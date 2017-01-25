@@ -1,0 +1,7 @@
+# IDE files
+/.idea
+
+# SBT files
+/target
+/project/project
+/project/target
