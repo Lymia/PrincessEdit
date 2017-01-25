@@ -51,8 +51,7 @@ val commonSettings = versionWithGit ++ Seq(
 
   // Scala configuration
   scalaVersion := config_scalaVersion,
-  scalacOptions ++= ("-Xlint -Yclosure-elim -target:jvm-1.7 -optimize -deprecation -unchecked "+
-                     "-Ydead-code -Yinline -Yinline-handlers").split(" ").toSeq,
+  scalacOptions ++= ("-Xlint -target:jvm-1.7 -optimize -deprecation -unchecked").split(" ").toSeq,
   crossPaths := false
 )
 
