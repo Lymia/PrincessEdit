@@ -48,7 +48,7 @@ class FileLock(lockFile: Path) {
 }
 
 object IOUtils {
-  private val resPath = "/moe/lymia/mppatch/"
+  private val resPath = "/moe/lymia/princess/"
 
   def getResourceURL(s: String) = getClass.getResource(resPath + s)
   def getResource(s: String) = getClass.getResourceAsStream(resPath + s)

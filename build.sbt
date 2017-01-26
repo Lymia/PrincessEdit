@@ -22,12 +22,11 @@
 
 import sbt._
 import sbt.Keys._
-import com.typesafe.sbt.SbtProguard._
 
 import Config._
-import Utils._
 
 import ProguardBuild.Keys._
+import com.typesafe.sbt.SbtProguard._
 
 // Additional keys
 
@@ -51,14 +50,14 @@ val commonSettings = versionWithGit ++ Seq(
 
   // Scala configuration
   scalaVersion := config_scalaVersion,
-  scalacOptions ++= ("-Xlint -target:jvm-1.7 -optimize -deprecation -unchecked").split(" ").toSeq,
+  scalacOptions ++= "-Xlint -target:jvm-1.8 -opt:l:classpath -deprecation -unchecked".split(" ").toSeq,
   crossPaths := false
 )
 
 lazy val princessEdit = project in file(".") settings (commonSettings ++ ProguardBuild.settings ++ Seq(
   name := "princess-edit",
 
-  libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
+  libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
   shadeMappings       += "scala.**" -> "moe.lymia.princess.lib.scala.@1",
 
   excludeFiles   := Set("library.properties", "rootdoc.txt", "scala-xml.properties"),
@@ -73,5 +72,5 @@ InputKey[Unit]("dist") := {
     IO.copyFile(source, output)
     output
   }
-  streams.value.log.info(s"Output written to: ${copy((Keys.`package` in Compile in princessEdit).value)}")
+  streams.value.log.info(s"Output written to: ${copy((ProguardKeys.proguard in Proguard in princessEdit).value.head)}")
 }
