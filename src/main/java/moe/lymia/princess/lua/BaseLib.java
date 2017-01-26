@@ -22,7 +22,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package moe.lymia.princess.lib.lua;
+package moe.lymia.princess.lua;
 
 import java.io.PrintStream;
 import java.io.Reader;

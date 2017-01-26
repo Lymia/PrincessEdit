@@ -1,4 +1,4 @@
-/*  $Header: //info.ravenbrook.com/project/jili/version/1.1/code/mnj/lua/FromReader.java#1 $
+/*  $Header: //info.ravenbrook.com/project/jili/version/1.1/code/mnj/lua/DumpedInput.java#1 $
  * Copyright (c) 2006 Nokia Corporation and/or its subsidiary(-ies).
  * All rights reserved.
  * 
@@ -22,54 +22,60 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package moe.lymia.princess.lib.lua;
+package moe.lymia.princess.lua;
 
 import java.io.InputStream;
-import java.io.IOException;
-import java.io.Reader;
 
 /**
- * Takes a {@link Reader} and converts to an {@link InputStream} by
- * reversing the transformation performed by <code>string.dump</code>.
- * Similar to {@link DumpedInput} which does the same job for {@link
- * String}.  This class is used by {@link BaseLib}'s load in order to
- * load binary chunks.
+ * Converts a string obtained using string.dump into an
+ * {@link InputStream} so that it can be passed to {@link
+ * Lua#load(InputStream, String)}.
  */
-final class FromReader extends InputStream
+final class DumpedInput extends InputStream
 {
-  // :todo: consider combining with DumpedInput.  No real reason except
-  // to save space in JME.
+  private String s;
+  private int i;        // = 0
+  int mark = -1;
 
-  private Reader reader;
-
-  FromReader(Reader reader)
+  DumpedInput(String s)
   {
-    this.reader = reader;
+    this.s = s;
   }
 
-  public void mark(int readahead)
+  public int available()
   {
-    try
-    {
-      reader.mark(readahead);
-    }
-    catch (Exception e_)
-    {
-    }
+    return s.length() - i;
   }
 
-  public void reset() throws IOException
+  public void close()
   {
-    reader.reset();
+    s = null;
+    i = -1;
   }
 
-  public int read() throws IOException
+  public void mark(int readlimit)
   {
-    int c = reader.read();
-    if (c == -1)
+    mark = i;
+  }
+
+  public boolean markSupported()
+  {
+    return true;
+  }
+
+  public int read()
+  {
+    if (i >= s.length())
     {
-      return c;
+      return -1;
     }
-    return c & 0xff;
+    char c = s.charAt(i);
+    ++i;
+    return c&0xff;
+  }
+
+  public void reset()
+  {
+    i = mark;
   }
 }

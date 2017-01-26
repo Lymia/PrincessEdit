@@ -1,4 +1,4 @@
-/*  $Header$
+/*  $Header: //info.ravenbrook.com/project/jili/version/1.1/code/mnj/lua/BlockCnt.java#1 $
  * Copyright (c) 2006 Nokia Corporation and/or its subsidiary(-ies).
  * All rights reserved.
  * 
@@ -22,18 +22,16 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package moe.lymia.princess.lib.lua;
+package moe.lymia.princess.lua;
 
-/**
- * Represent a Lua error
- */
-final class LuaError extends RuntimeException
+/*
+** nodes for block list (list of active blocks)
+*/
+final class BlockCnt
 {
-  int errorStatus;
-
-  LuaError(int errorStatus)
-  {
-    super("Lua error");
-    this.errorStatus = errorStatus;
-  }
+  BlockCnt previous;  /* chain */
+  int breaklist;      /* list of jumps out of this loop */
+  int nactvar;        /* # active locals outside the breakable structure */
+  boolean upval;      /* true if some variable in the block is an upvalue */
+  boolean isbreakable;/* true if `block' is a loop */
 }

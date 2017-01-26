@@ -25,7 +25,7 @@
 // REFERENCES
 // [C1990] "ISO Standard: Programming languages - C"; ISO 9899:1990;
 
-package moe.lymia.princess.lib.lua;
+package moe.lymia.princess.lua;
 
 import java.util.Calendar;
 import java.util.Date;
