@@ -39,18 +39,19 @@ final class SafePackageLib(paths: Seq[Path]) {
   private def load(L: LuaState, module: String): Seq[LuaOutObject] = {
     val filename = s"${module.replace(".", "/")}.lua"
     val components = filename.split("/").map(_.trim)
-    if(components.exists(_.isEmpty)) Seq(LuaNil)
+    if(components.exists(c => c.isEmpty || !c.matches("^[a-zA-Z0-9_]*$")))
+      Seq(s"\n\tinvalid module name '$module'")
     else {
       var errStr = ""
       for(path <- paths) {
         var currentPath = path
         var error = false
         errStr = errStr + s"\n\tno file '$filename' in '${path.toString}'"
-        for(component <- components) {
-          if(component.nonEmpty && component.matches("^[a-zA-Z0-9_]*$") &&
-            Files.list(currentPath).iterator().asScala.contains(component))
+        for(component <- components) if(!error) {
+          if(Files.list(currentPath).iterator().asScala.contains(component)) {
             currentPath = currentPath.resolve(component)
-          else error = true
+            if(!Files.isDirectory(currentPath)) error = true
+          } else error = true
         }
         if(!error) {
           val luaString = new String(Files.readAllBytes(currentPath), StandardCharsets.UTF_8)
