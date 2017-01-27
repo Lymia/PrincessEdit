@@ -2316,9 +2316,9 @@ protect:
     stacksetsize(oldtop+1);
   }
 
-  void dThrow(int status)
+  void dThrow(int status, String message)
   {
-    throw new LuaError(status);
+    throw new LuaError(status, message);
   }
 
 
@@ -2421,12 +2421,12 @@ protect:
     {
       if (!isFunction(errfunc))
       {
-        dThrow(ERRERR);
+        dThrow(ERRERR, message.toString());
       }
       insert(errfunc, getTop());        // push function (under error arg)
       vmCall(stackSize-2, 1);        // call it
     }
-    dThrow(ERRRUN);
+    dThrow(ERRRUN, message.toString());
     // NOTREACHED
     return 0;
   }

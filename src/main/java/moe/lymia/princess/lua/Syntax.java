@@ -616,7 +616,7 @@ loop:
       msg = msg + " near '" + txtToken(tok) + "'";
     }
     L.pushString(msg);
-    L.dThrow(Lua.ERRSYNTAX);
+    L.dThrow(Lua.ERRSYNTAX, msg);
   }
 
   /** Equivalent to <code>luaX_next</code>. */

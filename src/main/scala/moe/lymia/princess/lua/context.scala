@@ -22,6 +22,7 @@
 
 package moe.lymia.princess.lua
 import java.io.{InputStream, Reader}
+import java.nio.file.Path
 import java.util
 
 import scala.collection.JavaConverters._
@@ -47,7 +48,9 @@ final case class LuaState(L: Lua) extends AnyVal {
     L.pop(1)
     top
   }
+  def peekTop() = L.value(L.getTop()).returnWrapper
   def push[T : ToLua](o: T): Unit = L.push(o.toLua(this))
+  def pushClosure(o: ScalaLuaClosure): Unit = L.push(o.toLua(this))
   def pushValue(idx: Int): Unit = L.pushValue(idx)
   def insert[T : ToLua](o: T, idx: Int): Unit = L.insert(o.toLua(this), idx)
 
@@ -81,6 +84,10 @@ final case class LuaState(L: Lua) extends AnyVal {
   def rawGet[T : ToLua, K : ToLua](t: T, k: K) = Lua.rawGet(t.toLua(this), k.toLua(this)).returnWrapper
   def rawSet[T : ToLua, K : ToLua, V : ToLua](t: T, k: K, v: V) = L.rawSet(t.toLua(this), k.toLua(this), v.toLua(this))
 
+  def registerGlobal(k: String, v: ScalaLuaClosure) = L.setGlobal(k, v.toLua(this))
+  def register[T : ToLua, K : ToLua](t: T, k: K, v: ScalaLuaClosure) =
+    L.rawSet(t.toLua(this), k.toLua(this), v.toLua(this))
+
   // chunk loading
   private def popLoad(status: Int) = {
     val ret = if(status == 0) Left (L.value(L.getTop).fromLua[LuaClosure](this))
@@ -92,7 +99,11 @@ final case class LuaState(L: Lua) extends AnyVal {
   def load(in: Reader, chunkname: String) = popLoad(L.load(in, chunkname))
   def loadFile(filename: String) = popLoad(L.loadFile(filename))
   def loadString(s: String, chunkname: String) = popLoad(L.loadString(s, chunkname))
-  def doString(s: String): Int = L.doString(s)
+  def doString(s: String) = {
+    val status = L.doString(s)
+    if(status != 0) sys.error(s"Lua error: ${peekTop().as[String](this)}")
+    L.pop(1)
+  }
 
   // call functions
   def call(nargs: Int, nresults: Int) = L.call(nargs, nresults)
@@ -141,14 +152,9 @@ object LuaState {
 
     new LuaState(L)
   }
-  def makeFullContext() = {
+  def makeSafeContext(paths: Path*) = {
     val L = makeBasicContext()
-    PackageLib.open(L.L)
-    L
-  }
-  def makeSafeContext() = {
-    val L = makeBasicContext()
-    new SafePackageLib().open(L)
+    new SafePackageLib(paths).open(L)
     L.setGlobal("loadfile", LuaNil)
     L
   }

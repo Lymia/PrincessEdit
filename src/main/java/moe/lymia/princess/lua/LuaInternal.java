@@ -113,8 +113,9 @@ final class LuaInternal extends LuaJavaCallback
     }
     catch (IOException e)
     {
-      L.push("cannot read " + chunkname + ": " + e.toString());
-      L.dThrow(Lua.ERRFILE);
+      String msg = "cannot read " + chunkname + ": " + e.toString();
+      L.push(msg);
+      L.dThrow(Lua.ERRFILE, msg);
       return 0;
     }
   }

@@ -22,8 +22,42 @@
 
 package moe.lymia.princess.lua
 
-final class SafePackageLib {
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
+
+import scala.collection.JavaConverters._
+
+final class SafePackageLib(paths: Seq[Path]) {
   def open(L: LuaState): Unit = {
-    
+    PackageLib.open(L. L)
+
+    L.rawSet(L.getGlobal("package"), "path", LuaNil)
+    val loader = L.getTable(L.getGlobal("package"), "loaders").as[LuaTable](L)
+    L.register(loader, loader.getn(), load _) // replace LOADER_LUA
+  }
+
+  private def load(L: LuaState, module: String): Seq[LuaOutObject] = {
+    val filename = s"${module.replace(".", "/")}.lua"
+    val components = filename.split("/").map(_.trim)
+    if(components.exists(_.isEmpty)) Seq(LuaNil)
+    else {
+      var errStr = ""
+      for(path <- paths) {
+        var currentPath = path
+        var error = false
+        errStr = errStr + s"\n\tno file '$filename' in '${path.toString}'"
+        for(component <- components) {
+          if(component.nonEmpty && component.matches("^[a-zA-Z0-9_]*$") &&
+            Files.list(currentPath).iterator().asScala.contains(component))
+            currentPath = currentPath.resolve(component)
+          else error = true
+        }
+        if(!error) {
+          val luaString = new String(Files.readAllBytes(currentPath), StandardCharsets.UTF_8)
+          return Seq(L.loadString(luaString, s"@$filename").fold(x => x : LuaOutObject, x => x : LuaOutObject))
+        }
+      }
+      Seq(errStr)
+    }
   }
 }

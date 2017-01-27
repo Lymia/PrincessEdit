@@ -122,6 +122,12 @@ have Ravenbrook manage it.
 5. RELEASE NOTES
 
 
+PrincessEdit distribution
+
+Changes in this distribution:
+ - Lua error messages are propagated to LuaError for better stack traces.
+
+
 RELEASE 1.0
 
 First open source release.

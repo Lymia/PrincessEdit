@@ -31,9 +31,9 @@ final class LuaError extends RuntimeException
 {
   int errorStatus;
 
-  LuaError(int errorStatus)
+  LuaError(int errorStatus, String message)
   {
-    super("Lua error");
+    super("Lua error: "+message);
     this.errorStatus = errorStatus;
   }
 }

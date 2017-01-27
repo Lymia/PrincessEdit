@@ -53,6 +53,7 @@ class LuaOutObject(val wrapped: Any) extends AnyVal {
 sealed trait ToLua[T] {
   def toLua(t: T): LuaOutObject
 }
+private[lua] trait ToLuaEscape[T] extends ToLua[T]
 sealed trait FromLua[T] {
   def fromLua(L: Lua, v: Any, source: String): T
 }
@@ -62,7 +63,7 @@ case class LuaClosure(fn: Any)
 case class ScalaLuaClosure(fn: LuaState => Seq[LuaOutObject]) extends AnyVal
 
 class LuaReturnWrapper(val wrapped: Any) extends AnyVal {
-  def as[T : FromLua](L: LuaState) = wrapped.fromLua[T](L)
+  def as[T : FromLua](L: LuaState): T = wrapped.fromLua[T](L)
 }
 
 case object LuaNil
@@ -73,7 +74,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
     sys.error("L.error returned unexpectedly!")
   }
   private def typerror[T](L: Lua, source: String, got: Any, expected: Int): T =
-    typerror(L, source, Lua.typeName(Lua.`type`(expected)), Lua.typeName(expected))
+    typerror(L, source, Lua.typeName(Lua.`type`(got)), Lua.typeName(expected))
 
   // Function wrapper
   implicit def unitClosure2luaClosure(fn: LuaState => Unit): ScalaLuaClosure = ScalaLuaClosure(L => { fn(L); Seq() })
@@ -89,7 +90,9 @@ trait LuaImplicits extends LuaGeneratedImplicits {
       rets.length
     }
   }
-  implicit def luaClosure2LuaFunction(fn: ScalaLuaClosure): LuaClosure = LuaClosure(new LuaClosureWrapper(fn))
+  implicit object ToLuaScalaLuaClosure extends ToLua[ScalaLuaClosure] {
+    override def toLua(t: ScalaLuaClosure): LuaOutObject = new LuaOutObject(new LuaClosureWrapper(t))
+  }
 
   // Lua Object wrappers
   implicit def toLua2luaObject[T : ToLua](obj: T): LuaOutObject = implicitly[ToLua[T]].toLua(obj)
@@ -103,7 +106,8 @@ trait LuaImplicits extends LuaGeneratedImplicits {
     override def toLua(t: Any): LuaOutObject = new LuaOutObject(t)
     override def fromLua(L: Lua, v: Any, source: String) = v
   }
-  implicit object LuaParameterLuaNil extends ToLua[LuaNil.type] {
+  implicit val ToLuaReturnWrapper = new ToLuaLuaReturnWrapper() : ToLua[LuaReturnWrapper]
+  implicit object LuaParameterNil extends ToLua[LuaNil.type] {
     override def toLua(t: LuaNil.type): LuaOutObject = new LuaOutObject(Lua.NIL)
   }
 
@@ -189,7 +193,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   implicit def fromLuaSeq[V : FromLua] = new FromLua[Seq[V]] {
     override def fromLua(L: Lua, v: Any, source: String): Seq[V] = v match {
       case table: LuaTable =>
-        for(k <- table.array.take(table.sizeArray)) yield
+        for(k <- table.array.take(table.getn())) yield
           implicitly[FromLua[V]].fromLua(L, table.getlua(k), s"$source in table value")
       case _ => typerror(L, source, v, Lua.TTABLE)
     }
