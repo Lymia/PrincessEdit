@@ -26,7 +26,7 @@ import java.awt.image.BufferedImage
 import java.io.{File, OutputStream}
 import javax.imageio.ImageIO
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 case class ImageType(extension: String, format: String, name: String)
 object ImageType {
@@ -62,60 +62,62 @@ class ImageBuffer(xPxSize: Int, yPxSize: Int, xCoordOffset: Int, yCoordOffset: I
 
 sealed trait LayerType
 object LayerType {
-  case object BaseLayer        extends LayerType
-  case object OverlayLayer     extends LayerType
-  case object PremaskEffects   extends LayerType
-  case object MaskLayer        extends LayerType
-  case object MaskOverlayLayer extends LayerType
-  case object PostmaskEffects  extends LayerType
+  case object BaseLayer    extends LayerType
+  case object OverlayLayer extends LayerType
+  case object EffectsLayer extends LayerType
+  case object MaskLayer    extends LayerType
 
   val layers: Seq[LayerType] =
-    Seq(BaseLayer, OverlayLayer, PremaskEffects, MaskLayer, MaskOverlayLayer, PostmaskEffects)
+    Seq(BaseLayer, OverlayLayer, EffectsLayer, MaskLayer)
 }
 
-class RendererList extends (ImageBuffer => Unit) {
-  private val effects = new ArrayBuffer[ImageBuffer => Unit]
-  def addEffect(b: ImageBuffer => Unit) = effects.append(b)
-  def apply(b: ImageBuffer) = effects.foreach(_(b))
+class RenderContext(manager: RenderManager) {
+
+}
+
+class RendererList extends ((ImageBuffer, RenderContext) => Unit) {
+  private val effects = new mutable.ArrayBuffer[(ImageBuffer, RenderContext) => Unit]
+  def addEffect(b: (ImageBuffer, RenderContext) => Unit) = effects.append(b)
+  def apply(b: ImageBuffer, context: RenderContext) = effects.foreach(_(b, context))
   def hasEffects = effects.nonEmpty
 }
-class ImageLayer(xPxSize: Int, yPxSize: Int, xCoordOffset: Int, yCoordOffset: Int, xCoordSize: Int, yCoordSize: Int) {
+class ImageLayer(xPxSize: Int, yPxSize: Int, xCoordOffset: Int, yCoordOffset: Int, xCoordSize: Int, yCoordSize: Int,
+                 imageType: Int = BufferedImage.TYPE_4BYTE_ABGR) {
   def this(xPxSize: Int, yPxSize: Int) = this(xPxSize, yPxSize, 0, 0, xPxSize, yPxSize)
 
-  private def makeBuffer(imageType: Int) =
-    new ImageBuffer(xPxSize, yPxSize, xCoordOffset, yCoordOffset, xCoordSize, yCoordSize, imageType)
+  def layerFormat = imageType
 
   private val layers = LayerType.layers.map(x => x -> new RendererList).toMap
   def getLayer(layer: LayerType) = layers.getOrElse(layer, sys.error(s"unknown layer type $layer"))
-  def addRenderer(layer: LayerType)(effect: ImageBuffer => Unit) = getLayer(layer).addEffect(effect)
-  private def applyLayer(layer: LayerType, image: ImageBuffer) = getLayer(layer)(image)
+  def addRenderer(layer: LayerType)(effect: (ImageBuffer, RenderContext) => Unit) = getLayer(layer).addEffect(effect)
+  private def applyLayer(layer: LayerType, image: ImageBuffer, context: RenderContext) =
+    getLayer(layer)(image, context)
 
-  private def applyMask(image: ImageBuffer) = {
-    if(getLayer(LayerType.MaskLayer).hasEffects || getLayer(LayerType.MaskOverlayLayer).hasEffects) {
-      val mask = makeBuffer(BufferedImage.TYPE_BYTE_GRAY)
-      applyLayer(LayerType.MaskLayer       , mask)
-      applyLayer(LayerType.MaskOverlayLayer, mask)
-
-      val imgBuffer  = new Array[Int](image.getWidth)
-      val maskBuffer = new Array[Int](image.getWidth)
-      for(y <- 0 until image.getHeight) {
-        image.buffer.getRGB(0, y, image.getWidth, 1, imgBuffer , 0, 0)
-        mask .buffer.getRGB(0, y, image.getWidth, 1, maskBuffer, 0, 0)
-        for(x <- 0 until image.getWidth) {
-          val buffer = imgBuffer(x)
-          imgBuffer(x) = (buffer & 0xFFFFFF) | ((((buffer >>> 24) * (maskBuffer(x) & 0xFF)) / 255) << 24)
-        }
-        image.buffer.setRGB(0, y, image.getWidth, 1, imgBuffer , 0, 0)
-      }
-    }
-  }
-  def render() = {
-    val image = makeBuffer(BufferedImage.TYPE_4BYTE_ABGR)
-    applyLayer(LayerType.BaseLayer      , image)
-    applyLayer(LayerType.OverlayLayer   , image)
-    applyLayer(LayerType.PremaskEffects , image)
-    applyMask(image)
-    applyLayer(LayerType.PostmaskEffects, image)
+  def render(context: RenderContext) = {
+    val image = new ImageBuffer(xPxSize, yPxSize, xCoordOffset, yCoordOffset, xCoordSize, yCoordSize, imageType)
+    LayerType.layers.foreach(layer => applyLayer(layer, image, context))
     image
   }
+}
+
+class RenderManager(xPxSize: Int, yPxSize: Int, xCoordSize: Int, yCoordSize: Int) {
+  private val layers = new mutable.HashMap[String, ImageLayer]
+
+  private val xRatio = xPxSize.toDouble / xCoordSize.toDouble
+  private val yRatio = yPxSize.toDouble / yCoordSize.toDouble
+
+  private def toPx(x: Int, y: Int) = (math.round(x * xRatio).toInt, math.round(y * yRatio).toInt)
+
+  def createContext() = new RenderContext(this)
+  def createLayer(name: String, xOffset: Int, yOffset: Int, xCoordSize: Int, yCoordSize: Int,
+                  imageType: Int = BufferedImage.TYPE_4BYTE_ABGR) = {
+    if(layers.contains(name)) throw TemplateError("layerexists", name)
+
+    val (xPxOffset, yPxOffset) = toPx(xOffset, yOffset)
+    val (xPxEnd   , yPxEnd   ) = toPx(xOffset + xCoordSize - 1, yOffset + yCoordSize - 1)
+
+    layers(name) = new ImageLayer(xPxEnd - xPxOffset + 1, yPxEnd- yPxOffset + 1, xOffset, yOffset,
+                                  xCoordSize, yCoordSize, imageType)
+  }
+  def getLayer(name: String) = layers.getOrElse(name, throw TemplateError("nosuchlayer", name))
 }
