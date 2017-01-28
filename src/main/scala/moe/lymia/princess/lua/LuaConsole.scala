@@ -26,7 +26,7 @@ import java.nio.file.Paths
 
 object LuaConsole {
   def startConsole() {
-    var L: LuaState = LuaState.makeSafeContext(Paths.get("resources"), Paths.get("."))
+    val L = LuaState.makeSafeContext(Paths.get("resources"), Paths.get("."))
 
     var continue = true
 
@@ -82,7 +82,7 @@ object LuaConsole {
     L.call(0, 1)
     val runClosure = L.popTop().as[LuaClosure](L)
 
-    println("Type exit() to exit.")
+    println("Use exit() to exit.")
     println()
 
     val in = new java.io.BufferedReader(new java.io.InputStreamReader(System.in))
