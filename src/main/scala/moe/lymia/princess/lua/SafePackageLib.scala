@@ -24,8 +24,9 @@ package moe.lymia.princess.lua
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
+import java.util.regex.Pattern
 
-import scala.collection.JavaConverters._
+import moe.lymia.princess.util.IOUtils
 
 final class SafePackageLib(paths: Seq[Path]) {
   def open(L: LuaState): Unit = {
@@ -39,26 +40,26 @@ final class SafePackageLib(paths: Seq[Path]) {
   private def load(L: LuaState, module: String): Seq[LuaOutObject] = {
     val filename = s"${module.replace(".", "/")}.lua"
     val components = filename.split("/").map(_.trim)
-    if(components.exists(c => c.isEmpty || !c.matches("^[a-zA-Z0-9_]*$")))
+    if(!SafePackageLib.validModuleRegex.matcher(module).matches ||
+       components.exists(c => c.isEmpty || !SafePackageLib.validDirRegex.matcher(c).matches))
       Seq(s"\n\tinvalid module name '$module'")
     else {
       var errStr = ""
-      for(path <- paths) {
-        var currentPath = path
-        var error = false
-        errStr = errStr + s"\n\tno file '$filename' in '${path.toString}'"
-        for(component <- components) if(!error) {
-          if(Files.list(currentPath).iterator().asScala.contains(component)) {
-            currentPath = currentPath.resolve(component)
-            if(!Files.isDirectory(currentPath)) error = true
-          } else error = true
-        }
-        if(!error) {
-          val luaString = new String(Files.readAllBytes(currentPath), StandardCharsets.UTF_8)
-          return Seq(L.loadString(luaString, s"@$filename").fold(x => x : LuaOutObject, x => x : LuaOutObject))
-        }
+      for(path <- paths) IOUtils.paranoidResolve(path, filename) match {
+        case None =>
+          errStr = errStr + s"\n\tno file '$filename' in '${path.toString}'"
+        case Some(x) =>
+          val luaString = new String(Files.readAllBytes(x), StandardCharsets.UTF_8)
+          L.loadString(luaString, s"@$filename") match {
+            case Left (chunk) => return Seq(chunk)
+            case Right(err)   => errStr += s"\n\tcould not load file '$filename' in '${path.toString}: $err"
+          }
       }
       Seq(errStr)
     }
   }
+}
+object SafePackageLib {
+  private val validModuleRegex = Pattern.compile("^[a-zA-Z0-9_.]+^$")
+  private val validDirRegex    = Pattern.compile("^[a-zA-Z0-9_]+$")
 }

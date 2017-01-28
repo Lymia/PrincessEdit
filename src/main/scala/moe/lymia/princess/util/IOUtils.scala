@@ -27,13 +27,14 @@ import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
+import java.util.regex.Pattern
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.io.Codec
 import scala.xml.{Node, PrettyPrinter, XML}
 
-class FileLock(lockFile: Path) {
+final class FileLock(lockFile: Path) {
   private val channel  = FileChannel.open(lockFile, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
   private val lock     = Option(channel.tryLock)
   private var released = false
@@ -85,6 +86,24 @@ object IOUtils {
     if(parent == null) false
     else if(Files.isSameFile(parent, child)) true
     else isSubdirectory(parent.getParent, child)
+
+  private val validFilenameRegex = Pattern.compile("^[- 0-9a-zA-Z_./]+$")
+  def paranoidResolve(basePath: Path, path: String): Option[Path] =
+    if(!validFilenameRegex.matcher(path).matches()) None
+    else {
+      val splitPath = path.split("/")
+      if(splitPath.exists(x => x.isEmpty || x.contains(".."))) None
+      else {
+        var currentPath = basePath
+        var error = false
+        for(elem <- path.split("/")) if (!error && elem != ".")
+          if(Files.exists(currentPath) && Files.isDirectory(currentPath) &&
+             Files.list(currentPath).iterator().asScala.contains(elem))
+            currentPath = currentPath.resolve(elem)
+          else error = true
+        if(error || !Files.exists(currentPath) || !Files.isRegularFile(currentPath)) None else Some(currentPath)
+      }
+    }
 
   def deleteDirectory(path: Path) =
     if(Files.exists(path))

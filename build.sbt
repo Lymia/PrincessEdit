@@ -22,9 +22,7 @@
 
 import sbt._
 import sbt.Keys._
-
 import Config._
-
 import ProguardBuild.Keys._
 import com.typesafe.sbt.SbtProguard._
 
@@ -57,10 +55,24 @@ val commonSettings = versionWithGit ++ Seq(
 lazy val princessEdit = project in file(".") settings (commonSettings ++ ProguardBuild.settings ++ Seq(
   name := "princess-edit",
 
-  libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-  shadeMappings       += "scala.**" -> "moe.lymia.princess.lib.scala.@1",
+  libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
+  excludeFiles        ++= Set("library.properties", "rootdoc.txt", "scala-xml.properties"),
+  shadeMappings       +=  "scala.**" -> "moe.lymia.princess.lib.scala.@1",
 
-  excludeFiles   := Set("library.properties", "rootdoc.txt", "scala-xml.properties"),
+  libraryDependencies +=  "org.apache.xmlgraphics" % "batik-swing"      % config_batikVersion,
+  libraryDependencies +=  "org.apache.xmlgraphics" % "batik-svggen"     % config_batikVersion,
+  libraryDependencies +=  "org.apache.xmlgraphics" % "batik-transcoder" % config_batikVersion,
+  excludePatterns     ++= Seq("META-INF/services/.*"),
+  ignoreDuplicate     +=  "moe/lymia/princess/lib/w3c/dom/.*",
+  shadeMappings       +=  "org.apache.**"       -> "moe.lymia.princess.lib.apache.@1",
+  shadeMappings       +=  "java_cup.**"         -> "moe.lymia.princess.lib.java_cup.@1",
+  shadeMappings       +=  "org.w3c.**"          -> "moe.lymia.princess.lib.w3c.@1",
+  shadeMappings       +=  "org.xml.**"          -> "moe.lymia.princess.lib.xml.@1",
+  shadeMappings       +=  "javax.**"            -> "moe.lymia.princess.lib.javax.@1",
+
+  libraryDependencies +=  "com.github.scopt" %% "scopt" % "3.5.0",
+  shadeMappings       +=  "scopt.**"            -> "moe.lymia.princess.lib.scopt.@1",
+
   proguardConfig := "config.pro"
 ) ++ VersionBuild.settings)
 

@@ -20,19 +20,10 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.template
+package moe.lymia.princess.ui
 
-import java.util.Locale
+object CLI {
+  def main(args: Seq[String]) = {
 
-import moe.lymia.princess.util.I18N
-
-case class TemplateError(i18nKey: String, args: Any*) extends
-  RuntimeException(TemplateError.format(i18nKey, TemplateError.enLang, args: _*)) {
-
-  def apply(i18n: I18N) = TemplateError.format(i18nKey, i18n, args: _*)
-}
-object TemplateError {
-  private lazy val enLang = I18N(Locale.ENGLISH)
-  private def format(i18nKey: String, i18n: I18N, args: Any*) =
-    i18n(s"princess.template.error.$i18nKey", args: _*)
+  }
 }

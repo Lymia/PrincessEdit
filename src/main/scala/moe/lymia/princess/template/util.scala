@@ -20,10 +20,26 @@
  * THE SOFTWARE.
  */
 
-object Config {
-  val config_scalaVersion = "2.12.1"
-  val config_batikVersion = "1.8"
-  val config_home_url     = "https://github.com/Lymia/PrincessEdit"
+package moe.lymia.princess.template
 
-  val version_baseVersion  = "0.1.0"
+import java.awt.Font
+
+final case class TemplateException(message: String) extends RuntimeException(message)
+
+final case class Size(xSize: Int, ySize: Int) {
+  def toRenderArea = RenderArea(0, 0, xSize - 1,  ySize - 1)
+}
+final case class RenderArea(x0: Int, y0: Int, x1: Int, y1: Int) {
+  val xSize = x1 - x0 + 1
+  val ySize = y1 - y0 + 1
+}
+
+final case class RenderSettings(renderScale: Double, coordUnitsPerIn: Double) {
+  def scale(d: Double): Int = math.round(d * renderScale).toInt
+  def scale(size: Size): Size = Size(scale(size.xSize), scale(size.ySize))
+  def scale(renderArea: RenderArea): RenderArea =
+    RenderArea(scale(renderArea.x0), scale(renderArea.y0), scale(renderArea.x1), scale(renderArea.y1))
+
+  def scaleFont(font: Font, ptSize: Double) =
+    font.deriveFont((ptSize * (coordUnitsPerIn / 72.0)).toFloat)
 }

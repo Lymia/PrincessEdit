@@ -30,7 +30,9 @@ import AssemblyKeys._
 object ProguardBuild {
   object Keys {
     val shadeMappings     = SettingKey[Seq[(String, String)]]("proguard-wrapper-shade-mappings")
+    val ignoreDuplicate   = SettingKey[Seq[String]]("proguard-wrapper-ignore-duplicate")
     val excludeFiles      = SettingKey[Set[String]]("proguard-wrapper-exclude-files")
+    val excludePatterns   = SettingKey[Seq[String]]("proguard-wrapper-exclude-patterns")
     val proguardConfig    = SettingKey[String]("proguard-wrapper-config")
     val proguardMapping   = TaskKey[File]("proguard-wrapper-mapping")
   }
@@ -38,11 +40,15 @@ object ProguardBuild {
 
   val settings = proguardSettings ++ Seq(
     shadeMappings := Seq(),
+    ignoreDuplicate := Seq(),
     excludeFiles := Set(),
+    excludePatterns := Seq(),
     assemblyShadeRules in assembly := shadeMappings.value.map(x => ShadeRule.rename(x).inAll),
     assemblyMergeStrategy in assembly := {
-      case PathList(x) if excludeFiles.value.contains(x) =>
+      case x if excludeFiles.value.contains(x) || excludePatterns.value.exists(x.matches) =>
         MergeStrategy.discard
+      case x if ignoreDuplicate.value.exists(x.matches) =>
+        MergeStrategy.first
       case x =>
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)

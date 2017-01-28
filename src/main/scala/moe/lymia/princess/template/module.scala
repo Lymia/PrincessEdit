@@ -28,15 +28,12 @@ case class Version(major: Int, minor: Int, patch: Int) {
   override def toString = s"$major.$minor.$patch"
 }
 
-case class RenderData()
-
 trait ModuleAction {
-  def applyModule(data: RenderData, render: RenderManager, modules: ModuleManager)
+
 }
 case class Module(moduleName: String, version: Version, dependencies: Map[String, Version],
                   actions: Seq[ModuleAction]) extends ModuleAction {
-  def applyModule(data: RenderData, render: RenderManager, modules: ModuleManager) =
-    actions.foreach(_.applyModule(data, render, modules))
+
 }
 
 trait ModuleLoader {

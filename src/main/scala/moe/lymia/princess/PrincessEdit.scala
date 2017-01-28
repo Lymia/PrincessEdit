@@ -20,10 +20,20 @@
  * THE SOFTWARE.
  */
 
-object Config {
-  val config_scalaVersion = "2.12.1"
-  val config_batikVersion = "1.8"
-  val config_home_url     = "https://github.com/Lymia/PrincessEdit"
+package moe.lymia.princess
 
-  val version_baseVersion  = "0.1.0"
+import javax.swing.UIManager
+
+import moe.lymia.princess.util.VersionInfo
+
+object PrincessEdit {
+  def main(args: Array[String]) = {
+    println(s"Princess Edit v${VersionInfo.versionString} by Lymia")
+    println("Released under the MIT license")
+    println("")
+
+    if(args.length == 0) {
+      sys.error("GUI not implemented.")
+    } else ui.CLI.main(args)
+  }
 }

@@ -41,14 +41,14 @@ object VersionInfoSource {
 object NullSource extends VersionInfoSource {
   def apply(key: String, default: String) = default
 }
-case class PropertiesSource(prop: Properties) extends VersionInfoSource {
+final case class PropertiesSource(prop: Properties) extends VersionInfoSource {
   def apply(key: String, default: String) = {
     val p = prop.getProperty(key)
     if(p == null || p.trim.isEmpty) default else p
   }
 }
 
-class VersionInfo(properties: VersionInfoSource) {
+sealed class VersionInfo(properties: VersionInfoSource) {
   def this(resource: String) = this(VersionInfoSource.getPropertySource(resource))
 
   lazy val majorVersion  = properties("princessedit.version.major", "-1").toInt

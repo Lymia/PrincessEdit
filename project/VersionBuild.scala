@@ -99,7 +99,16 @@ object VersionBuild {
       val versionPropertiesPath =
         (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "version.properties"
       IO.copyFile(versionFile.value, versionPropertiesPath)
-      Seq(versionPropertiesPath)
+
+      val licenseFilePath =
+        (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "LICENSE.md"
+      IO.copyFile(new File("LICENSE.md"), licenseFilePath)
+
+      val readmeFilePath =
+        (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "README.md"
+      IO.copyFile(new File("README.md"), readmeFilePath)
+
+      Seq(versionPropertiesPath, licenseFilePath, readmeFilePath)
     }.taskValue
   )
 }

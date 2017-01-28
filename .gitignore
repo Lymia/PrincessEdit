@@ -5,3 +5,6 @@
 /target
 /project/project
 /project/target
+
+# Data files
+/template

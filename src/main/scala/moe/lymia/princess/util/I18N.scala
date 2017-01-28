@@ -29,7 +29,7 @@ import java.util.{Locale, Properties}
 
 import scala.collection.JavaConverters._
 
-case class I18N(locale: Locale, map: Map[String, String]) {
+final case class I18N(locale: Locale, map: Map[String, String]) {
   private val messageFormatCache = new collection.mutable.HashMap[String, Option[MessageFormat]]
   def getFormat(key: String) =
     messageFormatCache.getOrElseUpdate(key, map.get(key).map(s => new MessageFormat(s, locale)))
