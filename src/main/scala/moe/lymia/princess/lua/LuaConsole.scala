@@ -80,7 +80,7 @@ object LuaConsole {
 
     L.push(chunk)
     L.call(0, 1)
-    val runClosure = L.popTop().as[LuaClosure](L)
+    val runClosure = L.popTop().as[LuaClosure]
 
     println("Use exit() to exit.")
     println()

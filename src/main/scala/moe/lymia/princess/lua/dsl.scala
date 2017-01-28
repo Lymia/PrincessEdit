@@ -62,8 +62,8 @@ sealed trait LuaParameter[T] extends ToLua[T] with FromLua[T]
 case class LuaClosure(fn: Any)
 case class ScalaLuaClosure(fn: LuaState => Seq[LuaOutObject]) extends AnyVal
 
-class LuaReturnWrapper(val wrapped: Any) extends AnyVal {
-  def as[T : FromLua](L: LuaState): T = wrapped.fromLua[T](L)
+class LuaReturnWrapper(L: LuaState, val wrapped: Any) {
+  def as[T : FromLua]: T = wrapped.fromLua[T](L)
 }
 
 case object LuaNil
@@ -102,14 +102,16 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   implicit class FromLuaAnyExtension(obj: Any) {
     def fromLua[T : FromLua](L: LuaState, source: String = "<java function>") =
       implicitly[FromLua[T]].fromLua(L.L, obj, source)
-    private[lua] def returnWrapper = new LuaReturnWrapper(obj)
+    private[lua] def returnWrapper(L: LuaState) = new LuaReturnWrapper(L, obj)
   }
 
   implicit object LuaParameterAny extends LuaParameter[Any] {
     override def toLua(t: Any): LuaOutObject = new LuaOutObject(t)
     override def fromLua(L: Lua, v: Any, source: String) = v
   }
-  implicit val ToLuaReturnWrapper = new ToLuaLuaReturnWrapper() : ToLua[LuaReturnWrapper]
+  implicit object ToLuaReturnWrapper extends ToLua[LuaReturnWrapper] {
+    override def toLua(t: LuaReturnWrapper): LuaOutObject = new LuaOutObject(t.wrapped)
+  }
   implicit object LuaParameterNil extends ToLua[LuaNil.type] {
     override def toLua(t: LuaNil.type): LuaOutObject = new LuaOutObject(Lua.NIL)
   }

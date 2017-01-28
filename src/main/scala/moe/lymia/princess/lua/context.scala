@@ -23,7 +23,6 @@
 package moe.lymia.princess.lua
 import java.io.{InputStream, Reader}
 import java.nio.file.Path
-import java.util
 
 import scala.collection.JavaConverters._
 
@@ -44,11 +43,11 @@ final case class LuaState(L: Lua) extends AnyVal {
 
   def pop(n: Int): Unit = L.pop(n)
   def popTop() = {
-    val top = L.value(L.getTop).returnWrapper
+    val top = L.value(L.getTop).returnWrapper(this)
     L.pop(1)
     top
   }
-  def peekTop() = L.value(L.getTop()).returnWrapper
+  def peekTop() = L.value(L.getTop).returnWrapper(this)
   def push[T : ToLua](o: T): Unit = L.push(o.toLua(this))
   def pushClosure(o: ScalaLuaClosure): Unit = L.push(o.toLua(this))
   def pushValue(idx: Int): Unit = L.pushValue(idx)
@@ -56,7 +55,7 @@ final case class LuaState(L: Lua) extends AnyVal {
 
   def xmove(to: LuaState, n: Int): Unit = L.xmove(to.L, n)
 
-  def value(idx: Int) = L.value(idx).returnWrapper
+  def value(idx: Int) = L.value(idx).returnWrapper(this)
 
   // conversion functions
   def isNoneOrNil(narg: Int): Boolean = L.isNoneOrNil(narg)
@@ -71,17 +70,17 @@ final case class LuaState(L: Lua) extends AnyVal {
   def getGlobals: LuaTable = L.getGlobals
   def getRegistry: LuaTable = L.getRegistry
 
-  def getGlobal(name: String) = L.getGlobal(name).returnWrapper
+  def getGlobal(name: String) = L.getGlobal(name).returnWrapper(this)
   def setGlobal[V : ToLua](name: String, value: V): Unit = L.setGlobal(name, value.toLua(this))
 
-  def getMetafield[O : ToLua](o: scala.Any, event: String) = L.getMetafield(o.toLua(this), event).returnWrapper
+  def getMetafield[O : ToLua](o: scala.Any, event: String) = L.getMetafield(o.toLua(this), event).returnWrapper(this)
 
-  def getTable[T : ToLua, K : ToLua](t: T, k: K) = L.getTable(t.toLua(this), k.toLua(this)).returnWrapper
+  def getTable[T : ToLua, K : ToLua](t: T, k: K) = L.getTable(t.toLua(this), k.toLua(this)).returnWrapper(this)
   def setTable[T : ToLua, K : ToLua, V : ToLua](t: T, k: K, v: V) =
     L.setTable(t.toLua(this), k.toLua(this), v.toLua(this))
   def setField[T : ToLua, V : ToLua](t: T, name: String, v: V): Unit = L.setField(t.toLua(this), name, v.toLua(this))
 
-  def rawGet[T : ToLua, K : ToLua](t: T, k: K) = Lua.rawGet(t.toLua(this), k.toLua(this)).returnWrapper
+  def rawGet[T : ToLua, K : ToLua](t: T, k: K) = Lua.rawGet(t.toLua(this), k.toLua(this)).returnWrapper(this)
   def rawSet[T : ToLua, K : ToLua, V : ToLua](t: T, k: K, v: V) = L.rawSet(t.toLua(this), k.toLua(this), v.toLua(this))
 
   def registerGlobal(k: String, v: ScalaLuaClosure) = L.setGlobal(k, v.toLua(this))
@@ -101,7 +100,7 @@ final case class LuaState(L: Lua) extends AnyVal {
   def loadString(s: String, chunkname: String) = popLoad(L.loadString(s, chunkname))
   def doString(s: String) = {
     val status = L.doString(s)
-    if(status != 0) sys.error(s"Lua error: ${peekTop().as[String](this)}")
+    if(status != 0) sys.error(s"Lua error: ${peekTop().as[String]}")
     L.pop(1)
   }
 

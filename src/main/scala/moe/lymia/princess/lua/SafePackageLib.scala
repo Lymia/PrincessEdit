@@ -33,7 +33,7 @@ final class SafePackageLib(paths: Seq[Path]) {
     PackageLib.open(L. L)
 
     L.rawSet(L.getGlobal("package"), "path", LuaNil)
-    val loader = L.getTable(L.getGlobal("package"), "loaders").as[LuaTable](L)
+    val loader = L.getTable(L.getGlobal("package"), "loaders").as[LuaTable]
     L.register(loader, loader.getn(), load _) // replace LOADER_LUA
   }
 
