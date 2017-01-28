@@ -69,6 +69,9 @@ class LuaReturnWrapper(val wrapped: Any) extends AnyVal {
 case object LuaNil
 
 trait LuaImplicits extends LuaGeneratedImplicits {
+  type LuaRet = Seq[LuaOutObject]
+  def LuaRet(v: LuaOutObject*) = Seq(v : _*)
+
   private def typerror[T](L: Lua, source: String, got: String, expected: String): T = {
     L.error(s"bad argument $source ($expected expected, got $got)")
     sys.error("L.error returned unexpectedly!")

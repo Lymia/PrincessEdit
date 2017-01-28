@@ -126,6 +126,8 @@ final case class LuaState(L: Lua) extends AnyVal {
       }
     }, mask, count)
 
+  def newTable() = L.newTable()
+
   def getFenv[T : ToLua](o: T): LuaTable = L.getFenv(o.toLua(this))
   def setFenv[O : ToLua, T : ToLua](o: O, table: T): Boolean = L.setFenv(o.toLua(this), table.toLua(this))
 

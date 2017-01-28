@@ -37,12 +37,12 @@ final class SafePackageLib(paths: Seq[Path]) {
     L.register(loader, loader.getn(), load _) // replace LOADER_LUA
   }
 
-  private def load(L: LuaState, module: String): Seq[LuaOutObject] = {
+  private def load(L: LuaState, module: String): LuaRet = {
     val filename = s"${module.replace(".", "/")}.lua"
     val components = filename.split("/").map(_.trim)
     if(!SafePackageLib.validModuleRegex.matcher(module).matches ||
        components.exists(c => c.isEmpty || !SafePackageLib.validDirRegex.matcher(c).matches))
-      Seq(s"\n\tinvalid module name '$module'")
+      LuaRet(s"\n\tinvalid module name '$module'")
     else {
       var errStr = ""
       for(path <- paths) IOUtils.paranoidResolve(path, filename) match {
@@ -51,11 +51,11 @@ final class SafePackageLib(paths: Seq[Path]) {
         case Some(x) =>
           val luaString = new String(Files.readAllBytes(x), StandardCharsets.UTF_8)
           L.loadString(luaString, s"@$filename") match {
-            case Left (chunk) => return Seq(chunk)
+            case Left (chunk) => return LuaRet(chunk)
             case Right(err)   => errStr += s"\n\tcould not load file '$filename' in '${path.toString}: $err"
           }
       }
-      Seq(errStr)
+      LuaRet(errStr)
     }
   }
 }

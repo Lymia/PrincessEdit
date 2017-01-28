@@ -22,18 +22,24 @@
 
 package moe.lymia.princess.ui
 
+import moe.lymia.princess.lua.LuaConsole
+
 class CLI {
-  var mode: () => Unit = cmd_default
+  var mode: () => Unit = cmd_default _
 
   val parser = new scopt.OptionParser[Unit]("scopt") {
-
+    cmd("console").text("Run Lua console").foreach(_ => mode = cmd_console _)
   }
 
   def cmd_default() = {
     parser.showUsageAsError()
   }
+  def cmd_console() = {
+    LuaConsole.startConsole()
+  }
 
   def main(args: Seq[String]) = {
-
+    parser.parse(args)
+    mode()
   }
 }
