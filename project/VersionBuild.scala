@@ -80,9 +80,7 @@ object VersionBuild {
         "build.timestr"               -> dateFormat.format(new java.util.Date()),
         "build.path"                  -> baseDirectory.value.getAbsolutePath,
         "build.treestatus"            -> propertyFromProcess("git", "status", "--porcelain"),
-  
-        "build.version.uname"         -> propertyFromProcess("uname", "-a"),
-        "build.version.distro"        -> tryProperty { IO.read(file("/etc/os-release")) },
+
         "build.version.sbt"           -> sbtVersion.value
       )
     },

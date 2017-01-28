@@ -22,7 +22,17 @@
 
 package moe.lymia.princess.ui
 
-object CLI {
+class CLI {
+  var mode: () => Unit = cmd_default
+
+  val parser = new scopt.OptionParser[Unit]("scopt") {
+
+  }
+
+  def cmd_default() = {
+    parser.showUsageAsError()
+  }
+
   def main(args: Seq[String]) = {
 
   }

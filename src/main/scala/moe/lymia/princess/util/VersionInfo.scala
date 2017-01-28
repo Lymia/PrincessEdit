@@ -61,11 +61,6 @@ sealed class VersionInfo(properties: VersionInfoSource) {
   lazy val versionString = properties("princessedit.version.string", "<unknown>")
   lazy val isDirty       = properties("princessedit.version.clean", "false") == "false"
 
-  lazy val gccVersion    = properties("build.version.gcc.short", "<unknown>")
-  lazy val nasmVersion   = properties("build.version.nasm", "<unknown>")
-  lazy val mingwVersion  = properties("build.version.mingw.short", "<unknown>")
-  lazy val sbtVersion    = properties("build.version.sbt", "<unknown>")
-
   lazy val buildDate     = new Date(properties("build.time", "0").toLong)
   lazy val buildUser     = properties("build.user", "<unknown>")
 }
