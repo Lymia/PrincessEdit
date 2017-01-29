@@ -26,20 +26,26 @@ import java.awt.Font
 
 final case class TemplateException(message: String) extends RuntimeException(message)
 
-final case class Size(xSize: Int, ySize: Int) {
-  def toRenderArea = RenderArea(0, 0, xSize - 1,  ySize - 1)
-}
-final case class RenderArea(x0: Int, y0: Int, x1: Int, y1: Int) {
-  val xSize = x1 - x0 + 1
-  val ySize = y1 - y0 + 1
+final case class Size(width: Double, height: Double)
+
+case class PhysicalUnit(svgName: String, ratioPerInch: Double)
+object PhysicalUnit {
+  val mm = PhysicalUnit("mm", 25.4)
+  val in = PhysicalUnit("in", 1)
 }
 
-final case class RenderSettings(renderScale: Double, coordUnitsPerIn: Double) {
-  def scale(d: Double): Int = math.round(d * renderScale).toInt
-  def scale(size: Size): Size = Size(scale(size.xSize), scale(size.ySize))
-  def scale(renderArea: RenderArea): RenderArea =
-    RenderArea(scale(renderArea.x0), scale(renderArea.y0), scale(renderArea.x1), scale(renderArea.y1))
+final case class PhysicalSize(width: Double, height: Double, unit: PhysicalUnit) {
+  val widthString  = s"$width${unit.svgName}"
+  val heightString = s"$height${unit.svgName}"
+}
 
+final case class RenderSettings(size: PhysicalSize, viewportScale: Double) {
+  val viewport        = Size(size.width * viewportScale, size.height * viewportScale)
+  val coordUnitsPerIn = viewportScale * size.unit.ratioPerInch
   def scaleFont(font: Font, ptSize: Double) =
     font.deriveFont((ptSize * (coordUnitsPerIn / 72.0)).toFloat)
+}
+object RenderSettings {
+  def apply(width: Double, height: Double, viewportScale: Double, unit: PhysicalUnit): RenderSettings =
+    RenderSettings(PhysicalSize(width, height, unit), viewportScale)
 }
