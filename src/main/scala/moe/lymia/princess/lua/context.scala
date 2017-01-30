@@ -37,6 +37,8 @@ final case class LuaState(L: Lua) extends AnyVal {
   def isMain: Boolean = L.isMain
   def status: Int = L.status()
 
+  def unwrap(o: LuaObject) = o.wrapped
+
   // stack manipulation functions
   def getTop: Int = L.getTop
   def setTop(n: Int): Unit = L.setTop(n)
@@ -48,10 +50,10 @@ final case class LuaState(L: Lua) extends AnyVal {
     top
   }
   def peekTop() = L.value(L.getTop).returnWrapper(this)
-  def push[T : ToLua](o: T): Unit = L.push(o.toLua(this))
-  def pushClosure(o: ScalaLuaClosure): Unit = L.push(o.toLua(this))
+  def push(o: LuaObject): Unit = L.push(o.toLua(this))
+  def pushClosure(o: ScalaLuaClosure, doCheck: Boolean = true): Unit = L.push(o.checkError(doCheck).toLua(this))
   def pushValue(idx: Int): Unit = L.pushValue(idx)
-  def insert[T : ToLua](o: T, idx: Int): Unit = L.insert(o.toLua(this), idx)
+  def insert(o: LuaObject, idx: Int): Unit = L.insert(o.toLua(this), idx)
 
   def xmove(to: LuaState, n: Int): Unit = L.xmove(to.L, n)
 
@@ -59,33 +61,34 @@ final case class LuaState(L: Lua) extends AnyVal {
 
   // conversion functions
   def isNoneOrNil(narg: Int): Boolean = L.isNoneOrNil(narg)
-  def toBoolean[O : ToLua](o: O): Boolean = L.toBoolean(o.toLua(this))
-  def toInteger[O : ToLua](o: O): Int = L.toInteger(o.toLua(this))
-  def toNumber[O : ToLua](o: O): Double = L.toNumber(o.toLua(this))
-  def toString[O : ToLua](o: O): String = L.toString(o.toLua(this))
-  def toThread[O : ToLua](o: O): Lua = L.toThread(o.toLua(this))
-  def toUserdata[O : ToLua](o: O): LuaUserdata = L.toUserdata(o.toLua(this))
+  def toBoolean(o: LuaObject): Boolean = L.toBoolean(o.toLua(this))
+  def toInteger(o: LuaObject): Int = L.toInteger(o.toLua(this))
+  def toNumber(o: LuaObject): Double = L.toNumber(o.toLua(this))
+  def toString(o: LuaObject): String = L.toString(o.toLua(this))
+  def toThread(o: LuaObject): Lua = L.toThread(o.toLua(this))
+  def toUserdata(o: LuaObject): LuaUserdata = L.toUserdata(o.toLua(this))
 
   // field manipulation functions
   def getGlobals: LuaTable = L.getGlobals
   def getRegistry: LuaTable = L.getRegistry
 
   def getGlobal(name: String) = L.getGlobal(name).returnWrapper(this)
-  def setGlobal[V : ToLua](name: String, value: V): Unit = L.setGlobal(name, value.toLua(this))
+  def setGlobal(name: String, value: LuaObject): Unit = L.setGlobal(name, value.toLua(this))
 
-  def getMetafield[O : ToLua](o: scala.Any, event: String) = L.getMetafield(o.toLua(this), event).returnWrapper(this)
+  def getMetafield(o: LuaObject, event: String) = L.getMetafield(o.toLua(this), event).returnWrapper(this)
 
-  def getTable[T : ToLua, K : ToLua](t: T, k: K) = L.getTable(t.toLua(this), k.toLua(this)).returnWrapper(this)
-  def setTable[T : ToLua, K : ToLua, V : ToLua](t: T, k: K, v: V) =
+  def getTable(t: LuaObject, k: LuaObject) = L.getTable(t.toLua(this), k.toLua(this)).returnWrapper(this)
+  def setTable(t: LuaObject, k: LuaObject, v: LuaObject) =
     L.setTable(t.toLua(this), k.toLua(this), v.toLua(this))
-  def setField[T : ToLua, V : ToLua](t: T, name: String, v: V): Unit = L.setField(t.toLua(this), name, v.toLua(this))
+  def setField(t: LuaObject, name: String, v: LuaObject): Unit = L.setField(t.toLua(this), name, v.toLua(this))
 
-  def rawGet[T : ToLua, K : ToLua](t: T, k: K) = Lua.rawGet(t.toLua(this), k.toLua(this)).returnWrapper(this)
-  def rawSet[T : ToLua, K : ToLua, V : ToLua](t: T, k: K, v: V) = L.rawSet(t.toLua(this), k.toLua(this), v.toLua(this))
+  def rawGet(t: LuaObject, k: LuaObject) = Lua.rawGet(t.toLua(this), k.toLua(this)).returnWrapper(this)
+  def rawSet(t: LuaObject, k: LuaObject, v: LuaObject) = L.rawSet(t.toLua(this), k.toLua(this), v.toLua(this))
 
-  def registerGlobal(k: String, v: ScalaLuaClosure) = L.setGlobal(k, v.toLua(this))
-  def register[T : ToLua, K : ToLua](t: T, k: K, v: ScalaLuaClosure) =
-    L.rawSet(t.toLua(this), k.toLua(this), v.toLua(this))
+  def registerGlobal(k: String, v: ScalaLuaClosure, doCheck: Boolean = true) =
+    L.setGlobal(k, v.checkError(doCheck).toLua(this))
+  def register(t: LuaObject, k: LuaObject, v: ScalaLuaClosure, doCheck: Boolean = true) =
+    L.rawSet(t.toLua(this), k.toLua(this), v.checkError(doCheck).toLua(this))
 
   // chunk loading
   private def popLoad(status: Int) = {
@@ -100,7 +103,7 @@ final case class LuaState(L: Lua) extends AnyVal {
   def loadString(s: String, chunkname: String) = popLoad(L.loadString(s, chunkname))
   def doString(s: String) = {
     val status = L.doString(s)
-    if(status != 0) sys.error(s"Lua error: ${peekTop().as[String]}")
+    if(status != 0) L.error(peekTop().as[String])
     L.pop(1)
   }
 
@@ -108,6 +111,13 @@ final case class LuaState(L: Lua) extends AnyVal {
   def call(nargs: Int, nresults: Int) = L.call(nargs, nresults)
   def pcall(nargs: Int, nresults: Int, ef: LuaClosure): Int = L.pcall(nargs, nresults, ef.toLua(this))
   def callMeta(obj: Int, event: String): Boolean = L.callMeta(obj, event)
+
+  def call(fn: LuaClosure, nresults: Int, args: LuaObject*) = {
+    L.push(fn.toLua(this))
+    for(arg <- args) L.push(arg.toLua(this))
+    L.call(args.length, nresults)
+    (for(_ <- 0 until nresults) yield popTop()).reverse
+  }
 
   // api functions
   def error(message: String) = {
@@ -118,26 +128,24 @@ final case class LuaState(L: Lua) extends AnyVal {
 
   def where(level: Int): String = L.where(level)
   def setHook(mask: Int, count: Int)(fn: (LuaState, Debug) => Unit) =
-    L.setHook(new Hook {
-      override def luaHook(L: Lua, ar: Debug) = {
-        fn(new LuaState(L), ar)
-        0
-      }
+    L.setHook((L: Lua, ar: Debug) => {
+      fn(new LuaState(L), ar)
+      0
     }, mask, count)
 
   def newTable() = L.newTable()
 
-  def getFenv[T : ToLua](o: T): LuaTable = L.getFenv(o.toLua(this))
-  def setFenv[O : ToLua, T : ToLua](o: O, table: T): Boolean = L.setFenv(o.toLua(this), table.toLua(this))
+  def getFenv(o: LuaObject): LuaTable = L.getFenv(o.toLua(this))
+  def setFenv(o: LuaObject, table: LuaObject): Boolean = L.setFenv(o.toLua(this), table.toLua(this))
 
-  def getMetatable[T : ToLua](o: T): LuaTable = L.getMetatable(o.toLua(this))
-  def setMetatable[O : ToLua, M : ToLua](o: O, mt: M): Unit = L.setMetatable(o.toLua(this), mt.toLua(this))
+  def getMetatable(o: LuaObject): LuaTable = L.getMetatable(o.toLua(this))
+  def setMetatable(o: LuaObject, mt: LuaObject): Unit = L.setMetatable(o.toLua(this), mt.toLua(this))
 
   // operator functions
   def concat(n: Int): Unit = L.concat(n)
-  def equal[A : ToLua, B: ToLua](o1: A, o2: B): Boolean = L.equal(o1.toLua(this), o2.toLua(this))
-  def lessThan[A : ToLua, B : ToLua](o1: A, o2: B): Boolean = L.lessThan(o1.toLua(this), o2.toLua(this))
-  def tableKeys[T : ToLua](t: T) = L.tableKeys(t.toLua(this)).asScala
+  def equal(o1: LuaObject, o2: LuaObject): Boolean = L.equal(o1.toLua(this), o2.toLua(this))
+  def lessThan(o1: LuaObject, o2: LuaObject): Boolean = L.lessThan(o1.toLua(this), o2.toLua(this))
+  def tableKeys(t: LuaObject) = L.tableKeys(t.toLua(this)).asScala
   def `type`(idx: Int): Int = L.`type`(idx)
   def typeNameOfIndex(idx: Int): String = L.typeNameOfIndex(idx)
 }

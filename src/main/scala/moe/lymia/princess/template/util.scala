@@ -24,7 +24,9 @@ package moe.lymia.princess.template
 
 import java.awt.Font
 
-final case class TemplateException(message: String) extends RuntimeException(message)
+import moe.lymia.princess.lua.LuaErrorMarker
+
+final case class TemplateException(message: String) extends RuntimeException(message) with LuaErrorMarker
 
 final case class Size(width: Double, height: Double)
 

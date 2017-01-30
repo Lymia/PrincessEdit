@@ -78,9 +78,7 @@ object LuaConsole {
         return runClosure
       """, "loader").fold(x => x, x => sys.error(s"Error compiling Lua executor: $x"))
 
-    L.push(chunk)
-    L.call(0, 1)
-    val runClosure = L.popTop().as[LuaClosure]
+    val runClosure = L.call(chunk, 1).head.as[LuaClosure]
 
     println("Use exit() to exit.")
     println()
@@ -93,9 +91,7 @@ object LuaConsole {
         if (rawline.startsWith("=")) "return "+rawline.substring(1)
         else rawline
       try {
-        L.push(runClosure)
-        L.push(line)
-        L.call(1, 0)
+        L.call(runClosure, 0, line)
       } catch {
         case e: Throwable => e.printStackTrace()
       }

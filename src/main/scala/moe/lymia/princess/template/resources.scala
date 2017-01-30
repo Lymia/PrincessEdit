@@ -24,6 +24,7 @@ package moe.lymia.princess.template
 
 import java.io.ByteArrayOutputStream
 import java.nio.file.{Files, Path}
+import java.util.zip.GZIPInputStream
 import javax.imageio.ImageIO
 import javax.xml.bind.DatatypeConverter
 
@@ -35,18 +36,19 @@ import scala.xml.XML
 trait ResourceLoader {
   def loadRaster   (builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
                     path: Path, expectedSize: Size): SVGDefinitionReference
-  def loadVector   (builder: SVGBuilder, name: String,
+  def loadVector   (builder: SVGBuilder, name: String, compression: Boolean,
                     path: Path, expectedSize: Size): SVGDefinitionReference
-  def loadComponent(builder: SVGBuilder, name: String, path: Path): String
+  def loadDefinition(builder: SVGBuilder, name: String, path: Path): String
 }
 
-trait IncludeComponentLoader extends ResourceLoader {
-  def loadComponent(builder: SVGBuilder, name: String, path: Path) =
+trait IncludeDefinitionLoader extends ResourceLoader {
+  def loadDefinition(builder: SVGBuilder, name: String, path: Path) =
     builder.createDefinition(name, XML.load(Files.newInputStream(path)))
 }
 trait IncludeVectorLoader extends ResourceLoader {
-  def loadVector(builder: SVGBuilder, name: String, path: Path, expectedSize: Size) =
-    builder.createDefinitionFromContainer(name, expectedSize, XML.load(Files.newInputStream(path)))
+  def loadVector(builder: SVGBuilder, name: String, compression: Boolean, path: Path, expectedSize: Size) =
+    builder.createDefinitionFromContainer(name, expectedSize, XML.load(
+      if(compression) new GZIPInputStream(Files.newInputStream(path)) else Files.newInputStream(path)))
 }
 
 trait ReferenceRasterLoader extends ResourceLoader {
@@ -54,7 +56,7 @@ trait ReferenceRasterLoader extends ResourceLoader {
                  path: Path, expectedSize: Size) =
     builder.createDefinitionFromContainer(name, expectedSize, <image xlink:href={path.toUri.toASCIIString}/>)
 }
-trait IncludeRasterLoader extends ResourceLoader {
+trait DataURLRasterLoader extends ResourceLoader {
   def loadRaster(builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
                  path: Path, expectedSize: Size) = {
     val data = reencode match {
@@ -70,30 +72,25 @@ trait IncludeRasterLoader extends ResourceLoader {
   }
 }
 
-object RasterizeResourceLoader extends IncludeComponentLoader with IncludeVectorLoader with IncludeRasterLoader
-object ExportResourceLoader    extends IncludeComponentLoader with IncludeVectorLoader with ReferenceRasterLoader
+object RasterizeResourceLoader extends IncludeDefinitionLoader with IncludeVectorLoader with DataURLRasterLoader
+object ExportResourceLoader    extends IncludeDefinitionLoader with IncludeVectorLoader with ReferenceRasterLoader
 
 private sealed trait ImageFormatType
 private object ResourceFormatType {
   case class Raster(mime: String, reencode: Option[String] = None) extends ImageFormatType
-  case object Vector extends ImageFormatType
+  case class Vector(compression: Boolean) extends ImageFormatType
 }
 
 private case class ImageFormat(extensions: Seq[String], formatType: ImageFormatType)
 
-class ResourceCache {
-  val imageResourceCache = new mutable.HashMap[String, Option[SVGDefinitionReference]]
-  val componentCache = new mutable.HashMap[(String, String), Option[String]]
-}
-class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, resourcePaths: Seq[Path],
-                      cache: ResourceCache = new ResourceCache) {
+final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, resourcePaths: Seq[Path]) {
   private def tryLoadImageInFile(path: Path, fullName: String, format: ImageFormat, size: Size) =
     IOUtils.paranoidResolve(path, fullName).map(fullPath =>
       format.formatType match {
         case ResourceFormatType.Raster(mime, reencode) =>
           loader.loadRaster(builder, fullName, reencode, mime, path, size)
-        case ResourceFormatType.Vector =>
-          loader.loadVector(builder, fullName, path, size)
+        case ResourceFormatType.Vector(compression) =>
+          loader.loadVector(builder, fullName, compression, path, size)
       }
     )
   private def tryFindImageResourceInPath(path: Path, name: String, size: Size) =
@@ -103,24 +100,27 @@ class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, resourcePaths
   private def tryFindImageResource(name: String, size: Size) =
     resourcePaths.view.map(x => tryFindImageResourceInPath(x, name, size)).find(_.isDefined).flatten
 
+  val imageResourceCache = new mutable.HashMap[String, Option[SVGDefinitionReference]]
   def loadImageResource(name: String, size: Size) =
-    cache.imageResourceCache.getOrElseUpdate(name, tryFindImageResource(name, size))
-                            .getOrElse(throw TemplateException(s"Image resource $name not found."))
+    imageResourceCache.getOrElseUpdate(name, tryFindImageResource(name, size))
+                      .getOrElse(throw TemplateException(s"Image resource $name not found."))
 
   private def tryLoadComponentInPath(path: Path, name: String, resourceType: String) =
     IOUtils.paranoidResolve(path, s"$name.$resourceType.xml").map(path =>
-      loader.loadComponent(builder, name, path)
+      loader.loadDefinition(builder, name, path)
     )
   private def tryFindComponent(name: String, resourceType: String) =
     resourcePaths.view.map(x => tryLoadComponentInPath(x, name, resourceType)).find(_.isDefined).flatten
 
+  val componentCache = new mutable.HashMap[(String, String), Option[String]]
   def loadComponent(name: String, resourceType: String) =
-    cache.componentCache.getOrElseUpdate((name, resourceType), tryFindComponent(name, resourceType))
-                        .getOrElse(throw TemplateException(s"Component $name not found."))
+    componentCache.getOrElseUpdate((name, resourceType), tryFindComponent(name, resourceType))
+                  .getOrElse(throw TemplateException(s"Component $name not found."))
 }
 object ResourceManager {
   private val imageFormats = Seq(
-    ImageFormat(Seq("svg"), ResourceFormatType.Vector),
+    ImageFormat(Seq("svgz"), ResourceFormatType.Vector(compression = true)),
+    ImageFormat(Seq("svg"), ResourceFormatType.Vector(compression = false)),
     ImageFormat(Seq("png"), ResourceFormatType.Raster("image/png")),
     ImageFormat(Seq("bmp"), ResourceFormatType.Raster("image/png", Some("png"))), // bmp is lossless but big
     ImageFormat(Seq("jpg", "jpeg"), ResourceFormatType.Raster("image/jpeg"))

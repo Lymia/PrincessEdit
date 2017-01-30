@@ -95,7 +95,7 @@ final class SVGBuilder(val settings: RenderSettings) {
     <svg xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="none"
          width={settings.size.widthString} height={settings.size.heightString}
          viewBox={s"0 0 ${settings.viewport.width} ${settings.viewport.height}"}>
-      <use>{definitions}</use>
+      <defs>{definitions}</defs>
       {root.include(0, 0, settings.viewport.width, settings.viewport.height)}
     </svg>
   def write(w: Writer, root: SVGDefinitionReference, encoding: String= "utf-8") = {
