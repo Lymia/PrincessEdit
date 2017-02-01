@@ -69,7 +69,7 @@ public final class Loader implements Runnable {
         }
 
         try {
-            loader = new URLClassLoader(new URL[]{tempJarFile.toURI().toURL()}, getClass().getClassLoader());
+            loader = new URLClassLoader(new URL[]{tempJarFile.toURI().toURL()}, ClassLoader.getSystemClassLoader());
         } catch (MalformedURLException e) {
             throw error("unexpected error", e);
         }
