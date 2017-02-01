@@ -96,47 +96,36 @@ private object ResourceFormatType {
 
 private case class ImageFormat(extensions: Seq[String], formatType: ImageFormatType)
 
-// TODO: Reduce code duplication in class
-final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, resourcePaths: Seq[Path]) {
-  private def tryLoadImageInFile(path: Path, fullName: String, format: ImageFormat, size: Size) =
-    IOUtils.paranoidResolve(path, fullName).map(fullPath =>
-      format.formatType match {
-        case ResourceFormatType.Raster(mime, reencode) =>
-          loader.loadRaster(builder, fullName, reencode, mime, path, size)
-        case ResourceFormatType.Vector(compression) =>
-          loader.loadVector(builder, fullName, compression, path, size)
-      }
-    )
-  private def tryFindImageResourceInPath(path: Path, name: String, size: Size) =
-    ResourceManager.formatSearchList.view.map { case (extension, format) =>
-      tryLoadImageInFile(path, s"$name.$extension", format, size)
-    }.find(_.isDefined).flatten
+final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, packages: LoadedPackages) {
   private def tryFindImageResource(name: String, size: Size) =
-    resourcePaths.view.map(x => tryFindImageResourceInPath(x, name, size)).find(_.isDefined).flatten
-
+    ResourceManager.formatSearchList.view.map { case (extension, format) =>
+      packages.resolve(s"$name.$extension").map(fullPath =>
+        format.formatType match {
+          case ResourceFormatType.Raster(mime, reencode) =>
+            loader.loadRaster(builder, name, reencode, mime, fullPath, size)
+          case ResourceFormatType.Vector(compression) =>
+            loader.loadVector(builder, name, compression, fullPath, size)
+        }
+      )
+    }.find(_.isDefined).flatten
   val imageResourceCache = new mutable.HashMap[String, Option[SVGDefinitionReference]]
   def loadImageResource(name: String, size: Size) =
     imageResourceCache.getOrElseUpdate(name, tryFindImageResource(name, size))
                       .getOrElse(throw TemplateException(s"Image resource $name not found."))
 
-  private def tryLoadComponentInPath(path: Path, name: String, resourceType: String) =
-    IOUtils.paranoidResolve(path, s"$name.$resourceType.xml").map(path =>
+  private def tryFindComponent(name: String, resourceType: String) =
+    packages.resolve(s"$name.$resourceType.xml").map(path =>
       loader.loadDefinition(builder, name, path)
     )
-  private def tryFindComponent(name: String, resourceType: String) =
-    resourcePaths.view.map(x => tryLoadComponentInPath(x, name, resourceType)).find(_.isDefined).flatten
-
   val componentCache = new mutable.HashMap[(String, String), Option[String]]
   def loadComponent(name: String, resourceType: String) =
     componentCache.getOrElseUpdate((name, resourceType), tryFindComponent(name, resourceType))
                   .getOrElse(throw TemplateException(s"Component $name not found."))
 
-  private def tryLoadFontInPath(path: Path, name: String) =
-    IOUtils.paranoidResolve(path, s"$name.ttf").map(path =>
+  private def tryFindFont(name: String) =
+    packages.resolve(s"$name.ttf").map(path =>
       (Font.createFont(Font.TRUETYPE_FONT, Files.newInputStream(path)), path)
     )
-  private def tryFindFont(name: String) =
-    resourcePaths.view.map(x => tryLoadFontInPath(x, name)).find(_.isDefined).flatten
 
   val includedFontFaces = new mutable.HashSet[String]
   val fontFaceCache     = new mutable.HashMap[String, Option[Font]]
