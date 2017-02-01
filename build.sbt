@@ -20,6 +20,11 @@
  * THE SOFTWARE.
  */
 
+import java.io.FileOutputStream
+import java.util.jar.{JarFile, Pack200}
+import java.util.jar.Pack200.Packer
+import java.util.zip.{GZIPOutputStream, Deflater}
+
 import sbt._
 import sbt.Keys._
 import Config._
@@ -55,39 +60,71 @@ val commonSettings = versionWithGit ++ Seq(
 lazy val princessEdit = project in file(".") settings (commonSettings ++ ProguardBuild.settings ++ Seq(
   name := "princess-edit",
 
-  excludePatterns     +=  "META-INF/services/.*",
+  excludePatterns     += "META-INF/services/.*",
 
-  libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-  excludeFiles        ++= Set("library.properties", "rootdoc.txt", "scala-xml.properties"),
+  libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
+  excludeFiles        += "rootdoc.txt",
 
-  libraryDependencies +=  "org.apache.xmlgraphics" % "batik-swing"      % config_batikVersion,
-  libraryDependencies +=  "org.apache.xmlgraphics" % "batik-svggen"     % config_batikVersion,
-  libraryDependencies +=  "org.apache.xmlgraphics" % "batik-transcoder" % config_batikVersion,
-  ignoreDuplicate     +=  "org/w3c/dom/.*",
+  libraryDependencies += "org.apache.xmlgraphics" % "batik-swing"      % config_batikVersion,
+  libraryDependencies += "org.apache.xmlgraphics" % "batik-svggen"     % config_batikVersion,
+  libraryDependencies += "org.apache.xmlgraphics" % "batik-transcoder" % config_batikVersion,
+  ignoreDuplicate     += "org/w3c/dom/.*",
 
-  libraryDependencies +=  "com.github.scopt" %% "scopt" % "3.5.0",
-  libraryDependencies +=  "org.ini4j" % "ini4j" % "0.5.2",
+  libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0",
+  libraryDependencies += "org.ini4j" % "ini4j" % "0.5.2",
 
   proguardConfig := "config.pro"
 ) ++ VersionBuild.settings)
 
+lazy val loader = project in file("loader") settings (commonSettings ++ Seq(
+  name := "princess-edit-loader",
+  autoScalaLibrary := false,
+  javacOptions ++= Seq("-source", "1.7", "-target", "1.7")
+))
+
+Launch4JBuild.settings
+Launch4JBuild.Keys.launch4jSourceJar := (Keys.`package` in Compile in loader).value
+
 // Build distribution file
 InputKey[Unit]("dist") := {
   val path = crossTarget.value / "dist"
-  def copy(source: File, targetPath: File) = {
-    val output = targetPath / source.getName
-    IO.copyFile(source, output)
-    output
-  }
+
   val zipOut = IO.withTemporaryDirectory { dir =>
     val dirName = s"princess-edit-${(version in princessEdit).value}"
     val zipOut = path / s"$dirName.zip"
     val outDir = dir / dirName
     IO.createDirectory(outDir)
+
     IO.createDirectory(outDir / "packages")
-    copy((ProguardKeys.proguard in Proguard in princessEdit).value.head, outDir)
+
+    val packer = Pack200.newPacker()
+    val p      = packer.properties()
+    p.put(Packer.EFFORT, "9")
+    p.put(Packer.SEGMENT_LIMIT, "-1")
+    p.put(Packer.KEEP_FILE_ORDER, Packer.FALSE)
+    p.put(Packer.MODIFICATION_TIME, Packer.LATEST)
+    p.put(Packer.UNKNOWN_ATTRIBUTE, Packer.ERROR)
+
+    val gzipOut = new GZIPOutputStream(new FileOutputStream(outDir / "PrincessEdit.pack.gz")) {
+      this.`def`.setLevel(Deflater.BEST_COMPRESSION)
+    }
+    packer.pack(new JarFile((ProguardKeys.proguard in Proguard in princessEdit).value.head), gzipOut)
+    gzipOut.finish()
+
+    IO.copyFile(Launch4JBuild.Keys.launch4jOutput.value, outDir / "PrincessEdit.exe")
+    IO.write(outDir / "PrincessEdit",
+      """#!/bin/sh
+        |cd "$(dirname "$0")"
+        |java -jar PrincessEdit.exe "$@"
+      """.stripMargin)
+    (outDir / "PrincessEdit").setExecutable(true)
+
     IO.zip(Path.allSubpaths(file("core.pkg")), outDir / "core.pkg")
-    IO.zip(Path.allSubpaths(outDir), zipOut)
+
+    // we call out to zip to save the executable flag for *nix
+    if(zipOut.exists) IO.delete(zipOut)
+    Utils.runProcess(Seq("zip", "-r", zipOut, dirName), dir)
+
     zipOut
   }
 

@@ -25,5 +25,8 @@ object Config {
   val config_batikVersion = "1.8"
   val config_home_url     = "https://github.com/Lymia/PrincessEdit"
 
-  val version_baseVersion  = "0.1.0"
+  val version_baseVersion = "0.1.0"
+
+    // hardcoded mirror because redirection handling is :(
+  val config_launch4j_url = "https://pilotfiber.dl.sourceforge.net/project/launch4j/launch4j-3/3.9/launch4j-3.9-linux.tgz"
 }

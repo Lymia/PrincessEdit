@@ -145,16 +145,19 @@ case class PackageList(packages: Map[String, Package]) {
     requiredDependencies ++= packageList.map(x => Dependency(x, None))
 
     while(requiredDependencies.nonEmpty) {
-      val dep = getDependency(requiredDependencies.dequeue())
+      val depDef = requiredDependencies.dequeue()
+      val dep = getDependency(depDef)
       dep match {
-        case None => throw TemplateException(s"Could not resolve dependency $dep.")
+        case None =>
+          throw TemplateException(s"Could not resolve dependency $depDef."+
+            (if(packages.contains(depDef.name)) s" (Package ${packages(depDef.name).version} is installed)" else ""))
         case Some(pkg) =>
           loadedPackageNames.put(pkg.name, pkg.version)
           loadedPackages.append(pkg)
           for(dep <- pkg.dependencies) loadedPackageNames.get(dep.name) match {
             case None => requiredDependencies.enqueue(dep)
             case Some(version) =>
-              if(!(version >= dep.version)) throw TemplateException(s"Could not resolve dependency $dep. "+
+              if(!(version >= dep.version)) throw TemplateException(s"Could not resolve dependency $depDef. "+
                                                                     s"(Package ${dep.name} v$version is installed)")
           }
       }
