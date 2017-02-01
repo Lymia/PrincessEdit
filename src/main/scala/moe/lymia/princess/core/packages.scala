@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.core
 
-import java.nio.file.{FileSystems, Files, Path}
+import java.nio.file.{FileSystems, Files, Path, Paths}
 
 import moe.lymia.princess.util.IOUtils
 
@@ -106,7 +106,7 @@ object Package {
   }
   private def loadPackageFromZip(path: Path) = TemplateException.context(s"loading package from zip $path") {
     val fs = FileSystems.newFileSystem(path, getClass.getClassLoader)
-    loadPackageFromPath(path)
+    loadPackageFromPath(fs.getPath("/"))
   }
   private def loadPackageFromDirectory(path: Path) = TemplateException.context(s"loading package from $path") {
     loadPackageFromPath(path)
@@ -203,6 +203,8 @@ object PackageList {
     }
     PackageList(map.toMap)
   }
-  def loadPackageDirectory(packages: Path) =
-    PackageList((for(x <- Files.list(packages).iterator().asScala) yield Package.loadPackage(x)).toSeq)
+  def loadPackageDirectory(packages: Path, extraDirs: Path*) =
+    PackageList((for(x <- Files.list(packages).iterator().asScala ++ extraDirs) yield Package.loadPackage(x)).toSeq)
+
+  lazy val defaultPath = loadPackageDirectory(Paths.get("packages"), Paths.get("core.pkg"))
 }

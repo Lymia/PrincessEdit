@@ -30,10 +30,12 @@ import moe.lymia.princess.lua.LuaConsole
 class CLI {
   var mode: () => Unit = cmd_default _
 
-  val parser = new scopt.OptionParser[Unit]("scopt") {
+  val parser = new scopt.OptionParser[Unit]("./PrincessEdit") {
+    help("help").text("Shows this help message.")
+    note("")
     cmd("console").text("Run Lua console").foreach(_ => mode = cmd_console _)
+    note("")
     cmd("listGameIDs").text("List available Game IDs").foreach(_ => mode = cmd_listGameIDs _)
-    help("help")
   }
 
   def cmd_default() = { }
@@ -42,9 +44,8 @@ class CLI {
     LuaConsole.startConsole()
   }
   def cmd_listGameIDs() = {
-    val packages = PackageList.loadPackageDirectory(Paths.get("template"))
     println("Game IDs:")
-    for(gameId <- packages.gameIDs) println(s" - ${gameId._1}: ${gameId._2}")
+    for(gameId <- PackageList.defaultPath.gameIDs) println(s" - ${gameId._1}: ${gameId._2}")
   }
 
   def main(args: Seq[String]) = {
