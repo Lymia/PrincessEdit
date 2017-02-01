@@ -112,14 +112,14 @@ InputKey[Unit]("dist") := {
     gzipOut.finish()
 
     IO.copyFile(Launch4JBuild.Keys.launch4jOutput.value, outDir / "PrincessEdit.exe")
-    IO.write(outDir / "PrincessEdit",
+    IO.write(outDir / "PrincessEdit.sh",
       """#!/bin/sh
         |cd "$(dirname "$0")"
         |java -jar PrincessEdit.exe "$@"
       """.stripMargin)
-    (outDir / "PrincessEdit").setExecutable(true)
+    (outDir / "PrincessEdit.sh").setExecutable(true)
 
-    IO.zip(Path.allSubpaths(file("core.pkg")), outDir / "core.pkg")
+    IO.zip(Path.allSubpaths(file("PrincessEdit.pkg")), outDir / "PrincessEdit.pkg")
 
     // we call out to zip to save the executable flag for *nix
     if(zipOut.exists) IO.delete(zipOut)

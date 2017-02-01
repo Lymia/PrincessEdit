@@ -209,5 +209,5 @@ object PackageList {
   def loadPackageDirectory(packages: Path, extraDirs: Path*) =
     PackageList((for(x <- Files.list(packages).iterator().asScala ++ extraDirs) yield Package.loadPackage(x)).toSeq)
 
-  lazy val defaultPath = loadPackageDirectory(Paths.get("packages"), Paths.get("core.pkg"))
+  lazy val defaultPath = loadPackageDirectory(Paths.get("packages"), Paths.get("PrincessEdit.pkg"))
 }
