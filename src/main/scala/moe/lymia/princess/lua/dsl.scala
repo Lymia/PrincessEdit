@@ -86,8 +86,10 @@ trait LuaImplicits extends LuaGeneratedImplicits {
     L.error(s"bad argument $source ($expected expected, got $got)")
     sys.error("L.error returned unexpectedly!")
   }
+  private def typerror[T](L: Lua, source: String, got: Any, expected: String): T =
+    typerror(L, source, Lua.typeName(Lua.`type`(got)), expected)
   private def typerror[T](L: Lua, source: String, got: Any, expected: Int): T =
-    typerror(L, source, Lua.typeName(Lua.`type`(got)), Lua.typeName(expected))
+    typerror(L, source, got, Lua.typeName(expected))
 
   // Function wrapper
   implicit def unitClosure2luaClosure(fn: LuaState => Unit): ScalaLuaClosure = ScalaLuaClosure(L => { fn(L); Seq() })
@@ -126,19 +128,34 @@ trait LuaImplicits extends LuaGeneratedImplicits {
     override def toLua(t: LuaNil.type): LuaObject = new LuaObject(Lua.NIL)
   }
 
-  private class LuaParameterNumeric[N : Numeric](toN: Double => N) extends LuaParameter[N] {
+  private class LuaParameterNumeric[N : Numeric](toN: Double => N, expected: String, checkRange: Double => Boolean)
+    extends LuaParameter[N] {
+
     override def toLua(n: N) = new LuaObject(implicitly[Numeric[N]].toDouble(n))
     override def fromLua(L: Lua, v: Any, source: String) = v match {
-      case n: java.lang.Double => toN(n)
+      case n: java.lang.Double =>
+        if(checkRange(n)) toN(n)
+        else {
+          L.error(s"bad argument $source (number out of $expected range)")
+          sys.error("L.error returned unexpectedly")
+        }
       case _ => typerror(L, source, v, Lua.TNUMBER)
     }
   }
-  implicit val LuaParameterByte   : LuaParameter[Byte  ] = new LuaParameterNumeric[Byte  ](_.toByte)
-  implicit val LuaParameterShort  : LuaParameter[Short ] = new LuaParameterNumeric[Short ](_.toShort)
-  implicit val LuaParameterInt    : LuaParameter[Int   ] = new LuaParameterNumeric[Int   ](_.toInt)
-  implicit val LuaParameterLong   : LuaParameter[Long  ] = new LuaParameterNumeric[Long  ](_.toLong)
-  implicit val LuaParameterFloat  : LuaParameter[Float ] = new LuaParameterNumeric[Float ](_.toFloat)
-  implicit val LuaParameterDouble : LuaParameter[Double] = new LuaParameterNumeric[Double](identity)
+  implicit val LuaParameterByte   : LuaParameter[Byte  ] =
+    new LuaParameterNumeric[Byte  ](_.toByte , "byte"  , _.isValidByte)
+  implicit val LuaParameterShort  : LuaParameter[Short ] =
+    new LuaParameterNumeric[Short ](_.toShort, "short" , _.isValidShort)
+  implicit val LuaParameterChar   : LuaParameter[Char  ] =
+    new LuaParameterNumeric[Char  ](_.toChar , "char"  , _.isValidChar)
+  implicit val LuaParameterInt    : LuaParameter[Int   ] =
+    new LuaParameterNumeric[Int   ](_.toInt  , "int"   , _.isValidInt)
+  implicit val LuaParameterLong   : LuaParameter[Long  ] =
+    new LuaParameterNumeric[Long  ](_.toLong , "long"  , x => x.isWhole() && x >= Long.MinValue && x <= Long.MaxValue)
+  implicit val LuaParameterFloat  : LuaParameter[Float ] =
+    new LuaParameterNumeric[Float ](_.toFloat, "float" , _ => true)
+  implicit val LuaParameterDouble : LuaParameter[Double] =
+    new LuaParameterNumeric[Double](identity , "double", _ => true)
 
   implicit object LuaParameterBoolean extends LuaParameter[Boolean] {
     override def toLua(b: Boolean) = new LuaObject(b)

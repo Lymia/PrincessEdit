@@ -20,13 +20,25 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.template
+package moe.lymia.princess.core
 
 import java.awt.Font
+import javax.xml.parsers.SAXParserFactory
 
 import moe.lymia.princess.lua.LuaErrorMarker
 
-final case class TemplateException(message: String) extends RuntimeException(message) with LuaErrorMarker
+import scala.xml.factory.XMLLoader
+import scala.xml.{Elem, SAXParser}
+
+final case class TemplateException(message: String, ex: Throwable = null)
+  extends RuntimeException(message, ex) with LuaErrorMarker
+object TemplateException {
+  def context[T](contextString: String)(f: => T) = try {
+    f
+  } catch {
+    case TemplateException(e, ex) => throw TemplateException(s"$contextString: $e", ex)
+  }
+}
 
 final case class Size(width: Double, height: Double)
 
@@ -50,4 +62,20 @@ final case class RenderSettings(size: PhysicalSize, viewportScale: Double) {
 object RenderSettings {
   def apply(width: Double, height: Double, viewportScale: Double, unit: PhysicalUnit): RenderSettings =
     RenderSettings(PhysicalSize(width, height, unit), viewportScale)
+}
+
+// DTD loading is unfortunately way too slow
+private[core] object XML extends XMLLoader[Elem] {
+  override def parser: SAXParser = {
+    val factory = SAXParserFactory.newInstance()
+    factory.setNamespaceAware(false)
+    factory.setValidating(false)
+    for(feature <- Seq("http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
+                       "http://apache.org/xml/features/nonvalidating/load-external-dtd")) try {
+      factory.setFeature(feature, false)
+    } catch {
+      case _: Exception =>
+    }
+    factory.newSAXParser()
+  }
 }

@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.template
+package moe.lymia.princess.core
 
 import moe.lymia.princess.lua._
 
@@ -47,9 +47,7 @@ final class ComponentRenderManager(val builder: SVGBuilder, val components: Comp
       components.getComponent(name.name) match {
         case None => throw TemplateException(s"Component ${name.name} does not exist.")
         case Some(component) =>
-          builder.createDefinitionFromContainer(name.name, component.getSize,
-            <svg>{component.renderComponent(this)}</svg>
-          )
+          builder.createDefinitionFromFragment(name.name, component.getSize, component.renderComponent(this))
       }
     } finally {
       currentlyRendering.remove(name.name)

@@ -59,20 +59,14 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Proguar
 
   libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
   excludeFiles        ++= Set("library.properties", "rootdoc.txt", "scala-xml.properties"),
-  shadeMappings       +=  "scala.**" -> "moe.lymia.princess.lib.scala.@1",
 
   libraryDependencies +=  "org.apache.xmlgraphics" % "batik-swing"      % config_batikVersion,
   libraryDependencies +=  "org.apache.xmlgraphics" % "batik-svggen"     % config_batikVersion,
   libraryDependencies +=  "org.apache.xmlgraphics" % "batik-transcoder" % config_batikVersion,
-  ignoreDuplicate     +=  "moe/lymia/princess/lib/w3c/dom/.*",
-  shadeMappings       +=  "org.apache.**"       -> "moe.lymia.princess.lib.apache.@1",
-  shadeMappings       +=  "java_cup.**"         -> "moe.lymia.princess.lib.java_cup.@1",
-  shadeMappings       +=  "org.w3c.**"          -> "moe.lymia.princess.lib.w3c.@1",
-  shadeMappings       +=  "org.xml.**"          -> "moe.lymia.princess.lib.xml.@1",
-  shadeMappings       +=  "javax.**"            -> "moe.lymia.princess.lib.javax.@1",
+  ignoreDuplicate     +=  "org/w3c/dom/.*",
 
   libraryDependencies +=  "com.github.scopt" %% "scopt" % "3.5.0",
-  shadeMappings       +=  "scopt.**"            -> "moe.lymia.princess.lib.scopt.@1",
+  libraryDependencies +=  "org.ini4j" % "ini4j" % "0.5.2",
 
   proguardConfig := "config.pro"
 ) ++ VersionBuild.settings)

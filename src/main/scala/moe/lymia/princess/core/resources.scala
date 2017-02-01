@@ -20,8 +20,9 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.template
+package moe.lymia.princess.core
 
+import java.awt.Font
 import java.io.ByteArrayOutputStream
 import java.nio.file.{Files, Path}
 import java.util.zip.GZIPInputStream
@@ -31,14 +32,24 @@ import javax.xml.bind.DatatypeConverter
 import moe.lymia.princess.util.IOUtils
 
 import scala.collection.mutable
-import scala.xml.XML
+
+// TODO Cleanup this module
 
 trait ResourceLoader {
-  def loadRaster   (builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
-                    path: Path, expectedSize: Size): SVGDefinitionReference
-  def loadVector   (builder: SVGBuilder, name: String, compression: Boolean,
-                    path: Path, expectedSize: Size): SVGDefinitionReference
+  def referenceFont (path: Path): String
+  def loadRaster    (builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
+                     path: Path, expectedSize: Size): SVGDefinitionReference
+  def loadVector    (builder: SVGBuilder, name: String, compression: Boolean,
+                     path: Path, expectedSize: Size): SVGDefinitionReference
   def loadDefinition(builder: SVGBuilder, name: String, path: Path): String
+}
+
+trait ReferenceFontLoader extends ResourceLoader {
+  def referenceFont(path: Path) = path.toUri.toString
+}
+trait DataURLFontLoader extends ResourceLoader {
+  def referenceFont(path: Path) =
+    s"data:application/x-font-ttf;base64,${DatatypeConverter.printBase64Binary(Files.readAllBytes(path))}"
 }
 
 trait IncludeDefinitionLoader extends ResourceLoader {
@@ -72,8 +83,10 @@ trait DataURLRasterLoader extends ResourceLoader {
   }
 }
 
-object RasterizeResourceLoader extends IncludeDefinitionLoader with IncludeVectorLoader with DataURLRasterLoader
-object ExportResourceLoader    extends IncludeDefinitionLoader with IncludeVectorLoader with ReferenceRasterLoader
+object RasterizeResourceLoader
+  extends IncludeDefinitionLoader with IncludeVectorLoader with ReferenceRasterLoader with ReferenceFontLoader
+object ExportResourceLoader
+  extends IncludeDefinitionLoader with IncludeVectorLoader with DataURLRasterLoader with DataURLFontLoader
 
 private sealed trait ImageFormatType
 private object ResourceFormatType {
@@ -83,6 +96,7 @@ private object ResourceFormatType {
 
 private case class ImageFormat(extensions: Seq[String], formatType: ImageFormatType)
 
+// TODO: Reduce code duplication in class
 final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, resourcePaths: Seq[Path]) {
   private def tryLoadImageInFile(path: Path, fullName: String, format: ImageFormat, size: Size) =
     IOUtils.paranoidResolve(path, fullName).map(fullPath =>
@@ -116,6 +130,33 @@ final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, resourc
   def loadComponent(name: String, resourceType: String) =
     componentCache.getOrElseUpdate((name, resourceType), tryFindComponent(name, resourceType))
                   .getOrElse(throw TemplateException(s"Component $name not found."))
+
+  private def tryLoadFontInPath(path: Path, name: String) =
+    IOUtils.paranoidResolve(path, s"$name.ttf").map(path =>
+      (Font.createFont(Font.TRUETYPE_FONT, Files.newInputStream(path)), path)
+    )
+  private def tryFindFont(name: String) =
+    resourcePaths.view.map(x => tryLoadFontInPath(x, name)).find(_.isDefined).flatten
+
+  val includedFontFaces = new mutable.HashSet[String]
+  val fontFaceCache     = new mutable.HashMap[String, Option[Font]]
+  def loadFont(name: String, size: Float) =
+    fontFaceCache.getOrElseUpdate(name, {
+      tryFindFont(name).map { t =>
+        val (font, path) = t
+        val family = font.getFamily()
+        if(includedFontFaces.contains(family))
+          throw TemplateException(s"Font family '$family' already defined.")
+        includedFontFaces.add(family)
+        builder.addStylesheetDefinition(
+          s"""@font-face {
+             |  font-family: '$family';
+             |  src: url('${loader.referenceFont(path)}') format('truetype');
+             |}
+           """.stripMargin)
+        font
+      }
+    }).getOrElse(throw TemplateException(s"Font '$name' not found."))
 }
 object ResourceManager {
   private val imageFormats = Seq(
