@@ -68,6 +68,17 @@ object Version {
   }
 }
 
+case class GameId(gameName: String, displayName: String, iconPath: Option[Path])
+object GameId {
+  def loadGameId(loaded: LoadedPackages, path: Path) = TemplateException.context(s"loading GameId from 's$path'") {
+    val idData = IOUtils.loadIni(path)
+    val gameSection = idData.getOrElse("game", throw TemplateException(s"No game section in manifest"))
+    GameId(gameSection.getOrElse("name", throw TemplateException("No GameId name")).head,
+           gameSection.getOrElse("displayName", throw TemplateException("No GameId displayName")).head,
+           gameSection.getOrElse("icon", Seq()).headOption.flatMap(x => loaded.resolve(x)))
+  }
+}
+
 case class Dependency(name: String, version: Option[DepVersion]) {
   override def toString = s"$name${version.fold("")(x => s" v$x")}"
 }
@@ -93,11 +104,11 @@ object Package {
             dependenciesSection.map(x => Dependency(x._1, DepVersion.parse(x._2.head))).toSeq,
             exportsSection)
   }
-  private def loadPackageFromZip(path: Path) = TemplateException.context(s"While loading package from zip $path") {
+  private def loadPackageFromZip(path: Path) = TemplateException.context(s"loading package from zip $path") {
     val fs = FileSystems.newFileSystem(path, getClass.getClassLoader)
     loadPackageFromPath(path)
   }
-  private def loadPackageFromDirectory(path: Path) = TemplateException.context(s"While loading package from $path") {
+  private def loadPackageFromDirectory(path: Path) = TemplateException.context(s"loading package from $path") {
     loadPackageFromPath(path)
   }
   def loadPackage(path: Path) =
@@ -108,8 +119,18 @@ object Package {
 case class LoadedPackages(packages: Seq[Package]) {
   val filePaths = packages.map(_.rootPath)
 
-  def resolve(path: String) =
-    filePaths.view.map(x => IOUtils.paranoidResolve(x, path)).find(_.isDefined).flatten
+  private val allExports: Map[String, Seq[Path]] = packages.flatMap(_.exports.keySet).toSet.map(
+    (key: String) => key ->
+      packages.flatMap(pkg => pkg.exports.getOrElse(key, Seq()).map(x =>
+        IOUtils.paranoidResolve(pkg.rootPath, x) match {
+          case Some(path) => path
+          case None => throw TemplateException(s"No exported file '$x' in package '${pkg.name}'")
+        }))
+  ).toMap
+
+  def getExportKeys = allExports.keySet
+  def getExports(key: String) = allExports.getOrElse(key, Seq())
+  def resolve(path: String) = filePaths.view.map(x => IOUtils.paranoidResolve(x, path)).find(_.isDefined).flatten
 }
 case class PackageList(packages: Map[String, Package]) {
   def getPackageListForGameId(gameId: String) =
@@ -161,8 +182,18 @@ case class PackageList(packages: Map[String, Package]) {
 
   def loadPackages(packageList: Seq[String]) = LoadedPackages(resolveLoadOrder(findPackages(packageList)))
   def loadGameId(gameId: String) = loadPackages(packages.values.filter(_.gameIds.contains(gameId)).map(_.name).toSeq)
+
+  lazy val gameIDs: Map[String, GameId] = TemplateException.context("loading GameIDs"){
+    val loaded = loadGameId(PackageList.GameId_HasGameDef)
+    val gameIdPaths = loaded.getExports(PackageList.Export_GameDef)
+    val gameIds = gameIdPaths.map(x => GameId.loadGameId(loaded, x))
+    gameIds.map(x => x.gameName -> x).toMap
+  }
 }
 object PackageList {
+  val GameId_HasGameDef = "princess/hasgamedef"
+  val Export_GameDef    = "princess/gamedef"
+
   def apply(packages: Seq[Package]): PackageList = {
     val map = new mutable.HashMap[String, Package]
     for(pkg <- packages) {

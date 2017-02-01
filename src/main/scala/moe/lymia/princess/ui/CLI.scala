@@ -22,6 +22,9 @@
 
 package moe.lymia.princess.ui
 
+import java.nio.file.Paths
+
+import moe.lymia.princess.core.PackageList
 import moe.lymia.princess.lua.LuaConsole
 
 class CLI {
@@ -29,12 +32,19 @@ class CLI {
 
   val parser = new scopt.OptionParser[Unit]("scopt") {
     cmd("console").text("Run Lua console").foreach(_ => mode = cmd_console _)
+    cmd("listGameIDs").text("List available Game IDs").foreach(_ => mode = cmd_listGameIDs _)
     help("help")
   }
 
   def cmd_default() = { }
+
   def cmd_console() = {
     LuaConsole.startConsole()
+  }
+  def cmd_listGameIDs() = {
+    val packages = PackageList.loadPackageDirectory(Paths.get("template"))
+    println("Game IDs:")
+    for(gameId <- packages.gameIDs) println(s" - ${gameId._1}: ${gameId._2}")
   }
 
   def main(args: Seq[String]) = {
