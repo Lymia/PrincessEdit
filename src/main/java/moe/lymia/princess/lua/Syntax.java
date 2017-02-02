@@ -610,7 +610,7 @@ loop:
   /** Equivalent to <code>luaX_lexerror</code>. */
   private void xLexerror(String msg, int tok)
   {
-    msg = source + ":" + linenumber + ": " + msg;
+    msg = L.oChunkid(source) + ":" + linenumber + ": " + msg;
     if (tok != 0)
     {
       msg = msg + " near '" + txtToken(tok) + "'";

@@ -35,44 +35,28 @@ object LuaConsole {
     L.setMetatable(exit, mt)
 
     L.register(mt, "__call"    , () => { continue = false })
-    L.register(mt, "__tostring", () => LuaRet("Use exit() to exit."))
+    L.register(mt, "__tostring", () => "Use exit() to exit.")
 
     L.setGlobal("exit", exit)
 
+    val printFn = L.getGlobal("print").as[LuaClosure]
+    def loadLine(s: String) =
+      L.loadString(s"return $s", "@<console>").right.flatMap(_ => L.loadString(s, "@<console>"))
     val chunk = L.loadString(
       """
-        local loadstring = loadstring
         local pcall = pcall
         local unpack = unpack
         local print = print
-        local function loadLine(string)
-          local fn, err = loadstring("return "..string)
-          if not fn then
-            local fn, err = loadstring(string)
-            if not fn then
-              return fn, err
-            else
-              return fn
+        local function runClosure(fn)
+          local value = {pcall(fn)}
+          local success = value[1]
+          local ret = {unpack(value, 2)}
+          if success then
+            if #ret>0 then
+              print(unpack(ret))
             end
           else
-            return fn
-          end
-        end
-        local function runClosure(string)
-          local fn, err = loadLine(string)
-          if fn then
-            local value = {pcall(fn)}
-            local success = value[1]
-            local ret = {unpack(value, 2)}
-            if success then
-              if #ret>0 then
-                print(unpack(ret))
-              end
-            else
-              print(ret[1])
-            end
-          else
-            print(err)
+            print(ret[1])
           end
         end
         return runClosure
@@ -91,7 +75,10 @@ object LuaConsole {
         if (rawline.startsWith("=")) "return "+rawline.substring(1)
         else rawline
       try {
-        L.call(runClosure, 0, line)
+        loadLine(line) match {
+          case Left (x) => L.call(runClosure, 0, x)
+          case Right(x) => println(x)
+        }
       } catch {
         case e: Throwable => e.printStackTrace()
       }

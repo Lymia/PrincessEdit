@@ -27,49 +27,54 @@ import moe.lymia.princess.lua._
 import scala.collection.mutable
 import scala.xml.NodeSeq
 
-final case class ComponentReference(name: String, isTransient: Boolean)
+trait ComponentMetatable {
+  def setField(k: String, v: LuaObject)
+  def getField(k: String): LuaObject
+}
 trait Component {
   def getSize: Size
-  def methodList: Seq[String]
-  def callMethod(key: String, args: LuaObject*): Seq[LuaObject]
   def renderComponent(manager: ComponentRenderManager): NodeSeq
+  def getLuaMetatable: Option[ComponentMetatable] = None
 }
 
-final class ComponentRenderManager(val builder: SVGBuilder, val components: ComponentManager) {
-  private val currentlyRendering = new mutable.HashSet[String]
-  private val renderCache = new mutable.HashMap[String, SVGDefinitionReference]
-  def renderComponent(name: ComponentReference) = {
-    if(currentlyRendering.contains(name.name))
-      throw TemplateException(s"Attempted to render component ${name.name} while it is already rendering. "+
-                              s"Components involved: [${currentlyRendering.mkString(", ")}]")
-    renderCache.getOrElseUpdate(name.name, try {
-      currentlyRendering.add(name.name)
-      components.getComponent(name.name) match {
-        case None => throw TemplateException(s"Component ${name.name} does not exist.")
-        case Some(component) =>
-          builder.createDefinitionFromFragment(name.name, component.getSize, component.renderComponent(this))
-      }
+sealed trait ComponentReference {
+  def name: String
+  def component: Component
+  def deref = DirectComponentReference(component)
+}
+final case class DirectComponentReference(component: Component) extends ComponentReference {
+  def name = s"${component.getClass.getName}@0x${"%08x" format System.identityHashCode(component)}"
+}
+final case class IndirectComponentReference(manager: ComponentManager, name: String) extends ComponentReference {
+  def component =
+    manager.getComponent(name).getOrElse(throw TemplateException(s"No component $name in component manager $manager"))
+}
+
+final class ComponentRenderManager(val builder: SVGBuilder, val resources: ResourceManager,
+                                   val components: ComponentManager) {
+  private val currentlyRendering = new mutable.HashMap[Component, String]
+  private val renderCache = new mutable.HashMap[Component, SVGDefinitionReference]
+  def renderComponent(ref: ComponentReference) = {
+    val component = ref.component
+    if(currentlyRendering.contains(component))
+      throw TemplateException(s"Attempted to render component ${ref.name} while it is already rendering. "+
+                              s"Components involved: [${currentlyRendering.values.mkString(", ")}]")
+    renderCache.getOrElseUpdate(component, try {
+      currentlyRendering.put(component, ref.name)
+      builder.createDefinitionFromFragment(ref.name, component.getSize, component.renderComponent(this))
     } finally {
-      currentlyRendering.remove(name.name)
+      currentlyRendering.remove(component)
     })
   }
 }
 
-private sealed trait ComponentType
-private case class StaticComponentType(component: Component)
-private case class LazyComponentType(component: Component)
-final class ComponentManager {
-  private var transientId = 0
+final class ComponentManager(settings: RenderSettings) {
   private val componentMap  = new mutable.HashMap[String, Component]
 
-  def setComponent(name: String, component: Component, isTransient: Boolean = false) = {
-    val finalName = if(isTransient) s"transient_{${
-      transientId = transientId + 1
-      transientId
-    }_$name" else name
-    componentMap.put(finalName, component)
-    ComponentReference(finalName, isTransient)
-  }
+  def setComponent(name: String, component: Component) = componentMap.put(name, component)
   def getComponent(name: String) = componentMap.get(name)
-  def getComponent(reference: ComponentReference) = componentMap.get(reference.name)
+
+  def getComponentReference(name: String) =
+    if(componentMap.contains(name)) IndirectComponentReference(this, name)
+    else throw TemplateException(s"No component $name in component manager $this")
 }

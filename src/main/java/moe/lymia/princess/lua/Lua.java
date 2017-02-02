@@ -2447,9 +2447,24 @@ protect:
     return false;
   }
 
+  String ciWhere() {
+    try {
+      Debug ar = new Debug(0);
+      CallInfo ci = ci();
+
+      Object faso = stack[ci.function()].r;
+      LuaFunction f = (LuaFunction)faso;
+      funcinfo(ar, f);
+
+      return ar.shortsrc() + ":" + f.proto().getline(savedpc);
+    } catch (Exception e) {
+      return "<unknown>";
+    }
+  }
+
   void gRunerror(String s)
   {
-    gErrormsg(s);
+    gErrormsg(ciWhere() + ": " + s);
   }
 
   private void gTypeerror(Object o, String op)

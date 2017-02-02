@@ -112,6 +112,22 @@ final case class LuaState(L: Lua) extends AnyVal {
   def pcall(nargs: Int, nresults: Int, ef: LuaClosure): Int = L.pcall(nargs, nresults, ef.toLua(this))
   def callMeta(obj: Int, event: String): Boolean = L.callMeta(obj, event)
 
+  def callCapture(fn: LuaClosure, args: LuaObject*) = {
+    val capture = getRegistry(LuaState.captureFunctionReturn, {
+      val chunk = loadString(
+        """local function capture(fn, ...)
+          | return {fn(...)}
+          |end
+          |return capture
+        """.stripMargin, "@captureFn")
+      call(chunk.left.getOrElse(sys.error("Failed to load capture function.")), 1).head.as[LuaClosure]
+    })
+    L.push(capture)
+    L.push(fn.toLua(this))
+    for(arg <- args) L.push(arg.toLua(this))
+    L.call(args.length, 1)
+    popTop().as[LuaTable]
+  }
   def call(fn: LuaClosure, nresults: Int, args: LuaObject*) = {
     L.push(fn.toLua(this))
     for(arg <- args) L.push(arg.toLua(this))
@@ -150,6 +166,8 @@ final case class LuaState(L: Lua) extends AnyVal {
   def typeNameOfIndex(idx: Int): String = L.typeNameOfIndex(idx)
 }
 object LuaState {
+  private val captureFunctionReturn = LuaRegistryEntry[LuaClosure]()
+
   def makeBasicContext() = {
     val L = new Lua()
 

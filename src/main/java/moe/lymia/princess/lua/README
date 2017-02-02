@@ -125,6 +125,9 @@ have Ravenbrook manage it.
 PrincessEdit distribution
 
 Changes in this distribution:
+ - Fix bug that allows nil in tables
+ - Fix error messages for syntax errors.
+ - Line info is included in Lua runtime errors
  - Lua error messages are propagated to LuaError for better stack traces.
 
 

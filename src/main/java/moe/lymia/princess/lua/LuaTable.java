@@ -500,6 +500,10 @@ public final class LuaTable extends java.util.Hashtable
   {
     int i = Integer.MAX_VALUE;
 
+    if (key.r == Lua.NIL)
+    {
+      L.gRunerror("table index is nil");
+    }
     if (key.r == Lua.NUMBER)
     {
       int j = (int)key.d;

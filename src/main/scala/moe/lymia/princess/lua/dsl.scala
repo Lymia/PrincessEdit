@@ -30,15 +30,15 @@ import scala.language.implicitConversions
 
 class LuaUserdataType[T : ClassTag] {
   private val metatableInitializers = new mutable.ArrayBuffer[(LuaState, LuaTable) => Unit]
-  protected def registerInit(fn: (LuaState, LuaTable) => Unit) = metatableInitializers.append(fn)
-  def tag = implicitly[ClassTag[T]]
-  def getMetatable(L: LuaState) = {
-    if(metatableInitializers.isEmpty) None
-    else {
-      val table = new LuaTable()
-      metatableInitializers.foreach(_(L, table))
-      Some(table)
-    }
+  protected final def metatable(fn: (LuaState, LuaTable) => Unit) = metatableInitializers.append(fn)
+  final def tag = implicitly[ClassTag[T]]
+  final def getMetatable(L: LuaState) = {
+    val table = new LuaTable()
+    L.register(table, "__tostring" ,
+               (L: Lua, o: Any) => s"${tag.toString()}@0x${"%08x" format System.identityHashCode(o)}")
+    L.rawSet(table, "__metatable", s"metatable for ${tag.toString()}")
+    metatableInitializers.foreach(_(L, table))
+    table
   }
 }
 
@@ -59,12 +59,15 @@ sealed trait FromLua[T] {
 sealed trait LuaParameter[T] extends ToLua[T] with FromLua[T]
 
 case class LuaClosure(fn: Any)
+object LuaClosure {
+  def apply(cl: ScalaLuaClosure) = cl
+}
 
 trait LuaErrorMarker
-case class ScalaLuaClosure(fn: LuaState => Seq[LuaObject]) extends AnyVal {
+case class ScalaLuaClosure(fn: LuaJavaCallback) extends AnyVal {
   private[lua] def checkError(doCheck: Boolean = true) =
     if(doCheck) ScalaLuaClosure(L => try {
-      fn(L)
+      fn.luaFunction(L)
     } catch {
       case e: LuaError => throw e
       case e: LuaErrorMarker => L.error(e.getMessage)
@@ -91,22 +94,8 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   private def typerror[T](L: Lua, source: String, got: Any, expected: Int): T =
     typerror(L, source, got, Lua.typeName(expected))
 
-  // Function wrapper
-  implicit def unitClosure2luaClosure(fn: LuaState => Unit): ScalaLuaClosure = ScalaLuaClosure(L => { fn(L); Seq() })
-  implicit def closure2luaClosure(fn: LuaState => Seq[LuaObject]): ScalaLuaClosure = ScalaLuaClosure(fn)
-  implicit def nullUnitClosure2luaClosure(fn: () => Unit): ScalaLuaClosure = ScalaLuaClosure(L => { fn(); Seq() })
-  implicit def nullClosure2luaClosure(fn: () => Seq[LuaObject]): ScalaLuaClosure = ScalaLuaClosure(L => { fn() })
-
-  private class LuaClosureWrapper(fn: ScalaLuaClosure) extends LuaJavaCallback {
-    override def luaFunction(Lr: Lua) = {
-      val L = new LuaState(Lr)
-      val rets = fn.fn(L)
-      for(ret <- rets) Lr.push(ret.toLua(L))
-      rets.length
-    }
-  }
   implicit object ToLuaScalaLuaClosure extends ToLua[ScalaLuaClosure] {
-    override def toLua(t: ScalaLuaClosure): LuaObject = new LuaObject(new LuaClosureWrapper(t))
+    override def toLua(t: ScalaLuaClosure): LuaObject = new LuaObject(t.fn)
   }
 
   // Lua Object wrappers
@@ -185,7 +174,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   }
 
   private val userdataMetatableCache = new mutable.WeakHashMap[LuaUserdataType[_], Any]
-  private type MetatableCacheType = mutable.HashMap[LuaUserdataType[_], Option[LuaTable]]
+  private type MetatableCacheType = mutable.HashMap[LuaUserdataType[_], LuaTable]
   private val metatableCache = LuaRegistryEntry[MetatableCacheType]()
   implicit def luaParameterUnwrapUserdata[T : LuaUserdataType] = new LuaParameter[T] {
     private def metadata = implicitly[LuaUserdataType[T]]
@@ -193,7 +182,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
       val cache = L.getRegistry(metatableCache, new MetatableCacheType)
       val mt = cache.getOrElseUpdate(metadata, metadata.getMetatable(L))
       val ud = new LuaUserdata(t)
-      mt.foreach(ud.setMetatable)
+      ud.setMetatable(mt)
       ud
     })
     override def fromLua(L: Lua, v: Any, source: String) = v match {
