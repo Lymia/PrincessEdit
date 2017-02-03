@@ -28,19 +28,22 @@ import scala.collection.mutable
 import scala.xml.NodeSeq
 
 trait ComponentMetatable {
-  def setField(k: String, v: LuaObject)
-  def getField(k: String): LuaObject
+  def setField(L: LuaState, k: String, v: LuaObject)
+  def getField(L: LuaState, k: String): LuaObject
 }
 trait Component {
   def getSize: Size
   def renderComponent(manager: ComponentRenderManager): NodeSeq
-  def getLuaMetatable: Option[ComponentMetatable] = None
+  def getLuaMetatable: ComponentMetatable = new ComponentMetatable {
+    override def getField(L: LuaState, k: String) = LuaNil
+    override def setField(L: LuaState, k: String, v: LuaObject) = L.error("component has no fields")
+  }
 }
 
 sealed trait ComponentReference {
   def name: String
   def component: Component
-  def deref = DirectComponentReference(component)
+  def deref: ComponentReference = DirectComponentReference(component)
 }
 final case class DirectComponentReference(component: Component) extends ComponentReference {
   def name = s"${component.getClass.getName}@0x${"%08x" format System.identityHashCode(component)}"
@@ -74,7 +77,7 @@ final class ComponentManager(settings: RenderSettings) {
   def setComponent(name: String, component: Component) = componentMap.put(name, component)
   def getComponent(name: String) = componentMap.get(name)
 
-  def getComponentReference(name: String) =
+  def getComponentReference(name: String): ComponentReference =
     if(componentMap.contains(name)) IndirectComponentReference(this, name)
     else throw TemplateException(s"No component $name in component manager $this")
 }

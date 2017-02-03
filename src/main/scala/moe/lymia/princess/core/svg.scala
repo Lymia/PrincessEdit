@@ -131,6 +131,7 @@ final class SVGBuilder(val settings: RenderSettings) {
     }
 
     val hints = new TranscodingHints()
+    hints.put(SVGAbstractTranscoder.KEY_ALLOWED_SCRIPT_TYPES, "") // Disable scripting
     hints.put(SVGAbstractTranscoder.KEY_WIDTH, x.toFloat)
     hints.put(SVGAbstractTranscoder.KEY_HEIGHT, y.toFloat)
     hints.put(XMLAbstractTranscoder.KEY_XML_PARSER_VALIDATING, false)

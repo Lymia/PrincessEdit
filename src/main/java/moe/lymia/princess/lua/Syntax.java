@@ -497,7 +497,12 @@ loop:
     // :todo: consider doing PUC-Rio's decimal point tricks.
     try
     {
-      semR = Double.parseDouble(buff.toString());
+      String no = buff.toString();
+      if(no.startsWith("0x")) {
+        semR = Integer.parseInt(no.substring(2), 16);
+      } else {
+        semR = Double.parseDouble(buff.toString());
+      }
       return;
     }
     catch (NumberFormatException e)

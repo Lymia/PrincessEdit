@@ -26,19 +26,6 @@ import moe.lymia.princess.lua._
 
 import scala.collection.mutable
 
-trait CoreLuaImplicits {
-  private val metatableCache = LuaRegistryEntry[mutable.HashMap[ComponentMetatable, LuaTable]]
-  implicit object LuaComponentReference extends LuaUserdataType[ComponentReference] {
-    metatable { (L, mt) =>
-      L.register(mt, "__index"   , (L: Lua, ref: ComponentReference, k: String) => {
-        ()
-      })
-      L.register(mt, "__tostring", (L: Lua, ref: ComponentReference) => LuaRet(ref.name))
-    }
-  }
-}
-object CoreLuaImplicits extends CoreLuaImplicits
-
 object CoreLuaFunctions {
 
 }

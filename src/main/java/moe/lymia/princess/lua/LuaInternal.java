@@ -34,7 +34,7 @@ import java.io.Reader;
  * one callback used, one that parses or loads a Lua chunk into binary
  * form.
  */
-final class LuaInternal extends LuaJavaCallback
+final class LuaInternal implements LuaJavaCallback
 {
   private InputStream stream;
   private Reader reader;

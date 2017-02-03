@@ -32,7 +32,7 @@ import java.util.Vector;
  * Contains Lua's string library.
  * The library can be opened using the {@link #open} method.
  */
-public final class StringLib extends LuaJavaCallback
+public final class StringLib implements LuaJavaCallback
 {
   // Each function in the string library corresponds to an instance of
   // this class which is associated (the 'which' member) with an integer

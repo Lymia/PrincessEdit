@@ -124,10 +124,20 @@ have Ravenbrook manage it.
 
 PrincessEdit distribution
 
-Changes in this distribution:
+Backwards incompatible changes:
+ - LuaJavaCallback is now an interface.
+
+Bug fixes in this distribution:
+ - Add support for 0x... form of numbers.
+ - rawset returns the table passed into it
+ - Don't invoke toString in BaseLib.tostring, making behavior match Lua's tostring
  - Fix bug that allows nil in tables
- - Fix error messages for syntax errors.
- - Line info is included in Lua runtime errors
+
+Enhancements in this distribution:
+ - Implemented Lua math.* functions removed due to limited J2ME functionality
+ - MathLib now stores a Random pointer in all randomness related functions, isolating states better.
+ - Fix chunk names for syntax errors.
+ - Line info is included in Lua runtime errors.
  - Lua error messages are propagated to LuaError for better stack traces.
 
 

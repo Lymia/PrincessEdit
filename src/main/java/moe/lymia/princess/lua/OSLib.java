@@ -35,7 +35,7 @@ import java.util.TimeZone;
  * The OS Library.  Can be opened into a {@link Lua} state by invoking
  * the {@link #open} method.
  */
-public final class OSLib extends LuaJavaCallback
+public final class OSLib implements LuaJavaCallback
 {
   // Each function in the library corresponds to an instance of
   // this class which is associated (the 'which' member) with an integer

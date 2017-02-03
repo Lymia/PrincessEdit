@@ -22,3 +22,37 @@
 
 package moe.lymia.princess.core
 
+import moe.lymia.princess.lua.{LuaRet, LuaState, LuaUserdataType}
+
+trait LuaTemplateImplicits {
+  implicit object LuaComponentReference extends LuaUserdataType[ComponentReference] {
+    metatable { (L, mt) =>
+      L.register(mt, "__index"   , (L: LuaState, ref: ComponentReference, k: String) =>
+        k match {
+          case "deref" => LuaRet(ref.deref)
+          case n => ref.component.getLuaMetatable.getField(L, k)
+        }
+      )
+      L.register(mt, "__newindex", (L: LuaState, ref: ComponentReference, k: String, o: Any) => {
+        k match {
+          case "deref" => L.error("field 'deref' is immutable")
+          case n => ref.component.getLuaMetatable.setField(L, k, o)
+        }
+        ()
+      })
+      L.register(mt, "__tostring", (ref: ComponentReference) => LuaRet(ref.name))
+    }
+  }
+  implicit object LuaComponentManager extends LuaUserdataType[ComponentManager] {
+    metatable { (L, mt) =>
+      L.register(mt, "__index", (manager: ComponentManager, k: String) =>
+        LuaRet(manager.getComponentReference(k))
+      )
+      L.register(mt, "__newindex", (manager: ComponentManager, k: String, v: ComponentReference) => {
+        manager.setComponent(k, v.component)
+        ()
+      })
+    }
+  }
+}
+object LuaTemplateImplicits extends LuaTemplateImplicits

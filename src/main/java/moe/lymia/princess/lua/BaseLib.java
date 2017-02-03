@@ -33,7 +33,7 @@ import java.util.Enumeration;
  * considered essential for running any Lua program.  The base library
  * can be opened using the {@link #open} method.
  */
-public final class BaseLib extends LuaJavaCallback
+public final class BaseLib implements LuaJavaCallback
 {
   // :todo: consider making the enums contiguous so that the compiler
   // uses the compact and faster form of switch.
@@ -601,7 +601,8 @@ public final class BaseLib extends LuaJavaCallback
     L.checkAny(2);
     L.checkAny(3);
     L.rawSet(L.value(1), L.value(2), L.value(3));
-    return 0;
+    L.pushValue(1);
+    return 1;
   }
 
   /** Implements select. */
@@ -727,7 +728,7 @@ public final class BaseLib extends LuaJavaCallback
         L.pushLiteral("nil");
         break;
       default:
-        L.push(o.toString());
+        L.push(String.format("%s: 0x%08x", L.typeNameOfIndex(1), System.identityHashCode(o)));
         break;
     }
     return 1;

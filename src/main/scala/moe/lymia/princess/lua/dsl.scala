@@ -86,7 +86,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   def LuaRet(v: LuaObject*) = Seq(v : _*)
 
   private def typerror[T](L: Lua, source: String, got: String, expected: String): T = {
-    L.error(s"bad argument $source ($expected expected, got $got)")
+    L.error(s"${L.where(1)}bad argument $source ($expected expected, got $got)")
     sys.error("L.error returned unexpectedly!")
   }
   private def typerror[T](L: Lua, source: String, got: Any, expected: String): T =

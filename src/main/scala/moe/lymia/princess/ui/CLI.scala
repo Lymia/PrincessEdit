@@ -22,16 +22,19 @@
 
 package moe.lymia.princess.ui
 
-import java.nio.file.Paths
-
 import moe.lymia.princess.core.PackageList
-import moe.lymia.princess.lua.LuaConsole
+import moe.lymia.princess.lua.{LuaConsole, LuaState}
 
 class CLI {
   var mode: () => Unit = cmd_default _
+  var luaFile: String = _
 
   val parser = new scopt.OptionParser[Unit]("./PrincessEdit") {
     help("help").text("Shows this help message.")
+    note("")
+    cmd("lua").text("Runs a Lua file").foreach(_ => mode = cmd_lua _).children(
+      arg[String]("file").foreach(luaFile = _)
+    )
     note("")
     cmd("console").text("Run Lua console").foreach(_ => mode = cmd_console _)
     note("")
@@ -40,16 +43,22 @@ class CLI {
 
   def cmd_default() = { }
 
-  def cmd_console() = {
+  def cmd_lua(): Unit = {
+    val L = LuaState.makeSafeContext()
+    L.loadFile(luaFile) match {
+      case Left (x) => L.call(x, 0)
+      case Right(x) => println(x)
+    }
+  }
+  def cmd_console(): Unit = {
     LuaConsole.startConsole()
   }
-  def cmd_listGameIDs() = {
+  def cmd_listGameIDs(): Unit = {
     println("Game IDs:")
     for(gameId <- PackageList.defaultPath.gameIDs) println(s" - ${gameId._1}: ${gameId._2}")
   }
 
   def main(args: Seq[String]) = {
-    parser.parse(args)
-    mode()
+    if(parser.parse(args)) mode()
   }
 }

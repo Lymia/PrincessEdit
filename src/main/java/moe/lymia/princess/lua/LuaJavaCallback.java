@@ -37,7 +37,7 @@ package moe.lymia.princess.lua;
  * will increase the size of the resulting <code>.jar</code> file by a
  * large amount.
  */
-public abstract class LuaJavaCallback
+public interface LuaJavaCallback
 {
-  abstract int luaFunction(Lua L);
+  int luaFunction(Lua L);
 }

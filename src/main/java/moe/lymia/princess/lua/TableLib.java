@@ -30,7 +30,7 @@ import java.util.Enumeration;
  * Contains Lua's table library.
  * The library can be opened using the {@link #open} method.
  */
-public final class TableLib extends LuaJavaCallback
+public final class TableLib implements LuaJavaCallback
 {
   // Each function in the table library corresponds to an instance of
   // this class which is associated (the 'which' member) with an integer

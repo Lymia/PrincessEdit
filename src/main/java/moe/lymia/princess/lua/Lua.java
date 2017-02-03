@@ -1687,12 +1687,7 @@ protect:
    */
   public int argError(int narg, String extramsg)
   {
-    // :todo: use debug API as per PUC-Rio
-    if (true)
-    {
-      return error("bad argument " + narg + " (" + extramsg + ")");
-    }
-    return 0;
+    return error(where(1) + "bad argument " + narg + " (" + extramsg + ")");
   }
 
   /**
@@ -3582,43 +3577,7 @@ reentry:
 
   static double iNumpow(double a, double b)
   {
-    // :todo: this needs proper checking for boundary cases
-    // EG, is currently wrong for (-0)^2.
-    boolean invert = b < 0.0 ;
-    if (invert) b = -b ;
-    if (a == 0.0)
-      return invert ? Double.NaN : a ;
-    double result = 1.0 ;
-    int ipow = (int) b ;
-    b -= ipow ;
-    double t = a ;
-    while (ipow > 0)
-    {
-      if ((ipow & 1) != 0)
-        result *= t ;
-      ipow >>= 1 ;
-      t = t*t ;
-    }
-    if (b != 0.0) // integer only case, save doing unnecessary work
-    {
-      if (a < 0.0)  // doesn't work if a negative (complex result!)
-        return Double.NaN ;
-      t = Math.sqrt(a) ;
-      double half = 0.5 ;
-      while (b > 0.0)
-      {
-        if (b >= half)
-        {
-          result = result * t ;
-          b -= half ;
-        }
-        b = b+b ;
-        t = Math.sqrt(t) ;
-        if (t == 1.0)
-          break ;
-      }
-    }
-    return invert ?  1.0 / result : result ;
+    return Math.pow(a, b);
   }
 
   /** Equivalent of luaV_gettable. */

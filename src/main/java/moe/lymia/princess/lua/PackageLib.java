@@ -32,7 +32,7 @@ import java.io.IOException;
  * The library
  * can be opened using the {@link #open} method.
  */
-public final class PackageLib extends LuaJavaCallback
+public final class PackageLib implements LuaJavaCallback
 {
   // Each function in the library corresponds to an instance of
   // this class which is associated (the 'which' member) with an integer
