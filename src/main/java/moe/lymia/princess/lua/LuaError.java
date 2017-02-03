@@ -27,13 +27,13 @@ package moe.lymia.princess.lua;
 /**
  * Represent a Lua error
  */
-final class LuaError extends RuntimeException
+public final class LuaError extends RuntimeException
 {
   int errorStatus;
 
   LuaError(int errorStatus, String message)
   {
-    super("Lua error: "+message);
+    super(message);
     this.errorStatus = errorStatus;
   }
 }

@@ -102,6 +102,7 @@ final case class LuaState(L: Lua) extends AnyVal {
   def load(in: InputStream, chunkname: String) = popLoad(L.load(in, chunkname))
   def load(in: Reader, chunkname: String) = popLoad(L.load(in, chunkname))
   def loadFile(filename: String) = popLoad(L.loadString(IOUtils.readFileAsString(Paths.get(filename)), s"@$filename"))
+  def loadResource(filename: String) = popLoad(L.loadFile(filename))
   def loadString(s: String, chunkname: String) = popLoad(L.loadString(s, chunkname))
   def doString(s: String) = {
     val status = L.doString(s)
@@ -112,6 +113,8 @@ final case class LuaState(L: Lua) extends AnyVal {
   // call functions
   def call(nargs: Int, nresults: Int) = L.call(nargs, nresults)
   def pcall(nargs: Int, nresults: Int, ef: LuaClosure): Int = L.pcall(nargs, nresults, ef.toLua(this))
+  def pcall(nargs: Int, nresults: Int): Int =
+    L.pcall(nargs, nresults, ScalaLuaClosure(L => { L.pushValue(1); 1 }).toLua(this))
   def callMeta(obj: Int, event: String): Boolean = L.callMeta(obj, event)
 
   def callCapture(fn: LuaClosure, args: LuaObject*) = {
@@ -135,6 +138,12 @@ final case class LuaState(L: Lua) extends AnyVal {
     for(arg <- args) L.push(arg.toLua(this))
     L.call(args.length, nresults)
     (for(_ <- 0 until nresults) yield popTop()).reverse
+  }
+  def pcall(fn: LuaClosure, nresults: Int, args: LuaObject*): Either[Seq[LuaReturnWrapper], String] = {
+    L.push(fn.toLua(this))
+    for(arg <- args) L.push(arg.toLua(this))
+    if(pcall(args.length, nresults) != 0) Right(popTop().as[String])
+    else Left((for(_ <- 0 until nresults) yield popTop()).reverse)
   }
 
   // api functions

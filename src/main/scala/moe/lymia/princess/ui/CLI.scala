@@ -37,8 +37,6 @@ class CLI {
     )
     note("")
     cmd("console").text("Run Lua console").foreach(_ => mode = cmd_console _)
-    note("")
-    cmd("listGameIDs").text("List available Game IDs").foreach(_ => mode = cmd_listGameIDs _)
   }
 
   def cmd_default() = { }
@@ -52,10 +50,6 @@ class CLI {
   }
   def cmd_console(): Unit = {
     LuaConsole.startConsole()
-  }
-  def cmd_listGameIDs(): Unit = {
-    println("Game IDs:")
-    for(gameId <- PackageList.defaultPath.gameIDs) println(s" - ${gameId._1}: ${gameId._2}")
   }
 
   def main(args: Seq[String]) = {

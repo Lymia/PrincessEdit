@@ -68,17 +68,6 @@ object Version {
   }
 }
 
-case class GameId(gameName: String, displayName: String, iconPath: Option[Path])
-object GameId {
-  def loadGameId(loaded: LoadedPackages, path: Path) = TemplateException.context(s"loading GameId from 's$path'") {
-    val idData = IOUtils.loadIni(path)
-    val gameSection = idData.getOrElse("game", throw TemplateException(s"No game section in manifest"))
-    GameId(gameSection.getOrElse("name", throw TemplateException("No GameId name")).head,
-           gameSection.getOrElse("displayName", throw TemplateException("No GameId displayName")).head,
-           gameSection.getOrElse("icon", Seq()).headOption.flatMap(x => loaded.resolve(x)))
-  }
-}
-
 case class Dependency(name: String, version: Option[DepVersion]) {
   override def toString = s"$name${version.fold("")(x => s" v$x")}"
 }
@@ -133,9 +122,17 @@ object Package {
 case class LoadedPackages(gameId: String, packages: Seq[Package]) {
   val filePaths = packages.map(_.rootPath)
 
-  private val allExports: Map[String, Seq[Export]] = packages.flatMap(_.exports.keySet).toSet.map(
-    (key: String) => key -> packages.flatMap(pkg => pkg.exports.getOrElse(key, Seq()))
-  ).toMap
+  private val allExports: Map[String, Seq[Export]] = packages.flatMap(_.exports.keySet).toSet.map( (key: String) => {
+    val existingExports = new mutable.HashSet[String]
+    key -> packages.flatMap(pkg => {
+      val exports = pkg.exports.getOrElse(key, Seq())
+      exports.foreach(ex => {
+        if(existingExports.contains(ex.path)) throw TemplateException(s"Duplicate export '${ex.path}'")
+        existingExports.add(ex.path)
+      })
+      exports
+    })
+  }).toMap
 
   def getExportKeys = allExports.keySet
   def getExports(key: String) = allExports.getOrElse(key, Seq())
@@ -197,19 +194,9 @@ case class PackageList(packages: Map[String, Package]) {
   def loadPackages(gameId: String, packageList: Seq[String]) =
     LoadedPackages(gameId, resolveLoadOrder(findPackages(packageList)))
   def loadGameId(gameId: String) =
-    loadPackages(gameId, packages.values.filter(_.gameIds.contains(gameId)).map(_.name).toSeq)
-
-  lazy val gameIDs: Map[String, GameId] = TemplateException.context("loading GameIDs"){
-    val loaded = loadGameId(PackageList.GameId_HasGameDef)
-    val gameIdPaths = loaded.getExports(PackageList.Export_GameDef)
-    val gameIds = gameIdPaths.map(x => GameId.loadGameId(loaded, loaded.forceResolve(x.path)))
-    gameIds.map(x => x.gameName -> x).toMap
-  }
+    loadPackages(gameId, packages.values.filter(gameId == "*" || _.gameIds.contains(gameId)).map(_.name).toSeq)
 }
 object PackageList {
-  val GameId_HasGameDef = "princess/hasgamedef"
-  val Export_GameDef    = "princess/gamedef"
-
   def apply(packages: Seq[Package]): PackageList = {
     val map = new mutable.HashMap[String, Package]
     for(pkg <- packages) {

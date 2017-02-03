@@ -81,3 +81,36 @@ final class ComponentManager(settings: RenderSettings) {
     if(componentMap.contains(name)) IndirectComponentReference(this, name)
     else throw TemplateException(s"No component $name in component manager $this")
 }
+
+trait LuaComponentImplicits {
+  implicit object LuaComponentReference extends LuaUserdataType[ComponentReference] {
+    metatable { (L, mt) =>
+      L.register(mt, "__index"   , (L: LuaState, ref: ComponentReference, k: String) =>
+        k match {
+          case "deref" => LuaRet(ref.deref)
+          case n => ref.component.getLuaMetatable.getField(L, k)
+        }
+      )
+      L.register(mt, "__newindex", (L: LuaState, ref: ComponentReference, k: String, o: Any) => {
+        k match {
+          case "deref" => L.error("field 'deref' is immutable")
+          case n => ref.component.getLuaMetatable.setField(L, k, o)
+        }
+        ()
+      })
+      L.register(mt, "__tostring", (ref: ComponentReference) => LuaRet(ref.name))
+    }
+  }
+  implicit object LuaComponentManager extends LuaUserdataType[ComponentManager] {
+    metatable { (L, mt) =>
+      L.register(mt, "__index", (manager: ComponentManager, k: String) =>
+        LuaRet(manager.getComponentReference(k))
+      )
+      L.register(mt, "__newindex", (manager: ComponentManager, k: String, v: ComponentReference) => {
+        manager.setComponent(k, v.component)
+        ()
+      })
+    }
+  }
+}
+object LuaTemplateImplicits extends LuaComponentImplicits

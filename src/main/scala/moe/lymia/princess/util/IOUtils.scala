@@ -78,7 +78,7 @@ object IOUtils {
   }
 
   private val validFilenameRegex = Pattern.compile("^[- 0-9a-zA-Z_./]+$")
-  def paranoidResolve(basePath: Path, path: String): Option[Path] =
+  def paranoidResolve(basePath: Path, path: String, dir: Boolean = false): Option[Path] =
     if(!validFilenameRegex.matcher(path).matches()) None
     else {
       val splitPath = path.split("/")
@@ -91,7 +91,9 @@ object IOUtils {
              Files.list(currentPath).iterator().asScala.exists(x => x.getFileName.toString == elem))
             currentPath = currentPath.resolve(elem)
           else error = true
-        if(error || !Files.exists(currentPath) || !Files.isRegularFile(currentPath)) None else Some(currentPath)
+        if(error || !Files.exists(currentPath) ||
+           (if(dir) !Files.isDirectory(currentPath) else !Files.isRegularFile(currentPath))) None
+        else Some(currentPath)
       }
     }
 
