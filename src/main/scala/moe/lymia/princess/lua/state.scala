@@ -38,6 +38,7 @@ final case class LuaState(L: Lua) extends AnyVal {
 
   def isMain: Boolean = L.isMain
   def status: Int = L.status()
+  def newThread() = new LuaState(L.newThread())
 
   def unwrap(o: LuaObject) = o.wrapped
 
@@ -169,6 +170,7 @@ final case class LuaState(L: Lua) extends AnyVal {
   def setMetatable(o: LuaObject, mt: LuaObject): Unit = L.setMetatable(o.toLua(this), mt.toLua(this))
 
   // operator functions
+  def objLen(o: LuaObject) = Lua.objLen(o.toLua(this))
   def concat(n: Int): Unit = L.concat(n)
   def equal(o1: LuaObject, o2: LuaObject): Boolean = L.equal(o1.toLua(this), o2.toLua(this))
   def lessThan(o1: LuaObject, o2: LuaObject): Boolean = L.lessThan(o1.toLua(this), o2.toLua(this))

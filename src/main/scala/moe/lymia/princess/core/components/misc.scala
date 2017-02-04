@@ -33,3 +33,22 @@ class ResourceComponent(sizeParam: Size, private var resource: String) extends C
     manager.resources.loadImageResource(resource, size).include(0, 0, size.width, size.height)
   property("resource")(_ => resource, (L, v) => resource = v.fromLua[String](L))
 }
+
+class LayoutComponent(private var L_main: LuaState, sizeParam: Size) extends Component(sizeParam) {
+  private var handler = LuaClosure((L: LuaState) => { L.error("no layout function registered"); () })
+
+  override def renderComponent(manager: ComponentRenderManager): NodeSeq = {
+    val L = L_main.newThread()
+    val table = L.call(handler, 1, size).head.as[LuaTable]
+    for(i <- 1 until L.objLen(table)) yield {
+      val entry = L.getTable(table, i)
+      val component = L.getTable(entry, "component").as[ComponentReference]
+      val x         = L.getTable(entry, "x"        ).as[Double]
+      val y         = L.getTable(entry, "y"        ).as[Double]
+      val size      = L.getTable(entry, "size"     ).as[Size]
+      manager.renderComponent(component).include(x, y, size.width, size.height)
+    }
+  }
+
+  property("handler")(_ => handler, (L, v) => { L_main = L; handler = v.fromLua[LuaClosure](L) })
+}

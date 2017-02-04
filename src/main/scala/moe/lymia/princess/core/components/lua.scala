@@ -89,6 +89,8 @@ case class ComponentLib(packages: LoadedPackages) {
       new XMLTemplateComponent(size, getXMLTemplateData(s)).ref)
     L.register(component, "fromResource", (s: String, size: Size) =>
       new ResourceComponent(size, s).ref)
+    L.register(component, "newLayout", (L: LuaState, size: Size) =>
+      new LayoutComponent(L, size).ref)
 
     L.setGlobal("component", component)
   }
