@@ -195,7 +195,7 @@ case class PackageList(packages: Map[String, Package]) {
     LoadedPackages(gameId, resolveLoadOrder(findPackages(packageList)))
   def loadGameId(gameId: String) =
     loadPackages(gameId, packages.values.filter(x => gameId == "*" ||
-                                                     x.gameIds.contains(GameIDs.System) ||
+                                                     x.gameIds.contains(StaticGameIDs.System) ||
                                                      x.gameIds.contains(gameId)).map(_.name).toSeq)
 }
 object PackageList {

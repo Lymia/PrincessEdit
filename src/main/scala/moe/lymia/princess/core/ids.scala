@@ -22,11 +22,13 @@
 
 package moe.lymia.princess.core
 
-object GameIDs {
-  val System = "princess/system"
+object StaticGameIDs {
+  val System    = "princess/system"
+  val HasGameID = "princess/hasgameid"
 }
 
-object ExportIDs {
+object StaticExportIDs {
+  val GameID = "princess/gameid"
   object Predef {
     val Global = "princess/predefs/global"
     def apply(gameId: String) = s"princess/predefs/$gameId"

@@ -44,8 +44,8 @@ final class LuaContext(packages: LoadedPackages) {
   private def loadPredefs(exportType: String) =
     for(e <- packages.getExports(exportType).sortBy(_.metadata.get("priority").map(_.head.toInt).getOrElse(0)))
       loadLuaPredef(e.path)
-  loadPredefs(ExportIDs.Predef.Global)
-  loadPredefs(ExportIDs.Predef(packages.gameId))
+  loadPredefs(StaticExportIDs.Predef.Global)
+  loadPredefs(StaticExportIDs.Predef(packages.gameId))
 
   private val globalsCopy = new LuaRegistryEntry[LuaTable]
   private def copyTable(L: LuaState, tbl: LuaTable, ignore: String*): LuaTable = {
