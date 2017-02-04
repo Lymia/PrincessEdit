@@ -81,12 +81,12 @@ object Package {
     val manifestPath = path.resolve("package.ini")
     if(!Files.exists(manifestPath) || !Files.isRegularFile(manifestPath))
       throw TemplateException(s"No manifest found in package")
-    val manifest = IOUtils.loadIni(manifestPath)
+    val manifest = INI.load(manifestPath)
 
     val exportsPath = path.resolve("exports.ini")
     if(!Files.exists(exportsPath) || !Files.isRegularFile(exportsPath))
       throw TemplateException(s"No export manifest found in package")
-    val exports = IOUtils.loadIni(exportsPath)
+    val exports = INI.load(exportsPath)
 
     val exportMap = new mutable.HashMap[String, mutable.ArrayBuffer[Export]]
     for((path, metadata) <- exports if metadata.nonEmpty) {

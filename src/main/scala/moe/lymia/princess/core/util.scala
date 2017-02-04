@@ -22,10 +22,12 @@
 
 package moe.lymia.princess.core
 
+import java.nio.file.Path
 import java.security.SecureRandom
 import javax.xml.parsers.SAXParserFactory
 
 import moe.lymia.princess.lua.LuaErrorMarker
+import moe.lymia.princess.util.IOUtils
 
 import scala.xml.factory.XMLLoader
 import scala.xml.{Elem, SAXParser}
@@ -37,6 +39,15 @@ object TemplateException {
     f
   } catch {
     case TemplateException(e, ex) => throw TemplateException(s"While $contextString: $e", ex)
+  }
+}
+
+private[core] object INI {
+  def load(path: Path) = try {
+    IOUtils.loadIni(path)
+  } catch {
+    case e: Exception =>
+      throw TemplateException(s"Failed to parse .ini: ${e.getClass.getClass}: ${e.getMessage}")
   }
 }
 
