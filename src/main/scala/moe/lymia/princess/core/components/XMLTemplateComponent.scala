@@ -55,7 +55,7 @@ object XMLTemplateData {
     })
   def loadTemplate(data: NodeSeq): XMLTemplateData =
     XMLTemplateData((data \ "param").map(loadParam).toMap, (data \ "elems").flatMap(_.child))
-  def loadTemplate(packages: LoadedPackages, name: String): XMLTemplateData =
+  def loadTemplate(packages: PackageList, name: String): XMLTemplateData =
     TemplateException.context(s"while loading xml template '$name'") {
       loadTemplate(XML.load(Files.newInputStream(packages.forceResolve(name))))
     }

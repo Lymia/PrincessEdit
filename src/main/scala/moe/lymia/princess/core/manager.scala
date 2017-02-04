@@ -20,39 +20,27 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.ui
+package moe.lymia.princess.core
 
-import moe.lymia.princess.core.PackageResolver
-import moe.lymia.princess.lua.{LuaConsole, LuaState}
+import java.nio.file.{Path, Paths}
 
-class CLI {
-  var mode: () => Unit = cmd_default _
-  var luaFile: String = _
+class GameManager(val packages: PackageList) {
+  val lua = new LuaContext(packages)
 
-  val parser = new scopt.OptionParser[Unit]("./PrincessEdit") {
-    help("help").text("Shows this help message.")
-    note("")
-    cmd("lua").text("Runs a Lua file").foreach(_ => mode = cmd_lua _).children(
-      arg[String]("file").foreach(luaFile = _)
-    )
-    note("")
-    cmd("console").text("Run Lua console").foreach(_ => mode = cmd_console _)
-  }
+  def getExportKeys: Set[String] = packages.getExportKeys
+  def getExports(key: String): Seq[Export] = packages.getExports(key)
 
-  def cmd_default() = { }
+  def resolve(path: String): Option[Path] = packages.resolve(path)
+  def forceResolve(path: String): Path = packages.forceResolve(path)
+}
 
-  def cmd_lua(): Unit = {
-    val L = LuaState.makeSafeContext()
-    L.loadFile(luaFile) match {
-      case Left (x) => L.call(x, 0)
-      case Right(x) => println(x)
-    }
-  }
-  def cmd_console(): Unit = {
-    LuaConsole.startConsole()
-  }
+class PackageManager(packages: Path, extraDirs: Path*) {
+  val resolver = PackageResolver.loadPackageDirectory(packages, extraDirs: _*)
+  lazy val gameIDs = GameID.loadGameIDs(resolver)
 
-  def main(args: Seq[String]) = {
-    if(parser.parse(args)) mode()
-  }
+  def loadGameId(gameId: String) = new GameManager(resolver.loadGameId(gameId))
+  def loadGameId(gameId: GameID) = new GameManager(resolver.loadGameId(gameId.name))
+}
+object PackageManager {
+  lazy val default = new PackageManager(Paths.get("packages"), Paths.get("PrincessEdit.pkg"))
 }

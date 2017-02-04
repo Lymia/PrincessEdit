@@ -28,7 +28,7 @@ import moe.lymia.princess.util.IOUtils
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 
-final class LuaContext(packages: LoadedPackages) {
+final class LuaContext(packages: PackageList) {
   val L = LuaState.makeSafeContext(packages.filePaths : _*)
   components.ComponentLib(packages).open(L)
 

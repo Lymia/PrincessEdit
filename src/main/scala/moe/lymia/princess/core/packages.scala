@@ -95,7 +95,8 @@ object Package {
       for(t <- types) exportMap.getOrElseUpdate(t, new mutable.ArrayBuffer[Export]).append(export)
     }
 
-    val packageSection = manifest.getOrElse("package", throw TemplateException(s"'package' section not found in manifest"))
+    val packageSection = manifest.getOrElse("package",
+                                            throw TemplateException(s"'package' section not found in manifest"))
     val dependenciesSection = manifest.getOrElse("dependencies", Map())
 
     if(dependenciesSection.exists(_._2.length != 1)) throw TemplateException("Dependency declared twice")
@@ -119,7 +120,7 @@ object Package {
     else                        loadPackageFromZip      (path)
 }
 
-case class LoadedPackages(gameId: String, packages: Seq[Package]) {
+case class PackageList(gameId: String, packages: Seq[Package]) {
   val filePaths = packages.map(_.rootPath)
 
   private val allExports: Map[String, Seq[Export]] = packages.flatMap(_.exports.keySet).toSet.map( (key: String) => {
@@ -140,7 +141,7 @@ case class LoadedPackages(gameId: String, packages: Seq[Package]) {
   def forceResolve(path: String) =
     resolve(path).getOrElse(throw TemplateException(s"File '$path' not found."))
 }
-case class PackageList(packages: Map[String, Package]) {
+case class PackageResolver(packages: Map[String, Package]) {
   def getPackageListForGameId(gameId: String) =
     packages.values.filter(_.gameIds.contains(gameId)).toSeq
   def getDependency(dep: Dependency) =
@@ -192,24 +193,23 @@ case class PackageList(packages: Map[String, Package]) {
   }
 
   def loadPackages(gameId: String, packageList: Seq[String]) =
-    LoadedPackages(gameId, resolveLoadOrder(findPackages(packageList)))
+    PackageList(gameId, resolveLoadOrder(findPackages(packageList)))
   def loadGameId(gameId: String) =
     loadPackages(gameId, packages.values.filter(x => gameId == "*" ||
                                                      x.gameIds.contains(StaticGameIDs.System) ||
                                                      x.gameIds.contains(gameId)).map(_.name).toSeq)
 }
-object PackageList {
-  def apply(packages: Seq[Package]): PackageList = {
+object PackageResolver {
+  def apply(packages: Seq[Package]): PackageResolver = {
     val map = new mutable.HashMap[String, Package]
     for(pkg <- packages) {
       if(map.contains(pkg.name))
         throw TemplateException(s"Duplicate package ${pkg.name} (In ${pkg.rootPath} and ${map(pkg.name).rootPath})")
       map.put(pkg.name, pkg)
     }
-    PackageList(map.toMap)
+    PackageResolver(map.toMap)
   }
   def loadPackageDirectory(packages: Path, extraDirs: Path*) =
-    PackageList((for(x <- Files.list(packages).iterator().asScala ++ extraDirs) yield Package.loadPackage(x)).toSeq)
-
-  lazy val defaultPath = loadPackageDirectory(Paths.get("packages"), Paths.get("PrincessEdit.pkg"))
+    PackageResolver(
+      (for(x <- Files.list(packages).iterator().asScala ++ extraDirs) yield Package.loadPackage(x)).toSeq)
 }

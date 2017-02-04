@@ -96,7 +96,7 @@ private object ResourceFormatType {
 
 private case class ImageFormat(extensions: Seq[String], formatType: ImageFormatType)
 
-final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, packages: LoadedPackages) {
+final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, packages: PackageList) {
   private def stripExtension(name: String) = {
     val split      = name.split("/")
     val components = split.last.split("\\.")

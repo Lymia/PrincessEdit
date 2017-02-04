@@ -48,8 +48,8 @@ object GameID {
            section.getOrElse("displayName", throw TemplateException("No value 'displayName' found")).head,
            section.getOrElse("icon", Seq()).headOption)
   }
-  def loadGameIDs(list: PackageList) = {
-    val packages = list.loadGameId(StaticGameIDs.HasGameID)
+  def loadGameIDs(resolver: PackageResolver) = {
+    val packages = resolver.loadGameId(StaticGameIDs.HasGameID)
     val gameIDExports = packages.getExports(StaticExportIDs.GameID).map(_.path).map(packages.forceResolve)
 
     val idMap = new mutable.HashMap[String, GameID]

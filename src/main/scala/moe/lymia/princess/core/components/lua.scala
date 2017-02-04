@@ -77,7 +77,7 @@ trait LuaComponentImplicits {
   }
 }
 
-case class ComponentLib(packages: LoadedPackages) {
+case class ComponentLib(packages: PackageList) {
   private val xmlTemplateDataCache = new mutable.HashMap[String, XMLTemplateData]
   private def getXMLTemplateData(string: String) =
     xmlTemplateDataCache.getOrElseUpdate(string, XMLTemplateData.loadTemplate(packages, string))
