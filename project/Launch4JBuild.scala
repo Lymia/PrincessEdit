@@ -82,7 +82,7 @@ object Launch4JBuild {
       config.getVersionInfo.setProductVersion   (versionString)
       config.getVersionInfo.setTxtProductVersion(version.value)
 
-      config.getVersionInfo.setOriginalFilename (s"$jarFileShortName.exe")
+      config.getVersionInfo.setOriginalFilename (s"${jarFileShortName.replace("-assembly", "")}.exe")
       config.getVersionInfo.setInternalName     (jarFileShortName)
 
       configPersister.save(path)

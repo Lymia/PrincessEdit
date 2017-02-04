@@ -22,23 +22,20 @@
 
 import sbt._
 import sbt.Keys._
-import com.typesafe.sbt.SbtProguard._
 
 import sbtassembly._
 import AssemblyKeys._
 
-object ProguardBuild {
+object AssemblyBuild {
   object Keys {
-    val shadeMappings     = SettingKey[Seq[(String, String)]]("proguard-wrapper-shade-mappings")
-    val ignoreDuplicate   = SettingKey[Seq[String]]("proguard-wrapper-ignore-duplicate")
-    val excludeFiles      = SettingKey[Set[String]]("proguard-wrapper-exclude-files")
-    val excludePatterns   = SettingKey[Seq[String]]("proguard-wrapper-exclude-patterns")
-    val proguardConfig    = SettingKey[String]("proguard-wrapper-config")
-    val proguardMapping   = TaskKey[File]("proguard-wrapper-mapping")
+    val shadeMappings     = SettingKey[Seq[(String, String)]]("assembly-wrapper-shade-mappings")
+    val ignoreDuplicate   = SettingKey[Seq[String]]("assembly-wrapper-ignore-duplicate")
+    val excludeFiles      = SettingKey[Set[String]]("assembly-wrapper-exclude-files")
+    val excludePatterns   = SettingKey[Seq[String]]("assembly-wrapper-exclude-patterns")
   }
   import Keys._
 
-  val settings = proguardSettings ++ Seq(
+  val settings = Seq(
     shadeMappings := Seq(),
     ignoreDuplicate := Seq(),
     excludeFiles := Set(),
@@ -52,22 +49,6 @@ object ProguardBuild {
       case x =>
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
-    },
-
-    ProguardKeys.proguard in Proguard <<= (ProguardKeys.proguard in Proguard).dependsOn(assembly)
-  ) ++ inConfig(Proguard)(Seq(
-    ProguardKeys.proguardVersion := "5.3.2",
-    ProguardKeys.options ++= Seq("-verbose", "-include",
-                                 (file(".") / "project" / proguardConfig.value).getCanonicalPath),
-    ProguardKeys.options +=
-      ProguardOptions.keepMain((mainClass in Compile).value.getOrElse(sys.error("No main class!"))),
-
-    // Print mapping to file
-    proguardMapping := ProguardKeys.proguardDirectory.value / ("symbols-"+version.value+".map"),
-    ProguardKeys.options ++= Seq("-printmapping", proguardMapping.value.toString),
-
-    // Proguard filter configuration
-    ProguardKeys.inputs := Seq(),
-    ProguardKeys.filteredInputs ++= ProguardOptions.noFilter((assemblyOutputPath in assembly).value)
-  ))
+    }
+  )
 }
