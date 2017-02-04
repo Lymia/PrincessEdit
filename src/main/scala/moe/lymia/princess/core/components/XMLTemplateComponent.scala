@@ -38,6 +38,7 @@ object ExpectedType {
   case object Integer   extends ExpectedType
   case object Number    extends ExpectedType
   case object GenSym    extends ExpectedType
+  case object Definition  extends ExpectedType
 }
 
 case class XMLTemplateData(parameters: Map[String, ExpectedType], elems: NodeSeq)
@@ -49,6 +50,7 @@ object XMLTemplateData {
       case "int" | "integer"                   => ExpectedType.Integer
       case "number" | "float" | "double"       => ExpectedType.Number
       case "gensym" | "unique-id" | "uniqueid" => ExpectedType.GenSym
+      case "definition"                        => ExpectedType.Definition
       case x => throw TemplateException(s"unknown parameter type '$x'")
     })
   def loadTemplate(data: NodeSeq): XMLTemplateData =
@@ -66,15 +68,20 @@ class XMLTemplateComponent(sizeParam: Size, data: XMLTemplateData) extends Compo
   for(par <- data.parameters.filter(_._2 == ExpectedType.GenSym).keySet)
     stringMap.put(par, s"princess_gensym_${GenID.makeId()}")
 
-  private def templateString(str: String) =
+  private def templateString(manager: ComponentRenderManager, str: String) =
     XMLTemplateComponent.varRegex.replaceAllIn(str, x => stringMap.get(x.group(1)) match {
-      case Some(s) => s
+      case Some(s) => data.parameters.get(x.group(1)) match {
+        case Some(ExpectedType.Definition) =>
+          manager.resources.loadDefinition(s)
+        case _ => s
+      }
       case None    => throw TemplateException(s"field '${x.group(1)}' not set")
     })
-  private def processMetadata(m: MetaData): MetaData =
-    if(m == null) null else new UnprefixedAttribute(m.key, templateString(m.value.text), processMetadata(m.next))
+  private def processMetadata(manager: ComponentRenderManager, m: MetaData): MetaData =
+    if(m == null) null
+    else new UnprefixedAttribute(m.key, templateString(manager, m.value.text), processMetadata(manager, m.next))
   private def processNode(manager: ComponentRenderManager, n: Node): Node = n match {
-    case Text(s) => Text(templateString(s))
+    case Text(s) => Text(templateString(manager, s))
     case e: Elem if e.label == "component" =>
       val componentRef = manager.renderComponent(componentMap.get((e \ "@id").text) match {
         case Some(c) => c
@@ -92,7 +99,7 @@ class XMLTemplateComponent(sizeParam: Size, data: XMLTemplateData) extends Compo
       else componentRef.include(x, y)
       for(attr <- otherAttrs) elem = elem % Attribute(None, attr.key, Text(attr.value.text), Null)
       elem
-    case e: Elem => e.copy(attributes = processMetadata(e.attributes),
+    case e: Elem => e.copy(attributes = processMetadata(manager, e.attributes),
                            child = n.child.map(x => processNode(manager, x)))
     case x => x
   }
@@ -108,7 +115,7 @@ class XMLTemplateComponent(sizeParam: Size, data: XMLTemplateData) extends Compo
     case ExpectedType.Number =>
       property(k)(_      => stringMap.get(k).map(_.toDouble),
                   (L, v) => stringMap.put(k, v.fromLua[Double](L).toString))
-    case ExpectedType.String | ExpectedType.GenSym =>
+    case ExpectedType.String | ExpectedType.GenSym | ExpectedType.Definition =>
       property(k)(_      => stringMap.get(k),
                   (L, v) => stringMap.put(k, v.fromLua[String](L)))
   }

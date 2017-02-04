@@ -117,16 +117,16 @@ final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, package
   val imageResourceCache = new mutable.HashMap[String, Option[SVGDefinitionReference]]
   def loadImageResource(name: String, size: Size) =
     imageResourceCache.getOrElseUpdate(stripExtension(name), tryFindImageResource(stripExtension(name), size))
-                      .getOrElse(throw TemplateException(s"Image resource $name not found."))
+                      .getOrElse(throw TemplateException(s"image '$name' not found"))
 
-  private def tryFindComponent(name: String) =
+  private def tryFindDefinition(name: String) =
     packages.resolve(name).map(path =>
       loader.loadDefinition(builder, name, path)
     )
-  val componentCache = new mutable.HashMap[String, Option[String]]
-  def loadComponent(name: String) =
-    componentCache.getOrElseUpdate(name, tryFindComponent(name))
-                  .getOrElse(throw TemplateException(s"Component $name not found."))
+  val definitionCache = new mutable.HashMap[String, Option[String]]
+  def loadDefinition(name: String) =
+    definitionCache.getOrElseUpdate(name, tryFindDefinition(name))
+                   .getOrElse(throw TemplateException(s"definition '$name' not found"))
 
   // TODO: Support more font types
   private def tryFindFont(name: String) =
@@ -142,7 +142,7 @@ final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, package
         val (font, path) = t
         val family = font.getFamily()
         if(includedFontFaces.contains(family))
-          throw TemplateException(s"Font family '$family' already defined.")
+          throw TemplateException(s"font family '$family' already defined")
         includedFontFaces.add(family)
         builder.addStylesheetDefinition(
           s"""@font-face {
@@ -152,7 +152,7 @@ final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, package
            """.stripMargin)
         font
       }
-    }).getOrElse(throw TemplateException(s"Font '$name' not found."))
+    }).getOrElse(throw TemplateException(s"font '$name' not found"))
 }
 object ResourceManager {
   private val imageFormats = Seq(
