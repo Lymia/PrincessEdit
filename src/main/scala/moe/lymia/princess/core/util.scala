@@ -32,13 +32,13 @@ import moe.lymia.princess.util.IOUtils
 import scala.xml.factory.XMLLoader
 import scala.xml.{Elem, SAXParser}
 
-final case class TemplateException(message: String, ex: Throwable = null)
-  extends RuntimeException(message, ex) with LuaErrorMarker
+final case class TemplateException(message: String, ex: Throwable = null, context: Seq[String] = Seq())
+  extends RuntimeException((context :+ message).mkString(": "), ex) with LuaErrorMarker
 object TemplateException {
   def context[T](contextString: String)(f: => T) = try {
     f
   } catch {
-    case TemplateException(e, ex) => throw TemplateException(s"While $contextString: $e", ex)
+    case TemplateException(msg, ex, context) => throw TemplateException(msg, ex, s"While $contextString" +: context)
   }
 }
 
