@@ -88,7 +88,8 @@ object IOUtils {
         var error = false
         for(elem <- path.split("/")) if (!error && elem != ".")
           if(Files.exists(currentPath) && Files.isDirectory(currentPath) &&
-             Files.list(currentPath).iterator().asScala.exists(x => x.getFileName.toString == elem))
+             Files.list(currentPath).iterator().asScala.exists(x =>
+               x.getFileName.toString.replace("/", "") == elem))
             currentPath = currentPath.resolve(elem)
           else error = true
         if(error || !Files.exists(currentPath) ||
