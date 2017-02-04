@@ -23,19 +23,46 @@
 package moe.lymia.princess.core.components
 
 import moe.lymia.princess.core._
+import moe.lymia.princess.core.renderer._
 import moe.lymia.princess.lua._
 
 import scala.collection.mutable
 import scala.xml.NodeSeq
 
-trait Component {
-  def getSize: Size
+case class ComponentProperty(set: Component.SetPropertyFn, get: Component.GetPropertyFn)
+abstract class Component(protected var size: Size, private var noViewport: Boolean = false) {
   def renderComponent(manager: ComponentRenderManager): NodeSeq
 
-  def setField(L: LuaState, k: String, v: Any): Unit = L.error(s"no such field '$k'")
-  def getField(L: LuaState, k: String): LuaObject = LuaNil
+  final def getSize: Size = size
+  final def getNoViewport = noViewport
+
+  private val properties = new mutable.HashMap[String, ComponentProperty]
+  private val extTable   = new LuaTable()
+  protected def property(name: String)
+                        (get: Component.GetPropertyFn = (L   ) => L.error(s"property '$name' is write-only"),
+                         set: Component.SetPropertyFn = (L, _) => L.error(s"property '$name' is immutable")) =
+    properties.put(name, ComponentProperty(set, get))
+
+  final def setField(L: LuaState, k: String, v: Any) =
+    properties.get(k) match {
+      case Some(prop) => prop.set(L, v)
+      case None       => L.error(s"no such property '$k'")
+    }
+  final def getField(L: LuaState, k: String): LuaObject =
+    properties.get(k) match {
+      case Some(prop) => prop.get(L)
+      case None       => L.getTable(extTable, k)
+    }
+
+  property("_ext"      )(_ => extTable)
+  property("size"      )(_ => size, (L, v) => size = v.fromLua[Size](L))
+  property("noViewport")(_ => noViewport, (L, v) => noViewport = v.fromLua[Boolean](L))
 
   def ref: ComponentReference = DirectComponentReference(this)
+}
+object Component {
+  type SetPropertyFn = (LuaState, Any) => Unit
+  type GetPropertyFn = (LuaState) => LuaObject
 }
 
 sealed trait ComponentReference {
@@ -62,7 +89,8 @@ final class ComponentRenderManager(val builder: SVGBuilder, val resources: Resou
                               s"Components involved: [${currentlyRendering.values.mkString(", ")}]")
     renderCache.getOrElseUpdate(component, try {
       currentlyRendering.put(component, ref.name)
-      builder.createDefinitionFromFragment(ref.name, component.getSize, component.renderComponent(this))
+      builder.createDefinitionFromFragment(ref.name, component.getSize, component.renderComponent(this),
+                                           component.getNoViewport)
     } finally {
       currentlyRendering.remove(component)
     })

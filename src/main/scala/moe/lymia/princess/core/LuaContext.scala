@@ -39,16 +39,13 @@ final class LuaContext(packages: LoadedPackages) {
       case Left (c) => c
       case Right(e) => throw TemplateException(e)
     }
-    L.pcall(chunk, 0) match {
-      case Left (r) =>
-      case Right(e) => throw TemplateException(e)
-    }
+    L.pcall(chunk, 0).right.foreach(e => throw TemplateException(e))
   }
   private def loadPredefs(exportType: String) =
     for(e <- packages.getExports(exportType).sortBy(_.metadata.get("priority").map(_.head.toInt).getOrElse(0)))
       loadLuaPredef(e.path)
-  loadPredefs("princess/predefs/global")
-  loadPredefs(s"princess/predefs/${packages.gameId}")
+  loadPredefs(ExportIDs.Predef.Global)
+  loadPredefs(ExportIDs.Predef(packages.gameId))
 
   private val globalsCopy = new LuaRegistryEntry[LuaTable]
   private def copyTable(L: LuaState, tbl: LuaTable, ignore: String*): LuaTable = {
@@ -102,10 +99,7 @@ final class LuaContext(packages: LoadedPackages) {
       case Right(e) => throw TemplateException(e)
     }
     L.setFenv(chunk, wrapper)
-    L.pcall(chunk, 0) match {
-      case Left (r) =>
-      case Right(e) => throw TemplateException(e)
-    }
+    L.pcall(chunk, 0).right.foreach(e => throw TemplateException(e))
 
     env
   }

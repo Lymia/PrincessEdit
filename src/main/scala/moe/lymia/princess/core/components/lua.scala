@@ -23,6 +23,7 @@
 package moe.lymia.princess.core.components
 
 import moe.lymia.princess.core._
+import moe.lymia.princess.core.renderer._
 import moe.lymia.princess.lua._
 
 import scala.collection.mutable
@@ -86,6 +87,8 @@ case class ComponentLib(packages: LoadedPackages) {
 
     L.register(component, "fromTemplate", (s: String, size: Size) =>
       new XMLTemplateComponent(size, getXMLTemplateData(s)).ref)
+    L.register(component, "fromResource", (s: String, size: Size) =>
+      new ResourceComponent(size, s).ref)
 
     L.setGlobal("component", component)
   }

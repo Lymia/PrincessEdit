@@ -20,15 +20,16 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess.core.renderer
 
 import java.awt.Font
 import java.awt.image.BufferedImage
 import java.io.{ByteArrayInputStream, StringWriter, Writer}
 import java.nio.charset.StandardCharsets
-import java.security.SecureRandom
 
+import moe.lymia.princess.core._
 import moe.lymia.princess.util.IOUtils
+
 import org.apache.batik.anim.dom.SVGDOMImplementation
 import org.apache.batik.dom.GenericDOMImplementation
 import org.apache.batik.svggen.SVGGraphics2D
@@ -38,7 +39,7 @@ import org.w3c.dom.Document
 
 import scala.collection.mutable
 import scala.xml.dtd.{DocType, PublicID}
-import scala.xml._
+import scala.xml.{XML => _, _}
 
 final class SVGGraphics2DExtension(document: Document, settings: RenderSettings) extends SVGGraphics2D(document) {
   override def setFont(f: Font) = super.setFont(settings.scaleFont(f, f.getSize2D))
@@ -88,9 +89,10 @@ final class SVGBuilder(val settings: RenderSettings) {
             % attribute("height"             , expectedSize.height.toString)
             % attribute("preserveAspectRatio", "none")
     ), expectedSize)
-  def createDefinitionFromFragment(name: String, expectedSize: Size, elems: NodeSeq) =
+  def createDefinitionFromFragment(name: String, expectedSize: Size, elems: NodeSeq, noViewport: Boolean = false) =
     createDefinitionFromContainer(name, expectedSize,
-      <svg viewBox={s"0 0 ${expectedSize.width} ${expectedSize.height}"}>{elems}</svg>
+      if(!noViewport) <svg viewBox={s"0 0 ${expectedSize.width} ${expectedSize.height}"}>{elems}</svg>
+      else            <svg>{elems}</svg>
     )
   def createDefinitionFromGraphics(name: String, expectedSize: Size)(fn: SVGGraphics2D => Unit) = {
     val renderer = new SVGGraphicsRenderer(settings)

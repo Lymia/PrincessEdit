@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess.core.renderer
 
 import java.awt.Font
 import java.io.ByteArrayOutputStream
@@ -28,6 +28,8 @@ import java.nio.file.{Files, Path}
 import java.util.zip.GZIPInputStream
 import javax.imageio.ImageIO
 import javax.xml.bind.DatatypeConverter
+
+import moe.lymia.princess.core._
 
 import scala.collection.mutable
 

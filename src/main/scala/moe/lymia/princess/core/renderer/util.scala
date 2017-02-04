@@ -20,10 +20,30 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess.core.renderer
 
-import moe.lymia.princess.lua.LuaTable
+import java.awt.Font
 
-trait Template {
-  def renderCard(cardData: LuaTable)
+final case class Size(width: Double, height: Double)
+
+case class PhysicalUnit(svgName: String, ratioPerInch: Double)
+object PhysicalUnit {
+  val mm = PhysicalUnit("mm", 25.4)
+  val in = PhysicalUnit("in", 1)
+}
+
+final case class PhysicalSize(width: Double, height: Double, unit: PhysicalUnit) {
+  val widthString  = s"$width${unit.svgName}"
+  val heightString = s"$height${unit.svgName}"
+}
+
+final case class RenderSettings(size: PhysicalSize, viewportScale: Double) {
+  val viewport        = Size(size.width * viewportScale, size.height * viewportScale)
+  val coordUnitsPerIn = viewportScale * size.unit.ratioPerInch
+  def scaleFont(font: Font, ptSize: Double) =
+    font.deriveFont((ptSize * (coordUnitsPerIn / 72.0)).toFloat)
+}
+object RenderSettings {
+  def apply(width: Double, height: Double, viewportScale: Double, unit: PhysicalUnit): RenderSettings =
+    RenderSettings(PhysicalSize(width, height, unit), viewportScale)
 }

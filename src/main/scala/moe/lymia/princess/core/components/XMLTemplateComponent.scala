@@ -25,6 +25,7 @@ package moe.lymia.princess.core.components
 import java.nio.file.Files
 
 import moe.lymia.princess.core._
+import moe.lymia.princess.core.renderer.Size
 import moe.lymia.princess.lua._
 
 import scala.collection.mutable
@@ -58,15 +59,12 @@ object XMLTemplateData {
     }
 }
 
-class XMLTemplateComponent(private var size: Size, data: XMLTemplateData) extends Component {
+class XMLTemplateComponent(sizeParam: Size, data: XMLTemplateData) extends Component(sizeParam) {
   private val componentMap = new mutable.HashMap[String, ComponentReference]
   private val stringMap    = new mutable.HashMap[String, String]
-  private val extTable     = new LuaTable()
 
   for(par <- data.parameters.filter(_._2 == ExpectedType.GenSym).keySet)
     stringMap.put(par, s"princess_gensym_${GenID.makeId()}")
-
-  override def getSize: Size = size
 
   private def templateString(str: String) =
     XMLTemplateComponent.varRegex.replaceAllIn(str, x => stringMap.get(x.group(1)) match {
@@ -100,29 +98,19 @@ class XMLTemplateComponent(private var size: Size, data: XMLTemplateData) extend
   }
   override def renderComponent(manager: ComponentRenderManager) = data.elems.map(x => processNode(manager, x))
 
-  override def setField(L: LuaState, k: String, v: Any) = k match {
-    case "extensions" | "ext" => sys.error(s"field '$k' is immutable")
-    case "size"               => size = v.fromLua[Size](L)
-    case _ => data.parameters.get(k) match {
-      case Some(ExpectedType.Component) => componentMap.put(k, v.fromLua[ComponentReference](L))
-      case Some(ExpectedType.Integer  ) => stringMap   .put(k, v.fromLua[Int](L).toString)
-      case Some(ExpectedType.Number   ) => stringMap   .put(k, v.fromLua[Double](L).toString)
-      case Some(ExpectedType.String   ) |
-           Some(ExpectedType.GenSym   ) => stringMap   .put(k, v.fromLua[String](L))
-      case None => super.setField(L, k, v)
-    }
-  }
-  override def getField(L: LuaState, k: String): LuaObject = k match {
-    case "extensions" | "ext" => extTable
-    case "size"               => size
-    case _ => data.parameters.get(k) match {
-      case Some(ExpectedType.Component) => componentMap.get(k)
-      case Some(ExpectedType.Integer  ) => stringMap   .get(k).map(_.toInt)
-      case Some(ExpectedType.Number   ) => stringMap   .get(k).map(_.toDouble)
-      case Some(ExpectedType.String   ) |
-           Some(ExpectedType.GenSym   ) => stringMap   .get(k)
-      case None => L.getTable(extTable, k)
-    }
+  for((k, expectedType) <- data.parameters) expectedType match {
+    case ExpectedType.Component =>
+      property(k)(_      => componentMap.get(k),
+                  (L, v) => componentMap.put(k, v.fromLua[ComponentReference](L)))
+    case ExpectedType.Integer =>
+      property(k)(_      => stringMap.get(k).map(_.toInt),
+                  (L, v) => stringMap.put(k, v.fromLua[Int](L).toString))
+    case ExpectedType.Number =>
+      property(k)(_      => stringMap.get(k).map(_.toDouble),
+                  (L, v) => stringMap.put(k, v.fromLua[Double](L).toString))
+    case ExpectedType.String | ExpectedType.GenSym =>
+      property(k)(_      => stringMap.get(k),
+                  (L, v) => stringMap.put(k, v.fromLua[String](L)))
   }
 }
 object XMLTemplateComponent {
