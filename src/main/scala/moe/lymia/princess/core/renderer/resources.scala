@@ -97,6 +97,12 @@ private object ResourceFormatType {
 private case class ImageFormat(extensions: Seq[String], formatType: ImageFormatType)
 
 final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, packages: LoadedPackages) {
+  private def stripExtension(name: String) = {
+    val split      = name.split("/")
+    val components = split.last.split("\\.")
+    (split.init :+ (if(components.length == 1) components.head else components.init.mkString("."))).mkString("/")
+  }
+
   private def tryFindImageResource(name: String, size: Size) =
     ResourceManager.formatSearchList.view.map { case (extension, format) =>
       packages.resolve(s"$name.$extension").map(fullPath =>
@@ -110,20 +116,21 @@ final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, package
     }.find(_.isDefined).flatten
   val imageResourceCache = new mutable.HashMap[String, Option[SVGDefinitionReference]]
   def loadImageResource(name: String, size: Size) =
-    imageResourceCache.getOrElseUpdate(name, tryFindImageResource(name, size))
+    imageResourceCache.getOrElseUpdate(stripExtension(name), tryFindImageResource(stripExtension(name), size))
                       .getOrElse(throw TemplateException(s"Image resource $name not found."))
 
-  private def tryFindComponent(name: String, resourceType: String) =
-    packages.resolve(s"$name.$resourceType.xml").map(path =>
+  private def tryFindComponent(name: String) =
+    packages.resolve(name).map(path =>
       loader.loadDefinition(builder, name, path)
     )
-  val componentCache = new mutable.HashMap[(String, String), Option[String]]
-  def loadComponent(name: String, resourceType: String) =
-    componentCache.getOrElseUpdate((name, resourceType), tryFindComponent(name, resourceType))
+  val componentCache = new mutable.HashMap[String, Option[String]]
+  def loadComponent(name: String) =
+    componentCache.getOrElseUpdate(name, tryFindComponent(name))
                   .getOrElse(throw TemplateException(s"Component $name not found."))
 
+  // TODO: Support more font types
   private def tryFindFont(name: String) =
-    packages.resolve(s"$name.ttf").map(path =>
+    packages.resolve(name).map(path =>
       (Font.createFont(Font.TRUETYPE_FONT, Files.newInputStream(path)), path)
     )
 
