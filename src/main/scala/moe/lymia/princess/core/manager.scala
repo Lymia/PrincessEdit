@@ -24,7 +24,20 @@ package moe.lymia.princess.core
 
 import java.nio.file.{Path, Paths}
 
+import moe.lymia.princess.lua.LuaTable
+
+case class TemplateExport(path: String, manager: GameManager, displayName: String, icon: Option[String]) {
+  lazy val template = new LuaTemplate(path, manager.packages, manager.lua, manager.getLuaExport(path))
+}
+object TemplateExport {
+  def loadTemplateExport(e: Export, manager: GameManager) =
+    TemplateExport(e.path, manager,
+                   e.metadata.getOrElse("displayName", throw TemplateException("No value 'displayName' found")).head,
+                   e.metadata.getOrElse("icon", Seq()).headOption)
+}
+
 class GameManager(val packages: PackageList) {
+  val gameId = packages.gameId
   val lua = new LuaContext(packages)
 
   def getExportKeys: Set[String] = packages.getExportKeys
@@ -32,6 +45,11 @@ class GameManager(val packages: PackageList) {
 
   def resolve(path: String): Option[Path] = packages.resolve(path)
   def forceResolve(path: String): Path = packages.forceResolve(path)
+
+  def getLuaExport(path: String): LuaTable = lua.getLuaExport(path)
+
+  lazy val templates =
+    getExports(StaticExportIDs.Template(gameId)).map(x => TemplateExport.loadTemplateExport(x, this))
 }
 
 class PackageManager(packages: Path, extraDirs: Path*) {

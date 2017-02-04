@@ -67,7 +67,7 @@ trait LuaComponentImplicits {
     }))
     override def fromLua(L: Lua, v: Any, source: String): Size = v match {
       case t: LuaTable =>
-        def checkTableInt(i: Int) = L.getTable(t, i) match {
+        def checkTableInt(i: Int) = Lua.rawGet(t, i) match {
           case x: java.lang.Double => x
           case _ => typerror(L, source, v, "size")
         }
@@ -85,6 +85,7 @@ case class ComponentLib(packages: PackageList) {
   def open(L: LuaState) = {
     val component = L.newTable()
 
+    L.register(component, "newManager", () => new ComponentManager())
     L.register(component, "fromTemplate", (s: String, size: Size) =>
       new XMLTemplateComponent(size, getXMLTemplateData(s)).ref)
     L.register(component, "fromResource", (s: String, size: Size) =>

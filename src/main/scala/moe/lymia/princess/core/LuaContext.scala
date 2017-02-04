@@ -32,6 +32,8 @@ final class LuaContext(packages: PackageList) {
   val L = LuaState.makeSafeContext(packages.filePaths : _*)
   components.ComponentLib(packages).open(L)
 
+  L.registerGlobal("getModule", (name: String) => getLuaExport(name))
+
   private def loadLuaPredef(path: String) = TemplateException.context(s"loading Lua predef $path") {
     val fullPath = packages.forceResolve(path)
 
@@ -72,6 +74,8 @@ final class LuaContext(packages: PackageList) {
   }
   private def loadLuaExport(path: String) = TemplateException.context(s"loading Lua export $path") {
     val fullPath = packages.forceResolve(path)
+
+    val L = this.L.newThread()
 
     val globals = L.getRegistry(globalsCopy, copyTable(L, L.getGlobals, "_G"))
 

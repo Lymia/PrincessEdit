@@ -152,6 +152,10 @@ final case class LuaState(L: Lua) extends AnyVal {
     L.error(message.toLua(this))
     sys.error("L.error returned unexpectedly!")
   }
+  def error(message: String, level: Int) = {
+    L.error(message.toLua(this), level)
+    sys.error("L.error returned unexpectedly!")
+  }
   def gc(what: Int, data: Int): Int = L.gc(what, data)
 
   def where(level: Int): String = L.where(level)

@@ -452,7 +452,18 @@ public final class Lua
    */
   public int error(Object message)
   {
-    return gErrormsg(message);
+    return gErrormsg(where(1)+message);
+  }
+
+  /**
+   * Generates a Lua error using the error message.
+   * @param message  the error message.
+   * @param level    level to generate error messagefr
+   * @return never.
+   */
+  public int error(Object message, int level)
+  {
+    return gErrormsg(where(level)+message);
   }
 
   /**

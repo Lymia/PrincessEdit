@@ -51,7 +51,7 @@ abstract class Component(protected var size: Size, private var noViewport: Boole
   final def getField(L: LuaState, k: String): LuaObject =
     properties.get(k) match {
       case Some(prop) => prop.get(L)
-      case None       => L.getTable(extTable, k)
+      case None       => L.rawGet(extTable, k)
     }
 
   property("_ext"      )(_ => extTable)
@@ -78,8 +78,7 @@ final case class IndirectComponentReference(manager: ComponentManager, name: Str
     manager.getComponent(name).getOrElse(throw TemplateException(s"No component $name in component manager $manager"))
 }
 
-final class ComponentRenderManager(val builder: SVGBuilder, val resources: ResourceManager,
-                                   val components: ComponentManager) {
+final class ComponentRenderManager(val builder: SVGBuilder, val resources: ResourceManager) {
   private val currentlyRendering = new mutable.HashMap[Component, String]
   private val renderCache = new mutable.HashMap[Component, SVGDefinitionReference]
   def renderComponent(ref: ComponentReference) = TemplateException.context(s"rendering ${ref.name}") {
@@ -97,7 +96,7 @@ final class ComponentRenderManager(val builder: SVGBuilder, val resources: Resou
   }
 }
 
-final class ComponentManager(settings: RenderSettings) {
+final class ComponentManager {
   private val componentMap  = new mutable.HashMap[String, Component]
 
   def setComponent(name: String, component: Component) = componentMap.put(name, component)
