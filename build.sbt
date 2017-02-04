@@ -88,13 +88,14 @@ Launch4JBuild.Keys.launch4jSourceJar := (Keys.`package` in Compile in loader).va
 // Build distribution file
 InputKey[Unit]("dist") := {
   val path = crossTarget.value / "dist"
+  IO.createDirectory(path)
 
   val zipOut = IO.withTemporaryDirectory { dir =>
     val dirName = s"princess-edit-${(version in princessEdit).value}"
     val zipOut = path / s"$dirName.zip"
     val outDir = dir / dirName
-    IO.createDirectory(outDir)
 
+    IO.createDirectory(outDir)
     IO.createDirectory(outDir / "packages")
 
     val packer = Pack200.newPacker()

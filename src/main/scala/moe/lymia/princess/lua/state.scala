@@ -32,7 +32,7 @@ case class LuaRegistryEntry[T]()
 final case class LuaState(L: Lua) extends AnyVal {
   def getRegistry[T](entry: LuaRegistryEntry[T], default: => T) = {
     val reg = L.getRegistry
-    if(!reg.contains(entry)) reg.putlua(L, reg, default)
+    if(!reg.contains(entry)) reg.putlua(L, entry, default)
     reg.getlua(entry).asInstanceOf[T]
   }
 

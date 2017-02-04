@@ -87,7 +87,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   def LuaRet(v: LuaObject*) = Seq(v : _*)
 
   def typerror[T](L: Lua, source: String, got: String, expected: String): T = {
-    L.error(s"${L.where(1)}bad argument $source ($expected expected, got $got)")
+    L.error(s"bad argument $source ($expected expected, got $got)")
     sys.error("L.error returned unexpectedly!")
   }
   def typerror[T](L: Lua, source: String, got: Any, expected: String): T =
@@ -188,9 +188,10 @@ trait LuaImplicits extends LuaGeneratedImplicits {
     })
     override def fromLua(L: Lua, v: Any, source: String) = v match {
       case v: LuaUserdata =>
-        if(!metadata.tag.runtimeClass.isAssignableFrom(v.getClass))
-          typerror(L, source, v.getClass.toString, metadata.tag.toString)
-        v.asInstanceOf[T]
+        val obj = v.getUserdata
+        if(!metadata.tag.runtimeClass.isAssignableFrom(obj.getClass))
+          typerror(L, source, obj.getClass.toString, metadata.tag.toString)
+        obj.asInstanceOf[T]
       case _ => typerror(L, source, v, Lua.TUSERDATA)
     }
   }

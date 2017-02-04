@@ -33,7 +33,7 @@ object StaticGameIDs {
 
 object StaticExportIDs {
   val GameID = "princess/gameid"
-  def Template(gameId: String) = s"princess/templates/$gameId"
+  def Template(gameId: String) = s"$gameId/template"
   object Predef {
     val Global = "princess/predefs/global"
     def apply(gameId: String) = s"princess/predefs/$gameId"

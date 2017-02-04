@@ -55,6 +55,7 @@ class GameManager(val packages: PackageList) {
 class PackageManager(packages: Path, extraDirs: Path*) {
   val resolver = PackageResolver.loadPackageDirectory(packages, extraDirs: _*)
   lazy val gameIDs = GameID.loadGameIDs(resolver)
+  lazy val gameIDList = gameIDs.values.toSeq
 
   def loadGameId(gameId: String) = new GameManager(resolver.loadGameId(gameId))
   def loadGameId(gameId: GameID) = new GameManager(resolver.loadGameId(gameId.name))

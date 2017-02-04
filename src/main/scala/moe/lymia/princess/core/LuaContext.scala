@@ -49,14 +49,14 @@ final class LuaContext(packages: PackageList) {
   loadPredefs(StaticExportIDs.Predef.Global)
   loadPredefs(StaticExportIDs.Predef(packages.gameId))
 
-  private val globalsCopy = new LuaRegistryEntry[LuaTable]
   private def copyTable(L: LuaState, tbl: LuaTable, ignore: String*): LuaTable = {
     val n = L.newTable()
-    for(k <- tbl.keys().asScala) {
+    for(k <- tbl.keySet().asScala) {
       k match {
         case s: String if !ignore.contains(s) =>
-          L.push(L.rawGet(tbl, n))
-          L.rawSet(n, s, L.`type`(L.getTop) match {
+          L.push(L.rawGet(tbl, s))
+          val t = L.`type`(L.getTop)
+          L.rawSet(n, s, t match {
             case Lua.TTABLE => copyTable(L, L.popTop().as[LuaTable])
             case _          => L.popTop()
           })
@@ -77,7 +77,7 @@ final class LuaContext(packages: PackageList) {
 
     val L = this.L.newThread()
 
-    val globals = L.getRegistry(globalsCopy, copyTable(L, L.getGlobals, "_G"))
+    val globals = L.getRegistry(LuaContext.globalsCopy, copyTable(L, L.getGlobals, "_G", "package"))
 
     val overwrittenKeys = new mutable.WeakHashMap[Any, Unit]
     val env = L.newTable()
@@ -88,7 +88,7 @@ final class LuaContext(packages: PackageList) {
     L.register(mt , "__index"    , (L: LuaState, tbl: Any, k: Any) => {
       if(overwrittenKeys.contains(k)) LuaRet(L.rawGet(env, k))
       else if(k == "_G")              LuaRet(wrapper)
-      else                            LuaRet(L.rawGet(globals, k))
+      else                            LuaRet(L.getTable(globals, k))
     })
     L.register(mt , "__newindex" , (L: LuaState, tbl: Any, k: Any, v: Any) => {
       overwrittenKeys.put(k, ())
@@ -109,4 +109,7 @@ final class LuaContext(packages: PackageList) {
   }
   private val exportCache = new mutable.HashMap[String, LuaTable]
   def getLuaExport(path: String) = exportCache.getOrElseUpdate(path, loadLuaExport(path))
+}
+object LuaContext {
+  private val globalsCopy = new LuaRegistryEntry[LuaTable]
 }

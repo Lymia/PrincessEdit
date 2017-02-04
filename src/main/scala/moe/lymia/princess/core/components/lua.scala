@@ -67,12 +67,31 @@ trait LuaComponentImplicits {
     }))
     override def fromLua(L: Lua, v: Any, source: String): Size = v match {
       case t: LuaTable =>
-        def checkTableInt(i: Int) = Lua.rawGet(t, i) match {
+        def checkTableDouble(i: Int) = Lua.rawGet(t, i.toDouble) match {
           case x: java.lang.Double => x
-          case _ => typerror(L, source, v, "size")
+          case _ => typerror(L, source, v, "Size")
         }
-        Size(checkTableInt(1), checkTableInt(2))
-      case _ => typerror(L, source, v, "size")
+        Size(checkTableDouble(1), checkTableDouble(2))
+      case _ => typerror(L, source, v, "Size")
+    }
+  }
+  implicit object FromLuaPhysicalSize extends FromLua[PhysicalSize] {
+    override def fromLua(L: Lua, v: Any, source: String): PhysicalSize = v match {
+      case t: LuaTable =>
+        def checktableDouble(i: Int) = Lua.rawGet(t, i.toDouble) match {
+          case x: java.lang.Double => x
+          case x => typerror(L, source, v, "PhysicalSize")
+        }
+        PhysicalSize(checktableDouble(1), checktableDouble(2), Lua.rawGet(t, 3d) match {
+          case "mm"    => PhysicalUnit.mm
+          case "in"    => PhysicalUnit.in
+          case Lua.NIL => PhysicalUnit.mm
+          case un =>
+            L.error(s"Unknown physical unit: $un")
+            sys.error("L.error returned unexpectedly")
+        })
+      case _ => typerror(L, source, v, "PhysicalSize")
+
     }
   }
 }

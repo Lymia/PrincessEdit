@@ -22,37 +22,108 @@
 
 package moe.lymia.princess.ui
 
-import moe.lymia.princess.core.PackageResolver
-import moe.lymia.princess.lua.{LuaConsole, LuaState}
+import java.io.{FileOutputStream, FileWriter}
+import javax.imageio.ImageIO
+
+import moe.lymia.princess.core.PackageManager
+import moe.lymia.princess.core.renderer.RenderSettings
+import moe.lymia.princess.lua._
+
+private case class CLIException(message: String) extends Exception
 
 class CLI {
-  var mode: () => Unit = cmd_default _
-  var luaFile: String = _
+  private var mode: () => Unit = cmd_default _
+  private var luaFile: String = _
 
-  val parser = new scopt.OptionParser[Unit]("./PrincessEdit") {
+  private var gameId: String = _
+  private var template: String = _
+  private var cardData: String = _
+
+  private var x: Int = _
+  private var y: Int = _
+  private var out: String = _
+
+  private def error(s: String) = throw CLIException(s)
+
+  private val parser = new scopt.OptionParser[Unit]("./PrincessEdit") {
     help("help").text("Shows this help message.")
     note("")
     cmd("lua").text("Runs a Lua file").foreach(_ => mode = cmd_lua _).children(
-      arg[String]("file").foreach(luaFile = _)
+      arg[String]("<file>").foreach(luaFile = _).hidden()
     )
     note("")
     cmd("console").text("Run Lua console").foreach(_ => mode = cmd_console _)
+    note("")
+    cmd("packageStatus").text("Print package status").foreach(_ => mode = cmd_packageStatus _)
+    note("")
+    cmd("render").text("Renders a template").foreach(_ => mode = cmd_render _).children(
+      arg[Int   ]("<x>"       ).foreach(x        = _).hidden(),
+      arg[Int   ]("<y>"       ).foreach(y        = _).hidden(),
+      arg[String]("<gameId>"  ).foreach(gameId   = _).hidden(),
+      arg[String]("<template>").foreach(template = _).hidden(),
+      arg[String]("<cardData>").foreach(cardData = _).hidden(),
+      arg[String]("<out>"     ).foreach(out      = _).hidden()
+    )
+    note("")
+    cmd("renderSVG").text("Renders a template to SVG").foreach(_ => mode = cmd_renderSVG _).children(
+      arg[String]("<gameId>"  ).foreach(gameId   = _).hidden(),
+      arg[String]("<template>").foreach(template = _).hidden(),
+      arg[String]("<cardData>").foreach(cardData = _).hidden(),
+      arg[String]("<out>"     ).foreach(out      = _).hidden()
+    )
   }
 
-  def cmd_default() = { }
+  private def cmd_default() = { }
 
-  def cmd_lua(): Unit = {
+  private def cmd_lua(): Unit = {
     val L = LuaState.makeSafeContext()
     L.loadFile(luaFile) match {
       case Left (x) => L.call(x, 0)
       case Right(x) => println(x)
     }
   }
-  def cmd_console(): Unit = {
+  private def cmd_console(): Unit = {
     LuaConsole.startConsole()
   }
+  private def cmd_packageStatus(): Unit = {
+    println("Known game IDs:")
+    for(id <- PackageManager.default.gameIDList) println(s" - ${id.displayName} (${id.name})")
+    println()
+    for(id <- PackageManager.default.gameIDList) {
+      val game = PackageManager.default.loadGameId(id)
+      println(s"GameID ${id.name}:")
+      for(template <- game.templates) {
+        println(s" - Found template: ${template.displayName} (${template.path})")
+      }
+      println()
+    }
+  }
 
-  def main(args: Seq[String]) = {
+  private def renderCommon() = {
+    val game = PackageManager.default.loadGameId(gameId)
+    val templateObj = game.templates.find(_.path == template) match {
+      case Some(x) => x.template
+      case None => error(s"No such template $template")
+    }
+    val cardDataTable = game.lua.L.loadString(s"return $cardData", "@<card data>") match {
+      case Left (x) => game.lua.L.call(x, 1).head.as[LuaTable]
+      case Right(e) => error(e)
+    }
+    (templateObj, cardDataTable)
+  }
+  private def cmd_render(): Unit = {
+    val (template, cardData) = renderCommon()
+    val image = template.renderImage(x, y, cardData)
+    ImageIO.write(image, "png", new FileOutputStream(out))
+  }
+  private def cmd_renderSVG(): Unit = {
+    val (template, cardData) = renderCommon()
+    template.write(new FileWriter(out), cardData)
+  }
+
+  def main(args: Seq[String]) = try {
     if(parser.parse(args)) mode()
+  } catch {
+    case CLIException(e) => println(e)
   }
 }

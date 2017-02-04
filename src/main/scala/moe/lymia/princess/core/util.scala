@@ -38,7 +38,8 @@ object TemplateException {
   def context[T](contextString: String)(f: => T) = try {
     f
   } catch {
-    case TemplateException(msg, ex, context) => throw TemplateException(msg, ex, s"While $contextString" +: context)
+    case ex @ TemplateException(msg, _, context) =>
+      throw TemplateException(msg, ex, s"While $contextString" +: context)
   }
 }
 

@@ -22,36 +22,45 @@
 
 package moe.lymia.princess.core
 
+import java.io.Writer
+
 import moe.lymia.princess.core.components._
 import moe.lymia.princess.core.renderer._
 import moe.lymia.princess.lua._
 
 trait Template {
-  protected def doRender(builder: SVGBuilder, settings: RenderSettings, cardData: LuaTable,
-                         isImageRender: Boolean): SVGDefinitionReference
+  protected def renderSettings: RenderSettings
+  protected def doRender(builder: SVGBuilder, cardData: LuaTable, isImageRender: Boolean): SVGDefinitionReference
 
-  private def doRender(settings: RenderSettings, cardData: LuaTable,
-                       isImageRender: Boolean): (SVGBuilder, SVGDefinitionReference) = {
-    val builder = new SVGBuilder(settings)
-    (builder, doRender(builder, settings, cardData, isImageRender))
+  private def doRender(cardData: LuaTable, isImageRender: Boolean): (SVGBuilder, SVGDefinitionReference) = {
+    val builder = new SVGBuilder(renderSettings)
+    (builder, doRender(builder, cardData, isImageRender))
   }
 
-  def renderSVGTag(settings: RenderSettings, cardData: LuaTable) = {
-    val (builder, definition) = doRender(settings, cardData, isImageRender = false)
+  def renderSVGTag(cardData: LuaTable) = {
+    val (builder, definition) = doRender(cardData, isImageRender = false)
     builder.renderSVGTag(definition)
   }
-  def renderImage(x: Int, y: Int, settings: RenderSettings, cardData: LuaTable) = {
-    val (builder, definition) = doRender(settings, cardData, isImageRender = true)
+  def write(w: Writer, cardData: LuaTable, encoding: String = "utf-8") = {
+    val (builder, definition) = doRender(cardData, isImageRender = false)
+    builder.write(w, definition, encoding)
+  }
+  def renderImage(x: Int, y: Int, cardData: LuaTable) = {
+    val (builder, definition) = doRender(cardData, isImageRender = true)
     builder.renderImage(x, y, definition)
   }
 }
 
 class LuaTemplate(name: String, packages: PackageList, context: LuaContext, table: LuaTable) extends Template {
-  override protected def doRender(builder: SVGBuilder, settings: RenderSettings, cardData: LuaTable,
-                                  isImageRender: Boolean) =
+  override protected def renderSettings = TemplateException.context(s"rendering template $name") {
+    val L = context.L.newThread()
+    RenderSettings(L.getTable(table, "size"      ).as[PhysicalSize  ],
+                   L.getTable(table, "coordScale").as[Option[Double]].getOrElse(1))
+  }
+  override protected def doRender(builder: SVGBuilder, cardData: LuaTable, isImageRender: Boolean) =
     TemplateException.context(s"rendering template $name") {
       val L = context.L.newThread()
-      val layoutFn = L.getTable(cardData, "layoutComponents").as[LuaClosure]
+      val layoutFn = L.getTable(table, "layoutComponents").as[LuaClosure]
 
       val reference = L.pcall(layoutFn, 1, cardData) match {
         case Left(Seq(x)) => x.as[ComponentReference]
