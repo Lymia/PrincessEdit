@@ -70,14 +70,14 @@ final case class SVGDefinitionReference(name: String, expectedSize: Size) {
                          s"translate($x $y)"}/>
 }
 final class SVGBuilder(val settings: RenderSettings) {
-  private val id = SVGBuilder.makeId()
+  private val id = GenID.makeId()
   private var layerId = 0
   private val definitions = new mutable.ArrayBuffer[NodeSeq]
 
   private def attribute(key: String, value: String) = Attribute(None, key, Text(value), Null)
 
   def createDefinition(name: String, elem: Elem) = {
-    val resourceName = s"princessedit_def_${id}_${layerId}_${name.replace(" ", "_").replaceAll("[^a-zA-Z0-9_]", "")}"
+    val resourceName = s"princess_def_${id}_${layerId}_${name.replace(" ", "_").replaceAll("[^a-zA-Z0-9_]", "")}"
     layerId = layerId + 1
     definitions.append(elem % attribute("id", resourceName))
     resourceName
@@ -152,17 +152,4 @@ object SVGBuilder {
     Nil
   )
   private val prettyPrinter = new PrettyPrinter(Int.MaxValue, 2)
-
-  private var globalId = 0
-  private val globalIdLock = new Object
-  private def makeGlobalId() = globalIdLock synchronized {
-    val id = globalId
-    globalId = globalId + 1
-    id
-  }
-
-  private val      chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-  private lazy val rng   = new SecureRandom()
-  private def makeId() =
-    makeGlobalId()+"_"+new String((for(i <- 0 until 16) yield chars.charAt(rng.nextInt(chars.length))).toArray)
 }

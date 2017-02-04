@@ -29,8 +29,6 @@ import java.util.zip.GZIPInputStream
 import javax.imageio.ImageIO
 import javax.xml.bind.DatatypeConverter
 
-import moe.lymia.princess.util.IOUtils
-
 import scala.collection.mutable
 
 // TODO Cleanup this module

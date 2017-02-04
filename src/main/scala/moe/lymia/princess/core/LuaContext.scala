@@ -30,7 +30,27 @@ import scala.collection.JavaConverters._
 
 final class LuaContext(packages: LoadedPackages) {
   val L = LuaState.makeSafeContext(packages.filePaths : _*)
+  components.ComponentLib(packages).open(L)
 
+  private def loadLuaPredef(path: String) = TemplateException.context(s"loading Lua predef $path") {
+    val fullPath = packages.forceResolve(path)
+
+    val chunk = L.loadString(IOUtils.readFileAsString(fullPath), s"@$path") match {
+      case Left (c) => c
+      case Right(e) => throw TemplateException(e)
+    }
+    L.pcall(chunk, 0) match {
+      case Left (r) =>
+      case Right(e) => throw TemplateException(e)
+    }
+  }
+  private def loadPredefs(exportType: String) =
+    for(e <- packages.getExports(exportType).sortBy(_.metadata.get("priority").map(_.head.toInt).getOrElse(0)))
+      loadLuaPredef(e.path)
+  loadPredefs("princess/predefs/global")
+  loadPredefs(s"princess/predefs/${packages.gameId}")
+
+  private val globalsCopy = new LuaRegistryEntry[LuaTable]
   private def copyTable(L: LuaState, tbl: LuaTable, ignore: String*): LuaTable = {
     val n = L.newTable()
     for(k <- tbl.keys().asScala) {
@@ -53,26 +73,6 @@ final class LuaContext(packages: LoadedPackages) {
     L.setMetatable(wrapper, mt)
     wrapper
   }
-
-  private def loadLuaPredef(path: String) = TemplateException.context(s"loading Lua predef $path") {
-    val fullPath = packages.forceResolve(path)
-
-    val chunk = L.loadString(IOUtils.readFileAsString(fullPath), s"@$path") match {
-      case Left (c) => c
-      case Right(e) => throw TemplateException(e)
-    }
-    L.pcall(chunk, 0) match {
-      case Left (r) =>
-      case Right(e) => throw TemplateException(e)
-    }
-  }
-  private def loadPredefs(exportType: String) =
-    for(e <- packages.getExports(exportType).sortBy(_.metadata.get("priority").map(_.head.toInt).getOrElse(0)))
-      loadLuaPredef(e.path)
-  loadPredefs("princess/predefs/global")
-  loadPredefs(s"princess/predefs/${packages.gameId}")
-
-  private val globalsCopy = new LuaRegistryEntry[LuaTable]
   private def loadLuaExport(path: String) = TemplateException.context(s"loading Lua export $path") {
     val fullPath = packages.forceResolve(path)
 

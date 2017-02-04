@@ -62,7 +62,7 @@ public final class LuaTable extends java.util.Hashtable
    */
   private boolean inrehash;     // = false;
 
-  LuaTable()
+  public LuaTable()
   {
     super(1);
   }

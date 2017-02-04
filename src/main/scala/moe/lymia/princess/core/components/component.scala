@@ -20,24 +20,22 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess.core.components
 
+import moe.lymia.princess.core._
 import moe.lymia.princess.lua._
 
 import scala.collection.mutable
 import scala.xml.NodeSeq
 
-trait ComponentMetatable {
-  def setField(L: LuaState, k: String, v: LuaObject)
-  def getField(L: LuaState, k: String): LuaObject
-}
 trait Component {
   def getSize: Size
   def renderComponent(manager: ComponentRenderManager): NodeSeq
-  def getLuaMetatable: ComponentMetatable = new ComponentMetatable {
-    override def getField(L: LuaState, k: String) = LuaNil
-    override def setField(L: LuaState, k: String, v: LuaObject) = L.error("component has no fields")
-  }
+
+  def setField(L: LuaState, k: String, v: Any): Unit = L.error(s"no such field '$k'")
+  def getField(L: LuaState, k: String): LuaObject = LuaNil
+
+  def ref: ComponentReference = DirectComponentReference(this)
 }
 
 sealed trait ComponentReference {
@@ -57,7 +55,7 @@ final class ComponentRenderManager(val builder: SVGBuilder, val resources: Resou
                                    val components: ComponentManager) {
   private val currentlyRendering = new mutable.HashMap[Component, String]
   private val renderCache = new mutable.HashMap[Component, SVGDefinitionReference]
-  def renderComponent(ref: ComponentReference) = {
+  def renderComponent(ref: ComponentReference) = TemplateException.context(s"rendering ${ref.name}") {
     val component = ref.component
     if(currentlyRendering.contains(component))
       throw TemplateException(s"Attempted to render component ${ref.name} while it is already rendering. "+
@@ -81,36 +79,3 @@ final class ComponentManager(settings: RenderSettings) {
     if(componentMap.contains(name)) IndirectComponentReference(this, name)
     else throw TemplateException(s"No component $name in component manager $this")
 }
-
-trait LuaComponentImplicits {
-  implicit object LuaComponentReference extends LuaUserdataType[ComponentReference] {
-    metatable { (L, mt) =>
-      L.register(mt, "__index"   , (L: LuaState, ref: ComponentReference, k: String) =>
-        k match {
-          case "deref" => LuaRet(ref.deref)
-          case n => ref.component.getLuaMetatable.getField(L, k)
-        }
-      )
-      L.register(mt, "__newindex", (L: LuaState, ref: ComponentReference, k: String, o: Any) => {
-        k match {
-          case "deref" => L.error("field 'deref' is immutable")
-          case n => ref.component.getLuaMetatable.setField(L, k, o)
-        }
-        ()
-      })
-      L.register(mt, "__tostring", (ref: ComponentReference) => LuaRet(ref.name))
-    }
-  }
-  implicit object LuaComponentManager extends LuaUserdataType[ComponentManager] {
-    metatable { (L, mt) =>
-      L.register(mt, "__index", (manager: ComponentManager, k: String) =>
-        LuaRet(manager.getComponentReference(k))
-      )
-      L.register(mt, "__newindex", (manager: ComponentManager, k: String, v: ComponentReference) => {
-        manager.setComponent(k, v.component)
-        ()
-      })
-    }
-  }
-}
-object LuaTemplateImplicits extends LuaComponentImplicits

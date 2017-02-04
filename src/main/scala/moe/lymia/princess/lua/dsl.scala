@@ -50,13 +50,14 @@ class LuaObject(val wrapped: Any) extends AnyVal {
     case any => any
   }
 }
-sealed trait ToLua[T] {
+
+trait ToLua[T] {
   def toLua(t: T): LuaObject
 }
-sealed trait FromLua[T] {
+trait FromLua[T] {
   def fromLua(L: Lua, v: Any, source: String): T
 }
-sealed trait LuaParameter[T] extends ToLua[T] with FromLua[T]
+trait LuaParameter[T] extends ToLua[T] with FromLua[T]
 
 case class LuaClosure(fn: Any)
 object LuaClosure {
@@ -85,13 +86,13 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   type LuaRet = Seq[LuaObject]
   def LuaRet(v: LuaObject*) = Seq(v : _*)
 
-  private def typerror[T](L: Lua, source: String, got: String, expected: String): T = {
+  def typerror[T](L: Lua, source: String, got: String, expected: String): T = {
     L.error(s"${L.where(1)}bad argument $source ($expected expected, got $got)")
     sys.error("L.error returned unexpectedly!")
   }
-  private def typerror[T](L: Lua, source: String, got: Any, expected: String): T =
+  def typerror[T](L: Lua, source: String, got: Any, expected: String): T =
     typerror(L, source, Lua.typeName(Lua.`type`(got)), expected)
-  private def typerror[T](L: Lua, source: String, got: Any, expected: Int): T =
+  def typerror[T](L: Lua, source: String, got: Any, expected: Int): T =
     typerror(L, source, got, Lua.typeName(expected))
 
   implicit object ToLuaScalaLuaClosure extends ToLua[ScalaLuaClosure] {
