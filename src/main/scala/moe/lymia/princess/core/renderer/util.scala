@@ -26,7 +26,7 @@ import java.awt.Font
 
 final case class Size(width: Double, height: Double)
 
-case class PhysicalUnit(svgName: String, ratioPerInch: Double)
+case class PhysicalUnit(svgName: String, unPerInch: Double)
 object PhysicalUnit {
   val mm = PhysicalUnit("mm", 25.4)
   val in = PhysicalUnit("in", 1)
@@ -37,13 +37,9 @@ final case class PhysicalSize(width: Double, height: Double, unit: PhysicalUnit)
   val heightString = s"$height${unit.svgName}"
 }
 
-final case class RenderSettings(size: PhysicalSize, viewportScale: Double) {
-  val viewport        = Size(size.width * viewportScale, size.height * viewportScale)
-  val coordUnitsPerIn = viewportScale * size.unit.ratioPerInch
+final case class RenderSettings(viewport: Size, unPerViewport: Double, physicalUnit: PhysicalUnit) {
+  val size            = PhysicalSize(viewport.width * unPerViewport, viewport.height * unPerViewport, physicalUnit)
+  val coordUnitsPerIn = size.unit.unPerInch / unPerViewport
   def scaleFont(font: Font, ptSize: Double) =
     font.deriveFont((ptSize * (coordUnitsPerIn / 72.0)).toFloat)
-}
-object RenderSettings {
-  def apply(width: Double, height: Double, viewportScale: Double, unit: PhysicalUnit): RenderSettings =
-    RenderSettings(PhysicalSize(width, height, unit), viewportScale)
 }

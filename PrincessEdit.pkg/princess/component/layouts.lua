@@ -24,8 +24,8 @@ function component.basicLayout(size)
     layout.handler = function()
         return components
     end
-    function layout._ext.addComponent(x, y, component)
-        table.insert(components, {component = component, x = x, y = y, size = component.size})
+    function layout._ext.addComponent(x, y, component, size)
+        table.insert(components, {component = component, x = x, y = y, size = size or component.size})
     end
     return layout
 end

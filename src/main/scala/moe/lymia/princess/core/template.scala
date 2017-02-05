@@ -28,6 +28,25 @@ import moe.lymia.princess.core.components._
 import moe.lymia.princess.core.renderer._
 import moe.lymia.princess.lua._
 
+case class PhysicalScale(unPerViewport: Double, unit: PhysicalUnit)
+trait TemplateLuaImplicits {
+  implicit object LuaPhysicalScale extends LuaUserdataType[PhysicalScale]
+  implicit object LuaPhysicalUnit extends LuaUserdataType[PhysicalUnit] {
+    metatable { (L, mt) =>
+      L.register(mt, "__mul", (scale: Double, unit: PhysicalUnit) => PhysicalScale(scale, unit))
+    }
+  }
+}
+object TemplateLuaImplicits extends TemplateLuaImplicits
+import TemplateLuaImplicits._
+
+object TemplateLib {
+  def open(L: LuaState) = {
+    L.setGlobal("mm", PhysicalUnit.mm)
+    L.setGlobal("in", PhysicalUnit.in)
+  }
+}
+
 trait Template {
   protected def renderSettings: RenderSettings
   protected def doRender(builder: SVGBuilder, cardData: LuaTable, isImageRender: Boolean): SVGDefinitionReference
@@ -54,8 +73,8 @@ trait Template {
 class LuaTemplate(name: String, packages: PackageList, context: LuaContext, table: LuaTable) extends Template {
   override protected def renderSettings = TemplateException.context(s"rendering template $name") {
     val L = context.L.newThread()
-    RenderSettings(L.getTable(table, "size"      ).as[PhysicalSize  ],
-                   L.getTable(table, "coordScale").as[Option[Double]].getOrElse(1))
+    val scale = L.getTable(table, "scale").as[PhysicalScale]
+    RenderSettings(L.getTable(table, "size").as[Size], scale.unPerViewport, scale.unit)
   }
   override protected def doRender(builder: SVGBuilder, cardData: LuaTable, isImageRender: Boolean) =
     TemplateException.context(s"rendering template $name") {

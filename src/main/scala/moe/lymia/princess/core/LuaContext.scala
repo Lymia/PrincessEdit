@@ -22,6 +22,7 @@
 
 package moe.lymia.princess.core
 
+import moe.lymia.princess.core.renderer.PhysicalUnit
 import moe.lymia.princess.lua._
 import moe.lymia.princess.util.IOUtils
 
@@ -31,6 +32,7 @@ import scala.collection.JavaConverters._
 final class LuaContext(packages: PackageList) {
   val L = LuaState.makeSafeContext(packages.filePaths : _*)
   components.ComponentLib(packages).open(L)
+  TemplateLib.open(L)
 
   L.registerGlobal("getModule", (name: String) => getLuaExport(name))
 
