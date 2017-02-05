@@ -34,7 +34,7 @@ trait LuaComponentImplicits {
       L.register(mt, "__index"   , (L: LuaState, ref: ComponentReference, k: String) =>
         k match {
           case "deref" => LuaRet(ref.deref)
-          case n => ref.component.getField(L, k)
+          case n => ref.component.getField(L, k).toLua(L)
         }
       )
       L.register(mt, "__newindex", (L: LuaState, ref: ComponentReference, k: String, o: Any) => {

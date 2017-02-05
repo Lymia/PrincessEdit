@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+    <param name="color" type="string"/>
+    <elems>
+        <rect x="0" y="0" width="100%" height="100%" fill="${color}"/>
+    </elems>
+</template>

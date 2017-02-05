@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+    <param name="mask" type="component"/>
+    <param name="target" type="component"/>
+    <param name="maskId" type="gensym"/>
+    <elems>
+        <defs>
+            <clipPath id="${maskId}">
+                <component id="mask"/>
+            </clipPath>
+        </defs>
+        <component id="target" fillComponent="true" clip-path="url(#${maskId})"/>
+    </elems>
+</template>

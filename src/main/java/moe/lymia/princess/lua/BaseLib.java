@@ -326,13 +326,7 @@ public final class BaseLib implements LuaJavaCallback
   private static int error(Lua L)
   {
     int level = L.optInt(2, 1);
-    L.setTop(1);
-    if (L.isString(L.value(1)) && level > 0)
-    {
-      L.insert(L.where(level), 1);
-      L.concat(2);
-    }
-    L.error(L.value(1));
+    L.error(L.value(1), level);
     // NOTREACHED
     return 0;
   }

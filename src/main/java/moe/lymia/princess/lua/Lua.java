@@ -584,6 +584,10 @@ public final class Lua
     }
     else
     {
+      int type = type(o);
+      if(type == -1) {
+        return null;
+      }
       mt = metatable[type(o)];
     }
     return mt;
@@ -2455,22 +2459,16 @@ protect:
 
   String ciWhere() {
     try {
-      Debug ar = new Debug(0);
-      CallInfo ci = ci();
-
-      Object faso = stack[ci.function()].r;
-      LuaFunction f = (LuaFunction)faso;
-      funcinfo(ar, f);
-
-      return ar.shortsrc() + ":" + f.proto().getline(savedpc);
+      return where(0);
     } catch (Exception e) {
-      return "<unknown>";
+      e.printStackTrace();
+      return "<unknown>: ";
     }
   }
 
   void gRunerror(String s)
   {
-    gErrormsg(ciWhere() + ": " + s);
+    gErrormsg(ciWhere() + s);
   }
 
   private void gTypeerror(Object o, String op)
@@ -3125,6 +3123,7 @@ reentry:
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__add"))
             {
+              savedpc = pc; // Protect
               gAritherror(rb, rc);
             }
             continue;
@@ -3145,6 +3144,7 @@ reentry:
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__sub"))
             {
+              savedpc = pc; // Protect
               gAritherror(rb, rc);
             }
             continue;
@@ -3165,6 +3165,7 @@ reentry:
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__mul"))
             {
+              savedpc = pc; // Protect
               gAritherror(rb, rc);
             }
             continue;
@@ -3185,6 +3186,7 @@ reentry:
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__div"))
             {
+              savedpc = pc; // Protect
               gAritherror(rb, rc);
             }
             continue;
@@ -3205,6 +3207,7 @@ reentry:
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__mod"))
             {
+              savedpc = pc; // Protect
               gAritherror(rb, rc);
             }
             continue;
@@ -3225,6 +3228,7 @@ reentry:
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__pow"))
             {
+              savedpc = pc; // Protect
               gAritherror(rb, rc);
             }
             continue;
@@ -3242,6 +3246,7 @@ reentry:
             }
             else if (!call_binTM(rb, rb, stack[base+a], "__unm"))
             {
+              savedpc = pc; // Protect
               gAritherror(rb, rb);
             }
             continue;

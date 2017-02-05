@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+    <param name="mask" type="component"/>
+    <param name="target" type="component"/>
+    <param name="maskId" type="gensym"/>
+    <elems>
+        <defs>
+            <mask id="${maskId}">
+                <component id="mask"/>
+            </mask>
+        </defs>
+        <component id="target" fillComponent="true" mask="url(#${maskId})"/>
+    </elems>
+</template>

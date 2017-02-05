@@ -78,8 +78,10 @@ class XMLTemplateComponent(sizeParam: Size, data: XMLTemplateData) extends Compo
       case None    => throw TemplateException(s"field '${x.group(1)}' not set")
     })
   private def processMetadata(manager: ComponentRenderManager, m: MetaData): MetaData =
-    if(m == null) null
-    else new UnprefixedAttribute(m.key, templateString(manager, m.value.text), processMetadata(manager, m.next))
+    if(m == Null) Null
+    else Attribute(if(m.isPrefixed) Some(m.asInstanceOf[Attribute].pre) else None,
+                   m.key, if(m.value == null) Seq() else m.value.map(x => processNode(manager, x)),
+                   processMetadata(manager, m.next))
   private def processNode(manager: ComponentRenderManager, n: Node): Node = n match {
     case Text(s) => Text(templateString(manager, s))
     case e: Elem if e.label == "component" =>
@@ -88,17 +90,24 @@ class XMLTemplateComponent(sizeParam: Size, data: XMLTemplateData) extends Compo
         case None    => throw TemplateException(s"field '${(e \ "@id").text}' not set")
       })
 
-      val x = (e \ "@x").text.toDouble
-      val y = (e \ "@y").text.toDouble
+      val fill = (e \ "@fillComponent").nonEmpty
+      val x = e \ "@x"
+      val y = e \ "@y"
       val widthElem  = e \ "@width"
       val heightElem = e \ "@height"
-      val otherAttrs = e.attributes.filter(x => XMLTemplateComponent.ignoreAttrs.contains(x.key))
+      val otherAttrs = e.attributes.filter(x => !XMLTemplateComponent.ignoreAttrs.contains(x.key))
 
-      var elem = if(widthElem.nonEmpty && heightElem.nonEmpty)
-        componentRef.include(x, y, widthElem.text.toDouble, heightElem.text.toDouble)
-      else componentRef.include(x, y)
+      val xd = if(x.nonEmpty) x.text.toDouble else 0d
+      val yd = if(x.nonEmpty) y.text.toDouble else 0d
+
+      var elem =
+        if(fill)
+          componentRef.include(xd, yd, size.width, size.height)
+        else if(widthElem.nonEmpty && heightElem.nonEmpty)
+          componentRef.include(xd, yd, widthElem.text.toDouble, heightElem.text.toDouble)
+        else componentRef.include(xd, yd)
       for(attr <- otherAttrs) elem = elem % Attribute(None, attr.key, Text(attr.value.text), Null)
-      elem
+      processNode(manager, elem)
     case e: Elem => e.copy(attributes = processMetadata(manager, e.attributes),
                            child = n.child.map(x => processNode(manager, x)))
     case x => x
@@ -122,5 +131,5 @@ class XMLTemplateComponent(sizeParam: Size, data: XMLTemplateData) extends Compo
 }
 object XMLTemplateComponent {
   private val varRegex = "\\$\\{([a-zA-Z_][a-zA-Z_0-9]+)\\}".r
-  private val ignoreAttrs = Set("x", "y", "width", "height", "id")
+  private val ignoreAttrs = Set("fillComponent", "x", "y", "width", "height", "id")
 }

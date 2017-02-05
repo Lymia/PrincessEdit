@@ -38,6 +38,7 @@ abstract class Component(protected var size: Size, private var noViewport: Boole
 
   private val properties = new mutable.HashMap[String, ComponentProperty]
   private val extTable   = new LuaTable()
+  private val extProp    = new LuaTable()
   protected def property(name: String)
                         (get: Component.GetPropertyFn = (L   ) => L.error(s"property '$name' is write-only"),
                          set: Component.SetPropertyFn = (L, _) => L.error(s"property '$name' is immutable")) =
@@ -46,15 +47,22 @@ abstract class Component(protected var size: Size, private var noViewport: Boole
   final def setField(L: LuaState, k: String, v: Any) =
     properties.get(k) match {
       case Some(prop) => prop.set(L, v)
-      case None       => L.error(s"no such property '$k'")
+      case None       =>
+        if(extProp.contains(k))
+          L.call(L.rawGet(extProp, s"set_$k").as[LuaClosure], 0, v.toLua(L))
+        else L.error(s"no such property '$k'")
     }
   final def getField(L: LuaState, k: String): LuaObject =
     properties.get(k) match {
       case Some(prop) => prop.get(L)
-      case None       => L.rawGet(extTable, k)
+      case None       =>
+        if(extProp.contains(k))
+          L.call(L.rawGet(extProp, s"get_$k").as[LuaClosure], 1).head
+        else L.rawGet(extTable, k)
     }
 
   property("_ext"      )(_ => extTable)
+  property("_prop"     )(_ => extProp)
   property("size"      )(_ => size, (L, v) => size = v.fromLua[Size](L))
   property("noViewport")(_ => noViewport, (L, v) => noViewport = v.fromLua[Boolean](L))
 

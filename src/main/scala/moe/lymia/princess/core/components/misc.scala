@@ -40,7 +40,7 @@ class LayoutComponent(private var L_main: LuaState, sizeParam: Size) extends Com
   override def renderComponent(manager: ComponentRenderManager): NodeSeq = {
     val L = L_main.newThread()
     val table = L.call(handler, 1, size).head.as[LuaTable]
-    for(i <- 1 until L.objLen(table)) yield {
+    for(i <- 1 to L.objLen(table)) yield {
       val entry = L.getTable(table, i)
       val component = L.getTable(entry, "component").as[ComponentReference]
       val x         = L.getTable(entry, "x"        ).as[Double]
