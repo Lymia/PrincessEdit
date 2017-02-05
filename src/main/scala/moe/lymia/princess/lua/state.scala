@@ -68,6 +68,7 @@ final case class LuaState(L: Lua) extends AnyVal {
   def toInteger(o: LuaObject): Int = L.toInteger(o.toLua(this))
   def toNumber(o: LuaObject): Double = L.toNumber(o.toLua(this))
   def toString(o: LuaObject): String = L.toString(o.toLua(this))
+  def toPrintString(o: LuaObject): String = L.toPrintString(o.toLua(this))
   def toThread(o: LuaObject): Lua = L.toThread(o.toLua(this))
   def toUserdata(o: LuaObject): LuaUserdata = L.toUserdata(o.toLua(this))
 
@@ -75,17 +76,22 @@ final case class LuaState(L: Lua) extends AnyVal {
   def getGlobals: LuaTable = L.getGlobals
   def getRegistry: LuaTable = L.getRegistry
 
-  def getGlobal(name: String) = L.getGlobal(name).returnWrapper(this)
+  def getGlobal(name: String) = L.getGlobal(name).returnWrapper(this, s"invalid global $name")
   def setGlobal(name: String, value: LuaObject): Unit = L.setGlobal(name, value.toLua(this))
 
-  def getMetafield(o: LuaObject, event: String) = L.getMetafield(o.toLua(this), event).returnWrapper(this)
+  def getMetafield(o: LuaObject, event: String) =
+    L.getMetafield(o.toLua(this), event).returnWrapper(this, s"invalid metafield $event of ${toPrintString(o)}")
 
-  def getTable(t: LuaObject, k: LuaObject) = L.getTable(t.toLua(this), k.toLua(this)).returnWrapper(this)
+  def getTable(t: LuaObject, k: LuaObject) =
+    L.getTable(t.toLua(this), k.toLua(this))
+      .returnWrapper(this, s"invalid table field ${toPrintString(k)} of ${toPrintString(t)}")
   def setTable(t: LuaObject, k: LuaObject, v: LuaObject) =
     L.setTable(t.toLua(this), k.toLua(this), v.toLua(this))
   def setField(t: LuaObject, name: String, v: LuaObject): Unit = L.setField(t.toLua(this), name, v.toLua(this))
 
-  def rawGet(t: LuaObject, k: LuaObject) = Lua.rawGet(t.toLua(this), k.toLua(this)).returnWrapper(this)
+  def rawGet(t: LuaObject, k: LuaObject) =
+    Lua.rawGet(t.toLua(this), k.toLua(this))
+      .returnWrapper(this, s"invalid table field ${toPrintString(k)} of ${toPrintString(t)}")
   def rawSet(t: LuaObject, k: LuaObject, v: LuaObject) = L.rawSet(t.toLua(this), k.toLua(this), v.toLua(this))
 
   def registerGlobal(k: String, v: ScalaLuaClosure, doCheck: Boolean = true) =

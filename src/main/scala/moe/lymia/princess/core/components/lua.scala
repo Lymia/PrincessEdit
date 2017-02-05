@@ -65,7 +65,7 @@ trait LuaComponentImplicits {
       L.rawSet(t, 2, size.height)
       t
     }))
-    override def fromLua(L: Lua, v: Any, source: String): Size = v match {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]): Size = v match {
       case t: LuaTable =>
         def checkTableDouble(i: Int) = Lua.rawGet(t, i.toDouble) match {
           case x: java.lang.Double => x
@@ -76,7 +76,7 @@ trait LuaComponentImplicits {
     }
   }
   implicit object FromLuaPhysicalSize extends FromLua[PhysicalSize] {
-    override def fromLua(L: Lua, v: Any, source: String): PhysicalSize = v match {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]): PhysicalSize = v match {
       case t: LuaTable =>
         def checktableDouble(i: Int) = Lua.rawGet(t, i.toDouble) match {
           case x: java.lang.Double => x

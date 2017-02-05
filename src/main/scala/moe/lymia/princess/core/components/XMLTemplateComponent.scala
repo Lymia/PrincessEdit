@@ -116,17 +116,17 @@ class XMLTemplateComponent(sizeParam: Size, data: XMLTemplateData) extends Compo
 
   for((k, expectedType) <- data.parameters) expectedType match {
     case ExpectedType.Component =>
-      property(k)(_      => componentMap.get(k),
-                  (L, v) => componentMap.put(k, v.fromLua[ComponentReference](L)))
+      property(k)(_                          => componentMap.get(k),
+                  (L, v: ComponentReference) => componentMap.put(k, v))
     case ExpectedType.Integer =>
-      property(k)(_      => stringMap.get(k).map(_.toInt),
-                  (L, v) => stringMap.put(k, v.fromLua[Int](L).toString))
+      property(k)(_                          => stringMap.get(k).map(_.toInt),
+                  (L, v: Int               ) => stringMap.put(k, v.toString))
     case ExpectedType.Number =>
-      property(k)(_      => stringMap.get(k).map(_.toDouble),
-                  (L, v) => stringMap.put(k, v.fromLua[Double](L).toString))
+      property(k)(_                          => stringMap.get(k).map(_.toDouble),
+                  (L, v: Double            ) => stringMap.put(k, v.toString))
     case ExpectedType.String | ExpectedType.GenSym | ExpectedType.Definition =>
-      property(k)(_      => stringMap.get(k),
-                  (L, v) => stringMap.put(k, v.fromLua[String](L)))
+      property(k)(_                          => stringMap.get(k),
+                  (L, v: String            ) => stringMap.put(k, v))
   }
 }
 object XMLTemplateComponent {

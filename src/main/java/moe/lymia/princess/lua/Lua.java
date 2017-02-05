@@ -1412,6 +1412,28 @@ protect:
   }
 
   /**
+   * Converts an Lua object to a string, as tostring(...) does.
+   * @param o Lua value to convert.
+   * @return The resulting string.
+   */
+  public String toPrintString(Object o) {
+    int type = type(o);
+    switch (type) {
+      case TNUMBER:
+        return vmTostring(o);
+      case TSTRING:
+        return (String) o;
+      case TBOOLEAN:
+        if (toBoolean(o)) return "true";
+        else              return "false";
+      case Lua.TNIL:
+        return "nil";
+      default:
+        return String.format("%s: 0x%08x", typeName(type), System.identityHashCode(o));
+    }
+  }
+
+  /**
    * Convert to Lua thread and return it or <code>null</code>.
    * @param o  Lua value to convert.
    * @return  The resulting Lua instance.

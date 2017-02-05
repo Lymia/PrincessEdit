@@ -31,7 +31,7 @@ import scala.xml.NodeSeq
 class ResourceComponent(sizeParam: Size, private var resource: String) extends Component(sizeParam) {
   override def renderComponent(manager: ComponentRenderManager): NodeSeq =
     manager.resources.loadImageResource(resource, size).include(0, 0, size.width, size.height)
-  property("resource")(_ => resource, (L, v) => resource = v.fromLua[String](L))
+  property("resource")(_ => resource, (L, v : String) => resource = v)
 }
 
 class LayoutComponent(private var L_main: LuaState, sizeParam: Size) extends Component(sizeParam) {
@@ -50,5 +50,5 @@ class LayoutComponent(private var L_main: LuaState, sizeParam: Size) extends Com
     }
   }
 
-  property("handler")(_ => handler, (L, v) => { L_main = L; handler = v.fromLua[LuaClosure](L) })
+  property("handler")(_ => handler, (L, v: LuaClosure) => { L_main = L; handler = v })
 }

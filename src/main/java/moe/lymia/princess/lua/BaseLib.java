@@ -700,31 +700,7 @@ public final class BaseLib implements LuaJavaCallback
     {
       return 1; // use its value
     }
-    switch (L.type(1))
-    {
-      case Lua.TNUMBER:
-        L.push(L.toString(o));
-        break;
-      case Lua.TSTRING:
-        L.push(o);
-        break;
-      case Lua.TBOOLEAN:
-        if (L.toBoolean(o))
-        {
-          L.pushLiteral("true");
-        }
-        else
-        {
-          L.pushLiteral("false");
-        }
-        break;
-      case Lua.TNIL:
-        L.pushLiteral("nil");
-        break;
-      default:
-        L.push(String.format("%s: 0x%08x", L.typeNameOfIndex(1), System.identityHashCode(o)));
-        break;
-    }
+    L.push(L.toPrintString(o));
     return 1;
   }
 

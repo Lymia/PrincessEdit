@@ -55,7 +55,7 @@ trait ToLua[T] {
   def toLua(t: T): LuaObject
 }
 trait FromLua[T] {
-  def fromLua(L: Lua, v: Any, source: String): T
+  def fromLua(L: Lua, v: Any, source: => Option[String]): T
 }
 trait LuaParameter[T] extends ToLua[T] with FromLua[T]
 
@@ -76,8 +76,8 @@ case class ScalaLuaClosure(fn: LuaJavaCallback) extends AnyVal {
     }) else this
 }
 
-class LuaReturnWrapper(L: LuaState, val wrapped: Any) {
-  def as[T : FromLua]: T = wrapped.fromLua[T](L)
+class LuaReturnWrapper(L: LuaState, val wrapped: Any, source: => Option[String] = None) {
+  def as[T : FromLua]: T = wrapped.fromLua[T](L, source)
 }
 
 case object LuaNil
@@ -86,13 +86,15 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   type LuaRet = Seq[LuaObject]
   def LuaRet(v: LuaObject*) = Seq(v : _*)
 
-  def typerror[T](L: Lua, source: String, got: String, expected: String): T = {
-    L.error(s"bad argument $source ($expected expected, got $got)")
+  def errorWithSource[T](L: Lua, source: => Option[String], error: String): T = {
+    L.error(source.fold(error)(src => s"$src ($error)"))
     sys.error("L.error returned unexpectedly!")
   }
-  def typerror[T](L: Lua, source: String, got: Any, expected: String): T =
+  def typerror[T](L: Lua, source: => Option[String], got: String, expected: String): T =
+    errorWithSource(L, source, s"$expected expected, got $got")
+  def typerror[T](L: Lua, source: => Option[String], got: Any, expected: String): T =
     typerror(L, source, Lua.typeName(Lua.`type`(got)), expected)
-  def typerror[T](L: Lua, source: String, got: Any, expected: Int): T =
+  def typerror[T](L: Lua, source: => Option[String], got: Any, expected: Int): T =
     typerror(L, source, got, Lua.typeName(expected))
 
   implicit object ToLuaScalaLuaClosure extends ToLua[ScalaLuaClosure] {
@@ -102,14 +104,17 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   // Lua Object wrappers
   implicit def toLua2luaObject[T : ToLua](obj: T): LuaObject = implicitly[ToLua[T]].toLua(obj)
   implicit class FromLuaAnyExtension(obj: Any) {
-    def fromLua[T : FromLua](L: LuaState, source: String = "<java function>") =
+    def fromLua[T : FromLua](L: LuaState) =
+      implicitly[FromLua[T]].fromLua(L.L, obj, LuaImplicits.internalError)
+    def fromLua[T : FromLua](L: LuaState, source: => Option[String]) =
       implicitly[FromLua[T]].fromLua(L.L, obj, source)
-    private[lua] def returnWrapper(L: LuaState) = new LuaReturnWrapper(L, obj)
+    private[lua] def returnWrapper(L: LuaState) = new LuaReturnWrapper(L, obj, None)
+    private[lua] def returnWrapper(L: LuaState, source: => String) = new LuaReturnWrapper(L, obj, Some(source))
   }
 
   implicit object LuaParameterAny extends LuaParameter[Any] {
     override def toLua(t: Any): LuaObject = new LuaObject(t)
-    override def fromLua(L: Lua, v: Any, source: String) = v
+    override def fromLua(L: Lua, v: Any, source: => Option[String]) = v
   }
   implicit object ToLuaReturnWrapper extends ToLua[LuaReturnWrapper] {
     override def toLua(t: LuaReturnWrapper): LuaObject = new LuaObject(t.wrapped)
@@ -122,7 +127,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
     extends LuaParameter[N] {
 
     override def toLua(n: N) = new LuaObject(implicitly[Numeric[N]].toDouble(n))
-    override def fromLua(L: Lua, v: Any, source: String) = v match {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
       case n: java.lang.Double =>
         if(checkRange(n)) toN(n)
         else {
@@ -149,18 +154,18 @@ trait LuaImplicits extends LuaGeneratedImplicits {
 
   implicit object LuaParameterBoolean extends LuaParameter[Boolean] {
     override def toLua(b: Boolean) = new LuaObject(b)
-    override def fromLua(L: Lua, v: Any, source: String) = L.toBoolean(v)
+    override def fromLua(L: Lua, v: Any, source: => Option[String]) = L.toBoolean(v)
   }
   implicit object LuaParameterTable extends LuaParameter[LuaTable] {
     def toLua(t: LuaTable) = new LuaObject(t)
-    override def fromLua(L: Lua, v: Any, source: String) = v match {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
       case n: LuaTable => n
       case _ => typerror(L, source, v, Lua.TTABLE)
     }
   }
   implicit object LuaParameterThread extends LuaParameter[Lua] {
     def toLua(t: Lua) = new LuaObject(t)
-    override def fromLua(L: Lua, v: Any, source: String) = v match {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
       case n: Lua => n
       case _ => typerror(L, source, v, Lua.TTHREAD)
     }
@@ -168,7 +173,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
 
   implicit object LuaParameterString extends LuaParameter[String] {
     override def toLua(t: String) = new LuaObject(t)
-    override def fromLua(L: Lua, v: Any, source: String) = L.toString(v) match {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]) = L.toString(v) match {
       case null => typerror(L, source, v, Lua.TSTRING)
       case s => s
     }
@@ -186,7 +191,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
       ud.setMetatable(mt)
       ud
     })
-    override def fromLua(L: Lua, v: Any, source: String) = v match {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
       case v: LuaUserdata =>
         val obj = v.getUserdata
         if(!metadata.tag.runtimeClass.isAssignableFrom(obj.getClass))
@@ -198,7 +203,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
 
   implicit object LuaParameterLuaClosure extends LuaParameter[LuaClosure] {
     override def toLua(t: LuaClosure) = new LuaObject(t.fn)
-    override def fromLua(L: Lua, v: Any, source: String) = v match {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
       case v: LuaFunction     => LuaClosure(v)
       case v: LuaJavaCallback => LuaClosure(v)
       case _ => typerror(L, source, v, Lua.TFUNCTION)
@@ -214,10 +219,10 @@ trait LuaImplicits extends LuaGeneratedImplicits {
     })
   }
   implicit def fromLuaSeq[V : FromLua] = new FromLua[Seq[V]] {
-    override def fromLua(L: Lua, v: Any, source: String): Seq[V] = v match {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]): Seq[V] = v match {
       case table: LuaTable =>
         for(k <- table.array.take(table.getn())) yield
-          implicitly[FromLua[V]].fromLua(L, table.getlua(k), s"$source in table value")
+          implicitly[FromLua[V]].fromLua(L, table.getlua(k), source.map(x => s"$x in table value"))
       case _ => typerror(L, source, v, Lua.TTABLE)
     }
   }
@@ -230,11 +235,11 @@ trait LuaImplicits extends LuaGeneratedImplicits {
     })
   }
   implicit def fromLuaMap[K : FromLua, V : FromLua] = new FromLua[Map[K, V]] {
-    override def fromLua(L: Lua, v: Any, source: String): Map[K, V] = v match {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]): Map[K, V] = v match {
       case table: LuaTable =>
         (for(k <- table.keySet().asScala) yield (
-          implicitly[FromLua[K]].fromLua(L, k              , s"$source in table key"  ),
-          implicitly[FromLua[V]].fromLua(L, table.getlua(k), s"$source in table value"))).toMap
+          implicitly[FromLua[K]].fromLua(L, k              , source.map(x => s"$x in table key"  )),
+          implicitly[FromLua[V]].fromLua(L, table.getlua(k), source.map(x => s"$x in table value")))).toMap
       case _ => typerror(L, source, v, Lua.TTABLE)
     }
   }
@@ -243,9 +248,12 @@ trait LuaImplicits extends LuaGeneratedImplicits {
     override def toLua(t: Option[T]) = t.fold(new LuaObject(Lua.NIL))(implicitly[ToLua[T]].toLua)
   }
   implicit def fromLuaOptional[T : FromLua] = new FromLua[Option[T]] {
-    override def fromLua(L: Lua, v: Any, source: String) = Lua.`type`(v) match {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]) = Lua.`type`(v) match {
       case Lua.TNIL | Lua.TNONE => None
       case _ => Some(implicitly[FromLua[T]].fromLua(L, v, source))
     }
   }
+}
+object LuaImplicits {
+  private val internalError = Some("internal error")
 }

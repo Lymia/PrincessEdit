@@ -39,10 +39,12 @@ abstract class Component(protected var size: Size, private var noViewport: Boole
   private val properties = new mutable.HashMap[String, ComponentProperty]
   private val extTable   = new LuaTable()
   private val extProp    = new LuaTable()
-  protected def property(name: String)
-                        (get: Component.GetPropertyFn = (L   ) => L.error(s"property '$name' is write-only"),
-                         set: Component.SetPropertyFn = (L, _) => L.error(s"property '$name' is immutable")) =
-    properties.put(name, ComponentProperty(set, get))
+  protected def property[R: FromLua](name: String)
+                                    (get: Component.GetPropertyFn =
+                                       (L   ) => L.error(s"property '$name' is write-only"),
+                                     set: (LuaState, R) => Unit = (L: LuaState, _: R) =>
+                                       L.error(s"property '$name' is immutable")) =
+    properties.put(name, ComponentProperty((L, v) => set(L, v.fromLua[R](L, Some(s"invalid property value"))), get))
 
   final def setField(L: LuaState, k: String, v: Any) =
     properties.get(k) match {
@@ -63,8 +65,8 @@ abstract class Component(protected var size: Size, private var noViewport: Boole
 
   property("_ext"      )(_ => extTable)
   property("_prop"     )(_ => extProp)
-  property("size"      )(_ => size, (L, v) => size = v.fromLua[Size](L))
-  property("noViewport")(_ => noViewport, (L, v) => noViewport = v.fromLua[Boolean](L))
+  property("size"      )(_ => size, (L, v : Size) => size = v)
+  property("noViewport")(_ => noViewport, (L, v : Boolean) => noViewport = v)
 
   def ref: ComponentReference = DirectComponentReference(this)
 }
