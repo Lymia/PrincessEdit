@@ -73,6 +73,13 @@ class CLI {
     )
   }
 
+  private def time[T](what: String)(v: => T) = {
+    val time = System.currentTimeMillis()
+    val res = v
+    println(s"$what in ${System.currentTimeMillis() - time}ms.")
+    res
+  }
+
   private def cmd_default() = { }
 
   private def cmd_lua(): Unit = {
@@ -99,7 +106,7 @@ class CLI {
     }
   }
 
-  private def renderCommon() = {
+  private def renderCommon() = time("Loaded packages") {
     val game = PackageManager.default.loadGameId(gameId)
     val templateObj = game.templates.find(_.path == template) match {
       case Some(x) => x.template
@@ -114,11 +121,11 @@ class CLI {
   private def cmd_render(): Unit = {
     val (template, cardData) = renderCommon()
     val image = template.renderImage(x, y, cardData)
-    ImageIO.write(image, "png", new FileOutputStream(out))
+    time("Renderered card") { ImageIO.write(image, "png", new FileOutputStream(out)) }
   }
   private def cmd_renderSVG(): Unit = {
     val (template, cardData) = renderCommon()
-    template.write(new FileWriter(out), cardData)
+    time("Renderered card") { template.write(new FileWriter(out), cardData) }
   }
 
   def main(args: Seq[String]) = try {
