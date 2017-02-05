@@ -105,7 +105,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   implicit def toLua2luaObject[T : ToLua](obj: T): LuaObject = implicitly[ToLua[T]].toLua(obj)
   implicit class FromLuaAnyExtension(obj: Any) {
     def fromLua[T : FromLua](L: LuaState) =
-      implicitly[FromLua[T]].fromLua(L.L, obj, LuaImplicits.internalError)
+      implicitly[FromLua[T]].fromLua(L.L, obj, LuaImplicits.internalErrorFn())
     def fromLua[T : FromLua](L: LuaState, source: => Option[String]) =
       implicitly[FromLua[T]].fromLua(L.L, obj, source)
     private[lua] def returnWrapper(L: LuaState) = new LuaReturnWrapper(L, obj, None)
@@ -256,4 +256,5 @@ trait LuaImplicits extends LuaGeneratedImplicits {
 }
 object LuaImplicits {
   private val internalError = Some("internal error")
+  private val internalErrorFn = () => internalError
 }
