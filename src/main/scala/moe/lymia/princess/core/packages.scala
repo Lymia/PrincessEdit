@@ -108,9 +108,15 @@ object Package {
             dependenciesSection.map(x => Dependency(x._1, DepVersion.parse(x._2.head))).toSeq,
             exportMap.mapValues(_.toSeq).toMap)
   }
+
+  // TODO: Consider allowing loading multiple packages from one .zip file
   private def loadPackageFromZip(path: Path) = TemplateException.context(s"loading package from zip $path") {
     val fs = FileSystems.newFileSystem(path, getClass.getClassLoader)
-    loadPackageFromPath(fs.getPath("/"))
+    val root = fs.getPath("/")
+    val fileList = Files.list(root).iterator().asScala.toList
+    loadPackageFromPath(if(!Files.exists(root.resolve("package.ini")) &&
+                           fileList.length == 1 && Files.isDirectory(fileList.head)) fileList.head
+                        else root)
   }
   private def loadPackageFromDirectory(path: Path) = TemplateException.context(s"loading package from $path") {
     loadPackageFromPath(path)
