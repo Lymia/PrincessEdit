@@ -120,12 +120,12 @@ class CLI {
   }
   private def cmd_render(): Unit = {
     val (template, cardData) = renderCommon()
-    val image = template.renderImage(x, y, cardData)
-    time("Renderered card") { ImageIO.write(image, "png", new FileOutputStream(out)) }
+    val image = time("Renderered image") { template.renderImage(x, y, cardData) }
+    time("Encoding image") { ImageIO.write(image, "png", new FileOutputStream(out)) }
   }
   private def cmd_renderSVG(): Unit = {
     val (template, cardData) = renderCommon()
-    time("Renderered card") { template.write(new FileWriter(out), cardData) }
+    time("Renderered SVG") { template.write(new FileWriter(out), cardData) }
   }
 
   def main(args: Seq[String]) = try {
