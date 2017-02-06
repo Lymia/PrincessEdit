@@ -94,4 +94,18 @@ public final class LuaUserdata
   {
     this.env = env;
   }
+
+  @Override
+  public int hashCode() {
+    return System.identityHashCode(userdata);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if(obj instanceof LuaUserdata) {
+      LuaUserdata u = (LuaUserdata) obj;
+      return userdata == u.userdata;
+    }
+    return false;
+  }
 }

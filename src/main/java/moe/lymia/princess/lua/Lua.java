@@ -1428,6 +1428,9 @@ protect:
         else              return "false";
       case Lua.TNIL:
         return "nil";
+      case Lua.TUSERDATA:
+        LuaUserdata u = (LuaUserdata) o;
+        return String.format("userdata: 0x%08x", System.identityHashCode(u.getUserdata()));
       default:
         return String.format("%s: 0x%08x", typeName(type), System.identityHashCode(o));
     }

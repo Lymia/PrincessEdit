@@ -125,6 +125,7 @@ have Ravenbrook manage it.
 PrincessEdit distribution
 
 Backwards incompatible changes:
+ - LuaUserdata instances are compared based on the wrapped object.
  - LuaJavaCallback is now an interface.
 
 Bug fixes in this distribution:
