@@ -18,14 +18,29 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+function component.sizedLayout(size)
+    local layout = component.newLayout()
+
+    function layout._prop.set_size(newSize)
+        size = newSize
+    end
+    function layout._prop.get_size()
+        return size
+    end
+
+    return layout
+end
+
 function component.basicLayout(size)
+    local layout = component.sizedLayout(size)
+
     local components = {}
-    local layout = component.newLayout(size)
-    layout.handler = function()
-        return components
+    layout.layoutHandler = function()
+        return components, layout.size
     end
     function layout._ext.addComponent(x, y, component, size)
         table.insert(components, {component = component, x = x, y = y, size = size or component.size})
     end
+
     return layout
 end

@@ -61,7 +61,9 @@ object XMLTemplateData {
     }
 }
 
-class XMLTemplateComponent(sizeParam: Size, data: XMLTemplateData) extends Component(sizeParam) {
+class XMLTemplateComponent(protected val sizeParam: Size, data: XMLTemplateData)
+  extends Component with SizedComponent {
+
   private val componentMap = new mutable.HashMap[String, ComponentReference]
   private val stringMap    = new mutable.HashMap[String, String]
 
@@ -112,7 +114,7 @@ class XMLTemplateComponent(sizeParam: Size, data: XMLTemplateData) extends Compo
                            child = n.child.map(x => processNode(manager, x)))
     case x => x
   }
-  override def renderComponent(manager: ComponentRenderManager) = data.elems.map(x => processNode(manager, x))
+  override def sizedRender(manager: ComponentRenderManager) = data.elems.map(x => processNode(manager, x))
 
   for((k, expectedType) <- data.parameters) expectedType match {
     case ExpectedType.Component =>

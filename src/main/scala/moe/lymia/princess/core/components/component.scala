@@ -29,11 +29,19 @@ import moe.lymia.princess.lua._
 import scala.collection.mutable
 import scala.xml.NodeSeq
 
-case class ComponentProperty(set: Component.SetPropertyFn, get: Component.GetPropertyFn)
-abstract class Component(protected var size: Size, private var noViewport: Boolean = false) {
-  def renderComponent(manager: ComponentRenderManager): NodeSeq
+trait SizedComponent extends Component {
+  protected def sizeParam: Size
+  protected var size: Size = sizeParam
+  property("size")(_ => size, (L, v: Size) => size = v)
 
-  final def getSize: Size = size
+  protected def sizedRender(manager: ComponentRenderManager): NodeSeq
+  def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = (sizedRender(manager), size)
+}
+
+case class ComponentProperty(set: Component.SetPropertyFn, get: Component.GetPropertyFn)
+abstract class Component(private var noViewport: Boolean = false) {
+  def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size)
+
   final def getNoViewport = noViewport
 
   private val properties = new mutable.HashMap[String, ComponentProperty]
@@ -50,23 +58,28 @@ abstract class Component(protected var size: Size, private var noViewport: Boole
     properties.get(k) match {
       case Some(prop) => prop.set(L, v)
       case None       =>
-        if(extProp.contains(k))
-          L.call(L.rawGet(extProp, s"set_$k").as[LuaClosure], 0, v.toLua(L))
-        else L.error(s"no such property '$k'")
+        L.rawGet(extProp, s"set_$k").as[Option[LuaClosure]] match {
+          case Some(fn) => L.call(fn, 0, v.toLua(L))
+          case None     =>
+            L.rawGet(extProp, s"get_$k").as[Option[Any]] match {
+              case Some(_) => L.error(s"property '$k' is immutable")
+              case None    => L.error(s"no such property '$k'")
+            }
+        }
     }
   final def getField(L: LuaState, k: String): LuaObject =
     properties.get(k) match {
       case Some(prop) => prop.get(L)
       case None       =>
-        if(extProp.contains(k))
-          L.call(L.rawGet(extProp, s"get_$k").as[LuaClosure], 1).head
-        else L.rawGet(extTable, k)
+        L.rawGet(extProp, s"get_$k").as[Option[LuaClosure]] match {
+          case Some(fn) => L.call(fn, 1).head
+          case None     => L.rawGet(extTable, k)
+        }
     }
 
   property("_ext"      )(_ => extTable)
   property("_prop"     )(_ => extProp)
-  property("size"      )(_ => size, (L, v : Size) => size = v)
-  property("noViewport")(_ => noViewport, (L, v : Boolean) => noViewport = v)
+  property("noViewport")(_ => noViewport, (L, v: Boolean) => noViewport = v)
 
   def ref: ComponentReference = DirectComponentReference(this)
 }
@@ -98,8 +111,8 @@ final class ComponentRenderManager(val builder: SVGBuilder, val resources: Resou
                               s"Components involved: [${currentlyRendering.values.mkString(", ")}]")
     renderCache.getOrElseUpdate(component, try {
       currentlyRendering.put(component, ref.name)
-      builder.createDefinitionFromFragment(ref.name, component.getSize, component.renderComponent(this),
-                                           component.getNoViewport)
+      val (nodes, size) = component.renderComponent(this)
+      builder.createDefinitionFromFragment(ref.name, size, nodes, component.getNoViewport)
     } finally {
       currentlyRendering.remove(component)
     })

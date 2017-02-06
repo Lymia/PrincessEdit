@@ -59,9 +59,10 @@ trait FromLua[T] {
 }
 trait LuaParameter[T] extends ToLua[T] with FromLua[T]
 
-case class LuaClosure(fn: Any)
+class LuaClosure(val fn: Any)
 object LuaClosure {
-  def apply(cl: ScalaLuaClosure) = cl
+  def apply(cl: ScalaLuaClosure, checkError: Boolean = true) =
+    new LuaClosure(cl.checkError(checkError).fn)
 }
 
 trait LuaErrorMarker
@@ -204,8 +205,8 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   implicit object LuaParameterLuaClosure extends LuaParameter[LuaClosure] {
     override def toLua(t: LuaClosure) = new LuaObject(t.fn)
     override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
-      case v: LuaFunction     => LuaClosure(v)
-      case v: LuaJavaCallback => LuaClosure(v)
+      case v: LuaFunction     => new LuaClosure(v)
+      case v: LuaJavaCallback => new LuaClosure(v)
       case _ => typerror(L, source, v, Lua.TFUNCTION)
     }
   }

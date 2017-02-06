@@ -22,33 +22,41 @@
 
 package moe.lymia.princess.core.components
 
-import moe.lymia.princess.core._
 import moe.lymia.princess.core.renderer.Size
 import moe.lymia.princess.lua._
 
 import scala.xml.NodeSeq
 
-class ResourceComponent(sizeParam: Size, private var resource: String) extends Component(sizeParam) {
-  override def renderComponent(manager: ComponentRenderManager): NodeSeq =
+class ResourceComponent(protected var sizeParam: Size, private var resource: String)
+  extends Component with SizedComponent {
+
+  override def sizedRender(manager: ComponentRenderManager) =
     manager.resources.loadImageResource(resource, size).include(0, 0, size.width, size.height)
   property("resource")(_ => resource, (L, v : String) => resource = v)
 }
 
-class LayoutComponent(private var L_main: LuaState, sizeParam: Size) extends Component(sizeParam) {
-  private var handler = LuaClosure((L: LuaState) => { L.error("no layout function registered"); () })
+class LayoutComponent(private var L_main: LuaState) extends Component {
+  private var prerenderHandler = LuaClosure((L: LuaState) => L.newTable())
+  private var layoutHandler = LuaClosure((L: LuaState) => { L.error("no layout function registered"); () })
 
-  override def renderComponent(manager: ComponentRenderManager): NodeSeq = {
+  override def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = {
     val L = L_main.newThread()
-    val table = L.call(handler, 1, size).head.as[LuaTable]
-    for(i <- 1 to L.objLen(table)) yield {
-      val entry = L.getTable(table, i)
+
+    val componentsToSize = L.call(prerenderHandler, 1).head.as[Seq[ComponentReference]]
+    val sizeMap = componentsToSize.map(x => x -> manager.renderComponent(x).expectedSize).toMap
+
+    val Seq(a, b) = L.call(layoutHandler, 2, sizeMap)
+    val (components, size) = (a.as[LuaTable], b.as[Size])
+    (for(i <- 1 to L.objLen(components)) yield {
+      val entry = L.getTable(components, i)
       val component = L.getTable(entry, "component").as[ComponentReference]
       val x         = L.getTable(entry, "x"        ).as[Double]
       val y         = L.getTable(entry, "y"        ).as[Double]
       val size      = L.getTable(entry, "size"     ).as[Size]
       manager.renderComponent(component).include(x, y, size.width, size.height)
-    }
+    }, size)
   }
 
-  property("handler")(_ => handler, (L, v: LuaClosure) => { L_main = L; handler = v })
+  property("prerenderHandler")(_ => prerenderHandler, (L, v: LuaClosure) => { L_main = L; prerenderHandler = v })
+  property("layoutHandler"   )(_ => layoutHandler   , (L, v: LuaClosure) => { L_main = L; layoutHandler    = v })
 }
