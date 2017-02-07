@@ -79,9 +79,14 @@ class LuaTemplate(name: String, packages: PackageList, context: LuaContext, tabl
   override protected def doRender(builder: SVGBuilder, cardData: LuaTable, isImageRender: Boolean) =
     TemplateException.context(s"rendering template $name") {
       val L = context.L.newThread()
-      val layoutFn = L.getTable(table, "layoutComponents").as[LuaClosure]
+      val prerenderFn = L.getTable(table, "prerender"       ).as[Option[LuaClosure]]
+      val layoutFn    = L.getTable(table, "layoutComponents").as[LuaClosure]
 
-      val reference = L.pcall(layoutFn, 1, cardData) match {
+      val prerenderData = prerenderFn.map(x => L.pcall(x, 1, cardData) match {
+        case Left(Seq(ret)) => ret.as[Any]
+        case Right(e) => throw TemplateException(e)
+      })
+      val reference = L.pcall(layoutFn, 1, cardData, prerenderData) match {
         case Left(Seq(x)) => x.as[ComponentReference]
         case Right(e) => throw TemplateException(e)
       }

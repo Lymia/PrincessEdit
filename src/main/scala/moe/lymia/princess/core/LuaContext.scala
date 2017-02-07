@@ -22,19 +22,35 @@
 
 package moe.lymia.princess.core
 
-import moe.lymia.princess.core.renderer.PhysicalUnit
 import moe.lymia.princess.lua._
 import moe.lymia.princess.util.IOUtils
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 
-final class LuaContext(packages: PackageList) {
-  val L = LuaState.makeSafeContext(packages.filePaths : _*)
-  components.ComponentLib(packages).open(L)
-  TemplateLib.open(L)
+private final case class ModuleLib(context: LuaContext, packages: PackageList) {
+  def open(L: LuaState) = {
+    val module = L.newTable()
 
-  L.registerGlobal("getModule", (name: String) => getLuaExport(name))
+    L.register(module, "load", (s: String) => context.getLuaExport(s))
+    L.register(module, "getExportList", () => packages.getExportKeys.toSeq)
+    L.register(module, "getExportsRaw", (s: String) => packages.getExports(s).map{ e =>
+      val t = L.newTable()
+      L.rawSet(t, "path", e.path)
+      L.rawSet(t, "types", e.types)
+      L.rawSet(t, "metadata", e.metadata)
+      t
+    })
+
+    L.setGlobal("module", module)
+  }
+}
+
+final class LuaContext(packages: PackageList) {
+  val L = LuaState.makeSafeContext()
+  components.ComponentLib(packages).open(L)
+  ModuleLib(this, packages).open(L)
+  TemplateLib.open(L)
 
   private def loadLuaPredef(path: String) = TemplateException.context(s"loading Lua predef $path") {
     val fullPath = packages.forceResolve(path)
@@ -48,7 +64,7 @@ final class LuaContext(packages: PackageList) {
   private def loadPredefs(exportType: String) =
     for(e <- packages.getExports(exportType).sortBy(_.metadata.get("priority").map(_.head.toInt).getOrElse(0)))
       loadLuaPredef(e.path)
-  loadPredefs(StaticExportIDs.Predef.Global)
+  loadPredefs(StaticExportIDs.Predef.System)
   loadPredefs(StaticExportIDs.Predef(packages.gameId))
 
   private def copyTable(L: LuaState, tbl: LuaTable, ignore: String*): LuaTable = {
@@ -105,9 +121,10 @@ final class LuaContext(packages: PackageList) {
       case Right(e) => throw TemplateException(e)
     }
     L.setFenv(chunk, wrapper)
-    L.pcall(chunk, 0).right.foreach(e => throw TemplateException(e))
-
-    env
+    L.pcall(chunk, 1).fold(identity, e => throw TemplateException(e)).head.as[Option[LuaTable]] match {
+      case Some(x) => x
+      case None    => env
+    }
   }
   private val exportCache = new mutable.HashMap[String, LuaTable]
   def getLuaExport(path: String) = exportCache.getOrElseUpdate(path, loadLuaExport(path))

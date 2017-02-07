@@ -22,6 +22,8 @@
 
 package moe.lymia.princess.core.components
 
+import java.awt.Color
+
 import moe.lymia.princess.core._
 import moe.lymia.princess.core.renderer._
 import moe.lymia.princess.lua._
@@ -58,6 +60,33 @@ trait LuaComponentImplicits {
       })
     }
   }
+  implicit object LuaAttributedStringBuffer extends LuaUserdataType[AttributedStringBuffer] {
+    metatable { (L, mt) =>
+      L.register(mt, "__index", (attributed: AttributedStringBuffer, k: String) =>
+        k match {
+          case "italic"   => attributed.italics
+          case "bold"     => attributed.bold
+          case "fontPath" => attributed.fontPath
+          case "fontSize" => attributed.fontSize
+          case "append"   => LuaClosure((str: String) => { attributed.append(str); () })
+          case n => throw TemplateException(s"no such field '$n'")
+        }
+      )
+      L.register(mt, "_newindex", (L: LuaState, attributed: AttributedStringBuffer, k: String, o: Any) => {
+        k match {
+          case "italic"   => attributed.italics  = o.fromLua[Boolean](L)
+          case "bold"     => attributed.bold     = o.fromLua[Boolean](L)
+          case "fontPath" => attributed.fontPath = o.fromLua[String ](L)
+          case "fontSize" => attributed.fontSize = o.fromLua[Float  ](L)
+          case "append"   => throw TemplateException("property 'append' is immutable")
+          case n => throw TemplateException(s"no such field '$n'")
+        }
+        ()
+      })
+    }
+  }
+  implicit object LuaAttributedStringData extends LuaUserdataType[AttributedStringData]
+
   implicit object LuaParameterSize extends LuaParameter[Size] {
     override def toLua(size: Size) = new LuaObject(LuaExecWrapper(L => {
       val t = L.newTable()
@@ -67,12 +96,24 @@ trait LuaComponentImplicits {
     }))
     override def fromLua(L: Lua, v: Any, source: => Option[String]): Size = v match {
       case t: LuaTable =>
-        def checkTableDouble(i: Int) = Lua.rawGet(t, i.toDouble) match {
-          case x: java.lang.Double => x
-          case _ => typerror(L, source, v, "Size")
-        }
-        Size(checkTableDouble(1), checkTableDouble(2))
+        val Ls = new LuaState(L)
+        Size(Ls.getTable(t, 1).as[Double], Ls.getTable(t, 2).as[Double])
       case _ => typerror(L, source, v, "Size")
+    }
+  }
+  implicit object LuaParameterColor extends LuaParameter[Color] {
+    override def toLua(color: Color) = new LuaObject(LuaExecWrapper(L => {
+      val t = L.newTable()
+      L.rawSet(t, 1, color.getRed)
+      L.rawSet(t, 2, color.getGreen)
+      L.rawSet(t, 3, color.getBlue)
+      t
+    }))
+    override def fromLua(L: Lua, v: Any, source: => Option[String]): Color = v match {
+      case t: LuaTable =>
+        val Ls = new LuaState(L)
+        new Color(Ls.getTable(t, 1).as[Int], Ls.getTable(t, 2).as[Int], Ls.getTable(t, 3).as[Int])
+      case _ => typerror(L, source, v, "Color")
     }
   }
 }
@@ -83,14 +124,15 @@ case class ComponentLib(packages: PackageList) {
     xmlTemplateDataCache.getOrElseUpdate(string, XMLTemplateData.loadTemplate(packages, string))
 
   def open(L: LuaState) = {
+    L.registerGlobal("ComponentManager", () => new ComponentManager())
+
     val component = L.newTable()
 
-    L.register(component, "newManager", () => new ComponentManager())
-    L.register(component, "fromTemplate", (s: String, size: Size) =>
+    L.register(component, "Template", (s: String, size: Size) =>
       new XMLTemplateComponent(size, getXMLTemplateData(s)).ref)
-    L.register(component, "fromResource", (s: String, size: Size) =>
+    L.register(component, "Resource", (s: String, size: Size) =>
       new ResourceComponent(size, s).ref)
-    L.register(component, "newLayout", (L: LuaState) =>
+    L.register(component, "BaseLayout", (L: LuaState) =>
       new LayoutComponent(L).ref)
 
     L.setGlobal("component", component)

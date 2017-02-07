@@ -18,29 +18,8 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-function component.BaseSizedLayout(size)
-    local layout = component.BaseLayout()
+util = {}
 
-    function layout._prop.set_size(newSize)
-        size = newSize
-    end
-    function layout._prop.get_size()
-        return size
-    end
-
-    return layout
-end
-
-function component.BasicLayout(size)
-    local layout = component.BaseSizedLayout(size)
-
-    local components = {}
-    layout.layoutHandler = function()
-        return components, layout.size
-    end
-    function layout._ext.addComponent(x, y, component, size)
-        table.insert(components, {component = component, x = x, y = y, size = size or component.size})
-    end
-
-    return layout
+function util.colorToHex(color)
+    return string.format("#%02x%02x%02x", color[1], color[2], color[3])
 end

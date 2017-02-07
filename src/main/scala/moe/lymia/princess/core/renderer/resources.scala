@@ -137,7 +137,7 @@ final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, package
   val includedFontFaces = new mutable.HashSet[String]
   val fontFaceCache     = new mutable.HashMap[String, Option[Font]]
   def loadFont(name: String, size: Float) =
-    fontFaceCache.getOrElseUpdate(name, {
+    builder.settings.scaleFont(fontFaceCache.getOrElseUpdate(name, {
       tryFindFont(name).map { t =>
         val (font, path) = t
         val family = font.getFamily()
@@ -152,7 +152,7 @@ final class ResourceManager(builder: SVGBuilder, loader: ResourceLoader, package
            """.stripMargin)
         font
       }
-    }).getOrElse(throw TemplateException(s"font '$name' not found"))
+    }).getOrElse(throw TemplateException(s"font '$name' not found")), size)
 }
 object ResourceManager {
   private val imageFormats = Seq(

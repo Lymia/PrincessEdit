@@ -191,7 +191,7 @@ final case class LuaState(L: Lua) extends AnyVal {
 object LuaState {
   private val captureFunctionReturn = LuaRegistryEntry[LuaClosure]()
 
-  def makeBasicContext() = {
+  def makeSafeContext() = {
     val L = new Lua()
 
     BaseLib.open(L)
@@ -199,13 +199,8 @@ object LuaState {
     OSLib.open(L)
     StringLib.open(L)
     TableLib.open(L)
+    L.setGlobal("loadfile", LuaNil)
 
     new LuaState(L)
-  }
-  def makeSafeContext(paths: Path*) = {
-    val L = makeBasicContext()
-    new SafePackageLib(paths).open(L)
-    L.setGlobal("loadfile", LuaNil)
-    L
   }
 }

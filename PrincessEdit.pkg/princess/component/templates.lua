@@ -18,29 +18,35 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-function component.mask(maskComponent, dataComponent)
-    local mask = component.fromTemplate("princess/component/mask.xml", dataComponent.size)
+function component.Mask(maskComponent, dataComponent)
+    local mask = component.Template("princess/component/mask.xml", dataComponent.size)
     mask.target = dataComponent
     mask.mask   = maskComponent
     return mask
 end
 
-function component.clip(maskComponent, dataComponent)
-    local mask = component.fromTemplate("princess/component/clip.xml", dataComponent.size)
+function component.Clip(maskComponent, dataComponent)
+    local mask = component.Template("princess/component/clip.xml", dataComponent.size)
     mask.target = dataComponent
     mask.mask   = maskComponent
     return mask
 end
 
-function component.fill(size, color)
-    local mask = component.fromTemplate("princess/component/fillRect.xml", size)
-    mask.color = color
-    return mask
+function component.Fill(size, color)
+    local fill = component.Template("princess/component/fillRect.xml", size)
+    function fill._prop.set_color(color)
+        fill._ulColor = util.colorToHex(color)
+    end
+    function fill._prop.get_color()
+        return fill._ulColor
+    end
+    fill.color = color
+    return fill
 end
 
-function component.fillShape(maskComponent, color)
-    local fill = component.fill(maskComponent.size, color)
-    local clip = component.clip(maskComponent, fill)
+function component.FillShape(maskComponent, color)
+    local fill = component.Fill(maskComponent.size, color)
+    local clip = component.Clip(maskComponent, fill)
     function clip._prop.set_color(color)
         fill.color = color
     end

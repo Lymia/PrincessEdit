@@ -72,7 +72,7 @@ case class Dependency(name: String, version: Option[DepVersion]) {
   override def toString = s"$name${version.fold("")(x => s" v$x")}"
 }
 
-case class Export(path: String, metadata: Map[String, Seq[String]])
+case class Export(path: String, types: Seq[String], metadata: Map[String, Seq[String]])
 
 case class Package(name: String, version: Version, gameIds: Set[String], rootPath: Path,
                    dependencies: Seq[Dependency], exports: Map[String, Seq[Export]])
@@ -91,7 +91,7 @@ object Package {
     val exportMap = new mutable.HashMap[String, mutable.ArrayBuffer[Export]]
     for((path, metadata) <- exports if metadata.nonEmpty) {
       val types = metadata.getOrElse("type", throw TemplateException(s"No type in export $path"))
-      val export = Export(path, metadata)
+      val export = Export(path, types, metadata)
       for(t <- types) exportMap.getOrElseUpdate(t, new mutable.ArrayBuffer[Export]).append(export)
     }
 
@@ -129,7 +129,7 @@ object Package {
 case class PackageList(gameId: String, packages: Seq[Package]) {
   val filePaths = packages.map(_.rootPath)
 
-  private val allExports: Map[String, Seq[Export]] = packages.flatMap(_.exports.keySet).toSet.map( (key: String) => {
+  private val exportMap: Map[String, Seq[Export]] = packages.flatMap(_.exports.keySet).toSet.map( (key: String) => {
     val existingExports = new mutable.HashSet[String]
     key -> packages.flatMap(pkg => {
       val exports = pkg.exports.getOrElse(key, Seq())
@@ -140,9 +140,11 @@ case class PackageList(gameId: String, packages: Seq[Package]) {
       exports
     })
   }).toMap
+  private val allExports = exportMap.values.flatten.toSet.toSeq
 
-  def getExportKeys = allExports.keySet
-  def getExports(key: String) = allExports.getOrElse(key, Seq())
+  def getExportKeys = exportMap.keySet
+  def getExports(key: String) =
+    if(key == "*") allExports else exportMap.getOrElse(key, Seq())
   def resolve(path: String) = filePaths.view.map(x => IOUtils.paranoidResolve(x, path)).find(_.isDefined).flatten
   def forceResolve(path: String) =
     resolve(path).getOrElse(throw TemplateException(s"File '$path' not found."))

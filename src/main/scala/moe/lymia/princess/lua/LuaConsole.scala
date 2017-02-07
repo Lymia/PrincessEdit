@@ -22,11 +22,9 @@
 
 package moe.lymia.princess.lua
 
-import java.nio.file.Paths
-
 object LuaConsole {
   def startConsole() {
-    val L = LuaState.makeSafeContext(Paths.get("resources"), Paths.get("."))
+    val L = LuaState.makeSafeContext()
 
     var continue = true
 

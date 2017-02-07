@@ -18,29 +18,31 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-function component.BaseSizedLayout(size)
-    local layout = component.BaseLayout()
-
-    function layout._prop.set_size(newSize)
-        size = newSize
-    end
-    function layout._prop.get_size()
-        return size
-    end
-
-    return layout
+function require(s)
+    return module.load(s:gsub("%.", "/")..".lua")
 end
 
-function component.BasicLayout(size)
-    local layout = component.BaseSizedLayout(size)
+function module.getExports(type)
+    local list = module.getExportsRaw(type)
 
-    local components = {}
-    layout.layoutHandler = function()
-        return components, layout.size
-    end
-    function layout._ext.addComponent(x, y, component, size)
-        table.insert(components, {component = component, x = x, y = y, size = size or component.size})
+    function list.load()
+        module.load(list.path)
     end
 
-    return layout
+    -- We wrap the methods in a metadata so they don't show up in pairs() iteration
+    local metadata = list.metadata
+    local mt = { __index = {} }
+    function mt.__index.getSingle(k)
+        local v = metadata[k]
+        if not v then return nil end
+        if #v > 1 then return nil end
+        return v[1]
+    end
+    function mt.__index.getMulti(k)
+        return metadata[k] or {}
+    end
+    setmetatable(metadata, mt)
+
+    return list
 end
+
