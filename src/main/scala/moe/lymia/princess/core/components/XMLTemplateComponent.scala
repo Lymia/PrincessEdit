@@ -25,7 +25,7 @@ package moe.lymia.princess.core.components
 import java.nio.file.Files
 
 import moe.lymia.princess.core._
-import moe.lymia.princess.core.renderer.Size
+import moe.lymia.princess.core.svg.Size
 import moe.lymia.princess.lua._
 
 import scala.collection.mutable

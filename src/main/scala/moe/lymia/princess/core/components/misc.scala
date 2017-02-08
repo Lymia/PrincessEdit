@@ -22,8 +22,12 @@
 
 package moe.lymia.princess.core.components
 
-import moe.lymia.princess.core.renderer.Size
+import java.awt.font.TextLayout
+
+import moe.lymia.princess.core.TemplateException
+import moe.lymia.princess.core.svg.Size
 import moe.lymia.princess.lua._
+import org.apache.batik.svggen.SVGGraphics2D
 
 import scala.xml.NodeSeq
 
@@ -42,10 +46,16 @@ class LayoutComponent(private var L_main: LuaState) extends Component {
   override def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = {
     val L = L_main.newThread()
 
-    val componentsToSize = L.call(prerenderHandler, 1).head.as[Seq[ComponentReference]]
+    val componentsToSize = L.pcall(prerenderHandler, 1) match {
+      case Left (x) => x.head.as[Seq[ComponentReference]]
+      case Right(e) => throw TemplateException(e)
+    }
     val sizeMap = componentsToSize.map(x => x -> manager.renderComponent(x).expectedSize).toMap
 
-    val Seq(a, b) = L.call(layoutHandler, 2, sizeMap)
+    val Seq(a, b) = L.pcall(layoutHandler, 2, sizeMap) match {
+      case Left (x) => x
+      case Right(e) => throw TemplateException(e)
+    }
     val (components, size) = (a.as[LuaTable], b.as[Size])
     (for(i <- 1 to L.objLen(components)) yield {
       val entry = L.getTable(components, i)
@@ -59,4 +69,14 @@ class LayoutComponent(private var L_main: LuaState) extends Component {
 
   property("prerenderHandler")(_ => prerenderHandler, (L, v: LuaClosure) => { L_main = L; prerenderHandler = v })
   property("layoutHandler"   )(_ => layoutHandler   , (L, v: LuaClosure) => { L_main = L; layoutHandler    = v })
+}
+
+class SimpleTextComponent(private var text: FormattedString) extends GraphicsComponent {
+  override def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D): Size = {
+    val attributed = text.toAttributedStrings(manager.resources).head
+    val layout = new TextLayout(attributed.getIterator, graphics.getFontRenderContext)
+    val bounds = layout.getBounds
+    layout.draw(graphics, (0 - bounds.getMinX).toFloat, (0f - bounds.getMinY).toFloat)
+    Size(bounds.getWidth, bounds.getHeight)
+  }
 }

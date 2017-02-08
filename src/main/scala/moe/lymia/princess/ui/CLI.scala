@@ -26,7 +26,7 @@ import java.io.{FileOutputStream, FileWriter}
 import javax.imageio.ImageIO
 
 import moe.lymia.princess.core.PackageManager
-import moe.lymia.princess.core.renderer.RenderSettings
+import moe.lymia.princess.core.svg.RenderSettings
 import moe.lymia.princess.lua._
 
 private case class CLIException(message: String) extends Exception

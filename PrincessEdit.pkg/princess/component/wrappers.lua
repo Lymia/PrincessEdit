@@ -18,19 +18,10 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-util = {}
-
-function util.colorToHex(color)
-    return string.format("#%02x%02x%02x", color[1], color[2], color[3])
-end
-
-function util.strToText(text, font, size, color, bold, italic)
-    local buffer = FormattedStringBuffer()
-    if color then buffer.color = color end
-    buffer.bold = bold
-    buffer.italic = italic
-    buffer.fontPath = font
-    buffer.fontSize = size
-    buffer.append(text)
-    return buffer.getFormattedString()
+local SimpleText_super = component.SimpleText
+function component.SimpleText(str, fontPath, fontSize, color, bold, italic)
+    if type(str) == "string" then
+        str = util.strToText(str, fontPath, fontSize, color, bold, italic)
+    end
+    return SimpleText_super(str)
 end

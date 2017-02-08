@@ -113,7 +113,7 @@ object Package {
   private def loadPackageFromZip(path: Path) = TemplateException.context(s"loading package from zip $path") {
     val fs = FileSystems.newFileSystem(path, getClass.getClassLoader)
     val root = fs.getPath("/")
-    val fileList = Files.list(root).iterator().asScala.toList
+    val fileList = IOUtils.list(root)
     loadPackageFromPath(if(!Files.exists(root.resolve("package.ini")) &&
                            fileList.length == 1 && Files.isDirectory(fileList.head)) fileList.head
                         else root)
@@ -219,5 +219,5 @@ object PackageResolver {
   }
   def loadPackageDirectory(packages: Path, extraDirs: Path*) =
     PackageResolver(
-      (for(x <- Files.list(packages).iterator().asScala ++ extraDirs) yield Package.loadPackage(x)).toSeq)
+      (for(x <- IOUtils.list(packages) ++ extraDirs) yield Package.loadPackage(x)).toSeq)
 }

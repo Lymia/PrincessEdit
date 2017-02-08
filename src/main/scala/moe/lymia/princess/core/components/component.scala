@@ -23,20 +23,12 @@
 package moe.lymia.princess.core.components
 
 import moe.lymia.princess.core._
-import moe.lymia.princess.core.renderer._
+import moe.lymia.princess.core.svg._
 import moe.lymia.princess.lua._
+import org.apache.batik.svggen.SVGGraphics2D
 
 import scala.collection.mutable
 import scala.xml.NodeSeq
-
-trait SizedComponent extends Component {
-  protected def sizeParam: Size
-  protected var size: Size = sizeParam
-  property("size")(_ => size, (L, v: Size) => size = v)
-
-  protected def sizedRender(manager: ComponentRenderManager): NodeSeq
-  def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = (sizedRender(manager), size)
-}
 
 case class ComponentProperty(set: Component.SetPropertyFn, get: Component.GetPropertyFn)
 abstract class Component(private var noViewport: Boolean = false) {
@@ -86,6 +78,31 @@ abstract class Component(private var noViewport: Boolean = false) {
 object Component {
   type SetPropertyFn = (LuaState, Any) => Unit
   type GetPropertyFn = (LuaState) => LuaObject
+}
+
+abstract class GraphicsComponent(noViewportParam: Boolean = false) extends Component(noViewportParam) {
+  def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D): Size
+  override def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = {
+    val ref = manager.builder.createDefinitionFromGraphics("graphicsRender")(g => renderComponent(manager, g))
+    (ref.include(0, 0), ref.expectedSize)
+  }
+}
+
+trait SizedBase extends Component {
+  protected def sizeParam: Size
+  protected var size: Size = sizeParam
+  property("size")(_ => size, (L, v: Size) => size = v)
+}
+trait SizedComponent extends SizedBase {
+  protected def sizedRender(manager: ComponentRenderManager): NodeSeq
+  def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = (sizedRender(manager), size)
+}
+trait SizedGraphicsComponent extends SizedBase {
+  protected def sizedRender(manager: ComponentRenderManager, graphics: SVGGraphics2D): NodeSeq
+  def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D): Size = {
+    sizedRender(manager, graphics)
+    size
+  }
 }
 
 sealed trait ComponentReference {

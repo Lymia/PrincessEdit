@@ -25,7 +25,7 @@ package moe.lymia.princess.core
 import java.io.Writer
 
 import moe.lymia.princess.core.components._
-import moe.lymia.princess.core.renderer._
+import moe.lymia.princess.core.svg._
 import moe.lymia.princess.lua._
 
 case class PhysicalScale(unPerViewport: Double, unit: PhysicalUnit)
@@ -91,7 +91,8 @@ class LuaTemplate(name: String, packages: PackageList, context: LuaContext, tabl
         case Right(e) => throw TemplateException(e)
       }
 
-      val resources = new ResourceManager(builder, if(isImageRender) RasterizeResourceLoader else ExportResourceLoader,
+      val resources = new ResourceManager(builder, renderSettings,
+                                          if(isImageRender) RasterizeResourceLoader else ExportResourceLoader,
                                           packages)
       val renderManager = new ComponentRenderManager(builder, resources)
       renderManager.renderComponent(reference)

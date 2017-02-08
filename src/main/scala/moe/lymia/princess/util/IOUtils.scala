@@ -77,6 +77,15 @@ object IOUtils {
       x.keySet.asScala.toSeq.map(key => key -> x.getAll(key, classOf[Array[String]]).toSeq).toMap)
   }
 
+  def list(path: Path) = {
+    val stream = Files.list(path)
+    try {
+      stream.iterator().asScala.toList
+    } finally {
+      stream.close()
+    }
+  }
+
   private val validFilenameRegex = Pattern.compile("^[- 0-9a-zA-Z_./]+$")
   def paranoidResolve(basePath: Path, path: String, dir: Boolean = false): Option[Path] =
     if(!validFilenameRegex.matcher(path).matches()) None
@@ -88,8 +97,7 @@ object IOUtils {
         var error = false
         for(elem <- path.split("/")) if (!error && elem != ".")
           if(Files.exists(currentPath) && Files.isDirectory(currentPath) &&
-             Files.list(currentPath).iterator().asScala.exists(x =>
-               x.getFileName.toString.replace("/", "") == elem))
+             list(currentPath).exists(x => x.getFileName.toString.replace("/", "") == elem))
             currentPath = currentPath.resolve(elem)
           else error = true
         if(error || !Files.exists(currentPath) ||

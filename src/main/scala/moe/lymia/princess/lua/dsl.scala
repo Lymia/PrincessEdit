@@ -35,7 +35,7 @@ class LuaUserdataType[T : ClassTag] {
   final def getMetatable(L: LuaState) = {
     val table = new LuaTable()
     L.register(table, "__tostring" ,
-               (L: Lua, o: Any) => s"${tag.toString()}@0x${"%08x" format System.identityHashCode(o)}")
+               (L: Lua, o: Any) => s"${tag.toString()}: 0x${"%08x" format System.identityHashCode(o)}")
     L.rawSet(table, "__metatable", s"metatable for ${tag.toString()}")
     metatableInitializers.foreach(_(L, table))
     table
@@ -61,8 +61,7 @@ trait LuaParameter[T] extends ToLua[T] with FromLua[T]
 
 class LuaClosure(val fn: Any)
 object LuaClosure {
-  def apply(cl: ScalaLuaClosure, checkError: Boolean = true) =
-    new LuaClosure(cl.checkError(checkError).fn)
+  def apply(cl: ScalaLuaClosure, checkError: Boolean = true) = new LuaClosure(cl.checkError(checkError).fn)
 }
 
 trait LuaErrorMarker
@@ -215,15 +214,15 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   implicit def toLuaSeq[V : ToLua] = new ToLua[Seq[V]] {
     override def toLua(s: Seq[V]) = new LuaObject(LuaExecWrapper { L =>
       val t = new LuaTable()
-      for((v, k) <- s.zipWithIndex) t.putnum(k + 1, implicitly[ToLua[V]].toLua(v))
+      for((v, k) <- s.zipWithIndex) t.putnum(k + 1, implicitly[ToLua[V]].toLua(v).toLua(L))
       t
     })
   }
   implicit def fromLuaSeq[V : FromLua] = new FromLua[Seq[V]] {
     override def fromLua(L: Lua, v: Any, source: => Option[String]): Seq[V] = v match {
       case table: LuaTable =>
-        for(k <- table.array.take(table.getn())) yield
-          implicitly[FromLua[V]].fromLua(L, table.getlua(k), source.map(x => s"$x in table value"))
+        for(k <- 1 to table.getn()) yield
+          implicitly[FromLua[V]].fromLua(L, table.getnum(k), source.map(x => s"$x in table value"))
       case _ => typerror(L, source, v, Lua.TTABLE)
     }
   }
@@ -231,7 +230,7 @@ trait LuaImplicits extends LuaGeneratedImplicits {
   implicit def toLuaMap[K : ToLua, V : ToLua] = new ToLua[Map[K, V]] {
     override def toLua(m: Map[K, V]) = new LuaObject(LuaExecWrapper { L =>
       val t = new LuaTable()
-      for((k, v) <- m) t.putlua(L.L, implicitly[ToLua[K]].toLua(k), implicitly[ToLua[V]].toLua(v))
+      for((k, v) <- m) t.putlua(L.L, implicitly[ToLua[K]].toLua(k).toLua(L), implicitly[ToLua[V]].toLua(v).toLua(L))
       t
     })
   }

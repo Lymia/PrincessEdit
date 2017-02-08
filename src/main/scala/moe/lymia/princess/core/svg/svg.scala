@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.renderer
+package moe.lymia.princess.core.svg
 
 import java.awt.Font
 import java.awt.image.BufferedImage
@@ -31,7 +31,7 @@ import moe.lymia.princess.core._
 import moe.lymia.princess.util.IOUtils
 import org.apache.batik.anim.dom.SVGDOMImplementation
 import org.apache.batik.dom.GenericDOMImplementation
-import org.apache.batik.svggen.SVGGraphics2D
+import org.apache.batik.svggen.{SVGGeneratorContext, SVGGraphics2D}
 import org.apache.batik.transcoder._
 import org.apache.batik.transcoder.image.ImageTranscoder
 import org.apache.batik.util.SVGConstants
@@ -41,7 +41,9 @@ import scala.collection.mutable
 import scala.xml.dtd.{DocType, PublicID}
 import scala.xml.{XML => _, _}
 
-final class SVGGraphics2DExtension(document: Document, settings: RenderSettings) extends SVGGraphics2D(document) {
+final class SVGGraphics2DExtension(document: Document, settings: RenderSettings)
+  extends SVGGraphics2D(SVGGeneratorContext.createDefault(document), true) {
+
   override def setFont(f: Font) = super.setFont(settings.scaleFont(f, f.getSize2D))
 }
 final class SVGGraphicsRenderer(settings: RenderSettings) {
@@ -70,7 +72,7 @@ final case class SVGDefinitionReference(name: String, expectedSize: Size) {
                          s"scale(${width/expectedSize.width} ${height/expectedSize.height}) "+
                          s"translate($x $y)"}/>
 }
-final class SVGBuilder(val settings: RenderSettings) {
+final class SVGBuilder(settings: RenderSettings) {
   private val id = GenID.makeId()
   private var layerId = 0
   private val definitions = new mutable.ArrayBuffer[NodeSeq]
@@ -98,6 +100,11 @@ final class SVGBuilder(val settings: RenderSettings) {
     val renderer = new SVGGraphicsRenderer(settings)
     fn(renderer.gfx)
     createDefinitionFromContainer(name, expectedSize, renderer.renderXML())
+  }
+  def createDefinitionFromGraphics(name: String)(fn: SVGGraphics2D => Size) = {
+    val renderer = new SVGGraphicsRenderer(settings)
+    val size = fn(renderer.gfx)
+    createDefinitionFromContainer(name, size, renderer.renderXML())
   }
 
   private val stylesheetDefs = new mutable.ArrayBuffer[String]

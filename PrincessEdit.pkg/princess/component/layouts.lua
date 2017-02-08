@@ -35,8 +35,24 @@ function component.BasicLayout(size)
     local layout = component.BaseSizedLayout(size)
 
     local components = {}
-    layout.layoutHandler = function()
-        return components, layout.size
+    layout.prerenderHandler = function()
+        local prerender = {}
+        for _, component in ipairs(components) do
+            if not component.size then
+                table.insert(prerender, component.component)
+            end
+        end
+        return prerender
+    end
+    layout.layoutHandler = function(prerender)
+        local ret = {}
+        for _, component in ipairs(components) do
+            local copy = {}
+            for k, v in pairs(component) do copy[k] = v end
+            copy.size = copy.size or prerender[component.component]
+            table.insert(ret, copy)
+        end
+        return ret, layout.size
     end
     function layout._ext.addComponent(x, y, component, size)
         table.insert(components, {component = component, x = x, y = y, size = size or component.size})

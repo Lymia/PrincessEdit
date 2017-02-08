@@ -25,21 +25,22 @@ package moe.lymia.princess.core.components
 import java.awt.font.TextAttribute
 import java.awt.{Color, Font}
 
-import moe.lymia.princess.core.renderer._
+import moe.lymia.princess.core.svg._
 import org.apache.batik.bridge.SVGTextElementBridge
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-case class LuaTextAttributes(fontPath: String, fontSize: Float, attribute: Int, color: Color) {
+case class TextAttributes(fontPath: String, fontSize: Float, attribute: Int, color: Color) {
   def toAttributeMap(resources: ResourceManager) = Map(
     TextAttribute.FONT       ->
       resources.loadFont(fontPath, fontSize).deriveFont(attribute),
     TextAttribute.FOREGROUND -> color
   )
 }
-class AttributedStringBuffer {
-  private val underlying = new mutable.ArrayBuffer[(String, LuaTextAttributes)]
+class FormattedStringBuffer {
+  private val data   = new mutable.ArrayBuffer[Seq[(String, TextAttributes)]]
+  private val buffer = new mutable.ArrayBuffer[(String, TextAttributes)]
 
   var italics : Boolean = false
   var bold    : Boolean = false
@@ -47,20 +48,29 @@ class AttributedStringBuffer {
   var fontPath: String  = _
   var fontSize: Float   = 12f
 
-  def append(s: String) =
-    underlying.append((s, LuaTextAttributes(
-      fontPath, fontSize, (if(italics) Font.ITALIC else 0) | (if(bold) Font.BOLD else 0), color)))
-  def finish() = new AttributedStringData(underlying.clone())
+  def append(s: String) = {
+    val attributes =
+      TextAttributes(fontPath, fontSize, (if(italics) Font.ITALIC else 0) | (if(bold) Font.BOLD else 0), color)
+    if(buffer.isEmpty || buffer.last._2 != attributes) buffer.append((s,attributes))
+    else                                               buffer.append((s,buffer.last._2))
+  }
+  def paragraphBreak() = {
+    data.append(buffer.clone())
+    buffer.clear()
+  }
+  def finish() = new FormattedString(data :+ buffer)
 }
 
-private object AttributedStringData extends SVGTextElementBridge {
-  private final class BufferType extends SVGTextElementBridge.AttributedStringBuffer
+private object FormattedString extends SVGTextElementBridge {
+  private final class AttributedStringBuffer extends SVGTextElementBridge.AttributedStringBuffer
 }
-class AttributedStringData(underlying: Seq[(String, LuaTextAttributes)]) {
-  override def toString = underlying.map(_._1).mkString("")
-  def toAttributedString(resources: ResourceManager) = {
-    val buffer = new AttributedStringData.BufferType
-    for(s <- underlying) buffer.append(s._1, s._2.toAttributeMap(resources).asJava)
-    buffer.toAttributedString
+class FormattedString(data: Seq[Seq[(String, TextAttributes)]]) {
+  override def toString = data.map(_.map(_._1).mkString("")).mkString("\n")
+  def toAttributedStrings(resources: ResourceManager) = {
+    data.map { paragraph =>
+      val buffer = new FormattedString.AttributedStringBuffer
+      for(s <- paragraph) buffer.append(s._1, s._2.toAttributeMap(resources).asJava)
+      buffer.toAttributedString
+    }
   }
 }

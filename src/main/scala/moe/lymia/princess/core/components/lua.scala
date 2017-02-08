@@ -25,68 +25,12 @@ package moe.lymia.princess.core.components
 import java.awt.Color
 
 import moe.lymia.princess.core._
-import moe.lymia.princess.core.renderer._
+import moe.lymia.princess.core.svg._
 import moe.lymia.princess.lua._
 
 import scala.collection.mutable
 
 trait LuaComponentImplicits {
-  implicit object LuaComponentReference extends LuaUserdataType[ComponentReference] {
-    metatable { (L, mt) =>
-      L.register(mt, "__index"   , (L: LuaState, ref: ComponentReference, k: String) =>
-        k match {
-          case "deref" => LuaRet(ref.deref)
-          case n => ref.component.getField(L, k).toLua(L)
-        }
-      )
-      L.register(mt, "__newindex", (L: LuaState, ref: ComponentReference, k: String, o: Any) => {
-        k match {
-          case "deref" => L.error("field 'deref' is immutable")
-          case n => ref.component.setField(L, k, o)
-        }
-        ()
-      })
-      L.register(mt, "__tostring", (ref: ComponentReference) => LuaRet(ref.name))
-    }
-  }
-  implicit object LuaComponentManager extends LuaUserdataType[ComponentManager] {
-    metatable { (L, mt) =>
-      L.register(mt, "__index", (manager: ComponentManager, k: String) =>
-        LuaRet(manager.getComponentReference(k))
-      )
-      L.register(mt, "__newindex", (manager: ComponentManager, k: String, v: ComponentReference) => {
-        manager.setComponent(k, v.component)
-        ()
-      })
-    }
-  }
-  implicit object LuaAttributedStringBuffer extends LuaUserdataType[AttributedStringBuffer] {
-    metatable { (L, mt) =>
-      L.register(mt, "__index", (attributed: AttributedStringBuffer, k: String) =>
-        k match {
-          case "italic"   => attributed.italics
-          case "bold"     => attributed.bold
-          case "fontPath" => attributed.fontPath
-          case "fontSize" => attributed.fontSize
-          case "append"   => LuaClosure((str: String) => { attributed.append(str); () })
-          case n => throw TemplateException(s"no such field '$n'")
-        }
-      )
-      L.register(mt, "_newindex", (L: LuaState, attributed: AttributedStringBuffer, k: String, o: Any) => {
-        k match {
-          case "italic"   => attributed.italics  = o.fromLua[Boolean](L)
-          case "bold"     => attributed.bold     = o.fromLua[Boolean](L)
-          case "fontPath" => attributed.fontPath = o.fromLua[String ](L)
-          case "fontSize" => attributed.fontSize = o.fromLua[Float  ](L)
-          case "append"   => throw TemplateException("property 'append' is immutable")
-          case n => throw TemplateException(s"no such field '$n'")
-        }
-        ()
-      })
-    }
-  }
-  implicit object LuaAttributedStringData extends LuaUserdataType[AttributedStringData]
-
   implicit object LuaParameterSize extends LuaParameter[Size] {
     override def toLua(size: Size) = new LuaObject(LuaExecWrapper(L => {
       val t = L.newTable()
@@ -116,6 +60,68 @@ trait LuaComponentImplicits {
       case _ => typerror(L, source, v, "Color")
     }
   }
+
+  implicit object LuaComponentReference extends LuaUserdataType[ComponentReference] {
+    metatable { (L, mt) =>
+      L.register(mt, "__index"   , (L: LuaState, ref: ComponentReference, k: String) =>
+        k match {
+          case "deref" => LuaRet(ref.deref)
+          case n => ref.component.getField(L, k).toLua(L)
+        }
+      )
+      L.register(mt, "__newindex", (L: LuaState, ref: ComponentReference, k: String, o: Any) => {
+        k match {
+          case "deref" => L.error("field 'deref' is immutable")
+          case n => ref.component.setField(L, k, o)
+        }
+        ()
+      })
+      L.register(mt, "__tostring", (ref: ComponentReference) => LuaRet(ref.name))
+    }
+  }
+  implicit object LuaComponentManager extends LuaUserdataType[ComponentManager] {
+    metatable { (L, mt) =>
+      L.register(mt, "__index", (manager: ComponentManager, k: String) =>
+        LuaRet(manager.getComponentReference(k))
+      )
+      L.register(mt, "__newindex", (manager: ComponentManager, k: String, v: ComponentReference) => {
+        manager.setComponent(k, v.component)
+        ()
+      })
+    }
+  }
+  implicit object LuaFormattedString extends LuaUserdataType[FormattedString]
+  implicit object LuaFormattedStringBuffer extends LuaUserdataType[FormattedStringBuffer] {
+    metatable { (L, mt) =>
+      L.register(mt, "__index", (attributed: FormattedStringBuffer, k: String) =>
+        k match {
+          case "italic"             => attributed.italics
+          case "bold"               => attributed.bold
+          case "color"              => attributed.color
+          case "fontPath"           => attributed.fontPath
+          case "fontSize"           => attributed.fontSize
+          case "append"             => LuaClosure((str: String) => { attributed.append(str); () }).fn
+          case "getFormattedString" => LuaClosure(() => attributed.finish()).fn
+          case "paragraphBreak"     => LuaClosure(() => attributed.paragraphBreak()).fn
+          case n => throw TemplateException(s"no such field '$n'")
+        }
+      )
+      L.register(mt, "__newindex", (L: LuaState, attributed: FormattedStringBuffer, k: String, o: Any) => {
+        k match {
+          case "italic"             => attributed.italics  = o.fromLua[Boolean](L)
+          case "bold"               => attributed.bold     = o.fromLua[Boolean](L)
+          case "color"              => attributed.color    = o.fromLua[Color  ](L)
+          case "fontPath"           => attributed.fontPath = o.fromLua[String ](L)
+          case "fontSize"           => attributed.fontSize = o.fromLua[Float  ](L)
+          case "append"             |
+               "getFormattedString" |
+               "paragraphBreak"     => throw TemplateException(s"property '$k' is immutable")
+          case n => throw TemplateException(s"no such field '$n'")
+        }
+        ()
+      })
+    }
+  }
 }
 
 case class ComponentLib(packages: PackageList) {
@@ -125,6 +131,7 @@ case class ComponentLib(packages: PackageList) {
 
   def open(L: LuaState) = {
     L.registerGlobal("ComponentManager", () => new ComponentManager())
+    L.registerGlobal("FormattedStringBuffer", () => new FormattedStringBuffer())
 
     val component = L.newTable()
 
@@ -134,6 +141,8 @@ case class ComponentLib(packages: PackageList) {
       new ResourceComponent(size, s).ref)
     L.register(component, "BaseLayout", (L: LuaState) =>
       new LayoutComponent(L).ref)
+    L.register(component, "SimpleText", (str: FormattedString) =>
+      new SimpleTextComponent(str).ref)
 
     L.setGlobal("component", component)
   }
