@@ -28,5 +28,5 @@ object Config {
   val version_baseVersion = "0.1.0"
 
     // hardcoded mirror because redirection handling is :(
-  val config_launch4j_url = "https://pilotfiber.dl.sourceforge.net/project/launch4j/launch4j-3/3.9/launch4j-3.9-linux.tgz"
+  val config_launch4j_url = "https://superb-sea2.dl.sourceforge.net/project/launch4j/launch4j-3/3.9/launch4j-3.9-linux.tgz"
 }
