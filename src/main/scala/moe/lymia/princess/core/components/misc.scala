@@ -32,10 +32,10 @@ import org.apache.batik.svggen.SVGGraphics2D
 import scala.xml.NodeSeq
 
 class ResourceComponent(protected var sizeParam: Size, private var resource: String)
-  extends Component with SizedComponent {
+  extends LowLevelComponent with SizedBase {
 
-  override def sizedRender(manager: ComponentRenderManager) =
-    manager.resources.loadImageResource(resource, size).include(0, 0, size.width, size.height)
+  override def renderReference(ref: ComponentReference, manager: ComponentRenderManager) =
+    manager.resources.loadImageResource(resource, size)
   property("resource")(_ => resource, (L, v : String) => resource = v)
 }
 

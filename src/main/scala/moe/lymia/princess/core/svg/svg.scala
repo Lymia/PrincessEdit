@@ -62,27 +62,62 @@ object SVGGraphicsRenderer {
   lazy val domImpl = GenericDOMImplementation.getDOMImplementation
 }
 
-final case class SVGDefinitionReference(name: String, expectedSize: Size) {
-  def include(x: Double, y: Double): Elem =
-    <use x={x.toString} y={y.toString} xlink:href={s"#$name"}/>
-  def include(x: Double, y: Double, height: Double, width: Double): Elem =
-    if(Size(height, width) == expectedSize) include(x, y)
-    else <use x={x.toString} y={y.toString} xlink:href={s"#$name"}
-              transform={s"translate(-$x -$y) "+
-                         s"scale(${width/expectedSize.width} ${height/expectedSize.height}) "+
-                         s"translate($x $y)"}/>
+final case class SVGDefinitionReference(name: String, expectedSize: Size, parent: SVGBuilder) {
+  private def trackUsage() = parent.addUsage(name)
+  def include(x: Double, y: Double): Elem = {
+    trackUsage()
+    <use x={x.toString} y={y.toString} xlink:href={s"#$name"} princess:reference={name}/>
+  }
+  def include(x: Double, y: Double, width: Double, height: Double): Elem =
+    if(Size(width, height) == expectedSize) include(x, y)
+    else (include(x, y) % Attribute(null : String, "transform",
+                                    s"translate(-$x -$y) "+
+                                    s"scale(${width/expectedSize.width} ${height/expectedSize.height}) "+
+                                    s"translate($x $y)", Null)
+                        % Attribute("princess", "newX", width.toString , Null)
+                        % Attribute("princess", "newY", height.toString, Null))
 }
 final class SVGBuilder(settings: RenderSettings) {
   private val id = GenID.makeId()
   private var layerId = 0
-  private val definitions = new mutable.ArrayBuffer[NodeSeq]
+  private val definitions = new mutable.ArrayBuffer[(String, Elem)]
+  private val definitionMap = new mutable.HashMap[String, Elem]
+  private val useCount = new mutable.HashMap[String, Int]
 
   private def attribute(key: String, value: String) = Attribute(None, key, Text(value), Null)
+
+  private[svg] def addUsage(id: String) = useCount.put(id, useCount.getOrElse(id, 0) + 1)
+  private def getUseCount(id: String) = useCount.getOrElse(id, 0)
+
+  private def inlineReferencesIterContinue(elem: Elem): Node =
+    elem.copy(child = elem.child.map {
+      case e: Elem => inlineReferencesIter(e)
+      case e => e
+    })
+  private def inlineReferencesIter(elem: Elem): Node =
+    if(elem.label == "use") XMLUtils.getAttribute(elem, "princess", "reference") match {
+      case Some(x) if getUseCount(x.text) == 1 =>
+        val newX = XMLUtils.getAttribute(elem, "princess","newX")
+        val newY = XMLUtils.getAttribute(elem, "princess","newY")
+        var node = definitionMap(x.text)
+
+        if(newX.isDefined && newY.isDefined) node = (
+          node % attribute("width", newX.get.text)
+               % attribute("height", newY.get.text)
+        )
+        for(attr <-elem.attributes if !SVGBuilder.useExcludeSet.contains(attr.key) &&
+                                      !attr.prefixedKey.startsWith("princess:"))
+          node = node % attr.copy(Null)
+
+        inlineReferencesIter(node)
+      case _ => inlineReferencesIterContinue(elem)
+    } else inlineReferencesIterContinue(elem)
 
   def createDefinition(name: String, elem: Elem) = {
     val resourceName = s"princess_def_${id}_${layerId}_${name.replace(" ", "_").replaceAll("[^a-zA-Z0-9_]", "")}"
     layerId = layerId + 1
-    definitions.append(elem % attribute("id", resourceName))
+    definitions.append((resourceName, elem % attribute("id", resourceName)))
+    definitionMap.put(resourceName, elem)
     resourceName
   }
   def createDefinitionFromContainer(name: String, expectedSize: Size, elems: Elem) =
@@ -90,7 +125,7 @@ final class SVGBuilder(settings: RenderSettings) {
       elems % attribute("width"              , expectedSize.width.toString)
             % attribute("height"             , expectedSize.height.toString)
             % attribute("preserveAspectRatio", "none")
-    ), expectedSize)
+    ), expectedSize, this)
   def createDefinitionFromFragment(name: String, expectedSize: Size, elems: NodeSeq, noViewport: Boolean = false) =
     createDefinitionFromContainer(name, expectedSize,
       if(!noViewport) <svg viewBox={s"0 0 ${expectedSize.width} ${expectedSize.height}"}>{elems}</svg>
@@ -110,15 +145,22 @@ final class SVGBuilder(settings: RenderSettings) {
   private val stylesheetDefs = new mutable.ArrayBuffer[String]
   def addStylesheetDefinition(str: String) = stylesheetDefs.append(str)
 
-  def renderSVGTag(root: SVGDefinitionReference) =
+  def renderSVGTag(root: SVGDefinitionReference) = MinifyXML.SVGFinalize(
     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
          version="1.1" preserveAspectRatio="none"
          width={settings.size.widthString} height={settings.size.heightString}
          viewBox={s"0 0 ${settings.viewport.width} ${settings.viewport.height}"}>
       {stylesheetDefs.map(x => <style>{x}</style>)}
-      <defs>{definitions}</defs>
-      {root.include(0, 0, settings.viewport.width, settings.viewport.height)}
+      <defs> {
+        definitions.filter(x => getUseCount(x._1) > 1).map(x => inlineReferencesIter(x._2).head)
+      } </defs>
+      {
+        inlineReferencesIter(root.include(0, 0, settings.viewport.width, settings.viewport.height))
+      }
     </svg>
+  ).copy(scope = NamespaceBinding(null, "http://www.w3.org/2000/svg",
+                 NamespaceBinding("xlink", "http://www.w3.org/1999/xlink",  TopScope)))
+
   def write(w: Writer, root: SVGDefinitionReference, encoding: String= "utf-8") = {
     w.write(s"<?xml version='1.0' encoding='$encoding'?>\n")
     w.write(s"${SVGBuilder.SVG11Doctype.toString}\n")
@@ -166,4 +208,5 @@ object SVGBuilder {
     Nil
   )
   private val prettyPrinter = new PrettyPrinter(Int.MaxValue, 2)
+  private val useExcludeSet = Set("transform", "href")
 }

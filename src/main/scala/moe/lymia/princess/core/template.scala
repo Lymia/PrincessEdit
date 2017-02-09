@@ -49,23 +49,23 @@ object TemplateLib {
 
 trait Template {
   protected def renderSettings: RenderSettings
-  protected def doRender(builder: SVGBuilder, cardData: LuaTable, isImageRender: Boolean): SVGDefinitionReference
+  protected def doRender(builder: SVGBuilder, cardData: LuaTable, res: ResourceLoader): SVGDefinitionReference
 
-  private def doRender(cardData: LuaTable, isImageRender: Boolean): (SVGBuilder, SVGDefinitionReference) = {
+  private def doRender(cardData: LuaTable, res: ResourceLoader): (SVGBuilder, SVGDefinitionReference) = {
     val builder = new SVGBuilder(renderSettings)
-    (builder, doRender(builder, cardData, isImageRender))
+    (builder, doRender(builder, cardData, res))
   }
 
-  def renderSVGTag(cardData: LuaTable) = {
-    val (builder, definition) = doRender(cardData, isImageRender = false)
+  def renderSVGTag(cardData: LuaTable, res: ResourceLoader = ExportResourceLoader) = {
+    val (builder, definition) = doRender(cardData, res)
     builder.renderSVGTag(definition)
   }
-  def write(w: Writer, cardData: LuaTable, encoding: String = "utf-8") = {
-    val (builder, definition) = doRender(cardData, isImageRender = false)
+  def write(w: Writer, cardData: LuaTable, encoding: String = "utf-8", res: ResourceLoader = ExportResourceLoader) = {
+    val (builder, definition) = doRender(cardData, res)
     builder.write(w, definition, encoding)
   }
-  def renderImage(x: Int, y: Int, cardData: LuaTable) = {
-    val (builder, definition) = doRender(cardData, isImageRender = true)
+  def renderImage(x: Int, y: Int, cardData: LuaTable, res: ResourceLoader = RasterizeResourceLoader) = {
+    val (builder, definition) = doRender(cardData, res)
     builder.renderImage(x, y, definition)
   }
 }
@@ -76,7 +76,7 @@ class LuaTemplate(name: String, packages: PackageList, context: LuaContext, tabl
     val scale = L.getTable(table, "scale").as[PhysicalScale]
     RenderSettings(L.getTable(table, "size").as[Size], scale.unPerViewport, scale.unit)
   }
-  override protected def doRender(builder: SVGBuilder, cardData: LuaTable, isImageRender: Boolean) =
+  override protected def doRender(builder: SVGBuilder, cardData: LuaTable, res: ResourceLoader) =
     TemplateException.context(s"rendering template $name") {
       val L = context.L.newThread()
       val prerenderFn = L.getTable(table, "prerender"       ).as[Option[LuaClosure]]
@@ -91,9 +91,7 @@ class LuaTemplate(name: String, packages: PackageList, context: LuaContext, tabl
         case Right(e) => throw TemplateException(e)
       }
 
-      val resources = new ResourceManager(builder, renderSettings,
-                                          if(isImageRender) RasterizeResourceLoader else ExportResourceLoader,
-                                          packages)
+      val resources = new ResourceManager(builder, renderSettings, res, packages)
       val renderManager = new ComponentRenderManager(builder, resources)
       renderManager.renderComponent(reference)
     }

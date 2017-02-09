@@ -25,10 +25,10 @@ function component.Mask(maskComponent, dataComponent)
     return mask
 end
 
-function component.Clip(maskComponent, dataComponent)
+function component.Clip(clipPath, dataComponent)
     local mask = component.Template("princess/component/clip.xml", dataComponent.size)
     mask.target = dataComponent
-    mask.mask   = maskComponent
+    mask.clip   = clipPath
     return mask
 end
 
@@ -46,12 +46,12 @@ end
 
 function component.FillShape(maskComponent, color)
     local fill = component.Fill(maskComponent.size, color)
-    local clip = component.Clip(maskComponent, fill)
-    function clip._prop.set_color(color)
+    local mask = component.Mask(maskComponent, fill)
+    function mask._prop.set_color(color)
         fill.color = color
     end
-    function clip._prop.get_color()
+    function mask._prop.get_color()
         return fill.color
     end
-    return clip
+    return mask
 end

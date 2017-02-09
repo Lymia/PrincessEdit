@@ -24,6 +24,8 @@ package moe.lymia.princess.core.svg
 
 import java.awt.Font
 
+import scala.xml._
+
 final case class Size(width: Double, height: Double)
 
 case class PhysicalUnit(svgName: String, unPerInch: Double)
@@ -42,4 +44,48 @@ final case class RenderSettings(viewport: Size, unPerViewport: Double, physicalU
   val coordUnitsPerIn = size.unit.unPerInch / unPerViewport
   def scaleFont(font: Font, ptSize: Double) =
     font.deriveFont((ptSize * (coordUnitsPerIn / 72.0)).toFloat)
+}
+
+object XMLUtils {
+  def filterAttributes(m: MetaData)(fn: MetaData => Boolean) = {
+    var newMetadata: MetaData = Null
+    for(md <- m) if(fn(md)) newMetadata = md.copy(newMetadata)
+    newMetadata
+  }
+  def getAttribute(e: Elem, ns: String, key: String) =
+    e.attributes.find {
+      case PrefixedAttribute(`ns`, `key`, _, _) => true
+      case _ => false
+    }.map(_.value)
+}
+
+case class MinifyXML(dropNamespaces: Set[String], dropTags: Set[String]) {
+  private def iter(e: Elem, isRoot: Boolean = true, prevScope: NamespaceBinding = null): Seq[Elem] =
+    if(dropNamespaces.contains(e.prefix) ||
+       dropTags      .contains(e.label)) Seq() else {
+      val newAttr = XMLUtils.filterAttributes(e.attributes) {
+        case x: Attribute => !dropNamespaces.contains(x.pre)
+        case x => true
+      }
+
+      var curNewScope: NamespaceBinding = TopScope
+      if(isRoot || (prevScope != e.scope)) {
+        var curScope = e.scope
+        while(curScope != TopScope) {
+          if(!dropNamespaces.contains(curScope.prefix)) curNewScope = curScope.copy(parent = curNewScope)
+          curScope = curScope.parent
+        }
+      }
+
+      Seq(e.copy(scope = curNewScope, attributes = newAttr, child = e.child flatMap {
+        case ce: Elem => iter(ce, isRoot = false, prevScope = e.scope)
+        case n => Seq(n)
+      }))
+    }
+
+  def apply(n: Elem): Elem = iter(n).headOption.getOrElse(<ELEM/>.copy(label = n.label))
+}
+object MinifyXML {
+  val SVG = MinifyXML(Set("dc", "cc", "rdf", "sodipodi", "inkscape"), Set("metadata"))
+  val SVGFinalize = MinifyXML(Set("princess"), Set())
 }

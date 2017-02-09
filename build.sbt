@@ -38,6 +38,9 @@ val commonSettings = versionWithGit ++ Seq(
   homepage := Some(url("https://github.com/Lymia/PrincessEdit")),
   licenses := Seq("MIT License" -> url("http://www.opensource.org/licenses/mit-license.php")),
 
+  // Repositories
+  resolvers += Resolver.mavenLocal,
+
   // Git versioning
   git.baseVersion := version_baseVersion,
   git.uncommittedSignifier := Some("DIRTY"),
@@ -68,6 +71,7 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Assembl
   libraryDependencies += "org.apache.xmlgraphics" % "batik-transcoder"    % config_batikVersion,
   libraryDependencies += "org.apache.xmlgraphics" % "xmlgraphics-commons" % "2.1",
   ignoreDuplicate     += "org/w3c/dom/.*",
+  ignoreDuplicate     += "org/apache/batik/ext/awt/image/rendered/Any2LumRed\\.class",
 
   libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0",
   libraryDependencies += "org.ini4j" % "ini4j" % "0.5.2"

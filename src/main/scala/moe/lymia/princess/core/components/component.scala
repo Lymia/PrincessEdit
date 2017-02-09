@@ -33,6 +33,10 @@ import scala.xml.NodeSeq
 case class ComponentProperty(set: Component.SetPropertyFn, get: Component.GetPropertyFn)
 abstract class Component(private var noViewport: Boolean = false) {
   def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size)
+  def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager): SVGDefinitionReference = {
+    val (nodes, size) = renderComponent(manager)
+    manager.builder.createDefinitionFromFragment(ref.name, size, nodes, getNoViewport)
+  }
 
   final def getNoViewport = noViewport
 
@@ -80,6 +84,13 @@ object Component {
   type GetPropertyFn = (LuaState) => LuaObject
 }
 
+abstract class LowLevelComponent extends Component {
+  final override def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = ???
+  def renderReference(ref: ComponentReference, manager: ComponentRenderManager): SVGDefinitionReference
+  override def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager) =
+    renderReference(ref, manager)
+}
+
 abstract class GraphicsComponent(noViewportParam: Boolean = false) extends Component(noViewportParam) {
   def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D): Size
   override def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = {
@@ -111,7 +122,7 @@ sealed trait ComponentReference {
   def deref: ComponentReference = DirectComponentReference(component)
 }
 final case class DirectComponentReference(component: Component) extends ComponentReference {
-  def name = s"${component.getClass.getName}@0x${"%08x" format System.identityHashCode(component)}"
+  def name = s"${component.getClass.getName}: 0x${"%08x" format System.identityHashCode(component)}"
 }
 final case class IndirectComponentReference(manager: ComponentManager, name: String) extends ComponentReference {
   def component =
@@ -128,8 +139,7 @@ final class ComponentRenderManager(val builder: SVGBuilder, val resources: Resou
                               s"Components involved: [${currentlyRendering.values.mkString(", ")}]")
     renderCache.getOrElseUpdate(component, try {
       currentlyRendering.put(component, ref.name)
-      val (nodes, size) = component.renderComponent(this)
-      builder.createDefinitionFromFragment(ref.name, size, nodes, component.getNoViewport)
+      component.getDefinitionReference(ref, this)
     } finally {
       currentlyRendering.remove(component)
     })

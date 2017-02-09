@@ -26,7 +26,7 @@ import java.io.{FileOutputStream, FileWriter}
 import javax.imageio.ImageIO
 
 import moe.lymia.princess.core.PackageManager
-import moe.lymia.princess.core.svg.RenderSettings
+import moe.lymia.princess.core.svg.{ExportResourceLoader, RasterizeResourceLoader, RenderSettings}
 import moe.lymia.princess.lua._
 
 private case class CLIException(message: String) extends Exception
@@ -38,6 +38,8 @@ class CLI {
   private var gameId: String = _
   private var template: String = _
   private var cardData: String = _
+
+  private var link: Boolean = false
 
   private var x: Int = _
   private var y: Int = _
@@ -69,7 +71,8 @@ class CLI {
       arg[String]("<gameId>"  ).foreach(gameId   = _).hidden(),
       arg[String]("<template>").foreach(template = _).hidden(),
       arg[String]("<cardData>").foreach(cardData = _).hidden(),
-      arg[String]("<out>"     ).foreach(out      = _).hidden()
+      arg[String]("<out>"     ).foreach(out      = _).hidden(),
+      opt[Unit  ]("link"      ).text("Link instead of include resources").foreach(_ => link = true)
     )
   }
 
@@ -125,7 +128,9 @@ class CLI {
   }
   private def cmd_renderSVG(): Unit = {
     val (template, cardData) = renderCommon()
-    time("Renderered SVG") { template.write(new FileWriter(out), cardData) }
+    time("Renderered SVG") {
+      template.write(new FileWriter(out), cardData, res = if(link) RasterizeResourceLoader else ExportResourceLoader)
+    }
   }
 
   def main(args: Seq[String]) = try {

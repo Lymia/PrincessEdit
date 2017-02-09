@@ -49,7 +49,7 @@ trait IncludeDefinitionLoader extends ResourceLoader {
 }
 trait IncludeVectorLoader extends ResourceLoader {
   def loadVector(builder: SVGBuilder, name: String, compression: Boolean, path: Path, expectedSize: Size) =
-    builder.createDefinitionFromContainer(name, expectedSize, MinifyXML.minifyXML(MinifyDefinition.SVG,
+    builder.createDefinitionFromContainer(name, expectedSize, MinifyXML.SVG(
       XML.load(if(compression) new GZIPInputStream(Files.newInputStream(path)) else Files.newInputStream(path))))
 }
 

@@ -33,12 +33,12 @@ import scala.xml.{XML => _, _}
 
 sealed trait ExpectedType
 object ExpectedType {
-  case object Component extends ExpectedType
-  case object String    extends ExpectedType
-  case object Integer   extends ExpectedType
-  case object Number    extends ExpectedType
-  case object GenSym    extends ExpectedType
-  case object Definition  extends ExpectedType
+  case object Component  extends ExpectedType
+  case object String     extends ExpectedType
+  case object Integer    extends ExpectedType
+  case object Number     extends ExpectedType
+  case object GenSym     extends ExpectedType
+  case object Definition extends ExpectedType
 }
 
 case class XMLTemplateData(parameters: Map[String, ExpectedType], elems: NodeSeq)
@@ -71,13 +71,17 @@ class XMLTemplateComponent(protected val sizeParam: Size, data: XMLTemplateData)
     stringMap.put(par, s"princess_gensym_${GenID.makeId()}")
 
   private def templateString(manager: ComponentRenderManager, str: String) =
-    XMLTemplateComponent.varRegex.replaceAllIn(str, x => stringMap.get(x.group(1)) match {
-      case Some(s) => data.parameters.get(x.group(1)) match {
-        case Some(ExpectedType.Definition) =>
-          manager.resources.loadDefinition(s)
-        case _ => s
+    XMLTemplateComponent.varRegex.replaceAllIn(str, x => x.group(1) match {
+      case "width" => size.width.toString
+      case "height" => size.height.toString
+      case field => stringMap.get(field) match {
+        case Some(s) => data.parameters.get(field) match {
+          case Some(ExpectedType.Definition) =>
+            manager.resources.loadDefinition(s)
+          case _ => s
+        }
+        case None    => throw TemplateException(s"field '${x.group(1)}' not set")
       }
-      case None    => throw TemplateException(s"field '${x.group(1)}' not set")
     })
   private def processMetadata(manager: ComponentRenderManager, m: MetaData): MetaData =
     if(m == Null) Null
