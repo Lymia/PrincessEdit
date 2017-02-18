@@ -18,8 +18,8 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+ComponentManager = _princess.ComponentManager
+
 component = {}
 
 component.Resource = _princess.Resource
-
-ComponentManager = _princess.ComponentManager
