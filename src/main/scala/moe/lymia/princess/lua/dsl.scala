@@ -28,20 +28,6 @@ import scala.reflect.ClassTag
 
 import scala.language.implicitConversions
 
-class LuaUserdataType[T : ClassTag] {
-  private val metatableInitializers = new mutable.ArrayBuffer[(LuaState, LuaTable) => Unit]
-  protected final def metatable(fn: (LuaState, LuaTable) => Unit) = metatableInitializers.append(fn)
-  final def tag = implicitly[ClassTag[T]]
-  final def getMetatable(L: LuaState) = {
-    val table = new LuaTable()
-    L.register(table, "__tostring" ,
-               (L: Lua, o: Any) => s"${tag.toString()}: 0x${"%08x" format System.identityHashCode(o)}")
-    L.rawSet(table, "__metatable", s"metatable for ${tag.toString()}")
-    metatableInitializers.foreach(_(L, table))
-    table
-  }
-}
-
 case class LuaThreadWrapper(thread: Lua)
 case class LuaExecWrapper(fn: LuaState => Any)
 class LuaObject(val wrapped: Any) extends AnyVal {

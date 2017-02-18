@@ -22,4 +22,4 @@
 
 package moe.lymia.princess
 
-package object lua extends LuaImplicits
+package object lua extends LuaImplicits with LuaUserdataImplicits

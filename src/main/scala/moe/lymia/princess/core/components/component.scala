@@ -30,8 +30,7 @@ import org.apache.batik.svggen.SVGGraphics2D
 import scala.collection.mutable
 import scala.xml.NodeSeq
 
-case class ComponentProperty(set: Component.SetPropertyFn, get: Component.GetPropertyFn)
-abstract class Component(private var noViewport: Boolean = false) {
+abstract class Component(private var noViewport: Boolean = false) extends LuaLookup {
   def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size)
   def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager): SVGDefinitionReference = {
     val (nodes, size) = renderComponent(manager)
@@ -40,48 +39,9 @@ abstract class Component(private var noViewport: Boolean = false) {
 
   final def getNoViewport = noViewport
 
-  private val properties = new mutable.HashMap[String, ComponentProperty]
-  private val extTable   = new LuaTable()
-  private val extProp    = new LuaTable()
-  protected def property[R: FromLua](name: String)
-                                    (get: Component.GetPropertyFn =
-                                       (L   ) => L.error(s"property '$name' is write-only"),
-                                     set: (LuaState, R) => Unit = (L: LuaState, _: R) =>
-                                       L.error(s"property '$name' is immutable")) =
-    properties.put(name, ComponentProperty((L, v) => set(L, v.fromLua[R](L, Some(s"invalid property value"))), get))
-
-  final def setField(L: LuaState, k: String, v: Any) =
-    properties.get(k) match {
-      case Some(prop) => prop.set(L, v)
-      case None       =>
-        L.rawGet(extProp, s"set_$k").as[Option[LuaClosure]] match {
-          case Some(fn) => L.call(fn, 0, v.toLua(L))
-          case None     =>
-            L.rawGet(extProp, s"get_$k").as[Option[Any]] match {
-              case Some(_) => L.error(s"property '$k' is immutable")
-              case None    => L.error(s"no such property '$k'")
-            }
-        }
-    }
-  final def getField(L: LuaState, k: String): LuaObject =
-    properties.get(k) match {
-      case Some(prop) => prop.get(L)
-      case None       =>
-        L.rawGet(extProp, s"get_$k").as[Option[LuaClosure]] match {
-          case Some(fn) => L.call(fn, 1).head
-          case None     => L.rawGet(extTable, k)
-        }
-    }
-
-  property("_ext"      )(_ => extTable)
-  property("_prop"     )(_ => extProp)
-  property("noViewport")(_ => noViewport, (L, v: Boolean) => noViewport = v)
+  property("noViewport", _ => noViewport, (L, v: Boolean) => noViewport = v)
 
   def ref: ComponentReference = DirectComponentReference(this)
-}
-object Component {
-  type SetPropertyFn = (LuaState, Any) => Unit
-  type GetPropertyFn = (LuaState) => LuaObject
 }
 
 abstract class LowLevelComponent extends Component {
@@ -102,7 +62,7 @@ abstract class GraphicsComponent(noViewportParam: Boolean = false) extends Compo
 trait SizedBase extends Component {
   protected def sizeParam: Size
   protected var size: Size = sizeParam
-  property("size")(_ => size, (L, v: Size) => size = v)
+  property("size", _ => size, (L, v: Size) => size = v)
 }
 trait SizedComponent extends SizedBase {
   protected def sizedRender(manager: ComponentRenderManager): NodeSeq

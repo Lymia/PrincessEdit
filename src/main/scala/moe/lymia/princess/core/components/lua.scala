@@ -71,7 +71,7 @@ trait LuaComponentImplicits {
       )
       L.register(mt, "__newindex", (L: LuaState, ref: ComponentReference, k: String, o: Any) => {
         k match {
-          case "deref" => L.error("field 'deref' is immutable")
+          case "deref" => L.error("property 'deref' is immutable")
           case n => ref.component.setField(L, k, o)
         }
         ()
@@ -91,36 +91,16 @@ trait LuaComponentImplicits {
     }
   }
   implicit object LuaFormattedString extends LuaUserdataType[FormattedString]
-  implicit object LuaFormattedStringBuffer extends LuaUserdataType[FormattedStringBuffer] {
-    metatable { (L, mt) =>
-      L.register(mt, "__index", (attributed: FormattedStringBuffer, k: String) =>
-        k match {
-          case "italic"             => attributed.italics
-          case "bold"               => attributed.bold
-          case "color"              => attributed.color
-          case "fontPath"           => attributed.fontPath
-          case "fontSize"           => attributed.fontSize
-          case "append"             => LuaClosure((str: String) => { attributed.append(str); () }).fn
-          case "getFormattedString" => LuaClosure(() => attributed.finish()).fn
-          case "paragraphBreak"     => LuaClosure(() => attributed.paragraphBreak()).fn
-          case n => throw TemplateException(s"no such field '$n'")
-        }
-      )
-      L.register(mt, "__newindex", (L: LuaState, attributed: FormattedStringBuffer, k: String, o: Any) => {
-        k match {
-          case "italic"             => attributed.italics  = o.fromLua[Boolean](L)
-          case "bold"               => attributed.bold     = o.fromLua[Boolean](L)
-          case "color"              => attributed.color    = o.fromLua[Color  ](L)
-          case "fontPath"           => attributed.fontPath = o.fromLua[String ](L)
-          case "fontSize"           => attributed.fontSize = o.fromLua[Float  ](L)
-          case "append"             |
-               "getFormattedString" |
-               "paragraphBreak"     => throw TemplateException(s"property '$k' is immutable")
-          case n => throw TemplateException(s"no such field '$n'")
-        }
-        ()
-      })
-    }
+  implicit object LuaFormattedStringBuffer extends PropertiesUserdataType[FormattedStringBuffer] {
+    property("italic"  , (L, a) => a.italics , (L, a, v : Boolean) => a.italics  = v)
+    property("bold"    , (L, a) => a.bold    , (L, a, v : Boolean) => a.bold     = v)
+    property("color"   , (L, a) => a.color   , (L, a, v : Color  ) => a.color    = v)
+    property("fontPath", (L, a) => a.fontPath, (L, a, v : String ) => a.fontPath = v)
+    property("fontSize", (L, a) => a.fontSize, (L, a, v : Float  ) => a.fontSize = v)
+
+    method("append"            )(a => (str: String) => a.append(str))
+    method("getFormattedString")(a => () => a.finish())
+    method("paragraphBreak"    )(a => () => a.paragraphBreak())
   }
 }
 

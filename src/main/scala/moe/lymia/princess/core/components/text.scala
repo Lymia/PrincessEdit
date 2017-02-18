@@ -48,13 +48,13 @@ class FormattedStringBuffer {
   var fontPath: String  = _
   var fontSize: Float   = 12f
 
-  def append(s: String) = {
+  def append(s: String): Unit = {
     val attributes =
       TextAttributes(fontPath, fontSize, (if(italics) Font.ITALIC else 0) | (if(bold) Font.BOLD else 0), color)
     if(buffer.isEmpty || buffer.last._2 != attributes) buffer.append((s,attributes))
     else                                               buffer.append((s,buffer.last._2))
   }
-  def paragraphBreak() = {
+  def paragraphBreak(): Unit = {
     data.append(buffer.clone())
     buffer.clear()
   }

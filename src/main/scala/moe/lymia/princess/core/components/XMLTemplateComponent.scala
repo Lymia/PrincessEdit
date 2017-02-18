@@ -122,16 +122,16 @@ class XMLTemplateComponent(protected val sizeParam: Size, data: XMLTemplateData)
 
   for((k, expectedType) <- data.parameters) expectedType match {
     case ExpectedType.Component =>
-      property(k)(_                          => componentMap.get(k),
+      property(k, _                          => componentMap.get(k),
                   (L, v: ComponentReference) => componentMap.put(k, v))
     case ExpectedType.Integer =>
-      property(k)(_                          => stringMap.get(k).map(_.toInt),
+      property(k, _                          => stringMap.get(k).map(_.toInt),
                   (L, v: Int               ) => stringMap.put(k, v.toString))
     case ExpectedType.Number =>
-      property(k)(_                          => stringMap.get(k).map(_.toDouble),
+      property(k, _                          => stringMap.get(k).map(_.toDouble),
                   (L, v: Double            ) => stringMap.put(k, v.toString))
     case ExpectedType.String | ExpectedType.GenSym | ExpectedType.Definition =>
-      property(k)(_                          => stringMap.get(k),
+      property(k, _                          => stringMap.get(k),
                   (L, v: String            ) => stringMap.put(k, v))
   }
 }

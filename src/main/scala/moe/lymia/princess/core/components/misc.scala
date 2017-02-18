@@ -36,7 +36,7 @@ class ResourceComponent(protected var sizeParam: Size, private var resource: Str
 
   override def renderReference(ref: ComponentReference, manager: ComponentRenderManager) =
     manager.resources.loadImageResource(resource, size)
-  property("resource")(_ => resource, (L, v : String) => resource = v)
+  property("resource", _ => resource, (L, v : String) => resource = v)
 }
 
 class LayoutComponent(private var L_main: LuaState) extends Component {
@@ -67,8 +67,8 @@ class LayoutComponent(private var L_main: LuaState) extends Component {
     }, size)
   }
 
-  property("prerenderHandler")(_ => prerenderHandler, (L, v: LuaClosure) => { L_main = L; prerenderHandler = v })
-  property("layoutHandler"   )(_ => layoutHandler   , (L, v: LuaClosure) => { L_main = L; layoutHandler    = v })
+  property("prerenderHandler", _ => prerenderHandler, (L, v: LuaClosure) => { L_main = L; prerenderHandler = v })
+  property("layoutHandler"   , _ => layoutHandler   , (L, v: LuaClosure) => { L_main = L; layoutHandler    = v })
 }
 
 class SimpleTextComponent(private var text: FormattedString) extends GraphicsComponent {

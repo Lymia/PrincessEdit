@@ -20,14 +20,8 @@
 
 function component.BaseSizedLayout(size)
     local layout = component.BaseLayout()
-
-    function layout._prop.set_size(newSize)
-        size = newSize
-    end
-    function layout._prop.get_size()
-        return size
-    end
-
+    layout._property("size", function() return size end,
+                             function(newSize) size = newSize end)
     return layout
 end
 
@@ -54,9 +48,9 @@ function component.BasicLayout(size)
         end
         return ret, layout.size
     end
-    function layout._ext.addComponent(x, y, component, size)
+    layout._method("addComponent", function(x, y, component, size)
         table.insert(components, {component = component, x = x, y = y, size = size or component.size})
-    end
+    end)
 
     return layout
 end

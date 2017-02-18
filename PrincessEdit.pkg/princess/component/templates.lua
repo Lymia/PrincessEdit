@@ -34,12 +34,8 @@ end
 
 function component.Fill(size, color)
     local fill = component.Template("princess/component/fillRect.xml", size)
-    function fill._prop.set_color(color)
-        fill._ulColor = util.colorToHex(color)
-    end
-    function fill._prop.get_color()
-        return fill._ulColor
-    end
+    fill._property("color", function() return color end,
+                            function(newColor) fill._ulColor = util.colorToHex(newColor); color = newColor end)
     fill.color = color
     return fill
 end
@@ -47,11 +43,7 @@ end
 function component.FillShape(maskComponent, color)
     local fill = component.Fill(maskComponent.size, color)
     local mask = component.Mask(maskComponent, fill)
-    function mask._prop.set_color(color)
-        fill.color = color
-    end
-    function mask._prop.get_color()
-        return fill.color
-    end
+    mask._property("color", function() return fill.color end,
+                            function(color) fill.color = color end)
     return mask
 end
