@@ -3,15 +3,11 @@
   <headerType>gui</headerType>
   <chdir>.</chdir>
   <jre>
-    <minVersion>1.7.0</minVersion>
+    <minVersion>1.8.0</minVersion>
   </jre>
-  <singleInstance>
-    <mutexName>moe.lymia.mppatch.Launch4JStartupMutex</mutexName>
-    <windowTitle>MPPatch Installer</windowTitle>
-  </singleInstance>
   <versionInfo>
-    <fileDescription>MPPatch Installer</fileDescription>
-    <productName>MPPatch Installer</productName>
-    <copyright>Lymia</copyright>
+    <fileDescription>PrincessEdit</fileDescription>
+    <productName>PrincessEdit</productName>
+    <copyright>Copyright &#169; 2017 Lymia Alusyia &lt;lymia@lymiahugs.com&gt;</copyright>
   </versionInfo>
 </launch4jConfig>
