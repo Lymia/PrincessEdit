@@ -18,6 +18,8 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+component.BaseLayout = _princess.BaseLayout
+
 function component.BaseSizedLayout(size)
     local layout = component.BaseLayout()
     layout._property("size", function() return size end,

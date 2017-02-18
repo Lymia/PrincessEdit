@@ -18,6 +18,12 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+component.Template = _princess.Template
+
+local function colorToHex(color)
+    return string.format("#%02x%02x%02x", color[1], color[2], color[3])
+end
+
 function component.Mask(maskComponent, dataComponent)
     local mask = component.Template("princess/component/mask.xml", dataComponent.size)
     mask.target = dataComponent
@@ -35,7 +41,7 @@ end
 function component.Fill(size, color)
     local fill = component.Template("princess/component/fillRect.xml", size)
     fill._property("color", function() return color end,
-                            function(newColor) fill._ulColor = util.colorToHex(newColor); color = newColor end)
+                            function(newColor) fill._ulColor = colorToHex(newColor); color = newColor end)
     fill.color = color
     return fill
 end

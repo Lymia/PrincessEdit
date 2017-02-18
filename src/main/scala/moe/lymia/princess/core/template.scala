@@ -24,13 +24,18 @@ package moe.lymia.princess.core
 
 import java.io.Writer
 
+import moe.lymia.princess.core.TemplateLuaImplicits.LuaPhysicalUnit.metatable
 import moe.lymia.princess.core.components._
 import moe.lymia.princess.core.svg._
 import moe.lymia.princess.lua._
 
 case class PhysicalScale(unPerViewport: Double, unit: PhysicalUnit)
 trait TemplateLuaImplicits {
-  implicit object LuaPhysicalScale extends LuaUserdataType[PhysicalScale]
+  implicit object LuaPhysicalScale extends LuaUserdataType[PhysicalScale] {
+    metatable { (L, mt) =>
+      L.register(mt, "__mul", (scale: Double, s: PhysicalScale) => PhysicalScale(scale * s.unPerViewport, s.unit))
+    }
+  }
   implicit object LuaPhysicalUnit extends LuaUserdataType[PhysicalUnit] {
     metatable { (L, mt) =>
       L.register(mt, "__mul", (scale: Double, unit: PhysicalUnit) => PhysicalScale(scale, unit))
@@ -42,8 +47,9 @@ import TemplateLuaImplicits._
 
 object TemplateLib {
   def open(L: LuaState) = {
-    L.setGlobal("mm", PhysicalUnit.mm)
-    L.setGlobal("in", PhysicalUnit.in)
+    val table = L.newLib("_princess", "PhysicalUnit")
+    L.rawSet(table, "mm", PhysicalUnit.mm)
+    L.rawSet(table, "in", PhysicalUnit.in)
   }
 }
 

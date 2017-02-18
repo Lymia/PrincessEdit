@@ -30,19 +30,17 @@ import scala.collection.JavaConverters._
 
 private final case class ModuleLib(context: LuaContext, packages: PackageList) {
   def open(L: LuaState) = {
-    val module = L.newTable()
+    val princess = L.newLib("_princess")
 
-    L.register(module, "load", (s: String) => context.getLuaExport(s))
-    L.register(module, "getExportList", () => packages.getExportKeys.toSeq)
-    L.register(module, "getExportsRaw", (s: String) => packages.getExports(s).map{ e =>
+    L.register(princess, "loadExport", (s: String) => context.getLuaExport(s))
+    L.register(princess, "getExportList", () => packages.getExportKeys.toSeq)
+    L.register(princess, "getExports", (s: String) => packages.getExports(s).map{ e =>
       val t = L.newTable()
       L.rawSet(t, "path", e.path)
       L.rawSet(t, "types", e.types)
       L.rawSet(t, "metadata", e.metadata)
       t
     })
-
-    L.setGlobal("module", module)
   }
 }
 

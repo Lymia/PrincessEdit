@@ -18,10 +18,24 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-local SimpleText_super = component.SimpleText
-function component.SimpleText(str, fontPath, fontSize, color, bold, italic)
-    if type(str) == "string" then
-        str = util.strToText(str, fontPath, fontSize, color, bold, italic)
-    end
-    return SimpleText_super(str)
-end
+-- millimeter
+mm = _princess.PhysicalUnit.mm
+millimeter = mm
+millimetre = mm
+
+-- centimeters
+cm = 10 * mm
+centimeter = cm
+centimetre = cm
+
+-- meters
+m = 1000 * mm
+meter = m
+metre = m
+
+-- inches
+inch = _princess.PhysicalUnit["in"]
+
+-- feet
+ft = 12 * inch
+foot = ft

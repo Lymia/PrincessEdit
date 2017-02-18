@@ -110,20 +110,13 @@ case class ComponentLib(packages: PackageList) {
     xmlTemplateDataCache.getOrElseUpdate(string, XMLTemplateData.loadTemplate(packages, string))
 
   def open(L: LuaState) = {
-    L.registerGlobal("ComponentManager", () => new ComponentManager())
-    L.registerGlobal("FormattedStringBuffer", () => new FormattedStringBuffer())
-
-    val component = L.newTable()
-
-    L.register(component, "Template", (s: String, size: Size) =>
+    val princess = L.newLib("_princess")
+    L.register(princess, "ComponentManager", () => new ComponentManager())
+    L.register(princess, "FormattedStringBuffer", () => new FormattedStringBuffer())
+    L.register(princess, "Template", (s: String, size: Size) =>
       new XMLTemplateComponent(size, getXMLTemplateData(s)).ref)
-    L.register(component, "Resource", (s: String, size: Size) =>
-      new ResourceComponent(size, s).ref)
-    L.register(component, "BaseLayout", (L: LuaState) =>
-      new LayoutComponent(L).ref)
-    L.register(component, "SimpleText", (str: FormattedString) =>
-      new SimpleTextComponent(str).ref)
-
-    L.setGlobal("component", component)
+    L.register(princess, "Resource", (s: String, size: Size) => new ResourceComponent(size, s).ref)
+    L.register(princess, "BaseLayout", (L: LuaState) => new LayoutComponent(L).ref)
+    L.register(princess, "SimpleText", (str: FormattedString) => new SimpleTextComponent(str).ref)
   }
 }

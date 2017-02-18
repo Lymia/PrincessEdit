@@ -18,35 +18,22 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-function require(s)
-    return _princess.loadExport(s:gsub("%.", "/")..".lua")
+FormattedStringBuffer = _princess.FormattedStringBuffer
+
+local function strToText(text, font, size, color, bold, italic)
+    local buffer = FormattedStringBuffer()
+    if color then buffer.color = color end
+    buffer.bold = bold
+    buffer.italic = italic
+    buffer.fontPath = font
+    buffer.fontSize = size
+    buffer.append(text)
+    return buffer.getFormattedString()
 end
 
-module = {}
-
-module.getExportList = _princess.getExportList
-module.load = _princess.loadExport
-
-function module.getExports(type)
-    local list = _princess.getExports(type)
-
-    function list.load()
-        module.load(list.path)
+function component.SimpleText(str, fontPath, fontSize, color, bold, italic)
+    if type(str) == "string" then
+        str = strToText(str, fontPath, fontSize, color, bold, italic)
     end
-
-    -- We wrap the methods in a metadata so they don't show up in pairs() iteration
-    local metadata = list.metadata
-    local mt = { __index = {} }
-    function mt.__index.getSingle(k)
-        local v = metadata[k]
-        if not v then return nil end
-        if #v > 1 then return nil end
-        return v[1]
-    end
-    function mt.__index.getMulti(k)
-        return metadata[k] or {}
-    end
-    setmetatable(metadata, mt)
-
-    return list
+    return _princess.SimpleText(str)
 end
