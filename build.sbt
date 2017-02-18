@@ -93,6 +93,10 @@ InputKey[Unit]("dist") := {
     IO.createDirectory(outDir)
     IO.createDirectory(outDir / "packages")
 
+    IO.copyFile(file("project/dist_README.md"), outDir / "README.txt")
+    IO.copyFile(file("project/LICENSE.md"), outDir / "LICENSE.txt")
+    IO.copyFile(file("project/NOTICE.md"), outDir / "NOTICE.txt")
+
     IO.copyFile(Launch4JBuild.Keys.launch4jOutput.value, outDir / "PrincessEdit.exe")
     IO.write(outDir / "PrincessEdit.sh",
       """#!/bin/sh

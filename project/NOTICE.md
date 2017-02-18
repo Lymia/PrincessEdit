@@ -1,4 +1,31 @@
-The binary distribution includes code from Scala, which is available under
+This binary distribution includes code from Jill, which is available under the
+following license:
+    
+    Copyright (c) 2006 Nokia Corporation and/or its subsidiary(-ies).
+    All rights reserved.
+    
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject
+    to the following conditions:
+    
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+    
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+    ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+    CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+    WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+This binary distribution includes code from Scala, which is available under
 the following license:
 
     Copyright (c) 2002-2016 EPFL
@@ -32,7 +59,7 @@ the following license:
 
 ---
 
-The binary distribution includes code from scopt, which is available under
+This binary distribution includes code from scopt, which is available under
 the following license:
 
     Copyright (c) scopt contributors
@@ -56,7 +83,49 @@ the following license:
     OR OTHER DEALINGS IN THE SOFTWARE.
 ---
 
-The binary distribution includes code from ini4j, which is available under
+This binary distribution includes code from Batik, which is available under
+the following license:
+
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+    
+       http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+
+In addition, Batik includes the following external libraries:
+
+    Apache Batik
+    Copyright 1999-2007 The Apache Software Foundation
+    
+    This product includes software developed at
+    The Apache Software Foundation (http://www.apache.org/).
+    
+    This software contains code from the World Wide Web Consortium (W3C) for the 
+    Document Object Model API (DOM API) and SVG Document Type Definition (DTD).
+    
+    This software contains code from the International Organisation for
+    Standardization for the definition of character entities used in the software's
+    documentation.
+    
+    This product includes images from the Tango Desktop Project
+    (http://tango.freedesktop.org/).
+    
+    This product includes images from the Pasodoble Icon Theme
+    (http://www.jesusda.com/projects/pasodoble).
+
+---
+
+This binary distribution includes code from ini4j, which is available under
 the following license:
 
     Copyright 2005 [ini4j] Development Team
