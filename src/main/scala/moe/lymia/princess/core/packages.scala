@@ -145,9 +145,15 @@ case class PackageList(gameId: String, packages: Seq[Package]) {
   def getExportKeys = exportMap.keySet
   def getExports(key: String) =
     if(key == "*") allExports else exportMap.getOrElse(key, Seq())
-  def resolve(path: String) = filePaths.view.map(x => IOUtils.paranoidResolve(x, path)).find(_.isDefined).flatten
-  def forceResolve(path: String) =
-    resolve(path).getOrElse(throw TemplateException(s"File '$path' not found."))
+
+  private val resolveCache = CacheHashMap[String, Option[(Package, Path)]](4096)
+  private def internalResolve(path: String) =
+    resolveCache.getOrElseUpdate(path,
+      packages.view.map(x => IOUtils.paranoidResolve(x.rootPath, path).map(y => (x, y))).find(_.isDefined).flatten
+    )
+
+  def resolve(path: String) = internalResolve(path).map(_._2)
+  def forceResolve(path: String) = resolve(path).getOrElse(throw TemplateException(s"File '$path' not found."))
 }
 case class PackageResolver(packages: Map[String, Package]) {
   def getPackageListForGameId(gameId: String) =

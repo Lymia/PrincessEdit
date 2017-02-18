@@ -33,8 +33,6 @@ import moe.lymia.princess.core._
 
 import scala.collection.mutable
 
-// TODO Cleanup this module
-
 trait ResourceLoader {
   def loadRaster    (builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
                      path: Path, expectedSize: Size): SVGDefinitionReference
@@ -74,10 +72,8 @@ trait DataURLRasterLoader extends ResourceLoader {
   }
 }
 
-object RasterizeResourceLoader
-  extends IncludeDefinitionLoader with IncludeVectorLoader with ReferenceRasterLoader
-object ExportResourceLoader
-  extends IncludeDefinitionLoader with IncludeVectorLoader with DataURLRasterLoader
+object RasterizeResourceLoader extends IncludeDefinitionLoader with IncludeVectorLoader with ReferenceRasterLoader
+object ExportResourceLoader extends IncludeDefinitionLoader with IncludeVectorLoader with DataURLRasterLoader
 
 private sealed trait ImageFormatType
 private object ResourceFormatType {

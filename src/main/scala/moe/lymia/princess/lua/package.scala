@@ -22,4 +22,8 @@
 
 package moe.lymia.princess
 
+import java.util.Map.Entry
+
+import scala.collection.JavaConverters._
+
 package object lua extends LuaImplicits with LuaUserdataImplicits

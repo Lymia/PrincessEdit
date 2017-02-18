@@ -24,11 +24,13 @@ package moe.lymia.princess.core
 
 import java.nio.file.Path
 import java.security.SecureRandom
+import java.util.Map.Entry
 import javax.xml.parsers.SAXParserFactory
 
 import moe.lymia.princess.lua.LuaErrorMarker
 import moe.lymia.princess.util.IOUtils
 
+import scala.collection.JavaConverters._
 import scala.xml.factory.XMLLoader
 import scala.xml.{Elem, SAXParser}
 
@@ -46,6 +48,12 @@ object TemplateException {
     case ex @ TemplateException(msg, _, context, _, _) =>
       throw TemplateException(msg, ex, s"While $contextString" +: context, suppressTrace = true, noCause = true)
   }
+}
+
+private[core] object CacheHashMap {
+  def apply[K, V](maxSize: Int) = new java.util.LinkedHashMap[K, V] {
+    override def removeEldestEntry(eldest: Entry[K, V]): Boolean = size() > maxSize
+  }.asScala
 }
 
 private[core] object INI {
@@ -72,14 +80,17 @@ private[core] object GenID {
     makeGlobalId()+"_"+new String((for(i <- 0 until 16) yield chars.charAt(rng.nextInt(chars.length))).toArray)
 }
 
-// DTD loading is unfortunately way too slow
 private[core] object XML extends XMLLoader[Elem] {
   override def parser: SAXParser = {
     val factory = SAXParserFactory.newInstance()
     factory.setNamespaceAware(false)
     factory.setValidating(false)
-    for(feature <- Seq("http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
-                       "http://apache.org/xml/features/nonvalidating/load-external-dtd")) try {
+    for(feature <- Seq(// DTD loading for SVG is way too slow, unfortunely
+                       "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
+                       "http://apache.org/xml/features/nonvalidating/load-external-dtd",
+                       // No thousands smiles
+                       "http://xml.org/sax/features/external-general-entities",
+                       "http://xml.org/sax/features/external-parameter-entities")) try {
       factory.setFeature(feature, false)
     } catch {
       case _: Exception =>
