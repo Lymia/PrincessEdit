@@ -32,7 +32,8 @@ private final case class CoreLib(context: LuaContext, packages: PackageList) {
   def open(L: LuaState) = {
     val princess = L.newLib("_princess")
 
-    L.register(princess, "loadExport", (s: String) => context.getLuaExport(s))
+    L.register(princess, "loadLuaExport", (s: String) => context.getLuaExport(s))
+    L.register(princess, "loadINIExport", (s: String) => INI.loadRaw(packages.forceResolve(s)))
     L.register(princess, "getExportList", () => packages.getExportKeys.toSeq)
     L.register(princess, "getExports", (s: String) => packages.getExports(s).map{ e =>
       val t = L.newTable()

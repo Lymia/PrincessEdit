@@ -19,34 +19,49 @@
 -- THE SOFTWARE.
 
 function require(s)
-    return _princess.loadExport(s:gsub("%.", "/")..".lua")
+    return _princess.loadLuaExport(s:gsub("%.", "/")..".lua")
 end
 
 module = {}
 
 module.getExportList = _princess.getExportList
-module.load = _princess.loadExport
+module.loadLua = _princess.loadLuaExport
 
-function module.getExports(type)
-    local list = _princess.getExports(type)
-
-    function list.load()
-        module.load(list.path)
-    end
-
+local function wrapSection(section)
     -- We wrap the methods in a metadata so they don't show up in pairs() iteration
-    local metadata = list.metadata
     local mt = { __index = {} }
     function mt.__index.getSingle(k)
-        local v = metadata[k]
+        local v = section[k]
         if not v then return nil end
         if #v > 1 then return nil end
         return v[1]
     end
     function mt.__index.getMulti(k)
-        return metadata[k] or {}
+        return section[k] or {}
     end
-    setmetatable(metadata, mt)
+    setmetatable(section, mt)
+end
+
+function module.loadINI(path)
+    local ini = _princess.loadINIExport(path)
+    for _, v in pairs(ini) do
+        wrapSection(v)
+    end
+    return ini
+end
+
+function module.getExports(type)
+    local list = _princess.getExports(type)
+
+    for _, v in ipairs(list) do
+        function v.loadLua()
+            return _princess.loadLuaExport(list.path)
+        end
+        function v.loadINI()
+            return loadINI(path)
+        end
+        wrapSection(list.metadata)
+    end
 
     return list
 end

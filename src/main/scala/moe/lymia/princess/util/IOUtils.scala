@@ -29,8 +29,6 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.regex.Pattern
 
-import org.ini4j.Ini
-
 import scala.collection.JavaConverters._
 import scala.io.Codec
 
@@ -69,13 +67,6 @@ object IOUtils {
   def getFileReader(path: Path) = getInputStreamReader(Files.newInputStream(path))
   def readFileAsBytes(path: Path) = Files.readAllBytes(path)
   def readFileAsString(path: Path) = new String(readFileAsBytes(path), StandardCharsets.UTF_8)
-
-  def loadIni(path: Path) = {
-    val ini = new Ini
-    ini.load(getFileReader(path))
-    ini.asScala.mapValues(x =>
-      x.keySet.asScala.toSeq.map(key => key -> x.getAll(key, classOf[Array[String]]).toSeq).toMap)
-  }
 
   def list(path: Path) = {
     val stream = Files.list(path)

@@ -89,21 +89,19 @@ object Package {
     val exports = INI.load(exportsPath)
 
     val exportMap = new mutable.HashMap[String, mutable.ArrayBuffer[Export]]
-    for((path, metadata) <- exports if metadata.nonEmpty) {
-      val types = metadata.getOrElse("type", throw TemplateException(s"No type in export $path"))
-      val export = Export(path, types, metadata)
+    for((path, metadata) <- exports) {
+      val types = metadata.getMulti("type")
+      val export = Export(path, types, metadata.underlying)
       for(t <- types) exportMap.getOrElseUpdate(t, new mutable.ArrayBuffer[Export]).append(export)
     }
 
-    val packageSection = manifest.getOrElse("package",
-                                            throw TemplateException(s"'package' section not found in manifest"))
-    val dependenciesSection = manifest.getOrElse("dependencies", Map())
+    val packageSection = manifest.getSection("package")
+    val dependenciesSection = manifest.getSectionOptional("dependencies").underlying
 
     if(dependenciesSection.exists(_._2.length != 1)) throw TemplateException("Dependency declared twice")
 
-    Package(packageSection.getOrElse("name", throw TemplateException("No package name")).head,
-            Version.parse(packageSection.getOrElse("version", throw TemplateException("No package version")).head),
-            packageSection.getOrElse("gameId", Seq()).toSet,
+    Package(packageSection.getSingle("name"), Version.parse(packageSection.getSingle("version")),
+            packageSection.getMultiOptional("gameId").toSet,
             path,
             dependenciesSection.map(x => Dependency(x._1, DepVersion.parse(x._2.head))).toSeq,
             exportMap.mapValues(_.toSeq).toMap)

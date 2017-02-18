@@ -44,10 +44,8 @@ case class GameID(name: String, displayName: String, iconPath: Option[String])
 object GameID {
   def loadGameID(path: Path) = TemplateException.context(s"loading GameID from $path") {
     val ini = INI.load(path)
-    val section = ini.getOrElse("game", throw TemplateException("No section 'game' found"))
-    GameID(section.getOrElse("name", throw TemplateException("No value 'name' found")).head,
-           section.getOrElse("displayName", throw TemplateException("No value 'displayName' found")).head,
-           section.getOrElse("icon", Seq()).headOption)
+    val section = ini.getSection("game")
+    GameID(section.getSingle("name"), section.getSingle("displayName"), section.getSingleOption("icon"))
   }
   def loadGameIDs(resolver: PackageResolver) = {
     val packages = resolver.loadGameId(StaticGameIDs.HasGameID)
