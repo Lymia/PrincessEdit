@@ -24,6 +24,7 @@ package moe.lymia.princess.core.svg
 
 import java.awt.Font
 
+import scala.collection.mutable
 import scala.xml._
 
 final case class Size(width: Double, height: Double)
@@ -60,7 +61,7 @@ object XMLUtils {
 }
 
 case class MinifyXML(dropNamespaces: Set[String], dropTags: Set[String]) {
-  private def iter(e: Elem, isRoot: Boolean = true, prevScope: NamespaceBinding = null): Seq[Elem] =
+  private def iter(e: Elem, currentScope: mutable.HashMap[String, String]): Seq[Elem] =
     if(dropNamespaces.contains(e.prefix) ||
        dropTags      .contains(e.label)) Seq() else {
       val newAttr = XMLUtils.filterAttributes(e.attributes) {
@@ -68,22 +69,32 @@ case class MinifyXML(dropNamespaces: Set[String], dropTags: Set[String]) {
         case x => true
       }
 
+      var newCurrentScope = currentScope.clone()
       var curNewScope: NamespaceBinding = TopScope
-      if(isRoot || (prevScope != e.scope)) {
-        var curScope = e.scope
-        while(curScope != TopScope) {
-          if(!dropNamespaces.contains(curScope.prefix)) curNewScope = curScope.copy(parent = curNewScope)
-          curScope = curScope.parent
+      var curScope = e.scope
+      while(curScope != TopScope) {
+        if(!dropNamespaces.contains(curScope.prefix) && !currentScope.get(curScope.prefix).contains(curScope.uri)) {
+          curNewScope = curScope.copy(parent = curNewScope)
+          newCurrentScope.put(curScope.prefix, curScope.uri)
         }
+        curScope = curScope.parent
       }
 
       Seq(e.copy(scope = curNewScope, attributes = newAttr, child = e.child flatMap {
-        case ce: Elem => iter(ce, isRoot = false, prevScope = e.scope)
+        case ce: Elem => iter(ce, newCurrentScope)
         case n => Seq(n)
       }))
     }
 
-  def apply(n: Elem): Elem = iter(n).headOption.getOrElse(<ELEM/>.copy(label = n.label))
+  def apply(n: Elem, containerScope: NamespaceBinding = TopScope): Elem = {
+    val scope = new mutable.HashMap[String, String]
+    var curScope = containerScope
+    while(curScope != TopScope) {
+      scope.put(curScope.prefix, curScope.uri)
+      curScope = curScope.parent
+    }
+    iter(n, scope).headOption.getOrElse(<ELEM/>.copy(label = n.label))
+  }
 }
 object MinifyXML {
   val SVG = MinifyXML(Set("dc", "cc", "rdf", "sodipodi", "inkscape"), Set("metadata"))

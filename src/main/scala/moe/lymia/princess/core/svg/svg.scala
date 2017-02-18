@@ -146,8 +146,7 @@ final class SVGBuilder(settings: RenderSettings) {
   def addStylesheetDefinition(str: String) = stylesheetDefs.append(str)
 
   def renderSVGTag(root: SVGDefinitionReference) = MinifyXML.SVGFinalize(
-    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-         version="1.1" preserveAspectRatio="none"
+    <svg version="1.1" preserveAspectRatio="none"
          width={settings.size.widthString} height={settings.size.heightString}
          viewBox={s"0 0 ${settings.viewport.width} ${settings.viewport.height}"}>
       {stylesheetDefs.map(x => <style>{x}</style>)}
@@ -157,9 +156,7 @@ final class SVGBuilder(settings: RenderSettings) {
       {
         inlineReferencesIter(root.include(0, 0, settings.viewport.width, settings.viewport.height))
       }
-    </svg>
-  ).copy(scope = NamespaceBinding(null, "http://www.w3.org/2000/svg",
-                 NamespaceBinding("xlink", "http://www.w3.org/1999/xlink",  TopScope)))
+    </svg>, SVGBuilder.scope).copy(scope = SVGBuilder.scope)
 
   def write(w: Writer, root: SVGDefinitionReference, encoding: String= "utf-8") = {
     w.write(s"<?xml version='1.0' encoding='$encoding'?>\n")
@@ -200,13 +197,16 @@ final class SVGBuilder(settings: RenderSettings) {
     imageOut
   }
 }
-object SVGBuilder {
-  private val SVG11Doctype = DocType(
+private[svg] object SVGBuilder {
+  val SVG11Doctype = DocType(
     "svg",
     PublicID("-//W3C//DTD SVG 1.1//EN",
     "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"),
     Nil
   )
-  private val prettyPrinter = new PrettyPrinter(Int.MaxValue, 2)
-  private val useExcludeSet = Set("transform", "href")
+  val scope = NamespaceBinding(null, "http://www.w3.org/2000/svg",
+              NamespaceBinding("svg", "http://www.w3.org/2000/svg",
+              NamespaceBinding("xlink", "http://www.w3.org/1999/xlink",  TopScope)))
+  val prettyPrinter = new PrettyPrinter(Int.MaxValue, 2)
+  val useExcludeSet = Set("transform", "href")
 }

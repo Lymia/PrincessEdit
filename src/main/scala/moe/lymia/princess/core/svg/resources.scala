@@ -48,7 +48,8 @@ trait IncludeDefinitionLoader extends ResourceLoader {
 trait IncludeVectorLoader extends ResourceLoader {
   def loadVector(builder: SVGBuilder, name: String, compression: Boolean, path: Path, expectedSize: Size) =
     builder.createDefinitionFromContainer(name, expectedSize, MinifyXML.SVG(
-      XML.load(if(compression) new GZIPInputStream(Files.newInputStream(path)) else Files.newInputStream(path))))
+      XML.load(if(compression) new GZIPInputStream(Files.newInputStream(path)) else Files.newInputStream(path)),
+      SVGBuilder.scope))
 }
 
 trait ReferenceRasterLoader extends ResourceLoader {
@@ -73,7 +74,7 @@ trait DataURLRasterLoader extends ResourceLoader {
 }
 
 object RasterizeResourceLoader extends IncludeDefinitionLoader with IncludeVectorLoader with ReferenceRasterLoader
-object ExportResourceLoader extends IncludeDefinitionLoader with IncludeVectorLoader with DataURLRasterLoader
+object ExportResourceLoader    extends IncludeDefinitionLoader with IncludeVectorLoader with DataURLRasterLoader
 
 private sealed trait ImageFormatType
 private object ResourceFormatType {
