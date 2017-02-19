@@ -95,15 +95,20 @@ class PropertiesUserdataType[T : ClassTag] extends LuaUserdataType[T] {
     properties.put(name, Property((L, _, _) => L.error(s"property '$name' is immutable"), get))
   protected def property[R: FromLua](name: String, get: GetPropertyFn, set: (LuaState, T, R) => Unit): Unit =
     properties.put(name, Property((L, o, v) => set(L, o, v.fromLua[R](L, Some(s"invalid property value"))), get))
+
   protected def method(name: String)(fn: T => ScalaLuaClosure) =
     property(name, (L, o) => fn(o), (L, _, _ : Any) => L.error(s"cannot set method '$name'"))
+  protected def unboundMethod(name: String)(fn: => ScalaLuaClosure) = {
+    lazy val fnWrapper = fn
+    property(name, (L, _) => fnWrapper, (L, _, _ : Any) => L.error(s"cannot set method '$name'"))
+  }
 
   private def getField(L: LuaState, o: T, name: String): LuaObject =
     properties.get(name).map(_.get(L, o)).getOrElse(LuaNil)
   private def setField(L: LuaState, o: T, name: String, v: Any): Unit =
     properties.getOrElse(name, L.error(s"no such property $name")).set(L, o, v)
 
-  method("_hasProperty")(_ => (k: String) => properties.contains(k))
+  unboundMethod("_hasProperty")((k: String) => properties.contains(k))
 
   metatable { (L, mt) =>
     implicit val tud = this

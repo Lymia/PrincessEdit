@@ -31,10 +31,10 @@ import moe.lymia.princess.lua._
 
 trait LuaTextImplicits {
   implicit object LuaFont extends PropertiesUserdataType[Font] {
-    method("italic")(f => (b: Boolean) => if(b) f.deriveFont(f.getStyle | Font.ITALIC)
-                                          else  f.deriveFont(f.getStyle & ~Font.ITALIC))
-    method("bold"  )(f => (b: Boolean) => if(b) f.deriveFont(f.getStyle | Font.BOLD)
-                                          else  f.deriveFont(f.getStyle & ~Font.BOLD))
+    unboundMethod("italic")((f: Font, b: Boolean) => if(b) f.deriveFont(f.getStyle | Font.ITALIC)
+                                                     else  f.deriveFont(f.getStyle & ~Font.ITALIC))
+    unboundMethod("bold"  )((f: Font, b: Boolean) => if(b) f.deriveFont(f.getStyle | Font.BOLD)
+                                                     else  f.deriveFont(f.getStyle & ~Font.BOLD))
   }
 
   implicit object LuaParameterColor extends LuaParameter[Color] {
@@ -59,9 +59,10 @@ trait LuaTextImplicits {
     property("fontRelSize", (L, a) => a.fontRelativeSize, (L, a, v : Double) => a.fontRelativeSize = v)
     property("color"      , (L, a) => a.color           , (L, a, v : Color ) => a.color            = v)
 
-    method("append"            )(a => (str: String) => a.append(str))
-    method("getFormattedString")(a => () => a.finish())
-    method("paragraphBreak"    )(a => () => a.paragraphBreak())
+    unboundMethod("append"            )((a: FormattedStringBuffer, str: String) => a.append(str))
+    unboundMethod("getFormattedString")((a: FormattedStringBuffer) => a.finish())
+    unboundMethod("paragraphBreak"    )((a: FormattedStringBuffer) => a.paragraphBreak())
+    unboundMethod("lineBreak"         )((a: FormattedStringBuffer) => a.lineBreak())
   }
 }
 

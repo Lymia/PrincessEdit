@@ -106,7 +106,7 @@ InputKey[Unit]("dist") := {
     (outDir / "PrincessEdit.sh").setExecutable(true)
 
     for(file <- IO.listFiles(file("packages")) if file.isDirectory)
-      IO.zip(Path.allSubpaths(file), outDir / "packages" / file.getName)
+      IO.zip(Path.allSubpaths(file).filter(!_._2.startsWith(".git/")), outDir / "packages" / file.getName)
 
     // we call out to zip to save the executable flag for *nix
     if(zipOut.exists) IO.delete(zipOut)
