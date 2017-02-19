@@ -20,11 +20,12 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.components
+package moe.lymia.princess.core.lua
 
 import java.awt.Color
 
 import moe.lymia.princess.core._
+import moe.lymia.princess.core.components._
 import moe.lymia.princess.core.svg._
 import moe.lymia.princess.lua._
 

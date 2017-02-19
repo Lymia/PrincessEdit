@@ -18,10 +18,6 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-function require(s)
-    return _princess.loadLuaExport(s:gsub("%.", "/")..".lua")
-end
-
 module = {}
 
 module.getExportList = _princess.getExportList
@@ -58,10 +54,14 @@ function module.getExports(type)
             return _princess.loadLuaExport(list.path)
         end
         function v.loadINI()
-            return loadINI(path)
+            return module.loadINI(path)
         end
         wrapSection(list.metadata)
     end
 
     return list
+end
+
+function require(s)
+    return _princess.loadLuaExport(s:gsub("%.", "/")..".lua")
 end

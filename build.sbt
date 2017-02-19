@@ -105,7 +105,8 @@ InputKey[Unit]("dist") := {
       """.stripMargin)
     (outDir / "PrincessEdit.sh").setExecutable(true)
 
-    IO.zip(Path.allSubpaths(file("PrincessEdit.pkg")), outDir / "PrincessEdit.pkg")
+    for(file <- IO.listFiles(file("packages")) if file.isDirectory)
+      IO.zip(Path.allSubpaths(file), outDir / "packages" / file.getName)
 
     // we call out to zip to save the executable flag for *nix
     if(zipOut.exists) IO.delete(zipOut)

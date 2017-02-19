@@ -22,4 +22,6 @@
 
 package moe.lymia.princess.core
 
-package object components extends LuaComponentImplicits
+package object lua
+  extends LuaComponentImplicits
+  with    LuaTemplateImplicits

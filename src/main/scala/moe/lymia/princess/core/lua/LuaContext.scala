@@ -20,15 +20,16 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess.core.lua
 
+import moe.lymia.princess.core._
 import moe.lymia.princess.lua._
 import moe.lymia.princess.util.IOUtils
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 
-private final case class CoreLib(context: LuaContext, packages: PackageList) {
+private final case class ExportLib(context: LuaContext, packages: PackageList) {
   def open(L: LuaState) = {
     val princess = L.newLib("_princess")
 
@@ -42,15 +43,14 @@ private final case class CoreLib(context: LuaContext, packages: PackageList) {
       L.rawSet(t, "metadata", e.metadata)
       t
     })
-
-    L.register(princess, "Object", () => new LuaLookup { } : HasLuaMethods)
   }
 }
 
 final class LuaContext(packages: PackageList) {
   val L = LuaState.makeSafeContext()
-  components.ComponentLib(packages).open(L)
-  CoreLib(this, packages).open(L)
+  CoreLib.open(L)
+  ComponentLib(packages).open(L)
+  ExportLib(this, packages).open(L)
   TemplateLib.open(L)
 
   private def loadLuaPredef(path: String) = TemplateException.context(s"loading Lua predef $path") {

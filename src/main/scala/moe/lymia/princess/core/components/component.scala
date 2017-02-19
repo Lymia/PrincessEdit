@@ -23,6 +23,7 @@
 package moe.lymia.princess.core.components
 
 import moe.lymia.princess.core._
+import moe.lymia.princess.core.lua._
 import moe.lymia.princess.core.svg._
 import moe.lymia.princess.lua._
 import org.apache.batik.svggen.SVGGraphics2D

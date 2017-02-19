@@ -223,5 +223,6 @@ object PackageResolver {
   }
   def loadPackageDirectory(packages: Path, extraDirs: Path*) =
     PackageResolver(
-      (for(x <- IOUtils.list(packages) ++ extraDirs) yield Package.loadPackage(x)).toSeq)
+      for (x <- IOUtils.list(packages) ++ extraDirs if x.getFileName.toString != ".gitignore")
+        yield Package.loadPackage(x))
 }

@@ -6,5 +6,6 @@
 /project/project
 /project/target
 
-# Data files
-/packages
+# Generated files
+/*.png
+/*.svg

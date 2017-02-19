@@ -24,6 +24,7 @@ package moe.lymia.princess.core
 
 import java.nio.file.{Path, Paths}
 
+import moe.lymia.princess.core.lua.LuaContext
 import moe.lymia.princess.lua.LuaTable
 
 case class TemplateExport(path: String, manager: GameManager, packages: PackageList,
@@ -63,5 +64,5 @@ class PackageManager(packages: Path, extraDirs: Path*) {
   def loadGameId(gameId: GameID) = new GameManager(resolver.loadGameId(gameId.name))
 }
 object PackageManager {
-  lazy val default = new PackageManager(Paths.get("packages"), Paths.get("PrincessEdit.pkg"))
+  lazy val default = new PackageManager(Paths.get("packages"))
 }

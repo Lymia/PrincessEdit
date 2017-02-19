@@ -25,6 +25,7 @@ package moe.lymia.princess.core.components
 import java.awt.font.TextLayout
 
 import moe.lymia.princess.core.TemplateException
+import moe.lymia.princess.core.lua._
 import moe.lymia.princess.core.svg.Size
 import moe.lymia.princess.lua._
 import org.apache.batik.svggen.SVGGraphics2D
@@ -79,4 +80,6 @@ class SimpleTextComponent(private var text: FormattedString) extends GraphicsCom
     layout.draw(graphics, (0 - bounds.getMinX).toFloat, (0f - bounds.getMinY).toFloat)
     Size(bounds.getWidth, bounds.getHeight)
   }
+
+  property("text", L => text, (L, newText: FormattedString) => text = newText)
 }
