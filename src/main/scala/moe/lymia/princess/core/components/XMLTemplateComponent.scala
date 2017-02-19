@@ -63,7 +63,7 @@ object XMLTemplateData {
 }
 
 class XMLTemplateComponent(protected val sizeParam: Size, data: XMLTemplateData)
-  extends Component with SizedComponent {
+  extends SimpleComponent with SizedSimpleComponent {
 
   private val componentMap = new mutable.HashMap[String, ComponentReference]
   private val stringMap    = new mutable.HashMap[String, String]

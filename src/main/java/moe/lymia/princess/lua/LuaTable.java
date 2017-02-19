@@ -72,7 +72,7 @@ public final class LuaTable extends java.util.Hashtable
    * @param narray  number of array slots to preallocate.
    * @param nhash   number of hash slots to preallocate.
    */
-  LuaTable(int narray, int nhash)
+  public LuaTable(int narray, int nhash)
   {
     // :todo: super(nhash) isn't clearly correct as adding nhash hash
     // table entries will causes a rehash with the usual implementation

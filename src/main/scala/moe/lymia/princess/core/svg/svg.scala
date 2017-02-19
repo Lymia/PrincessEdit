@@ -28,6 +28,7 @@ import java.io.{ByteArrayInputStream, StringWriter, Writer}
 import java.nio.charset.StandardCharsets
 
 import moe.lymia.princess.core._
+import moe.lymia.princess.lua.LuaTable
 import moe.lymia.princess.util.IOUtils
 import org.apache.batik.anim.dom.SVGDOMImplementation
 import org.apache.batik.dom.GenericDOMImplementation
@@ -62,7 +63,8 @@ object SVGGraphicsRenderer {
   lazy val domImpl = GenericDOMImplementation.getDOMImplementation
 }
 
-final case class SVGDefinitionReference(name: String, expectedSize: Size, parent: SVGBuilder) {
+final case class SVGDefinitionReference(name: String, expectedSize: Size, extraLayout: Option[LuaTable],
+                                        parent: SVGBuilder) {
   private def trackUsage() = parent.addUsage(name)
   def include(x: Double, y: Double): Elem = {
     trackUsage()
@@ -77,7 +79,7 @@ final case class SVGDefinitionReference(name: String, expectedSize: Size, parent
                         % Attribute("princess", "newX", width.toString , Null)
                         % Attribute("princess", "newY", height.toString, Null))
 }
-final class SVGBuilder(settings: RenderSettings) {
+final class SVGBuilder(val settings: RenderSettings) {
   private val id = GenID.makeId()
   private var layerId = 0
   private val definitions = new mutable.ArrayBuffer[(String, Elem)]
@@ -120,26 +122,39 @@ final class SVGBuilder(settings: RenderSettings) {
     definitionMap.put(resourceName, elem)
     resourceName
   }
-  def createDefinitionFromContainer(name: String, expectedSize: Size, elems: Elem) =
+  def createDefinitionFromContainer(name: String, expectedSize: Size, elems: Elem,
+                                    extraLayout: Option[LuaTable] = None) =
     SVGDefinitionReference(createDefinition(name,
       elems % attribute("width"              , expectedSize.width.toString)
             % attribute("height"             , expectedSize.height.toString)
             % attribute("preserveAspectRatio", "none")
-    ), expectedSize, this)
-  def createDefinitionFromFragment(name: String, expectedSize: Size, elems: NodeSeq, noViewport: Boolean = false) =
+    ), expectedSize, extraLayout, this)
+  def createDefinitionFromFragment(name: String, expectedSize: Size, elems: NodeSeq,
+                                   extraLayout: Option[LuaTable] = None, noViewport: Boolean = false) =
     createDefinitionFromContainer(name, expectedSize,
       if(!noViewport) <svg viewBox={s"0 0 ${expectedSize.width} ${expectedSize.height}"}>{elems}</svg>
-      else            <svg>{elems}</svg>
-    )
-  def createDefinitionFromGraphics(name: String, expectedSize: Size)(fn: SVGGraphics2D => Unit) = {
+      else            <svg>{elems}</svg>, extraLayout = extraLayout)
+
+  def createDefinitionFromGraphics(name: String, expectedSize: Size, extraLayout: LuaTable)
+                                  (fn: SVGGraphics2D => Unit) = {
     val renderer = new SVGGraphicsRenderer(settings)
     fn(renderer.gfx)
-    createDefinitionFromContainer(name, expectedSize, renderer.renderXML())
+    createDefinitionFromContainer(name, expectedSize, renderer.renderXML(), extraLayout = Some(extraLayout))
   }
-  def createDefinitionFromGraphics(name: String)(fn: SVGGraphics2D => Size) = {
+  def createDefinitionFromGraphics(name: String, expectedSize: Size)(fn: SVGGraphics2D => LuaTable) = {
     val renderer = new SVGGraphicsRenderer(settings)
-    val size = fn(renderer.gfx)
-    createDefinitionFromContainer(name, size, renderer.renderXML())
+    val extraLayout = fn(renderer.gfx)
+    createDefinitionFromContainer(name, expectedSize, renderer.renderXML(), extraLayout = Some(extraLayout))
+  }
+  def createDefinitionFromGraphics(name: String, extraLayout: LuaTable)(fn: SVGGraphics2D => Size) = {
+    val renderer = new SVGGraphicsRenderer(settings)
+    val expectedSize = fn(renderer.gfx)
+    createDefinitionFromContainer(name, expectedSize, renderer.renderXML(), extraLayout = Some(extraLayout))
+  }
+  def createDefinitionFromGraphics(name: String)(fn: SVGGraphics2D => (Size, LuaTable)) = {
+    val renderer = new SVGGraphicsRenderer(settings)
+    val (expectedSize, extraLayout) = fn(renderer.gfx)
+    createDefinitionFromContainer(name, expectedSize, renderer.renderXML(), extraLayout = Some(extraLayout))
   }
 
   private val stylesheetDefs = new mutable.ArrayBuffer[String]

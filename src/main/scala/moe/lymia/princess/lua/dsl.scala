@@ -31,6 +31,10 @@ import scala.language.implicitConversions
 case class LuaThreadWrapper(thread: Lua)
 case class LuaExecWrapper(fn: LuaState => Any)
 class LuaObject(val wrapped: Any) extends AnyVal {
+  def toLua() = wrapped match {
+    case LuaExecWrapper(fn) => sys.error("Cannot unwrap object without LuaState")
+    case any => any
+  }
   def toLua(L: LuaState) = wrapped match {
     case LuaExecWrapper(fn) => fn(L)
     case any => any
@@ -238,6 +242,21 @@ trait LuaImplicits extends LuaGeneratedImplicits {
       case Lua.TNIL | Lua.TNONE => None
       case _ => Some(implicitly[FromLua[T]].fromLua(L, v, source))
     }
+  }
+
+  // table extensions
+  implicit class LuaTableExtension(table: LuaTable) {
+    def rawSet(k: LuaObject, v: LuaObject) = {
+      val luak = k.toLua()
+      if(luak == Lua.NIL)
+        sys.error("Table key cannot be nil.")
+      luak match {
+        case d: Double if java.lang.Double.isNaN(d) => sys.error("Table key cannot be NaN")
+        case _ =>
+      }
+      table.putlua(null, luak, v.toLua())
+    }
+    def rawGet(k: LuaObject) = Lua.rawGet(table, k.toLua())
   }
 }
 object LuaImplicits {

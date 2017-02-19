@@ -22,25 +22,20 @@
 
 package moe.lymia.princess.core.components
 
-import java.awt.font.TextLayout
-
 import moe.lymia.princess.core.TemplateException
 import moe.lymia.princess.core.lua._
 import moe.lymia.princess.core.svg.Size
 import moe.lymia.princess.lua._
-import org.apache.batik.svggen.SVGGraphics2D
 
 import scala.xml.NodeSeq
 
-class ResourceComponent(protected var sizeParam: Size, private var resource: String)
-  extends LowLevelComponent with SizedBase {
-
-  override def renderReference(ref: ComponentReference, manager: ComponentRenderManager) =
+class ResourceComponent(protected var sizeParam: Size, private var resource: String) extends Component with SizedBase {
+  override def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager) =
     manager.resources.loadImageResource(resource, size)
   property("resource", _ => resource, (L, v : String) => resource = v)
 }
 
-class LayoutComponent(private var L_main: LuaState) extends Component {
+class LayoutComponent(private var L_main: LuaState) extends SimpleComponent {
   private var prerenderHandler = LuaClosure((L: LuaState) => L.newTable())
   private var layoutHandler = LuaClosure((L: LuaState) => { L.error("no layout function registered"); () })
 
@@ -52,8 +47,9 @@ class LayoutComponent(private var L_main: LuaState) extends Component {
       case Right(e) => throw TemplateException(e)
     }
     val sizeMap = componentsToSize.map(x => x -> manager.renderComponent(x).expectedSize).toMap
+    val extraLayout = componentsToSize.flatMap(x => manager.renderComponent(x).extraLayout.map(x -> _)).toMap
 
-    val Seq(a, b) = L.pcall(layoutHandler, 2, sizeMap) match {
+    val Seq(a, b) = L.pcall(layoutHandler, 2, sizeMap, extraLayout) match {
       case Left (x) => x
       case Right(e) => throw TemplateException(e)
     }
@@ -70,16 +66,4 @@ class LayoutComponent(private var L_main: LuaState) extends Component {
 
   property("prerenderHandler", _ => prerenderHandler, (L, v: LuaClosure) => { L_main = L; prerenderHandler = v })
   property("layoutHandler"   , _ => layoutHandler   , (L, v: LuaClosure) => { L_main = L; layoutHandler    = v })
-}
-
-class SimpleTextComponent(private var text: FormattedString) extends GraphicsComponent {
-  override def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D): Size = {
-    val attributed = text.toAttributedStrings(manager.resources).head
-    val layout = new TextLayout(attributed.getIterator, graphics.getFontRenderContext)
-    val bounds = layout.getBounds
-    layout.draw(graphics, (0 - bounds.getMinX).toFloat, (0f - bounds.getMinY).toFloat)
-    Size(bounds.getWidth, bounds.getHeight)
-  }
-
-  property("text", L => text, (L, newText: FormattedString) => text = newText)
 }

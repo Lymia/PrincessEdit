@@ -20,20 +20,5 @@
 
 FormattedStringBuffer = _princess.FormattedStringBuffer
 
-local function strToText(text, font, size, color, bold, italic)
-    local buffer = FormattedStringBuffer()
-    if color then buffer.color = color end
-    buffer.bold = bold
-    buffer.italic = italic
-    buffer.fontPath = font
-    buffer.fontSize = size
-    buffer.append(text)
-    return buffer.getFormattedString()
-end
-
-function component.SimpleText(str, fontPath, fontSize, color, bold, italic)
-    if type(str) == "string" then
-        str = strToText(str, fontPath, fontSize, color, bold, italic)
-    end
-    return _princess.SimpleText(str)
-end
+component.SimpleText = _princess.SimpleText
+component.SimpleFormattedText = _princess.SimpleFormattedText

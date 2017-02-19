@@ -46,21 +46,6 @@ trait LuaComponentImplicits {
       case _ => typerror(L, source, v, "Size")
     }
   }
-  implicit object LuaParameterColor extends LuaParameter[Color] {
-    override def toLua(color: Color) = new LuaObject(LuaExecWrapper(L => {
-      val t = L.newTable()
-      L.rawSet(t, 1, color.getRed)
-      L.rawSet(t, 2, color.getGreen)
-      L.rawSet(t, 3, color.getBlue)
-      t
-    }))
-    override def fromLua(L: Lua, v: Any, source: => Option[String]): Color = v match {
-      case t: LuaTable =>
-        val Ls = new LuaState(L)
-        new Color(Ls.getTable(t, 1).as[Int], Ls.getTable(t, 2).as[Int], Ls.getTable(t, 3).as[Int])
-      case _ => typerror(L, source, v, "Color")
-    }
-  }
 
   implicit object LuaComponentReference extends LuaUserdataType[ComponentReference] {
     metatable { (L, mt) =>
@@ -91,18 +76,6 @@ trait LuaComponentImplicits {
       })
     }
   }
-  implicit object LuaFormattedString extends LuaUserdataType[FormattedString]
-  implicit object LuaFormattedStringBuffer extends PropertiesUserdataType[FormattedStringBuffer] {
-    property("italic"  , (L, a) => a.italics , (L, a, v : Boolean) => a.italics  = v)
-    property("bold"    , (L, a) => a.bold    , (L, a, v : Boolean) => a.bold     = v)
-    property("color"   , (L, a) => a.color   , (L, a, v : Color  ) => a.color    = v)
-    property("fontPath", (L, a) => a.fontPath, (L, a, v : String ) => a.fontPath = v)
-    property("fontSize", (L, a) => a.fontSize, (L, a, v : Float  ) => a.fontSize = v)
-
-    method("append"            )(a => (str: String) => a.append(str))
-    method("getFormattedString")(a => () => a.finish())
-    method("paragraphBreak"    )(a => () => a.paragraphBreak())
-  }
 }
 
 case class ComponentLib(packages: PackageList) {
@@ -113,11 +86,9 @@ case class ComponentLib(packages: PackageList) {
   def open(L: LuaState) = {
     val princess = L.newLib("_princess")
     L.register(princess, "ComponentManager", () => new ComponentManager())
-    L.register(princess, "FormattedStringBuffer", () => new FormattedStringBuffer())
     L.register(princess, "Template", (s: String, size: Size) =>
       new XMLTemplateComponent(size, getXMLTemplateData(s)).ref)
     L.register(princess, "Resource", (s: String, size: Size) => new ResourceComponent(size, s).ref)
     L.register(princess, "BaseLayout", (L: LuaState) => new LayoutComponent(L).ref)
-    L.register(princess, "SimpleText", (str: FormattedString) => new SimpleTextComponent(str).ref)
   }
 }

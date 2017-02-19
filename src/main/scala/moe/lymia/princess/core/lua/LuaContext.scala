@@ -52,6 +52,7 @@ final class LuaContext(packages: PackageList) {
   ComponentLib(packages).open(L)
   ExportLib(this, packages).open(L)
   TemplateLib.open(L)
+  TextLib(packages).open(L)
 
   private def loadLuaPredef(path: String) = TemplateException.context(s"loading Lua predef $path") {
     val fullPath = packages.forceResolve(path)

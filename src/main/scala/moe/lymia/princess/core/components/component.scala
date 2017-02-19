@@ -31,41 +31,40 @@ import org.apache.batik.svggen.SVGGraphics2D
 import scala.collection.mutable
 import scala.xml.NodeSeq
 
-abstract class Component(private var noViewport: Boolean = false) extends LuaLookup {
+trait Component extends LuaLookup {
+  def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager): SVGDefinitionReference
+  def ref: ComponentReference = DirectComponentReference(this)
+}
+
+abstract class SimpleComponent(private var noViewport: Boolean = false) extends Component {
   def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size)
   def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager): SVGDefinitionReference = {
     val (nodes, size) = renderComponent(manager)
-    manager.builder.createDefinitionFromFragment(ref.name, size, nodes, getNoViewport)
+    manager.builder.createDefinitionFromFragment(ref.name, size, nodes, noViewport = noViewport)
   }
 
   final def getNoViewport = noViewport
 
   property("noViewport", _ => noViewport, (L, v: Boolean) => noViewport = v)
-
-  def ref: ComponentReference = DirectComponentReference(this)
 }
 
-abstract class LowLevelComponent extends Component {
-  final override def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = ???
-  def renderReference(ref: ComponentReference, manager: ComponentRenderManager): SVGDefinitionReference
-  override def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager) =
-    renderReference(ref, manager)
-}
-
-abstract class GraphicsComponent(noViewportParam: Boolean = false) extends Component(noViewportParam) {
-  def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D): Size
+abstract class GraphicsComponent(noViewportParam: Boolean = false) extends SimpleComponent(noViewportParam) {
+  def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D, table: LuaTable): Size
   override def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = {
-    val ref = manager.builder.createDefinitionFromGraphics("graphicsRender")(g => renderComponent(manager, g))
+    val ref = manager.builder.createDefinitionFromGraphics("graphicsRender")(g => {
+      val table = new LuaTable()
+      (renderComponent(manager, g, table), table)
+    })
     (ref.include(0, 0), ref.expectedSize)
   }
 }
 
-trait SizedBase extends Component {
+trait SizedBase extends LuaLookup {
   protected def sizeParam: Size
   protected var size: Size = sizeParam
   property("size", _ => size, (L, v: Size) => size = v)
 }
-trait SizedComponent extends SizedBase {
+trait SizedSimpleComponent extends SizedBase {
   protected def sizedRender(manager: ComponentRenderManager): NodeSeq
   def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = (sizedRender(manager), size)
 }
@@ -91,6 +90,8 @@ final case class IndirectComponentReference(manager: ComponentManager, name: Str
 }
 
 final class ComponentRenderManager(val builder: SVGBuilder, val resources: ResourceManager) {
+  val settings = builder.settings
+
   private val currentlyRendering = new mutable.HashMap[Component, String]
   private val renderCache = new mutable.HashMap[Component, SVGDefinitionReference]
   def renderComponent(ref: ComponentReference) = TemplateException.context(s"rendering ${ref.name}") {

@@ -116,16 +116,6 @@ final class ResourceManager(builder: SVGBuilder, settings: RenderSettings,
   def loadDefinition(name: String) =
     definitionCache.getOrElseUpdate(name, tryFindDefinition(name))
                    .getOrElse(throw TemplateException(s"definition '$name' not found"))
-
-  private def tryFindFont(name: String) =
-    packages.resolve(name).map(path =>
-      Font.createFont(Font.TRUETYPE_FONT, Files.newInputStream(path))
-    )
-  val includedFontFaces = new mutable.HashSet[String]
-  val fontFaceCache     = new mutable.HashMap[String, Option[Font]]
-  def loadFont(name: String, size: Float) =
-    settings.scaleFont(fontFaceCache.getOrElseUpdate(name, tryFindFont(name))
-      .getOrElse(throw TemplateException(s"font '$name' not found")), size)
 }
 object ResourceManager {
   private val imageFormats = Seq(
