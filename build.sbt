@@ -107,6 +107,7 @@ InputKey[Unit]("dist") := {
 
     for(file <- IO.listFiles(file("packages")) if file.isDirectory)
       IO.zip(Path.allSubpaths(file).filter(!_._2.startsWith(".git/")), outDir / "packages" / file.getName)
+    IO.zip(Path.allSubpaths(file("PrincessEdit.pedit-pkg")), outDir / "PrincessEdit.pedit-pkg")
 
     // we call out to zip to save the executable flag for *nix
     if(zipOut.exists) IO.delete(zipOut)

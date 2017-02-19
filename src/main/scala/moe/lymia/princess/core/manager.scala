@@ -64,5 +64,5 @@ class PackageManager(packages: Path, extraDirs: Path*) {
   def loadGameId(gameId: GameID) = new GameManager(resolver.loadGameId(gameId.name))
 }
 object PackageManager {
-  lazy val default = new PackageManager(Paths.get("packages"))
+  lazy val default = new PackageManager(Paths.get("packages"), Paths.get("PrincessEdit.pedit-pkg"))
 }
