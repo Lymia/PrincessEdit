@@ -164,27 +164,31 @@ case class PackageResolver(packages: Map[String, Package]) {
   def getDependency(dep: Dependency) =
     packages.get(dep.name).filter(_.version >= dep.version)
 
+  private val packageVersions = packages.mapValues(_.version)
   private def findPackages(packageList: Seq[String]) = {
-    val requiredDependencies = new mutable.Queue[Dependency]
-    val loadedPackageNames   = new mutable.HashMap[String, Version]
+    val requiredDependencies = new mutable.Queue[String]
+    val handledDependencies  = new mutable.HashSet[String]
     val loadedPackages       = new mutable.ArrayBuffer[Package]
-    requiredDependencies ++= packageList.map(x => Dependency(x, None))
+
+    requiredDependencies ++= packageList
+    handledDependencies ++= packageList
 
     while(requiredDependencies.nonEmpty) {
-      val depDef = requiredDependencies.dequeue()
-      val dep = getDependency(depDef)
-      dep match {
-        case None =>
-          throw TemplateException(s"Could not resolve dependency $depDef."+
-            (if(packages.contains(depDef.name)) s" (Package ${packages(depDef.name).version} is installed)" else ""))
+      val depName = requiredDependencies.dequeue()
+      packages.get(depName) match {
+        case None => throw TemplateException(s"Could not resolve dependency $depName.")
         case Some(pkg) =>
-          loadedPackageNames.put(pkg.name, pkg.version)
           loadedPackages.append(pkg)
-          for(dep <- pkg.dependencies) loadedPackageNames.get(dep.name) match {
-            case None => requiredDependencies.enqueue(dep)
-            case Some(version) =>
-              if(!(version >= dep.version)) throw TemplateException(s"Could not resolve dependency $depDef. "+
-                                                                    s"(Package ${dep.name} v$version is installed)")
+          for(dep <- pkg.dependencies) {
+            if(!handledDependencies.contains(dep.name)) {
+              requiredDependencies.enqueue(dep.name)
+              handledDependencies.add(dep.name)
+            }
+            packageVersions.get(dep.name) match {
+              case None => throw TemplateException(s"Could not resolve dependency $depName.")
+              case Some(version) => if(!(version >= dep.version))
+                throw TemplateException(s"$depName requires package $dep, but version $version is installed.")
+            }
           }
       }
     }
