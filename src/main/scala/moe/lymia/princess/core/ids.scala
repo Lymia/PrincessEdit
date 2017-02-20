@@ -27,17 +27,14 @@ import java.nio.file.Path
 import scala.collection.mutable
 
 object StaticGameIDs {
-  val System    = "princess/internal/system_package"
+  val System    = "princess/system_package"
   val HasGameID = "hasgameid"
 }
 
 object StaticExportIDs {
   val GameID = "gameid"
   def Template(gameId: String) = s"$gameId/template"
-  object Predef {
-    val System = "princess/internal/system_predef"
-    def apply(gameId: String) = s"$gameId/predef"
-  }
+  val Predef = "princess/predef"
 }
 
 case class GameID(name: String, displayName: String, iconPath: Option[String])

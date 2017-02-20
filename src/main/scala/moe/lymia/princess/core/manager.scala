@@ -55,8 +55,8 @@ class GameManager(packages: PackageList) {
     getExports(StaticExportIDs.Template(gameId)).map(x => TemplateExport.loadTemplateExport(x, this, packages))
 }
 
-class PackageManager(packages: Path, extraDirs: Path*) {
-  val resolver = PackageResolver.loadPackageDirectory(packages, extraDirs: _*)
+class PackageManager(packages: Path, systemPackages: Path*) {
+  val resolver = PackageResolver.loadPackageDirectory(packages, systemPackages: _*)
   lazy val gameIDs = GameID.loadGameIDs(resolver)
   lazy val gameIDList = gameIDs.values.toSeq
 

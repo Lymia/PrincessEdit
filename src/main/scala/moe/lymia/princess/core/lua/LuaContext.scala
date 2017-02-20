@@ -64,10 +64,9 @@ final class LuaContext(packages: PackageList) {
     L.pcall(chunk, 0).right.foreach(e => throw TemplateException(e))
   }
   private def loadPredefs(exportType: String) =
-    for(e <- packages.getExports(exportType).sortBy(_.metadata.get("priority").map(_.head.toInt).getOrElse(0)))
+    for(e <- packages.getSystemExports(exportType).sortBy(_.metadata.get("priority").map(_.head.toInt).getOrElse(0)))
       loadLuaPredef(e.path)
-  loadPredefs(StaticExportIDs.Predef.System)
-  loadPredefs(StaticExportIDs.Predef(packages.gameId))
+  loadPredefs(StaticExportIDs.Predef)
 
   private def copyTable(L: LuaState, tbl: LuaTable, ignore: String*): LuaTable = {
     val n = L.newTable()

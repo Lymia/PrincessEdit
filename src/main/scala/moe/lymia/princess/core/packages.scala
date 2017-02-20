@@ -75,7 +75,7 @@ case class Dependency(name: String, version: Option[DepVersion]) {
 case class Export(path: String, types: Seq[String], metadata: Map[String, Seq[String]])
 
 case class Package(name: String, version: Version, gameIds: Set[String], rootPath: Path,
-                   dependencies: Seq[Dependency], exports: Map[String, Seq[Export]])
+                   dependencies: Seq[Dependency], exports: Map[String, Seq[Export]], isSystem: Boolean = false)
 object Package {
   private def loadPackageFromPath(path: Path) = {
     val manifestPath = path.resolve("package.ini")
@@ -130,7 +130,7 @@ object Package {
 case class PackageList(gameId: String, packages: Seq[Package]) {
   val filePaths = packages.map(_.rootPath)
 
-  private val exportMap: Map[String, Seq[Export]] = packages.flatMap(_.exports.keySet).toSet.map( (key: String) => {
+  private val exportMap = packages.flatMap(_.exports.keySet).toSet.map( (key: String) => {
     val existingExports = new mutable.HashSet[String]
     key -> packages.flatMap(pkg => {
       val exports = pkg.exports.getOrElse(key, Seq())
@@ -138,14 +138,15 @@ case class PackageList(gameId: String, packages: Seq[Package]) {
         if(existingExports.contains(ex.path)) throw TemplateException(s"Duplicate export '${ex.path}'")
         existingExports.add(ex.path)
       })
-      exports
+      exports.map(pkg -> _)
     })
   }).toMap
-  private val allExports = exportMap.values.flatten.toSet.toSeq
+  private val allExports = exportMap.values.flatten.map(_._2).toSet.toSeq
 
   def getExportKeys = exportMap.keySet
+  def getSystemExports(key: String) = exportMap.getOrElse(key, Seq()).filter(_._1.isSystem).map(_._2)
   def getExports(key: String) =
-    if(key == "*") allExports else exportMap.getOrElse(key, Seq())
+    if(key == "*") allExports else exportMap.getOrElse(key, Seq()).map(_._2)
 
   private val resolveCache = CacheHashMap[String, Option[(Package, Path)]](4096)
   private def internalResolve(path: String) =
@@ -211,7 +212,7 @@ case class PackageResolver(packages: Map[String, Package]) {
     PackageList(gameId, resolveLoadOrder(findPackages(packageList)))
   def loadGameId(gameId: String) =
     loadPackages(gameId, packages.values.filter(x => gameId == "*" ||
-                                                     x.gameIds.contains(StaticGameIDs.System) ||
+                                                     (x.gameIds.contains(StaticGameIDs.System) && x.isSystem) ||
                                                      x.gameIds.contains(gameId)).map(_.name).toSeq)
 }
 object PackageResolver {
@@ -224,8 +225,8 @@ object PackageResolver {
     }
     PackageResolver(map.toMap)
   }
-  def loadPackageDirectory(packages: Path, extraDirs: Path*) =
+  def loadPackageDirectory(packages: Path, systemPackages: Path*) =
     PackageResolver(
-      for (x <- IOUtils.list(packages) ++ extraDirs if x.getFileName.toString != ".gitignore")
-        yield Package.loadPackage(x))
+      (for(x <- IOUtils.list(packages) if x.getFileName.toString != ".gitignore") yield Package.loadPackage(x)) ++
+      (for(x <- systemPackages) yield Package.loadPackage(x).copy(isSystem = true)))
 }
