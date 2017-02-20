@@ -18,25 +18,33 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+local ipairs = ipairs
+local getFont, getFontName = _princess.getFont, _princess.getFontName
+local FormattedStringBuffer, Object, SimpleText, ComponentWrapper =
+    _princess.FormattedStringBuffer, _princess.Object, _princess.SimpleText, _princess.ComponentWrapper
+
 local function copyAttrs(target, v)
-    if v.font         then target.font         = _princess.getFont(v.font) end
-    if v.relativeSize then target.relativeSize = v.relativeSize            end
-    if v.color        then target.color        = v.color                   end
+    if v.font         then target.font         = getFont(v.font) end
+    if v.relativeSize then target.relativeSize = v.relativeSize  end
+    if v.color        then target.color        = v.color         end
     return target
 end
 
+local function fontAccessor(component, underlying)
+    component._property("font", function() return getFontName(underlying.font) end,
+                                function(v) underlying.font = getFont(v) end)
+end
+
 function TextFormatter()
-    local underlying = _princess.FormattedStringBuffer()
-    local formatter  = _princess.Object()
+    local underlying = FormattedStringBuffer()
+    local formatter  = Object()
 
-
-    formatter._property("font", function() return _princess.getFontName(underlying.font) end,
-                                function(v) underlying.font = _princess.getFont(v) end)
+    fontAccessor(formatter, underlying)
     for _, name in ipairs({"relativeSize", "color"}) do
         formatter._property(name, function() return underlying[name] end, function(v) underlying[name] = v end)
     end
     formatter._property("attributes", function()
-        return {font         = _princess.getFontName(underlying.font),
+        return {font         = getFontName(underlying.font),
                 relativeSize = underlying.relativeSize,
                 color        = underlying.color}
     end, function(v)
@@ -62,9 +70,14 @@ function TextFormatter()
 end
 
 function component.SimpleText(string, font, size, color)
-    font = _princess.getFont(font)
-    -- TODO: Override font property in SimpleText
-    return _princess.SimpleText(string, font, size, color)
+    font = getFont(font)
+    local underlying = SimpleText(string, font, size, color)
+    local wrapper = ComponentWrapper(underlying)
+    fontAccessor(wrapper, underlying)
+    for _, name in ipairs({"text", "color"}) do
+        wrapper._property(name, function() return underlying[name] end, function(v) underlying[name] = v end)
+    end
+    return wrapper
 end
 
 component.SimpleFormattedText = _princess.SimpleFormattedText

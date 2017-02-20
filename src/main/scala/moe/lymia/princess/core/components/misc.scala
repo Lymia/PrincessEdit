@@ -24,10 +24,15 @@ package moe.lymia.princess.core.components
 
 import moe.lymia.princess.core.TemplateException
 import moe.lymia.princess.core.lua._
-import moe.lymia.princess.core.svg.Size
+import moe.lymia.princess.core.svg.{SVGDefinitionReference, Size}
 import moe.lymia.princess.lua._
 
 import scala.xml.NodeSeq
+
+class ComponentWrapper(underlying: ComponentReference) extends Component {
+  override def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager) =
+    manager.renderComponent(underlying)
+}
 
 class ResourceComponent(protected var sizeParam: Size, private var resource: String) extends Component with SizedBase {
   override def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager) =

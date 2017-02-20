@@ -22,8 +22,6 @@
 
 package moe.lymia.princess.core.lua
 
-import java.awt.Color
-
 import moe.lymia.princess.core._
 import moe.lymia.princess.core.components._
 import moe.lymia.princess.core.svg._
@@ -90,5 +88,6 @@ case class ComponentLib(packages: PackageList) {
       new XMLTemplateComponent(size, getXMLTemplateData(s)).ref)
     L.register(princess, "Resource", (s: String, size: Size) => new ResourceComponent(size, s).ref)
     L.register(princess, "BaseLayout", (L: LuaState) => new LayoutComponent(L).ref)
+    L.register(princess, "ComponentWrapper", (ref: ComponentReference) => new ComponentWrapper(ref).ref)
   }
 }

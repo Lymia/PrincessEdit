@@ -18,10 +18,13 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+local setmetatable, pairs, ipairs = setmetatable, pairs, ipairs
+local getExports, loadLuaExport, loadINIExport = _princess.getExports, _princess.loadLuaExport, _princess.loadINIExport
+
 module = {}
 
 module.getExportList = _princess.getExportList
-module.loadLua = _princess.loadLuaExport
+module.loadLua = loadLuaExport
 
 local function wrapSection(section)
     -- We wrap the methods in a metadata so they don't show up in pairs() iteration
@@ -43,16 +46,17 @@ local function wrapSection(section)
     return mt.__index
 end
 
-function module.loadINI(path)
-    local ini = _princess.loadINIExport(path)
+local function loadINI(path)
+    local ini = loadINIExport(path)
     for _, v in pairs(ini) do
         wrapSection(v)
     end
     return ini
 end
+module.loadINI = loadINI
 
 function module.getExports(type)
-    local list = _princess.getExports(type)
+    local list = getExports(type)
 
     for _, export in ipairs(list) do
         local mt = wrapSection(export.metadata)
@@ -61,10 +65,10 @@ function module.getExports(type)
         end
 
         function export.loadLua()
-            return _princess.loadLuaExport(export.path)
+            return loadLuaExport(export.path)
         end
         function export.loadINI()
-            return module.loadINI(path)
+            return loadINI(path)
         end
     end
 
@@ -72,5 +76,5 @@ function module.getExports(type)
 end
 
 function require(s)
-    return _princess.loadLuaExport(s:gsub("%.", "/")..".lua")
+    return loadLuaExport(s:gsub("%.", "/")..".lua")
 end

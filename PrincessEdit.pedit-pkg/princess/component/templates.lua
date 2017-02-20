@@ -18,37 +18,41 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-component.Template = _princess.Template
+local Template = _princess.Template
+
+component.Template = Template
 
 local function colorToHex(color)
     return string.format("#%02x%02x%02x", color[1], color[2], color[3])
 end
 
-function component.Mask(maskComponent, dataComponent)
-    local mask = component.Template("princess/component/mask.xml", dataComponent.size)
+local function Mask(maskComponent, dataComponent)
+    local mask = Template("princess/component/mask.xml", dataComponent.size)
     mask.target = dataComponent
     mask.mask   = maskComponent
     return mask
 end
+component.Mask = Mask
 
 function component.Clip(clipPath, dataComponent)
-    local mask = component.Template("princess/component/clip.xml", dataComponent.size)
+    local mask = Template("princess/component/clip.xml", dataComponent.size)
     mask.target = dataComponent
     mask.clip   = clipPath
     return mask
 end
 
-function component.Fill(size, color)
-    local fill = component.Template("princess/component/fillRect.xml", size)
+local function Fill(size, color)
+    local fill = Template("princess/component/fillRect.xml", size)
     fill._property("color", function() return color end,
                             function(newColor) fill._ulColor = colorToHex(newColor); color = newColor end)
     fill.color = color
     return fill
 end
+component.Fill = Fill
 
 function component.FillShape(maskComponent, color)
-    local fill = component.Fill(maskComponent.size, color)
-    local mask = component.Mask(maskComponent, fill)
+    local fill = Fill(maskComponent.size, color)
+    local mask = Mask(maskComponent, fill)
     mask._property("color", function() return fill.color end,
                             function(color) fill.color = color end)
     return mask

@@ -18,24 +18,28 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+local pairs, ipairs = pairs, ipairs
+local table_insert = table.insert
+local BaseLayout = _princess.BaseLayout
+
 component.BaseLayout = _princess.BaseLayout
 
-function component.BaseSizedLayout(size)
-    local layout = component.BaseLayout()
+local function BaseSizedLayout(size)
+    local layout = BaseLayout()
     layout._property("size", function() return size end,
                              function(newSize) size = newSize end)
     return layout
 end
 
 function component.BasicLayout(size)
-    local layout = component.BaseSizedLayout(size)
+    local layout = BaseSizedLayout(size)
 
     local components = {}
     layout.prerenderHandler = function()
         local prerender = {}
         for _, component in ipairs(components) do
             if not component.size then
-                table.insert(prerender, component.component)
+                table_insert(prerender, component.component)
             end
         end
         return prerender
@@ -46,12 +50,12 @@ function component.BasicLayout(size)
             local copy = {}
             for k, v in pairs(component) do copy[k] = v end
             copy.size = copy.size or prerender[component.component]
-            table.insert(ret, copy)
+            table_insert(ret, copy)
         end
         return ret, layout.size
     end
     layout._method("addComponent", function(x, y, component, size)
-        table.insert(components, {component = component, x = x, y = y, size = size or component.size})
+        table_insert(components, {component = component, x = x, y = y, size = size or component.size})
     end)
 
     return layout

@@ -18,6 +18,9 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+local ipairs, warn = ipairs, warn
+local loadFont, getExports = _princess.loadFont, module.getExports
+
 local fontCache = {}
 local fontList = {}
 local function canonicalFontName(family, bold, italic)
@@ -35,13 +38,13 @@ local function registerFont(name, fontLoader)
 end
 local function loadFontPath(path)
     if fontCache[path] then return fontCache[path] end
-    local loaded = _princess.loadFont(path)
+    local loaded = loadFont(path)
     fontCache[path] = loaded
     return loaded
 end
 
 do
-    local fontExports = module.getExports("font")
+    local fontExports = getExports("font")
     for _, font in ipairs(fontExports) do
         local family, bold, italic = font.getSingle("family"), font.checkFlag("bold"), font.checkFlag("italic")
         local name = canonicalFontName(family, bold, italic)
