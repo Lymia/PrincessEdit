@@ -84,9 +84,17 @@ local fontNameList = {}
 function _princess.getFontName(font)
     return fontNameList[font]
 end
-function _princess.getFont(fontName)
+
+local function getFont(fontName)
     local font = fontList[fontName]
-    if not font then error("Font '"..fontName.."' does not exist.") end
+    if not font then
+        warn("Font '"..fontName.."' does not exist.")
+        local type = ""
+        for _, suffix in ipairs({"-Bold", "-Italic", "-BoldItalic"}) do
+            if fontName:endsWith(suffix) then type = suffix end
+        end
+        return getFont("FreeSans"..type)
+    end
 
     if not fontLoaded[fontName] then
         font = font()
@@ -97,3 +105,4 @@ function _princess.getFont(fontName)
 
     return font
 end
+_princess.getFont = getFont
