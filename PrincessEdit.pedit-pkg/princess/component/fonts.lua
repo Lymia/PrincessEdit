@@ -58,7 +58,7 @@ do
             end
         end
         if font.checkFlag("derive_bold") then
-            if italic then
+            if bold then
                 warn("Font '"..name.."' is already bold, but 'derive_bold' flag is set.")
             else
                 addBold = true
