@@ -22,7 +22,6 @@
 
 package moe.lymia.princess.core.svg
 
-import java.awt.Font
 import java.io.ByteArrayOutputStream
 import java.nio.file.{Files, Path}
 import java.util.zip.GZIPInputStream
@@ -32,6 +31,7 @@ import javax.xml.bind.DatatypeConverter
 import moe.lymia.princess.core._
 
 import scala.collection.mutable
+import scala.xml.{XML => _, _}
 
 trait ResourceLoader {
   def loadRaster    (builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
@@ -47,15 +47,15 @@ trait IncludeDefinitionLoader extends ResourceLoader {
 }
 trait IncludeVectorLoader extends ResourceLoader {
   def loadVector(builder: SVGBuilder, name: String, compression: Boolean, path: Path, expectedSize: Size) =
-    builder.createDefinitionFromContainer(name, expectedSize, MinifyXML.SVG(
+    builder.createDefinitionFromContainer(name, Bounds(expectedSize), MinifyXML.SVG(
       XML.load(if(compression) new GZIPInputStream(Files.newInputStream(path)) else Files.newInputStream(path)),
-      SVGBuilder.scope))
+      SVGBuilder.scope) % Attribute(null, "overflow", "hidden", Null))
 }
 
 trait ReferenceRasterLoader extends ResourceLoader {
   def loadRaster(builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
                  path: Path, expectedSize: Size) =
-    builder.createDefinitionFromContainer(name, expectedSize, <image xlink:href={path.toUri.toASCIIString}/>)
+    builder.createDefinitionFromContainer(name, Bounds(expectedSize), <image xlink:href={path.toUri.toASCIIString}/>)
 }
 trait DataURLRasterLoader extends ResourceLoader {
   def loadRaster(builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
@@ -69,7 +69,7 @@ trait DataURLRasterLoader extends ResourceLoader {
         byteOut.toByteArray
     }
     val uri = s"data:$expectedMime;base64,${DatatypeConverter.printBase64Binary(Files.readAllBytes(path))}"
-    builder.createDefinitionFromContainer(name, expectedSize, <image xlink:href={uri}/>)
+    builder.createDefinitionFromContainer(name, Bounds(expectedSize), <image xlink:href={uri}/>)
   }
 }
 

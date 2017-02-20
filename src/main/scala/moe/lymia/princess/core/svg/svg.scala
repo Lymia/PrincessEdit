@@ -63,33 +63,45 @@ object SVGGraphicsRenderer {
   lazy val domImpl = GenericDOMImplementation.getDOMImplementation
 }
 
-final case class SVGDefinitionReference(name: String, expectedSize: Size, extraLayout: Option[LuaTable],
+final case class SVGDefinitionReference(name: String, bounds: Bounds, extraLayout: Option[LuaTable],
                                         parent: SVGBuilder) {
-  private def trackUsage() = parent.addUsage(name)
+  private def incrementRefcount() = parent.addUsage(name)
+  def setNoInline() = parent.noInline(name)
+
   def include(x: Double, y: Double): Elem = {
-    trackUsage()
+    incrementRefcount()
     <use x={x.toString} y={y.toString} xlink:href={s"#$name"} princess:reference={name}/>
   }
-  def include(x: Double, y: Double, width: Double, height: Double): Elem =
-    if(Size(width, height) == expectedSize) include(x, y)
+  def includeInRect(x0: Double, y0: Double, width: Double, height: Double): Elem = {
+    val (x, y) = (x0 - bounds.minX, y0 - bounds.minY)
+    val boundSize = bounds.size
+    if(Size(width, height) == boundSize) include(x, y)
     else (include(x, y) % Attribute(null : String, "transform",
                                     s"translate(-$x -$y) "+
-                                    s"scale(${width/expectedSize.width} ${height/expectedSize.height}) "+
+                                    s"scale(${width/boundSize.width} ${height/boundSize.height}) "+
                                     s"translate($x $y)", Null)
                         % Attribute("princess", "newX", width.toString , Null)
                         % Attribute("princess", "newY", height.toString, Null))
+  }
+  def includeInBounds(minX: Double, minY: Double, maxX: Double, maxY: Double): Elem =
+    includeInRect(minX, minY, maxX - minX, maxY - minX)
 }
 final class SVGBuilder(val settings: RenderSettings) {
   private val id = GenID.makeId()
-  private var layerId = 0
+  private var defId = 0
   private val definitions = new mutable.ArrayBuffer[(String, Elem)]
   private val definitionMap = new mutable.HashMap[String, Elem]
+  private val noInlineList = new mutable.HashSet[String]
   private val useCount = new mutable.HashMap[String, Int]
 
   private def attribute(key: String, value: String) = Attribute(None, key, Text(value), Null)
 
   private[svg] def addUsage(id: String) = useCount.put(id, useCount.getOrElse(id, 0) + 1)
+  private[svg] def noInline(id: String) = noInlineList.add(id)
+
   private def getUseCount(id: String) = useCount.getOrElse(id, 0)
+  private def isUsed(id: String) = getUseCount(id) > 0
+  private def doInline(id: String) = !noInlineList.contains(id) && getUseCount(id) == 1
 
   private def inlineReferencesIterContinue(elem: Elem): Node =
     elem.copy(child = elem.child.map {
@@ -98,13 +110,13 @@ final class SVGBuilder(val settings: RenderSettings) {
     })
   private def inlineReferencesIter(elem: Elem): Node =
     if(elem.label == "use") XMLUtils.getAttribute(elem, "princess", "reference") match {
-      case Some(x) if getUseCount(x.text) == 1 =>
-        val newX = XMLUtils.getAttribute(elem, "princess","newX")
-        val newY = XMLUtils.getAttribute(elem, "princess","newY")
+      case Some(x) if doInline(x.text) =>
+        val newX = XMLUtils.getAttribute(elem, "princess", "newX")
+        val newY = XMLUtils.getAttribute(elem, "princess", "newY")
         var node = definitionMap(x.text)
 
         if(newX.isDefined && newY.isDefined) node = (
-          node % attribute("width", newX.get.text)
+          node % attribute("width" , newX.get.text)
                % attribute("height", newY.get.text)
         )
         for(attr <-elem.attributes if !SVGBuilder.useExcludeSet.contains(attr.key) &&
@@ -116,60 +128,43 @@ final class SVGBuilder(val settings: RenderSettings) {
     } else inlineReferencesIterContinue(elem)
 
   def createDefinition(name: String, elem: Elem) = {
-    val resourceName = s"princess_def_${id}_${layerId}_${name.replace(" ", "_").replaceAll("[^a-zA-Z0-9_]", "")}"
-    layerId = layerId + 1
+    val resourceName = s"princess_def_${id}_${defId}_${name.replace(" ", "_").replaceAll("[^a-zA-Z0-9_]", "")}"
+    defId = defId + 1
     definitions.append((resourceName, elem % attribute("id", resourceName)))
     definitionMap.put(resourceName, elem)
     resourceName
   }
-  def createDefinitionFromContainer(name: String, expectedSize: Size, elems: Elem,
-                                    extraLayout: Option[LuaTable] = None) =
-    SVGDefinitionReference(createDefinition(name,
-      elems % attribute("width"              , expectedSize.width.toString)
-            % attribute("height"             , expectedSize.height.toString)
-            % attribute("preserveAspectRatio", "none")
-    ), expectedSize, extraLayout, this)
-  def createDefinitionFromFragment(name: String, expectedSize: Size, elems: NodeSeq,
-                                   extraLayout: Option[LuaTable] = None, noViewport: Boolean = false) =
-    createDefinitionFromContainer(name, expectedSize,
-      if(!noViewport) <svg viewBox={s"0 0 ${expectedSize.width} ${expectedSize.height}"}>{elems}</svg>
-      else            <svg>{elems}</svg>, extraLayout = extraLayout)
+  private def setSize(elem: Elem, size: Size) =
+    (elem % attribute("width"              , size.width.toString)
+          % attribute("height"             , size.height.toString)
+          % attribute("preserveAspectRatio", "none"))
+  def createDefinitionFromContainer(name: String, bounds: Bounds, elems: Elem,
+                                    extraLayout: Option[LuaTable] = None) = {
+    val size = Size(bounds.maxX, bounds.maxY)
+    SVGDefinitionReference(createDefinition(name, setSize(elems, size)), bounds, extraLayout, this)
+  }
+  def createDefinitionFromFragment(name: String, bounds: Bounds, elems: NodeSeq,
+                                   extraLayout: Option[LuaTable] = None, allowOverflow: Boolean = false) = {
+    val svg = <svg viewBox={s"0 0 ${bounds.maxX} ${bounds.maxY}"}>{elems}</svg>
+    createDefinitionFromContainer(name, bounds,
+      if(!allowOverflow) svg else svg % Attribute(null, "overflow", "visible", Null), extraLayout = extraLayout)
+  }
 
-  def createDefinitionFromGraphics(name: String, expectedSize: Size, extraLayout: LuaTable)
-                                  (fn: SVGGraphics2D => Unit) = {
-    val renderer = new SVGGraphicsRenderer(settings)
-    fn(renderer.gfx)
-    createDefinitionFromContainer(name, expectedSize, renderer.renderXML(), extraLayout = Some(extraLayout))
-  }
-  def createDefinitionFromGraphics(name: String, expectedSize: Size)(fn: SVGGraphics2D => LuaTable) = {
-    val renderer = new SVGGraphicsRenderer(settings)
-    val extraLayout = fn(renderer.gfx)
-    createDefinitionFromContainer(name, expectedSize, renderer.renderXML(), extraLayout = Some(extraLayout))
-  }
-  def createDefinitionFromGraphics(name: String, extraLayout: LuaTable)(fn: SVGGraphics2D => Size) = {
-    val renderer = new SVGGraphicsRenderer(settings)
-    val expectedSize = fn(renderer.gfx)
-    createDefinitionFromContainer(name, expectedSize, renderer.renderXML(), extraLayout = Some(extraLayout))
-  }
-  def createDefinitionFromGraphics(name: String)(fn: SVGGraphics2D => (Size, LuaTable)) = {
-    val renderer = new SVGGraphicsRenderer(settings)
-    val (expectedSize, extraLayout) = fn(renderer.gfx)
-    createDefinitionFromContainer(name, expectedSize, renderer.renderXML(), extraLayout = Some(extraLayout))
-  }
+  def createRenderer() = new SVGGraphicsRenderer(settings)
 
   private val stylesheetDefs = new mutable.ArrayBuffer[String]
   def addStylesheetDefinition(str: String) = stylesheetDefs.append(str)
 
   def renderSVGTag(root: SVGDefinitionReference) = MinifyXML.SVGFinalize(
-    <svg version="1.1" preserveAspectRatio="none"
+    <svg version="1.1" preserveAspectRatio="none" overflow="hidden"
          width={settings.size.widthString} height={settings.size.heightString}
          viewBox={s"0 0 ${settings.viewport.width} ${settings.viewport.height}"}>
       {stylesheetDefs.map(x => <style>{x}</style>)}
       <defs> {
-        definitions.filter(x => getUseCount(x._1) > 1).map(x => inlineReferencesIter(x._2).head)
+        definitions.filter(x => !doInline(x._1) && isUsed(x._1)).map(x => inlineReferencesIter(x._2).head)
       } </defs>
       {
-        inlineReferencesIter(root.include(0, 0, settings.viewport.width, settings.viewport.height))
+        inlineReferencesIter(root.includeInRect(0, 0, settings.viewport.width, settings.viewport.height))
       }
     </svg>, SVGBuilder.scope).copy(scope = SVGBuilder.scope)
 

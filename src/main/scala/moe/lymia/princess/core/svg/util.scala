@@ -24,10 +24,10 @@ package moe.lymia.princess.core.svg
 
 import java.awt.Font
 
+import moe.lymia.princess.core.Size
+
 import scala.collection.mutable
 import scala.xml._
-
-final case class Size(width: Double, height: Double)
 
 case class PhysicalUnit(svgName: String, unPerInch: Double)
 object PhysicalUnit {

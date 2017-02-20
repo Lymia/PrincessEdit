@@ -26,7 +26,6 @@ import java.nio.file.Files
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.core.lua._
-import moe.lymia.princess.core.svg.Size
 import moe.lymia.princess.lua._
 
 import scala.collection.mutable
@@ -62,8 +61,8 @@ object XMLTemplateData {
     }
 }
 
-class XMLTemplateComponent(protected val sizeParam: Size, data: XMLTemplateData)
-  extends SimpleComponent with SizedSimpleComponent {
+class XMLTemplateComponent(protected val boundsParam: Bounds, data: XMLTemplateData)
+  extends SimpleComponent with BoundedBase {
 
   private val componentMap = new mutable.HashMap[String, ComponentReference]
   private val stringMap    = new mutable.HashMap[String, String]
@@ -73,8 +72,10 @@ class XMLTemplateComponent(protected val sizeParam: Size, data: XMLTemplateData)
 
   private def templateString(manager: ComponentRenderManager, str: String) =
     XMLTemplateComponent.varRegex.replaceAllIn(str, x => x.group(1) match {
-      case "width" => size.width.toString
-      case "height" => size.height.toString
+      case "minX" => bounds.minX.toString
+      case "maxX" => bounds.maxX.toString
+      case "width" | "maxX" => bounds.maxX.toString
+      case "height" | "maxY" => bounds.maxY.toString
       case field => stringMap.get(field) match {
         case Some(s) => data.parameters.get(field) match {
           case Some(ExpectedType.Definition) =>
@@ -109,9 +110,9 @@ class XMLTemplateComponent(protected val sizeParam: Size, data: XMLTemplateData)
 
       var elem =
         if(fill)
-          componentRef.include(xd, yd, size.width, size.height)
+          componentRef.includeInBounds(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY)
         else if(widthElem.nonEmpty && heightElem.nonEmpty)
-          componentRef.include(xd, yd, widthElem.text.toDouble, heightElem.text.toDouble)
+          componentRef.includeInRect(xd, yd, widthElem.text.toDouble, heightElem.text.toDouble)
         else componentRef.include(xd, yd)
       for(attr <- otherAttrs) elem = elem % Attribute(None, attr.key, Text(attr.value.text), Null)
       processNode(manager, elem)
@@ -119,7 +120,9 @@ class XMLTemplateComponent(protected val sizeParam: Size, data: XMLTemplateData)
                            child = n.child.map(x => processNode(manager, x)))
     case x => x
   }
-  override def sizedRender(manager: ComponentRenderManager) = data.elems.map(x => processNode(manager, x))
+
+  override def renderComponent(manager: ComponentRenderManager) =
+    (data.elems.map(x => processNode(manager, x)), bounds)
 
   for((k, expectedType) <- data.parameters) expectedType match {
     case ExpectedType.Component =>

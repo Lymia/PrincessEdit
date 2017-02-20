@@ -44,6 +44,27 @@ trait LuaComponentImplicits {
       case _ => typerror(L, source, v, "Size")
     }
   }
+  implicit object LuaParameterBounds extends LuaParameter[Bounds] {
+    override def toLua(bounds: Bounds) = new LuaObject(LuaExecWrapper(L => {
+      val t = L.newTable()
+      L.rawSet(t, 1, bounds.minX)
+      L.rawSet(t, 2, bounds.minY)
+      L.rawSet(t, 3, bounds.maxX)
+      L.rawSet(t, 4, bounds.maxY)
+      t
+    }))
+    override def fromLua(L: Lua, v: Any, source: => Option[String]): Bounds = v match {
+      case t: LuaTable =>
+        val Ls = new LuaState(L)
+        if(Ls.objLen(t) == 2)
+          Bounds(Ls.getTable(t, 1).as[Double], Ls.getTable(t, 2).as[Double])
+        else if(Ls.objLen(t) == 4)
+          Bounds(Ls.getTable(t, 1).as[Double], Ls.getTable(t, 2).as[Double],
+                 Ls.getTable(t, 3).as[Double], Ls.getTable(t, 4).as[Double])
+        else typerror(L, source, v, "Bounds")
+      case _ => typerror(L, source, v, "Bounds")
+    }
+  }
 
   implicit object LuaComponentReference extends LuaUserdataType[ComponentReference] {
     metatable { (L, mt) =>
@@ -84,10 +105,13 @@ case class ComponentLib(packages: PackageList) {
   def open(L: LuaState) = {
     val princess = L.newLib("_princess")
     L.register(princess, "ComponentManager", () => new ComponentManager())
-    L.register(princess, "Template", (s: String, size: Size) =>
-      new XMLTemplateComponent(size, getXMLTemplateData(s)).ref)
+    L.register(princess, "Template", (s: String, bounds: Bounds) =>
+      new XMLTemplateComponent(bounds, getXMLTemplateData(s)).ref)
     L.register(princess, "Resource", (s: String, size: Size) => new ResourceComponent(size, s).ref)
-    L.register(princess, "BaseLayout", (L: LuaState) => new LayoutComponent(L).ref)
     L.register(princess, "ComponentWrapper", (ref: ComponentReference) => new ComponentWrapper(ref).ref)
+
+    L.register(princess, "BaseLayout", (L: LuaState, overflow: Boolean) => new LayoutComponent(L, overflow).ref)
+    L.register(princess, "BaseSizedLayout", (L: LuaState, bounds: Bounds, overflow: Boolean) =>
+      new BoundedLayoutComponent(L, bounds, overflow).ref)
   }
 }

@@ -20,42 +20,26 @@
 
 local pairs, ipairs = pairs, ipairs
 local table_insert = table.insert
-local BaseLayout = _princess.BaseLayout
+local BaseLayout, BaseSizedLayout = _princess.BaseLayout, _princess.BaseSizedLayout
 
-component.BaseLayout = _princess.BaseLayout
-
-local function BaseSizedLayout(size)
-    local layout = BaseLayout()
-    layout._property("size", function() return size end,
-                             function(newSize) size = newSize end)
-    return layout
-end
+component.BaseLayout = BaseLayout
+component.BasicSizedLayout = BaseSizedLayout
 
 function component.BasicLayout(size)
     local layout = BaseSizedLayout(size)
 
     local components = {}
-    layout.prerenderHandler = function()
-        local prerender = {}
-        for _, component in ipairs(components) do
-            if not component.size then
-                table_insert(prerender, component.component)
-            end
-        end
-        return prerender
-    end
-    layout.layoutHandler = function(prerender)
-        local ret = {}
-        for _, component in ipairs(components) do
-            local copy = {}
-            for k, v in pairs(component) do copy[k] = v end
-            copy.size = copy.size or prerender[component.component]
-            table_insert(ret, copy)
-        end
-        return ret, layout.size
+    layout.layoutHandler = function()
+        return {
+            components = components,
+            bounds     = layout.bounds,
+        }
     end
     layout._method("addComponent", function(x, y, component, size)
         table_insert(components, {component = component, x = x, y = y, size = size or component.size})
+    end)
+    layout._method("addUnsizedComponent", function(x, y, component)
+        table_insert(components, {component = component, x = x, y = y})
     end)
 
     return layout

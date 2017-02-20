@@ -29,51 +29,56 @@ import moe.lymia.princess.lua._
 import org.apache.batik.svggen.SVGGraphics2D
 
 import scala.collection.mutable
-import scala.xml.NodeSeq
+import scala.xml._
 
 trait Component extends LuaLookup {
   def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager): SVGDefinitionReference
   def ref: ComponentReference = DirectComponentReference(this)
 }
 
-abstract class SimpleComponent(private var noViewport: Boolean = false) extends Component {
-  def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size)
+abstract class SimpleComponent(protected var allowOverflow: Boolean = false) extends Component {
+  def renderComponent(manager: ComponentRenderManager): (NodeSeq, Bounds)
   def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager): SVGDefinitionReference = {
-    val (nodes, size) = renderComponent(manager)
-    manager.builder.createDefinitionFromFragment(ref.name, size, nodes, noViewport = noViewport)
+    val (nodes, bounds) = renderComponent(manager)
+    manager.builder.createDefinitionFromFragment(ref.name, bounds, nodes, allowOverflow = allowOverflow)
   }
-
-  final def getNoViewport = noViewport
-
-  property("noViewport", _ => noViewport, (L, v: Boolean) => noViewport = v)
 }
 
-abstract class GraphicsComponent(noViewportParam: Boolean = false) extends SimpleComponent(noViewportParam) {
-  def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D, table: LuaTable): Size
-  override def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = {
-    val ref = manager.builder.createDefinitionFromGraphics("graphicsRender")(g => {
-      val table = new LuaTable()
-      (renderComponent(manager, g, table), table)
-    })
-    (ref.include(0, 0), ref.expectedSize)
+abstract class GraphicsComponent(protected var allowOverflow: Boolean = false) extends Component {
+  def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D, table: LuaTable): Bounds
+  override def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager) = {
+    val renderer = manager.builder.createRenderer()
+    val table = new LuaTable()
+    val bounds = renderComponent(manager, renderer.gfx, table)
+    val rendered = renderer.renderXML()
+    val xml = if(allowOverflow) rendered % Attribute(null, "overflow", "visible", Null) else rendered
+    manager.builder.createDefinitionFromContainer(ref.name, bounds, xml, extraLayout = Some(table))
   }
 }
 
 trait SizedBase extends LuaLookup {
+  private def checkSize(size: Size) =
+    if(size.width <= 0 || size.height <= 0) throw TemplateException("Invalid size value.")
   protected def sizeParam: Size
+  checkSize(sizeParam)
   protected var size: Size = sizeParam
-  property("size", _ => size, (L, v: Size) => size = v)
+  property("size", _ => size, (_, v: Size) => {
+    checkSize(v)
+    size = v
+  })
+  property("bounds", _ => Bounds(size), (L, v: Bounds) => {
+    if(v.minX != 0 || v.minY != 0)
+      L.error("cannot convert given bounds into size (minX or minY is non-zero)")
+    val ns = Size(v.maxX, v.maxY)
+    checkSize(ns)
+    size = ns
+  })
 }
-trait SizedSimpleComponent extends SizedBase {
-  protected def sizedRender(manager: ComponentRenderManager): NodeSeq
-  def renderComponent(manager: ComponentRenderManager): (NodeSeq, Size) = (sizedRender(manager), size)
-}
-trait SizedGraphicsComponent extends SizedBase {
-  protected def sizedRender(manager: ComponentRenderManager, graphics: SVGGraphics2D): NodeSeq
-  def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D): Size = {
-    sizedRender(manager, graphics)
-    size
-  }
+trait BoundedBase extends LuaLookup {
+  protected def boundsParam: Bounds
+  protected var bounds: Bounds = boundsParam
+  property("size", L => bounds.size, (_, v: Size) => {bounds = Bounds(v)})
+  property("bounds", _ => bounds, (_, v: Bounds) => bounds = v)
 }
 
 sealed trait ComponentReference {

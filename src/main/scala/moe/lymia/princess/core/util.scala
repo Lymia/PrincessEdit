@@ -35,6 +35,15 @@ import scala.collection.JavaConverters._
 import scala.xml.factory.XMLLoader
 import scala.xml.{Elem, SAXParser}
 
+final case class Size(width: Double, height: Double)
+final case class Bounds(minX: Double, minY: Double, maxX: Double, maxY: Double) {
+  def size = Size(maxX - minX, maxY - minY)
+}
+object Bounds {
+  def apply(width: Double, height: Double) = new Bounds(0, 0, width, height)
+  def apply(size: Size) = new Bounds(0, 0, size.width, size.height)
+}
+
 final case class TemplateException(message: String, ex: Throwable = null, context: Seq[String] = Seq(),
                                    suppressTrace: Boolean = false, noCause: Boolean = false)
   extends RuntimeException((context :+ message).mkString(": "), if(noCause) null else ex, suppressTrace, true)

@@ -22,6 +22,8 @@
 
 package moe.lymia.princess.lua
 
+import moe.lymia.princess.core.TemplateException
+
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
@@ -47,7 +49,10 @@ trait LuaLookup extends HasLuaMethods {
     property(name, L => fn, (L, _ : Any) => L.error(s"cannot set method '$name'"))
   protected def method(name: String)(fn: ScalaLuaClosure) = luaMethod(name)(new LuaClosure(fn.fn))
 
-  protected def deleteProperty(name: String): Unit = properties.remove(name)
+  protected def deleteProperty(name: String): Unit = {
+    if(!properties.contains(name)) throw TemplateException(s"property '$name' does not exist")
+    properties.remove(name)
+  }
 
   private def setLuaProperty(doOverride: Boolean)
                             (L: LuaState, name: String, get: Option[LuaClosure], set: Option[LuaClosure]) = {

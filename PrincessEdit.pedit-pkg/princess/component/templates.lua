@@ -27,7 +27,7 @@ local function colorToHex(color)
 end
 
 local function Mask(maskComponent, dataComponent)
-    local mask = Template("princess/component/mask.xml", dataComponent.size)
+    local mask = Template("princess/component/mask.xml", dataComponent.bounds)
     mask.target = dataComponent
     mask.mask   = maskComponent
     return mask
@@ -35,14 +35,14 @@ end
 component.Mask = Mask
 
 function component.Clip(clipPath, dataComponent)
-    local mask = Template("princess/component/clip.xml", dataComponent.size)
+    local mask = Template("princess/component/clip.xml", dataComponent.bounds)
     mask.target = dataComponent
     mask.clip   = clipPath
     return mask
 end
 
-local function Fill(size, color)
-    local fill = Template("princess/component/fillRect.xml", size)
+local function Fill(bounds, color)
+    local fill = Template("princess/component/fillRect.xml", bounds)
     fill._property("color", function() return color end,
                             function(newColor) fill._ulColor = colorToHex(newColor); color = newColor end)
     fill.color = color
@@ -51,7 +51,7 @@ end
 component.Fill = Fill
 
 function component.FillShape(maskComponent, color)
-    local fill = Fill(maskComponent.size, color)
+    local fill = Fill(maskComponent.bounds, color)
     local mask = Mask(maskComponent, fill)
     mask._property("color", function() return fill.color end,
                             function(color) fill.color = color end)
