@@ -83,17 +83,20 @@ object Package {
       throw TemplateException(s"No manifest found in package")
     val manifest = INI.load(manifestPath)
 
-    val exportsPath = path.resolve("exports.ini")
-    if(!Files.exists(exportsPath) || !Files.isRegularFile(exportsPath))
-      throw TemplateException(s"No export manifest found in package")
-    val exports = INI.load(exportsPath)
-
     val exportMap = new mutable.HashMap[String, mutable.ArrayBuffer[Export]]
-    for((path, metadata) <- exports) {
+    def loadExports(exports: INI) = for((path, metadata) <- exports) {
       val types = metadata.getMulti("type")
       val export = Export(path, types, metadata.underlying)
       for(t <- types) exportMap.getOrElseUpdate(t, new mutable.ArrayBuffer[Export]).append(export)
     }
+
+    val exportsPath = path.resolve("exports.ini")
+    if(Files.exists(exportsPath) && Files.isRegularFile(exportsPath)) loadExports(INI.load(exportsPath))
+
+    val exportsDirPath = path.resolve("exports")
+    if(Files.exists(exportsDirPath) && Files.isDirectory(exportsDirPath))
+      for(file <- IOUtils.list(exportsDirPath))
+        loadExports(INI.load(file))
 
     val packageSection = manifest.getSection("package")
     val dependenciesSection = manifest.getSectionOptional("dependencies").underlying

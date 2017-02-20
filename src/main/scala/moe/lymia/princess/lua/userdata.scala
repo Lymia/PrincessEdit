@@ -47,6 +47,8 @@ trait LuaLookup extends HasLuaMethods {
     property(name, L => fn, (L, _ : Any) => L.error(s"cannot set method '$name'"))
   protected def method(name: String)(fn: ScalaLuaClosure) = luaMethod(name)(new LuaClosure(fn.fn))
 
+  protected def deleteProperty(name: String): Unit = properties.remove(name)
+
   private def setLuaProperty(doOverride: Boolean)
                             (L: LuaState, name: String, get: Option[LuaClosure], set: Option[LuaClosure]) = {
     if(!doOverride && properties.contains(name)) L.error(s"property '$name' already defined!")
@@ -59,10 +61,12 @@ trait LuaLookup extends HasLuaMethods {
     luaMethod(name)(m)
   }
 
+  method("_lock")(() => for(name <- properties.keySet if name.startsWith("_")) properties.remove(name))
   method("_property")(setLuaProperty(doOverride = false) _)
   method("_overrideProperty")(setLuaProperty(doOverride = true) _)
   method("_method")(setLuaMethod(doOverride = false) _)
   method("_overrideMethod")(setLuaMethod(doOverride = true) _)
+  method("_deleteProperty")(deleteProperty _)
   method("_hasProperty")((k: String) => properties.contains(k))
 
   override def getField(L: LuaState, name: String): LuaObject =

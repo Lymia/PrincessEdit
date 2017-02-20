@@ -31,6 +31,8 @@ object CoreLib {
     L.register(princess, "trimString", (s: String) => s.trim)
     L.register(princess, "splitString", (s: String, on: String) => s.split(on).toSeq)
 
+    L.rawSet(princess, "warn", L.rawGet(L.getGlobals, "print"))
+
     L.register(princess, "Object", () => new LuaLookup { } : HasLuaMethods)
   }
 }

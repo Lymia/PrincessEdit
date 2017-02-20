@@ -55,11 +55,18 @@ trait LuaTextImplicits {
 
   implicit object LuaFormattedString extends LuaUserdataType[FormattedString]
   implicit object LuaFormattedStringBuffer extends PropertiesUserdataType[FormattedStringBuffer] {
-    property("font"       , (L, a) => a.font            , (L, a, v : Font  ) => a.font             = v)
-    property("fontRelSize", (L, a) => a.fontRelativeSize, (L, a, v : Double) => a.fontRelativeSize = v)
-    property("color"      , (L, a) => a.color           , (L, a, v : Color ) => a.color            = v)
+    property("font"        , (L, a) => a.font            , (L, a, v : Font  ) => a.font             = v)
+    property("relativeSize", (L, a) => a.fontRelativeSize, (L, a, v : Double) => a.fontRelativeSize = v)
+    property("color"       , (L, a) => a.color           , (L, a, v : Color ) => a.color            = v)
 
-    unboundMethod("append"            )((a: FormattedStringBuffer, str: String) => a.append(str))
+    unboundMethod("append") { (a: FormattedStringBuffer, str: String) => a.append(str) }
+    unboundMethod("appendWithAttributes") { (L: LuaState, a: FormattedStringBuffer, str: String, attr: LuaTable) =>
+      val textAttrs = TextAttributes(L.rawGet(attr, "font").as[Option[Font]].getOrElse(a.font),
+                                     L.rawGet(attr, "relativeSize").as[Option[Double]].getOrElse(a.fontRelativeSize),
+                                     L.rawGet(attr, "color").as[Option[Color]].getOrElse(a.color))
+      a.append(str, textAttrs)
+    }
+
     unboundMethod("getFormattedString")((a: FormattedStringBuffer) => a.finish())
     unboundMethod("paragraphBreak"    )((a: FormattedStringBuffer) => a.paragraphBreak())
     unboundMethod("lineBreak"         )((a: FormattedStringBuffer) => a.lineBreak())

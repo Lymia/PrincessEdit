@@ -35,7 +35,12 @@ local function wrapSection(section)
     function mt.__index.getMulti(k)
         return section[k] or {}
     end
+    function mt.__index.checkFlag(k)
+        return not not section[k]
+    end
+
     setmetatable(section, mt)
+    return mt.__index
 end
 
 function module.loadINI(path)
@@ -49,14 +54,18 @@ end
 function module.getExports(type)
     local list = _princess.getExports(type)
 
-    for _, v in ipairs(list) do
-        function v.loadLua()
-            return _princess.loadLuaExport(list.path)
+    for _, export in ipairs(list) do
+        local mt = wrapSection(export.metadata)
+        for k, v in pairs(mt) do
+            export[k] = v
         end
-        function v.loadINI()
+
+        function export.loadLua()
+            return _princess.loadLuaExport(export.path)
+        end
+        function export.loadINI()
             return module.loadINI(path)
         end
-        wrapSection(list.metadata)
     end
 
     return list
