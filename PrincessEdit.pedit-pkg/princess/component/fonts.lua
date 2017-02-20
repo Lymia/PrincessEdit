@@ -91,11 +91,11 @@ end
 local function getFont(fontName)
     local font = fontList[fontName]
     if not font then
-        warn("Font '"..fontName.."' does not exist.")
         local type = ""
         for _, suffix in ipairs({"-Bold", "-Italic", "-BoldItalic"}) do
             if fontName:endsWith(suffix) then type = suffix end
         end
+        warn("Font '"..fontName.."' does not exist, falling back to 'FreeSans"..type.."'.")
         return getFont("FreeSans"..type)
     end
 

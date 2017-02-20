@@ -21,7 +21,7 @@
 function string.startsWith(str, prefix)
     local lpre = #prefix
     if str:sub(1, lpre) == prefix then
-        return true, str:sub(lpre, #str)
+        return true, str:sub(lpre + 1, #str)
     else
         return false
     end
@@ -29,7 +29,7 @@ end
 
 function string.endsWith(str, suffix)
     local lstr, lsuf = #str, #suffix
-    if str:sub(lstr - lsuf, lstr) == suffix then
+    if str:sub(lstr - lsuf + 1, lstr) == suffix then
         return true, str:sub(1, lstr - lsuf)
     else
         return false
