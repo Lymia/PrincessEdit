@@ -208,7 +208,8 @@ object LuaState {
     OSLib.open(L)
     StringLib.open(L)
     TableLib.open(L)
-    L.setGlobal("loadfile", LuaNil)
+    L.setGlobal("dofile", Lua.NIL)
+    L.setGlobal("loadfile", Lua.NIL)
 
     new LuaState(L)
   }
