@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.util
 
-import java.io.{IOException, InputStream, InputStreamReader}
+import java.io.{File, IOException, InputStream, InputStreamReader}
 import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
 import java.nio.file._
@@ -115,6 +115,15 @@ object IOUtils {
           FileVisitResult.CONTINUE
         } else throw exc
       })
+
+  def withTemporaryFile[T](prefix: String = "princess-edit-tmp-", extension: String = "tmp")(f: File => T) = {
+    val tempFile = File.createTempFile(prefix, s".$extension")
+    try {
+      f(tempFile)
+    } finally {
+      if(!tempFile.delete() && tempFile.exists()) tempFile.deleteOnExit()
+    }
+  }
 
   def lock(lockFile: Path) = {
     val lock = new FileLock(lockFile)

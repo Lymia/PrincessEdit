@@ -24,7 +24,7 @@ package moe.lymia.princess.core.lua
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.core.components._
-import moe.lymia.princess.core.svg._
+import moe.lymia.princess.core.builder._
 import moe.lymia.princess.lua._
 
 import scala.collection.mutable

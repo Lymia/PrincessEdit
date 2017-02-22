@@ -26,8 +26,9 @@ import java.io.{FileOutputStream, FileWriter}
 import javax.imageio.ImageIO
 
 import moe.lymia.princess.core.PackageManager
-import moe.lymia.princess.core.svg.{ExportResourceLoader, RasterizeResourceLoader, RenderSettings}
+import moe.lymia.princess.core.builder.{ExportResourceLoader, LinkExportResourceLoader, RasterizeResourceLoader, RenderSettings}
 import moe.lymia.princess.lua._
+import moe.lymia.princess.svg.InkscapeConnectionFactory
 
 private case class CLIException(message: String) extends Exception
 
@@ -40,6 +41,7 @@ class CLI {
   private var cardData: String = _
 
   private var link: Boolean = false
+  private var dirty: Boolean = false
 
   private var x: Int = _
   private var y: Int = _
@@ -72,7 +74,9 @@ class CLI {
       arg[String]("<template>").foreach(template = _).hidden(),
       arg[String]("<cardData>").foreach(cardData = _).hidden(),
       arg[String]("<out>"     ).foreach(out      = _).hidden(),
-      opt[Unit  ]("link"      ).text("Link instead of include resources").foreach(_ => link = true)
+      opt[Unit  ]("link"      ).text("Link instead of include resources").foreach(_ => link = true),
+      opt[Unit  ]("dirty"     ).text("Output version of SVG used for direct rendering. Implies --link").
+        foreach(_ => dirty = true)
     )
   }
 
@@ -123,13 +127,19 @@ class CLI {
   }
   private def cmd_render(): Unit = {
     val (template, cardData) = renderCommon()
-    val image = time("Renderered image") { template.renderImage(x, y, cardData) }
-    time("Encoding image") { ImageIO.write(image, "png", new FileOutputStream(out)) }
+    val renderer = time("Creating renderer instance") { new InkscapeConnectionFactory("inkscape").createRenderer() }
+    try {
+      val image = time("Renderered image") { template.renderImage(renderer, x, y, cardData) }
+      time("Encoding image") { ImageIO.write(image, "png", new FileOutputStream(out)) }
+    } finally {
+      renderer.destroy()
+    }
   }
   private def cmd_renderSVG(): Unit = {
     val (template, cardData) = renderCommon()
     time("Renderered SVG") {
-      template.write(new FileWriter(out), cardData, res = if(link) RasterizeResourceLoader else ExportResourceLoader)
+      template.write(new FileWriter(out), cardData, pretty = !dirty, res =
+        if(dirty) RasterizeResourceLoader else if(link) LinkExportResourceLoader else ExportResourceLoader)
     }
   }
 

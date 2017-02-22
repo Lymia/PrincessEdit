@@ -24,7 +24,7 @@ package moe.lymia.princess.core.components
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.core.lua._
-import moe.lymia.princess.core.svg._
+import moe.lymia.princess.core.builder._
 import moe.lymia.princess.lua._
 
 class ComponentWrapper(underlying: ComponentReference) extends Component {

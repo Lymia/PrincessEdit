@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.svg
+package moe.lymia.princess.core.builder
 
 import java.io.ByteArrayOutputStream
 import java.nio.file.{Files, Path}
@@ -45,14 +45,19 @@ trait IncludeDefinitionLoader extends ResourceLoader {
   def loadDefinition(builder: SVGBuilder, name: String, path: Path) =
     builder.createDefinition(name, XML.load(Files.newInputStream(path)), isDef = true)
 }
-trait IncludeVectorLoader extends ResourceLoader {
+
+trait SimpleVectorLoader extends ResourceLoader {
+  def minifyVectorElem(elem: Elem, scope: NamespaceBinding) = elem
   def loadVector(builder: SVGBuilder, name: String, compression: Boolean, path: Path, expectedSize: Size) =
-    builder.createDefinitionFromContainer(name, Bounds(expectedSize), MinifyXML.SVG(
+    builder.createDefinitionFromContainer(name, Bounds(expectedSize), minifyVectorElem(
       XML.load(if(compression) new GZIPInputStream(Files.newInputStream(path)) else Files.newInputStream(path)),
       SVGBuilder.scope) % Attribute(null, "overflow", "hidden", Null))
 }
+trait MinifyVectorLoader extends SimpleVectorLoader {
+  override def minifyVectorElem(elem: Elem, scope: NamespaceBinding) = MinifyXML.SVG(elem, scope)
+}
 
-trait ReferenceRasterLoader extends ResourceLoader {
+trait LinkRasterLoader extends ResourceLoader {
   def loadRaster(builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
                  path: Path, expectedSize: Size) =
     builder.createDefinitionFromContainer(name, Bounds(expectedSize), <image xlink:href={path.toUri.toASCIIString}/>)
@@ -73,8 +78,9 @@ trait DataURLRasterLoader extends ResourceLoader {
   }
 }
 
-object RasterizeResourceLoader extends IncludeDefinitionLoader with IncludeVectorLoader with ReferenceRasterLoader
-object ExportResourceLoader    extends IncludeDefinitionLoader with IncludeVectorLoader with DataURLRasterLoader
+object RasterizeResourceLoader  extends IncludeDefinitionLoader with SimpleVectorLoader with LinkRasterLoader
+object LinkExportResourceLoader extends IncludeDefinitionLoader with MinifyVectorLoader with LinkRasterLoader
+object ExportResourceLoader     extends IncludeDefinitionLoader with MinifyVectorLoader with DataURLRasterLoader
 
 private sealed trait ImageFormatType
 private object ResourceFormatType {

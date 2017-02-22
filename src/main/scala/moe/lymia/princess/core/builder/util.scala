@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.svg
+package moe.lymia.princess.core.builder
 
 import java.awt.Font
 

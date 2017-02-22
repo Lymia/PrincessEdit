@@ -26,8 +26,9 @@ import java.io.Writer
 
 import moe.lymia.princess.core.components._
 import moe.lymia.princess.core.lua._
-import moe.lymia.princess.core.svg._
+import moe.lymia.princess.core.builder._
 import moe.lymia.princess.lua._
+import moe.lymia.princess.svg.SVGRenderer
 
 trait Template {
   protected def renderSettings: RenderSettings
@@ -42,13 +43,15 @@ trait Template {
     val (builder, definition) = doRender(cardData, res)
     builder.renderSVGTag(definition)
   }
-  def write(w: Writer, cardData: LuaTable, encoding: String = "utf-8", res: ResourceLoader = ExportResourceLoader) = {
+  def write(w: Writer, cardData: LuaTable, encoding: String = "utf-8", pretty: Boolean = true,
+            res: ResourceLoader = ExportResourceLoader) = {
     val (builder, definition) = doRender(cardData, res)
-    builder.write(w, definition, encoding)
+    builder.write(w, definition, encoding, pretty = pretty)
   }
-  def renderImage(x: Int, y: Int, cardData: LuaTable, res: ResourceLoader = RasterizeResourceLoader) = {
+  def renderImage(renderer: SVGRenderer, x: Int, y: Int, cardData: LuaTable,
+                  res: ResourceLoader = RasterizeResourceLoader) = {
     val (builder, definition) = doRender(cardData, res)
-    builder.renderImage(x, y, definition)
+    builder.renderImage(renderer, x, y, definition)
   }
 }
 

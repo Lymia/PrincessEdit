@@ -20,29 +20,19 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.lua
+package moe.lymia.princess.svg
 
-import moe.lymia.princess.core.builder._
-import moe.lymia.princess.lua._
+import java.awt.image.BufferedImage
+import java.nio.file.Path
 
-case class PhysicalScale(unPerViewport: Double, unit: PhysicalUnit)
-trait LuaTemplateImplicits {
-  implicit object LuaPhysicalScale extends LuaUserdataType[PhysicalScale] {
-    metatable { (L, mt) =>
-      L.register(mt, "__mul", (scale: Double, s: PhysicalScale) => PhysicalScale(scale * s.unPerViewport, s.unit))
-    }
-  }
-  implicit object LuaPhysicalUnit extends LuaUserdataType[PhysicalUnit] {
-    metatable { (L, mt) =>
-      L.register(mt, "__mul", (scale: Double, unit: PhysicalUnit) => PhysicalScale(scale, unit))
-    }
-  }
+import scala.xml.Elem
+
+trait SVGRendererFactory {
+  def createRenderer(): SVGRenderer
 }
 
-object TemplateLib {
-  def open(L: LuaState) = {
-    val table = L.newLib("_princess", "PhysicalUnit")
-    L.rawSet(table, "mm", PhysicalUnit.mm)
-    L.rawSet(table, "in", PhysicalUnit.in)
-  }
+trait SVGRenderer {
+  def renderSVGToPNG(x: Int, y: Int, svg: Elem, out: Path)
+  def renderSVG(x: Int, y: Int, svg: Elem): BufferedImage
+  def destroy(): Unit
 }

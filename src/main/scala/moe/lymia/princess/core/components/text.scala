@@ -28,7 +28,7 @@ import java.text.AttributedCharacterIterator
 
 import moe.lymia.princess.core.{Bounds, TemplateException}
 import moe.lymia.princess.core.lua._
-import moe.lymia.princess.core.svg._
+import moe.lymia.princess.core.builder._
 import moe.lymia.princess.lua._
 import org.jfree.graphics2d.svg.SVGGraphics2D
 
