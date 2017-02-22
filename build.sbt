@@ -102,7 +102,8 @@ InputKey[Unit]("dist") := {
     (outDir / "PrincessEdit.sh").setExecutable(true)
 
     for(file <- IO.listFiles(file("packages")) if file.isDirectory)
-      IO.zip(Path.allSubpaths(file).filter(!_._2.startsWith(".git/")), outDir / "packages" / file.getName)
+      IO.copy(Path.allSubpaths(file).filter(!_._2.startsWith(".git/"))
+                                    .map   (x => x.copy(_2 = outDir / "packages" / file.getName / x._2)))
     IO.zip(Path.allSubpaths(file("PrincessEdit.pedit-pkg")), outDir / "PrincessEdit.pedit-pkg")
 
     // we call out to zip to save the executable flag for *nix
