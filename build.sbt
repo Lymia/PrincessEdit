@@ -20,15 +20,10 @@
  * THE SOFTWARE.
  */
 
-import java.io.FileOutputStream
-import java.util.jar.{JarFile, Pack200}
-import java.util.jar.Pack200.Packer
-import java.util.zip.{GZIPOutputStream, Deflater}
-
 import sbt._
 import sbt.Keys._
 import Config._
-import AssemblyBuild.Keys._
+import ProguardBuild.Keys._
 
 // Additional keys
 
@@ -59,22 +54,28 @@ val commonSettings = versionWithGit ++ Seq(
   crossPaths := false
 )
 
-lazy val princessEdit = project in file(".") settings (commonSettings ++ AssemblyBuild.settings ++ Seq(
+lazy val princessEdit = project in file(".") settings (commonSettings ++ ProguardBuild.settings ++ Seq(
   name := "princess-edit",
+  proguardConfig := "config.pro",
 
-  excludePatterns     += "META-INF/services/.*",
+  excludePatterns     +=  "META-INF/services/.*",
 
-  libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-  excludeFiles        += "rootdoc.txt",
+  libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
+  excludeFiles        ++= Set("library.properties", "rootdoc.txt", "scala-xml.properties"),
+  shadeMappings       +=  "scala.**" -> "moe.lymia.princess.lib.scala.@1",
 
-  libraryDependencies += "org.jfree" % "jfreesvg" % "3.2",
+  libraryDependencies +=  "org.jfree" % "jfreesvg" % "3.2",
+  shadeMappings       +=  "org.jfree.**" -> "moe.lymia.princess.lib.jfree.@1",
 
-  libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0",
-  libraryDependencies += "org.ini4j" % "ini4j" % "0.5.2"
+  libraryDependencies +=  "com.github.scopt" %% "scopt" % "3.5.0",
+  shadeMappings       +=  "scopt.**" -> "moe.lymia.princess.lib.scopt.@1",
+
+  libraryDependencies +=  "org.ini4j" % "ini4j" % "0.5.2",
+  shadeMappings       +=  "org.ini4j.**" -> "moe.lymia.princess.lib.ini4j.@1"
 ) ++ VersionBuild.settings)
 
 Launch4JBuild.settings
-Launch4JBuild.Keys.launch4jSourceJar := (assembly in princessEdit).value
+Launch4JBuild.Keys.launch4jSourceJar := (ProguardKeys.proguard in Proguard in princessEdit).value.head
 
 // Build distribution file
 InputKey[Unit]("dist") := {

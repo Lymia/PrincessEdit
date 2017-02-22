@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Lymia Alusyia <lymia@lymiahugs.com>
+ * Copyright (c) 2015-2016 Lymia Alusyia <lymia@lymiahugs.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,33 +22,52 @@
 
 import sbt._
 import sbt.Keys._
+import com.typesafe.sbt.SbtProguard._
 
 import sbtassembly._
 import AssemblyKeys._
 
-object AssemblyBuild {
+object ProguardBuild {
   object Keys {
-    val shadeMappings     = SettingKey[Seq[(String, String)]]("assembly-wrapper-shade-mappings")
-    val ignoreDuplicate   = SettingKey[Seq[String]]("assembly-wrapper-ignore-duplicate")
-    val excludeFiles      = SettingKey[Set[String]]("assembly-wrapper-exclude-files")
-    val excludePatterns   = SettingKey[Seq[String]]("assembly-wrapper-exclude-patterns")
+    val shadeMappings     = SettingKey[Seq[(String, String)]]("proguard-wrapper-shade-mappings")
+    val excludeFiles      = SettingKey[Set[String]]("proguard-wrapper-exclude-files")
+    val ignoreDuplicate   = SettingKey[Seq[String]]("proguard-wrapper-ignore-duplicate")
+    val excludePatterns   = SettingKey[Seq[String]]("proguard-wrapper-exclude-patterns")
+    val proguardConfig    = SettingKey[String]("proguard-wrapper-config")
+    val proguardMapping   = TaskKey[File]("proguard-wrapper-mapping")
   }
   import Keys._
 
-  val settings = Seq(
+  val settings = proguardSettings ++ Seq(
     shadeMappings := Seq(),
     ignoreDuplicate := Seq(),
     excludeFiles := Set(),
     excludePatterns := Seq(),
     assemblyShadeRules in assembly := shadeMappings.value.map(x => ShadeRule.rename(x).inAll),
     assemblyMergeStrategy in assembly := {
-      case x if excludeFiles.value.contains(x) || excludePatterns.value.exists(x.matches) =>
+      case PathList(x) if excludeFiles.value.contains(x) =>
         MergeStrategy.discard
       case x if ignoreDuplicate.value.exists(x.matches) =>
         MergeStrategy.first
       case x =>
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
-    }
-  )
+    },
+
+    ProguardKeys.proguard in Proguard <<= (ProguardKeys.proguard in Proguard).dependsOn(assembly)
+  ) ++ inConfig(Proguard)(Seq(
+    ProguardKeys.proguardVersion := "5.3.1",
+    ProguardKeys.options ++= Seq("-verbose", "-include",
+                                 (file(".") / "project" / proguardConfig.value).getCanonicalPath),
+    ProguardKeys.options +=
+      ProguardOptions.keepMain((mainClass in Compile).value.getOrElse(sys.error("No main class!"))),
+
+    // Print mapping to file
+    proguardMapping := ProguardKeys.proguardDirectory.value / ("symbols-"+version.value+".map"),
+    ProguardKeys.options ++= Seq("-printmapping", proguardMapping.value.toString),
+
+    // Proguard filter configuration
+    ProguardKeys.inputs := Seq(),
+    ProguardKeys.filteredInputs ++= ProguardOptions.noFilter((assemblyOutputPath in assembly).value)
+  ))
 }
