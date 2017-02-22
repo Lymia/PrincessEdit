@@ -97,6 +97,7 @@ case class MinifyXML(dropNamespaces: Set[String], dropTags: Set[String]) {
   }
 }
 object MinifyXML {
-  val SVG = MinifyXML(Set("dc", "cc", "rdf", "sodipodi", "inkscape"), Set("metadata"))
+  // TODO: Identify namespaces to remove via URI
+  val SVG = MinifyXML(Set("dc", "cc", "rdf", "sodipodi", "inkscape", "jfreesvg"), Set("metadata"))
   val SVGFinalize = MinifyXML(Set("princess"), Set())
 }

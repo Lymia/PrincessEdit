@@ -67,12 +67,7 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Assembl
   libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
   excludeFiles        += "rootdoc.txt",
 
-  libraryDependencies += "org.apache.xmlgraphics" % "batik-svggen"        % config_batikVersion,
-  libraryDependencies += "org.apache.xmlgraphics" % "batik-transcoder"    % config_batikVersion,
-  libraryDependencies += "org.apache.xmlgraphics" % "batik-codec"         % config_batikVersion,
-  libraryDependencies += "org.apache.xmlgraphics" % "xmlgraphics-commons" % "2.1",
-  ignoreDuplicate     += "org/w3c/dom/.*",
-  ignoreDuplicate     += "org/apache/batik/ext/awt/image/rendered/Any2LumRed\\.class",
+  libraryDependencies += "org.jfree" % "jfreesvg" % "3.2",
 
   libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0",
   libraryDependencies += "org.ini4j" % "ini4j" % "0.5.2"

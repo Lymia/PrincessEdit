@@ -29,8 +29,6 @@ import moe.lymia.princess.core.PackageManager
 import moe.lymia.princess.core.svg.{ExportResourceLoader, RasterizeResourceLoader, RenderSettings}
 import moe.lymia.princess.lua._
 
-import org.apache.batik.transcoder.TranscoderException
-
 private case class CLIException(message: String) extends Exception
 
 class CLI {
@@ -139,9 +137,6 @@ class CLI {
     if(parser.parse(args)) mode()
   } catch {
     case CLIException(e) => println(e)
-    case e: TranscoderException =>
-      e.printStackTrace()
-      e.getException().printStackTrace()
     case e: Exception => e.printStackTrace()
   }
 }

@@ -24,13 +24,13 @@ package moe.lymia.princess.core.components
 
 import java.awt.font.{TextAttribute, TextLayout}
 import java.awt.{Color, Font}
+import java.text.AttributedCharacterIterator
 
 import moe.lymia.princess.core.{Bounds, TemplateException}
 import moe.lymia.princess.core.lua._
 import moe.lymia.princess.core.svg._
 import moe.lymia.princess.lua._
-import org.apache.batik.bridge.SVGTextElementBridge
-import org.apache.batik.svggen.SVGGraphics2D
+import org.jfree.graphics2d.svg.SVGGraphics2D
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -39,7 +39,7 @@ case class TextAttributes(font: Font, fontRelativeSize: Double, color: Color) {
   def toAttributeMap(manager: ComponentRenderManager, fontSize: Double) = Map(
     TextAttribute.FONT       -> manager.settings.scaleFont(font, fontSize * fontRelativeSize),
     TextAttribute.FOREGROUND -> color
-  )
+  ) : Map[AttributedCharacterIterator.Attribute, Object]
 }
 class FormattedStringBuffer {
   private val data            = new mutable.ArrayBuffer[Seq[Seq[(String, TextAttributes)]]]
@@ -67,21 +67,18 @@ class FormattedStringBuffer {
   def finish() = new FormattedString(data :+ (paragraphBuffer :+ lineBuffer.clone()))
 }
 
-private object FormattedString extends SVGTextElementBridge {
-  private final class AttributedStringBuffer extends SVGTextElementBridge.AttributedStringBuffer
-}
 class FormattedString(data: Seq[Seq[Seq[(String, TextAttributes)]]]) {
   override def toString = data.map(_.flatMap(_.map(_._1)).mkString("")).mkString("\n")
   def toAttributedString(manager: ComponentRenderManager, fontSize: Double) = {
     if(data.length != 1 || data.head.length != 1) throw TemplateException("String contains line breaks.")
-    val buffer = new FormattedString.AttributedStringBuffer
+    val buffer = new AttributedStringBuffer
     for(s <- data.head.head) buffer.append(s._1, s._2.toAttributeMap(manager, fontSize).asJava)
     buffer.toAttributedString
   }
   def toAttributedStrings(manager: ComponentRenderManager, fontSize: Double) = {
     data.map { paragraph =>
       paragraph.map { line =>
-        val buffer = new FormattedString.AttributedStringBuffer
+        val buffer = new AttributedStringBuffer
         for(s <- line) buffer.append(s._1, s._2.toAttributeMap(manager, fontSize).asJava)
         buffer.toAttributedString
       }

@@ -26,7 +26,8 @@ import moe.lymia.princess.core._
 import moe.lymia.princess.core.lua._
 import moe.lymia.princess.core.svg._
 import moe.lymia.princess.lua._
-import org.apache.batik.svggen.SVGGraphics2D
+
+import org.jfree.graphics2d.svg.SVGGraphics2D
 
 import scala.collection.mutable
 import scala.xml._
@@ -52,7 +53,7 @@ abstract class GraphicsComponent(protected var allowOverflow: Boolean = false) e
     val bounds = renderComponent(manager, renderer.gfx, table)
     val rendered = renderer.renderXML()
     val xml = if(allowOverflow) rendered % Attribute(null, "overflow", "visible", Null) else rendered
-    manager.builder.createDefinitionFromContainer(ref.name, bounds, xml, extraLayout = Some(table))
+    manager.builder.createDefinitionFromContainer(ref.name, bounds, MinifyXML.SVG(xml), extraLayout = Some(table))
   }
 }
 
