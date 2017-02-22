@@ -33,6 +33,8 @@ import moe.lymia.princess.core._
 import scala.collection.mutable
 import scala.xml.{XML => _, _}
 
+// TODO: Add caching for these resources between renders
+
 trait ResourceLoader {
   def loadRaster    (builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
                      path: Path, expectedSize: Size): SVGDefinitionReference
@@ -41,12 +43,12 @@ trait ResourceLoader {
   def loadDefinition(builder: SVGBuilder, name: String, path: Path): String
 }
 
-trait IncludeDefinitionLoader extends ResourceLoader {
+trait IncludeDefinitionLoader {
   def loadDefinition(builder: SVGBuilder, name: String, path: Path) =
     builder.createDefinition(name, XML.load(Files.newInputStream(path)), isDef = true)
 }
 
-trait SimpleVectorLoader extends ResourceLoader {
+trait SimpleVectorLoader {
   def minifyVectorElem(elem: Elem, scope: NamespaceBinding) = elem
   def loadVector(builder: SVGBuilder, name: String, compression: Boolean, path: Path, expectedSize: Size) =
     builder.createDefinitionFromContainer(name, Bounds(expectedSize), minifyVectorElem(
@@ -57,12 +59,21 @@ trait MinifyVectorLoader extends SimpleVectorLoader {
   override def minifyVectorElem(elem: Elem, scope: NamespaceBinding) = MinifyXML.SVG(elem, scope)
 }
 
-trait LinkRasterLoader extends ResourceLoader {
+trait LinkRasterLoader {
   def loadRaster(builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
-                 path: Path, expectedSize: Size) =
-    builder.createDefinitionFromContainer(name, Bounds(expectedSize), <image xlink:href={path.toUri.toASCIIString}/>)
+                 path: Path, expectedSize: Size) = {
+    val uri = path.toUri
+    if(LinkRasterLoader.normalSchemes.contains(uri.getScheme))
+      builder.createDefinitionFromContainer(name, Bounds(expectedSize),
+                                            <image xlink:href={path.toUri.toASCIIString}/>)
+    else LinkRasterLoader.fallback.loadRaster(builder, name, reencode, expectedMime, path, expectedSize)
+  }
 }
-trait DataURLRasterLoader extends ResourceLoader {
+object LinkRasterLoader {
+  private val fallback = new DataURLRasterLoader {}
+  private val normalSchemes = Set("http", "https", "ftp", "file")
+}
+trait DataURLRasterLoader {
   def loadRaster(builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
                  path: Path, expectedSize: Size) = {
     val data = reencode match {
@@ -78,9 +89,12 @@ trait DataURLRasterLoader extends ResourceLoader {
   }
 }
 
-object RasterizeResourceLoader  extends IncludeDefinitionLoader with SimpleVectorLoader with LinkRasterLoader
-object LinkExportResourceLoader extends IncludeDefinitionLoader with MinifyVectorLoader with LinkRasterLoader
-object ExportResourceLoader     extends IncludeDefinitionLoader with MinifyVectorLoader with DataURLRasterLoader
+object RasterizeResourceLoader
+  extends ResourceLoader with IncludeDefinitionLoader with SimpleVectorLoader with LinkRasterLoader
+object LinkExportResourceLoader
+  extends ResourceLoader with IncludeDefinitionLoader with MinifyVectorLoader with LinkRasterLoader
+object ExportResourceLoader
+  extends ResourceLoader with IncludeDefinitionLoader with MinifyVectorLoader with DataURLRasterLoader
 
 private sealed trait ImageFormatType
 private object ResourceFormatType {
