@@ -22,14 +22,11 @@
 
 package moe.lymia.princess.core.builder
 
-import java.awt.image.BufferedImage
-import java.io.{ByteArrayInputStream, StringWriter, Writer}
-import java.nio.charset.StandardCharsets
+import java.io.Writer
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.lua.LuaTable
 import moe.lymia.princess.svg.SVGRenderer
-import moe.lymia.princess.util.IOUtils
 import org.jfree.graphics2d.svg.{SVGGraphics2D, SVGHints}
 
 import scala.collection.mutable
