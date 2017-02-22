@@ -1,0 +1,3 @@
+<filter id="backgroundMultiply">
+    <feBlend in="BackgroundImage" in2="SourceGraphic" mode="multiply"/>
+</filter>

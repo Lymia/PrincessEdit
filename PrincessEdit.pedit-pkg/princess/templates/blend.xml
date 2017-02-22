@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+    <param name="blendMode" type="string"/>
+    <param name="opacity" type="number"/>
+    <param name="target" type="component"/>
+    <elems>
+        <component id="target" fillComponent="true" opacity="${opacity}" style="mix-blend-mode: ${blendMode};"/>
+    </elems>
+</template>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template>
+    <param name="filter" type="definition"/>
+    <param name="target" type="component"/>
+    <elems>
+        <component id="target" fillComponent="true" filter="url(#${filter})"/>
+    </elems>
+</template>

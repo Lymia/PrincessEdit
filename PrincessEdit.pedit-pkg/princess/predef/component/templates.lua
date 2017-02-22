@@ -26,23 +26,23 @@ local function colorToHex(color)
     return string.format("#%02x%02x%02x", color[1], color[2], color[3])
 end
 
-local function Mask(maskComponent, dataComponent)
-    local mask = Template("princess/component/mask.xml", dataComponent.bounds)
+local function Mask(maskComponent, dataComponent, bounds)
+    local mask = Template("princess/templates/mask.xml", dataComponent.bounds or bounds)
     mask.target = dataComponent
     mask.mask   = maskComponent
     return mask
 end
 component.Mask = Mask
 
-function component.Clip(clipPath, dataComponent)
-    local mask = Template("princess/component/clip.xml", dataComponent.bounds)
+function component.Clip(clipPath, dataComponent, bounds)
+    local mask = Template("princess/templates/clip.xml", dataComponent.bounds or bounds)
     mask.target = dataComponent
     mask.clip   = clipPath
     return mask
 end
 
 local function Fill(bounds, color)
-    local fill = Template("princess/component/fillRect.xml", bounds)
+    local fill = Template("princess/templates/fillRect.xml", bounds)
     fill._property("color", function() return color end,
                             function(newColor) fill._ulColor = colorToHex(newColor); color = newColor end)
     fill.color = color
@@ -56,4 +56,19 @@ function component.FillShape(maskComponent, color)
     mask._property("color", function() return fill.color end,
                             function(color) fill.color = color end)
     return mask
+end
+
+function component.Filter(filterPath, dataComponent, bounds)
+    local filter = Template("princess/templates/filter.xml", dataComponent.bounds or bounds)
+    filter.filter = filterPath
+    filter.target = dataComponent
+    return filter
+end
+
+function component.Blend(dataComponent, blendMode, opacity, bounds)
+    local filter = Template("princess/templates/blend.xml", dataComponent.bounds or bounds)
+    filter.blendMode = blendMode or "normal"
+    filter.opacity   = opacity or 1
+    filter.target    = dataComponent
+    return filter
 end

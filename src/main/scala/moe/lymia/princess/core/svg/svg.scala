@@ -127,11 +127,15 @@ final class SVGBuilder(val settings: RenderSettings) {
       case _ => inlineReferencesIterContinue(elem)
     } else inlineReferencesIterContinue(elem)
 
-  def createDefinition(name: String, elem: Elem) = {
+  def createDefinition(name: String, elem: Elem, isDef: Boolean = false) = {
     val resourceName = s"princess_def_${id}_${defId}_${name.replace(" ", "_").replaceAll("[^a-zA-Z0-9_]", "")}"
     defId = defId + 1
     definitions.append((resourceName, elem % attribute("id", resourceName)))
     definitionMap.put(resourceName, elem)
+    if(isDef) {
+      useCount.put(resourceName, 1)
+      noInlineList.add(resourceName)
+    }
     resourceName
   }
   private def setSize(elem: Elem, size: Size) =
@@ -156,7 +160,7 @@ final class SVGBuilder(val settings: RenderSettings) {
   def addStylesheetDefinition(str: String) = stylesheetDefs.append(str)
 
   def renderSVGTag(root: SVGDefinitionReference) = MinifyXML.SVGFinalize(
-    <svg version="1.1" preserveAspectRatio="none" overflow="hidden"
+    <svg version="1.1" preserveAspectRatio="none" overflow="hidden" enable-background="new"
          width={settings.size.widthString} height={settings.size.heightString}
          viewBox={s"0 0 ${settings.viewport.width} ${settings.viewport.height}"}>
       {stylesheetDefs.map(x => <style>{x}</style>)}

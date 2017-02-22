@@ -43,7 +43,7 @@ trait ResourceLoader {
 
 trait IncludeDefinitionLoader extends ResourceLoader {
   def loadDefinition(builder: SVGBuilder, name: String, path: Path) =
-    builder.createDefinition(name, XML.load(Files.newInputStream(path)))
+    builder.createDefinition(name, XML.load(Files.newInputStream(path)), isDef = true)
 }
 trait IncludeVectorLoader extends ResourceLoader {
   def loadVector(builder: SVGBuilder, name: String, compression: Boolean, path: Path, expectedSize: Size) =

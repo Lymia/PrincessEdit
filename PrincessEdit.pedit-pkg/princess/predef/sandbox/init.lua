@@ -19,6 +19,11 @@
 -- THE SOFTWARE.
 
 local ipairs, pairs, error, print, type, _G = ipairs, pairs, error, print, type, _G
+local _princess = _princess
+
+if not _princess then
+    error("_princess library not found")
+end
 
 -----------------------------------
 -- Remove non-whitelisted functions
@@ -28,6 +33,7 @@ local function set(t)
     for _, v in ipairs(t) do n[v] = true end
     return n
 end
+_princess.set = set -- TODO: Maybe define this somewhere nicer?
 
 local absoluteWhitelist = set {
     "assert", "error", "getmetatable", "next", "pairs", "pcall", "print", "rawequal", "rawget", "rawset", "select",

@@ -69,6 +69,7 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Assembl
 
   libraryDependencies += "org.apache.xmlgraphics" % "batik-svggen"        % config_batikVersion,
   libraryDependencies += "org.apache.xmlgraphics" % "batik-transcoder"    % config_batikVersion,
+  libraryDependencies += "org.apache.xmlgraphics" % "batik-codec"         % config_batikVersion,
   libraryDependencies += "org.apache.xmlgraphics" % "xmlgraphics-commons" % "2.1",
   ignoreDuplicate     += "org/w3c/dom/.*",
   ignoreDuplicate     += "org/apache/batik/ext/awt/image/rendered/Any2LumRed\\.class",
