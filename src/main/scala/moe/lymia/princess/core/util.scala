@@ -22,6 +22,7 @@
 
 package moe.lymia.princess.core
 
+import java.awt.geom.Rectangle2D
 import java.nio.file.Path
 import java.security.SecureRandom
 import java.util.Map.Entry
@@ -42,6 +43,8 @@ final case class Bounds(minX: Double, minY: Double, maxX: Double, maxY: Double) 
 object Bounds {
   def apply(width: Double, height: Double) = new Bounds(0, 0, width, height)
   def apply(size: Size) = new Bounds(0, 0, size.width, size.height)
+  def apply(rectangle: Rectangle2D) = new Bounds(rectangle.getMinX, rectangle.getMinY,
+                                                 rectangle.getMaxX, rectangle.getMaxY)
 }
 
 final case class TemplateException(message: String, ex: Throwable = null, context: Seq[String] = Seq(),

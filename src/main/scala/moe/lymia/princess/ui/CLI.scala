@@ -23,12 +23,14 @@
 package moe.lymia.princess.ui
 
 import java.io.{FileOutputStream, FileWriter}
+import java.nio.file.Paths
 import javax.imageio.ImageIO
 
 import moe.lymia.princess.core.PackageManager
-import moe.lymia.princess.core.builder.{ExportResourceLoader, LinkExportResourceLoader, RasterizeResourceLoader, RenderSettings}
+import moe.lymia.princess.core.builder.{ExportResourceLoader, RasterizeResourceLoader}
 import moe.lymia.princess.lua._
 import moe.lymia.princess.svg.InkscapeConnectionFactory
+import moe.lymia.princess.util.IOUtils
 
 private case class CLIException(message: String) extends Exception
 
@@ -119,7 +121,8 @@ class CLI {
       case Some(x) => x.template
       case None => error(s"No such template $template")
     }
-    val cardDataTable = game.lua.L.loadString(s"return $cardData", "@<card data>") match {
+    val card = if(cardData.startsWith("@")) IOUtils.readFileAsString(Paths.get(cardData.substring(1))) else cardData
+    val cardDataTable = game.lua.L.loadString(s"return $card", "@<card data>") match {
       case Left (x) => game.lua.L.call(x, 1).head.as[LuaTable]
       case Right(e) => error(e)
     }
@@ -139,7 +142,7 @@ class CLI {
     val (template, cardData) = renderCommon()
     time("Renderered SVG") {
       template.write(new FileWriter(out), cardData, pretty = !dirty, res =
-        if(dirty) RasterizeResourceLoader else if(link) LinkExportResourceLoader else ExportResourceLoader)
+        if(dirty) RasterizeResourceLoader else ExportResourceLoader)
     }
   }
 

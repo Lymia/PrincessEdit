@@ -137,7 +137,7 @@ final class SVGBuilder(val settings: RenderSettings) {
 
   def renderSVGTag(root: SVGDefinitionReference, pretty: Boolean = false) = {
     def inlineRefs(elem: Elem) = if(pretty) inlineReferencesIter(elem) else elem
-    def doMinify(elem: Elem) = if(pretty) MinifyXML.SVGFinalize(elem) else elem
+    def doMinify(elem: Elem) = if(pretty) MinifyXML.SVG(elem, SVGBuilder.scope) else elem
     val rootTag = inlineRefs(root.includeInRect(0, 0, settings.viewport.width, settings.viewport.height))
     doMinify(<svg version="1.1" preserveAspectRatio="none" overflow="hidden"
           width={settings.size.widthString} height={settings.size.heightString}

@@ -25,6 +25,13 @@ component.Template = Template
 local function colorToHex(color)
     return string.format("#%02x%02x%02x", color[1], color[2], color[3])
 end
+local function wrapColor(component)
+    local color
+    local _ulColor =  component._getProperty("_ulColor")
+    component._deleteProperty("_ulColor")
+    component._property("color", function() return color end,
+                                 function(newColor) _ulColor.set(colorToHex(newColor)); color = newColor end)
+end
 
 local function Mask(maskComponent, dataComponent, bounds)
     local mask = Template("princess/templates/mask.xml", dataComponent.bounds or bounds)
@@ -43,8 +50,7 @@ end
 
 local function Fill(bounds, color)
     local fill = Template("princess/templates/fillRect.xml", bounds)
-    fill._property("color", function() return color end,
-                            function(newColor) fill._ulColor = colorToHex(newColor); color = newColor end)
+    wrapColor(fill)
     fill.color = color
     return fill
 end
@@ -71,4 +77,22 @@ function component.Blend(dataComponent, blendMode, opacity, bounds)
     filter.opacity   = opacity or 1
     filter.target    = dataComponent
     return filter
+end
+
+function component.Circle(radius, color)
+    local circle = Template("princess/templates/circle.xml", {0, 0})
+    circle.allowOverflow = true
+    local _ulRadius = circle._getProperty("_ulRadius")
+    circle._deleteProperty("_ulRadius")
+    wrapColor(circle)
+
+    circle._property("radius", function() return _ulRadius.get() end, function(r)
+        _ulRadius.set(r)
+        circle.bounds = {-radius, -radius, radius, radius}
+    end)
+
+    circle.radius = radius
+    circle.color  = color
+
+    return circle
 end

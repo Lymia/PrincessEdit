@@ -62,7 +62,7 @@ object XMLTemplateData {
 }
 
 class XMLTemplateComponent(protected val boundsParam: Bounds, data: XMLTemplateData)
-  extends SimpleComponent with BoundedBase {
+  extends SimpleComponent(false) with BoundedBase {
 
   private val componentMap = new mutable.HashMap[String, ComponentReference]
   private val stringMap    = new mutable.HashMap[String, String]
@@ -138,6 +138,8 @@ class XMLTemplateComponent(protected val boundsParam: Bounds, data: XMLTemplateD
       property(k, _                          => stringMap.get(k),
                   (L, v: String            ) => stringMap.put(k, v))
   }
+
+  property("allowOverflow", _ => allowOverflow, (_, b: Boolean) => allowOverflow = b)
 }
 object XMLTemplateComponent {
   private val varRegex = "\\$\\{([a-zA-Z_][a-zA-Z_0-9]+)\\}".r

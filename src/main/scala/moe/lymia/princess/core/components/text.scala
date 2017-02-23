@@ -22,18 +22,38 @@
 
 package moe.lymia.princess.core.components
 
-import java.awt.font.{TextAttribute, TextLayout}
+import java.awt.font.TextAttribute
 import java.awt.{Color, Font}
-import java.text.AttributedCharacterIterator
+import java.text.{AttributedCharacterIterator, AttributedString}
 
-import moe.lymia.princess.core.{Bounds, TemplateException}
-import moe.lymia.princess.core.lua._
-import moe.lymia.princess.core.builder._
-import moe.lymia.princess.lua._
-import org.jfree.graphics2d.svg.SVGGraphics2D
+import moe.lymia.princess.core.TemplateException
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+
+private[components] sealed trait FormatInstruction
+private[components] sealed trait RawFormatInstruction {
+  def reify(manager: ComponentRenderManager, fontSize: Double): FormatInstruction
+}
+private[components] sealed trait SharedFormatInstruction extends FormatInstruction with RawFormatInstruction {
+  override def reify(manager: ComponentRenderManager, fontSize: Double): FormatInstruction = this
+}
+
+private[components] object FormatInstruction {
+  case class RenderString(str: AttributedString) extends FormatInstruction
+  case object NewLine extends SharedFormatInstruction
+  case object NewParagraph extends SharedFormatInstruction
+  case object BulletStop extends SharedFormatInstruction
+}
+private[components] object RawFormatInstruction {
+  case class RenderString(data: Seq[(String, TextAttributes)]) extends RawFormatInstruction {
+    override def reify(manager: ComponentRenderManager, fontSize: Double): FormatInstruction = {
+      val buffer = new AttributedStringBuffer
+      for(s <- data) buffer.append(s._1, s._2.toAttributeMap(manager, fontSize).asJava)
+      FormatInstruction.RenderString(buffer.toAttributedString)
+    }
+  }
+}
 
 case class TextAttributes(font: Font, fontRelativeSize: Double, color: Color) {
   def toAttributeMap(manager: ComponentRenderManager, fontSize: Double) = Map(
@@ -42,9 +62,8 @@ case class TextAttributes(font: Font, fontRelativeSize: Double, color: Color) {
   ) : Map[AttributedCharacterIterator.Attribute, Object]
 }
 class FormattedStringBuffer {
-  private val data            = new mutable.ArrayBuffer[Seq[Seq[(String, TextAttributes)]]]
-  private val paragraphBuffer = new mutable.ArrayBuffer[Seq[(String, TextAttributes)]]
-  private val lineBuffer      = new mutable.ArrayBuffer[(String, TextAttributes)]
+  private val data       = new mutable.ArrayBuffer[RawFormatInstruction]
+  private var lineBuffer = new mutable.ArrayBuffer[(String, TextAttributes)]
 
   var font            : Font   = _
   var fontRelativeSize: Double = 1
@@ -55,73 +74,32 @@ class FormattedStringBuffer {
     if(font eq null) throw TemplateException("No font set.")
     append(s, TextAttributes(font, fontRelativeSize, color))
   }
+  private def outputBuffer() = if(lineBuffer.nonEmpty) {
+    data.append(RawFormatInstruction.RenderString(lineBuffer))
+    lineBuffer = new mutable.ArrayBuffer[(String, TextAttributes)]()
+  }
   def lineBreak(): Unit = {
-    paragraphBuffer.append(lineBuffer.clone())
-    lineBuffer.clear()
+    outputBuffer()
+    data.append(FormatInstruction.NewLine)
   }
   def paragraphBreak(): Unit = {
-    lineBreak()
-    data.append(paragraphBuffer.clone())
-    paragraphBuffer.clear()
+    outputBuffer()
+    data.append(FormatInstruction.NewParagraph)
   }
-  def finish() = new FormattedString(data :+ (paragraphBuffer :+ lineBuffer.clone()))
+  def bulletStop(): Unit = {
+    outputBuffer()
+    data.append(FormatInstruction.BulletStop)
+  }
+  def finish() =
+    FormattedString(if(lineBuffer.isEmpty) data else data :+ RawFormatInstruction.RenderString(lineBuffer.clone()))
 }
 
-class FormattedString(data: Seq[Seq[Seq[(String, TextAttributes)]]]) {
-  override def toString = data.map(_.flatMap(_.map(_._1)).mkString("")).mkString("\n")
-  def toAttributedString(manager: ComponentRenderManager, fontSize: Double) = {
-    if(data.length != 1 || data.head.length != 1) throw TemplateException("String contains line breaks.")
-    val buffer = new AttributedStringBuffer
-    for(s <- data.head.head) buffer.append(s._1, s._2.toAttributeMap(manager, fontSize).asJava)
-    buffer.toAttributedString
-  }
-  def toAttributedStrings(manager: ComponentRenderManager, fontSize: Double) = {
-    data.map { paragraph =>
-      paragraph.map { line =>
-        val buffer = new AttributedStringBuffer
-        for(s <- line) buffer.append(s._1, s._2.toAttributeMap(manager, fontSize).asJava)
-        buffer.toAttributedString
-      }
-    }
-  }
-}
+case class FormattedString(data: Seq[RawFormatInstruction]) {
+  def toSimpleString = data.map {
+    case RawFormatInstruction.RenderString(str) => str.map(_._1).mkString("")
+    case _ => ""
+  }.mkString("\n")
 
-sealed abstract class SimpleTextComponentBase(protected var fontSize: Double) extends GraphicsComponent(true) {
-  def createLayout(manager: ComponentRenderManager, graphics: SVGGraphics2D): TextLayout
-  def preRender(manager: ComponentRenderManager, graphics: SVGGraphics2D): Unit = { }
-
-  def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D, table: LuaTable): Bounds = {
-    val layout = createLayout(manager, graphics)
-    val bounds = layout.getBounds
-    preRender(manager, graphics)
-    layout.draw(graphics, 0, 0)
-    Bounds(bounds.getMinX, bounds.getMinY, bounds.getMaxX, bounds.getMaxY)
-  }
-
-  property("fontSize", L => fontSize     , (L, newSize: Double ) => fontSize      = newSize)
-}
-
-class SimpleTextComponent(private var text: String, private var font: Font, fontSizeParam: Double,
-                          private var color: Color)
-  extends SimpleTextComponentBase(fontSizeParam) {
-
-  def createLayout(manager: ComponentRenderManager, graphics: SVGGraphics2D) =
-    new TextLayout(text, manager.settings.scaleFont(font, fontSize.toFloat), graphics.getFontRenderContext)
-
-  override def preRender(manager: ComponentRenderManager, graphics: SVGGraphics2D): Unit = graphics.setColor(color)
-
-  property("font" , L => font , (L, newFont : Font  ) => font  = newFont )
-  property("text" , L => text , (L, newText : String) => text  = newText )
-  property("color", L => color, (L, newColor: Color ) => color = newColor)
-}
-
-class SimpleFormattedTextComponent(private var text: FormattedString, fontSizeParam: Double)
-  extends SimpleTextComponentBase(fontSizeParam) {
-
-  def createLayout(manager: ComponentRenderManager, graphics: SVGGraphics2D) = {
-    val attributed = text.toAttributedString(manager, fontSize)
-    new TextLayout(attributed.getIterator, graphics.getFontRenderContext)
-  }
-
-  property("text", L => text, (L, newText: FormattedString) => text = newText)
+  private[components] def execute(manager: ComponentRenderManager, fontSize: Double)(f: FormatInstruction => Unit) =
+    for(instruction <- data) f(instruction.reify(manager, fontSize))
 }

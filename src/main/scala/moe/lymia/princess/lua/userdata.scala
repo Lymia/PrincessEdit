@@ -36,6 +36,8 @@ private object LuaLookup {
   type SetPropertyFn = (LuaState, Any) => Unit
   type GetPropertyFn = (LuaState) => LuaObject
   case class Property(set: LuaLookup.SetPropertyFn, get: LuaLookup.GetPropertyFn)
+  val lockProps = Set("_lock", "_property", "_overideProperty", "_method", "_overrideMethod", "_deleteProperty")
+  val fullLockProps = Set("_listProperties", "_getProperty", "_hasProperty")
 }
 trait LuaLookup extends HasLuaMethods {
   private val properties = new mutable.HashMap[String, LuaLookup.Property]
@@ -54,6 +56,7 @@ trait LuaLookup extends HasLuaMethods {
     properties.remove(name)
   }
 
+
   private def setLuaProperty(doOverride: Boolean)
                             (L: LuaState, name: String, get: Option[LuaClosure], set: Option[LuaClosure]) = {
     if(!doOverride && properties.contains(name)) L.error(s"property '$name' already defined!")
@@ -65,13 +68,26 @@ trait LuaLookup extends HasLuaMethods {
     if(!doOverride && properties.contains(name)) L.error(s"method '$name' already defined!")
     luaMethod(name)(m)
   }
+  protected def lock(full: Boolean = true): Unit =
+    for(name <- properties.keySet if (full && LuaLookup.fullLockProps.contains(name)) ||
+                                     LuaLookup.lockProps.contains(name)) properties.remove(name)
 
-  method("_lock")(() => for(name <- properties.keySet if name.startsWith("_")) properties.remove(name))
+  method("_lock")(() => lock(false))
   method("_property")(setLuaProperty(doOverride = false) _)
   method("_overrideProperty")(setLuaProperty(doOverride = true) _)
   method("_method")(setLuaMethod(doOverride = false) _)
   method("_overrideMethod")(setLuaMethod(doOverride = true) _)
   method("_deleteProperty")(deleteProperty _)
+
+  method("_getProperty")((L: LuaState, k: String) => properties.get(k) match {
+    case Some(x) =>
+      val t = new LuaTable()
+      L.register(t, "set", x.set)
+      L.register(t, "get", (L: LuaState) => LuaRet(x.get(L)))
+      LuaRet(t)
+    case None => LuaRet(LuaNil)
+  })
+  method("_listProperties")(() => properties.keySet.toSeq)
   method("_hasProperty")((k: String) => properties.contains(k))
 
   override def getField(L: LuaState, name: String): LuaObject =

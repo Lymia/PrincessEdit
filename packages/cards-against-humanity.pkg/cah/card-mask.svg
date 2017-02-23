@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   height="350"
+   viewBox="0 0 66.145831 92.60417"
+   width="250"
+   version="1.1"
+   id="svg8"
+   sodipodi:docname="card-mask.svg"
+   inkscape:version="0.92.1 r">
+  <metadata
+     id="metadata14">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs12" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1014"
+     id="namedview10"
+     showgrid="false"
+     inkscape:zoom="1.907168"
+     inkscape:cx="17.503481"
+     inkscape:cy="175"
+     inkscape:window-x="0"
+     inkscape:window-y="21"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg8" />
+  <g
+     transform="translate(0 -204.39579)"
+     id="g6">
+    <path
+       d="m0 204.3958h66.145836v92.604164h-66.145836z"
+       id="path2" />
+    <path
+       d="m1.5681282 204.39595 31.5047888-.0001 31.504788.0001v-.00014c.65161.0758 1.395501.84531 1.568128 1.61994v44.68212 44.68213c-.172627.77463-.916518 1.54416-1.568128 1.61994v-.00014l-31.504788.00009-31.5047888-.00009v.00014c-.65161022-.07578-1.3955008-.84531-1.5681282-1.61994v-44.68213-44.68212c.1726274-.77463.91651798-1.54416 1.5681282-1.61994z"
+       fill="#fff"
+       id="path4" />
+  </g>
+</svg>

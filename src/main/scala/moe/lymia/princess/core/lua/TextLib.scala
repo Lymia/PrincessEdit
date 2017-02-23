@@ -70,6 +70,7 @@ trait LuaTextImplicits {
     unboundMethod("getFormattedString")((a: FormattedStringBuffer) => a.finish())
     unboundMethod("paragraphBreak"    )((a: FormattedStringBuffer) => a.paragraphBreak())
     unboundMethod("lineBreak"         )((a: FormattedStringBuffer) => a.lineBreak())
+    unboundMethod("bulletStop"        )((a: FormattedStringBuffer) => a.bulletStop())
   }
 }
 
@@ -82,6 +83,7 @@ case class TextLib(packages: PackageList) {
       new SimpleTextComponent(str, font, size, color.getOrElse(Color.BLACK)).ref)
     L.register(princess, "SimpleFormattedText", (str: FormattedString, size: Double) =>
       new SimpleFormattedTextComponent(str, size).ref)
+    L.register(princess, "TextLayout", (bounds: Bounds) => new TextLayoutComponent(bounds).ref)
 
     L.register(princess, "loadFont", (path: String) =>
       Font.createFont(Font.TRUETYPE_FONT, Files.newInputStream(packages.forceResolve(path))))

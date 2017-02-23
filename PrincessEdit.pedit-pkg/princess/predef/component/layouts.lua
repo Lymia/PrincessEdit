@@ -35,12 +35,57 @@ function component.BasicLayout(size)
             bounds     = layout.bounds,
         }
     end
-    layout._method("addComponent", function(x, y, component, size)
-        table_insert(components, {component = component, x = x, y = y, size = size or component.size})
+    layout._method("addComponent", function(x, y, component, bounds)
+        local bounds = bounds or component.bounds
+        local size
+        if bounds then
+            size = bounds and { bounds[3] - bounds[1], bounds[4] - bounds[2] }
+            x = x + bounds[1]
+            y = y + bounds[2]
+        end
+        table_insert(components, {component = component, x = x, y = y, size = size})
     end)
     layout._method("addUnsizedComponent", function(x, y, component)
         table_insert(components, {component = component, x = x, y = y})
     end)
 
+    return layout
+end
+
+local function SingleComponentLayout(component)
+    local layout = BaseLayout()
+    layout.allowOverflow = true
+
+    local boundsHandler = function() error("no bounds function given") end
+    layout._property("boundsHandler", function() return boundsHandler end, function(f) boundsHandler = f end)
+
+    layout.prerenderHandler = function()
+        return { component }
+    end
+    layout.layoutHandler = function(prerender)
+        local bounds = boundsHandler(prerender[component].bounds, prerender[component].size)
+        return {
+            components = { { component = component, bounds = bounds } },
+            bounds     = bounds,
+        }
+    end
+    layout._property("target", function() return component end, function(c) component = c end)
+
+    return layout
+end
+
+function component.LeftAlign(component)
+    local layout = SingleComponentLayout(component)
+    function layout.boundsHandler(bounds, size)
+        return { bounds[1] - bounds[3], bounds[2], 0, bounds[4] }
+    end
+    return layout
+end
+
+function component.Center(component)
+    local layout = SingleComponentLayout(component)
+    function layout.boundsHandler(bounds, size)
+        return { -(size[1]/2), -(size[2]/2), size[1]/2, size[2]/2 }
+    end
     return layout
 end

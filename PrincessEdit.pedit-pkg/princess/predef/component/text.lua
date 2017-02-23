@@ -19,7 +19,7 @@
 -- THE SOFTWARE.
 
 local ipairs = ipairs
-local getFont, getFontName = _princess.getFont, _princess.getFontName
+local getFont, getFontName, lockAll = _princess.getFont, _princess.getFontName, _princess.lockAll
 local FormattedStringBuffer, Object, SimpleText, ComponentWrapper =
     _princess.FormattedStringBuffer, _princess.Object, _princess.SimpleText, _princess.ComponentWrapper
 
@@ -51,7 +51,7 @@ function TextFormatter()
         copyAttrs(underlying, v)
     end)
 
-    for _, name in ipairs({"getFormattedString", "paragraphBreak", "lineBreak"}) do
+    for _, name in ipairs({"getFormattedString", "paragraphBreak", "lineBreak", "bulletStop"}) do
         local fn = underlying[name]
         formatter._method(name, function(...) return fn(underlying, ...) end)
     end
@@ -64,7 +64,7 @@ function TextFormatter()
         end
     end)
 
-    formatter._lock()
+    lockAll(formatter)
 
     return formatter
 end
@@ -81,3 +81,6 @@ function component.SimpleText(string, font, size, color)
 end
 
 component.SimpleFormattedText = _princess.SimpleFormattedText
+
+-- TODO: Make some kind of wrapper layer around TextLayout
+component.TextLayout = _princess.TextLayout
