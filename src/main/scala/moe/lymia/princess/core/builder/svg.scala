@@ -142,7 +142,7 @@ final class SVGBuilder(val settings: RenderSettings) {
 
   def renderSVGTag(root: SVGDefinitionReference, pretty: Boolean = false) = {
     def inlineRefs(elem: Elem) = if(pretty) inlineReferencesIter(elem) else elem
-    def doMinify(elem: Elem) = if(pretty) MinifyXML.SVG(elem, SVGBuilder.scope) else elem
+    def doMinify(elem: Elem) = if(pretty) MinifyXML.SVG(elem, SVGBuilder.princessScope) else elem
     val rootTag = inlineRefs(root.includeInRect(0, 0, settings.viewport.width, settings.viewport.height))
     doMinify(<svg version="1.1" preserveAspectRatio="none" overflow="hidden"
           width={settings.size.widthString} height={settings.size.heightString}
@@ -173,10 +173,9 @@ private[builder] object SVGBuilder {
     "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"),
     Nil
   )
-  val scope = NamespaceBinding(null, "http://www.w3.org/2000/svg",
-              NamespaceBinding("svg", "http://www.w3.org/2000/svg",
-              NamespaceBinding("xlink", "http://www.w3.org/1999/xlink",  TopScope)))
-  val princessScope = NamespaceBinding("princess", "http://lymia.moe/xmlns/princess", scope)
+  val scope = NamespaceBinding(null, XMLNS.svg,
+              NamespaceBinding("xlink", XMLNS.xlink,  TopScope))
+  val princessScope = NamespaceBinding("princess", XMLNS.princess, scope)
   val prettyPrinter = new PrettyPrinter(Int.MaxValue, 2)
   val useExcludeSet = Set("transform", "href")
 }
