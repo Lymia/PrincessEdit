@@ -52,8 +52,8 @@ abstract class GraphicsComponent(protected var allowOverflow: Boolean = false) e
     val table = new LuaTable()
     val bounds = renderComponent(manager, renderer.gfx, table)
     val rendered = renderer.renderXML()
-    val xml = if(allowOverflow) rendered % Attribute(null, "overflow", "visible", Null) else rendered
-    manager.builder.createDefinitionFromContainer(ref.name, bounds, xml, extraLayout = Some(table))
+    manager.builder.createDefinitionFromSVG(ref.name, bounds, rendered,
+                                            extraLayout = Some(table), allowOverflow = allowOverflow)
   }
 }
 

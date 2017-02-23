@@ -32,7 +32,7 @@ import moe.lymia.princess.lua._
 import org.jfree.graphics2d.svg.SVGGraphics2D
 
 
-sealed abstract class SimpleTextComponentBase(protected var fontSize: Double) extends GraphicsComponent(true) {
+sealed abstract class SimpleTextComponentBase(protected var fontSize: Double) extends GraphicsComponent {
   def createLayout(manager: ComponentRenderManager, graphics: SVGGraphics2D): TextLayout
   def preRender(manager: ComponentRenderManager, graphics: SVGGraphics2D): Unit = { }
 

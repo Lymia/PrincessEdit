@@ -32,6 +32,7 @@ class ComponentWrapper(underlying: ComponentReference) extends Component {
     manager.renderComponent(underlying)
 }
 
+// TODO: Make ResourceComponent bounded instead of just sized
 class ResourceComponent(protected var sizeParam: Size, private var resource: String) extends Component with SizedBase {
   override def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager) =
     manager.resources.loadImageResource(resource, size)

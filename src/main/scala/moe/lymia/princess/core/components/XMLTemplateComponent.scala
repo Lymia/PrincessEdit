@@ -62,7 +62,7 @@ object XMLTemplateData {
 }
 
 class XMLTemplateComponent(protected val boundsParam: Bounds, data: XMLTemplateData)
-  extends SimpleComponent(false) with BoundedBase {
+  extends SimpleComponent with BoundedBase {
 
   private val componentMap = new mutable.HashMap[String, ComponentReference]
   private val stringMap    = new mutable.HashMap[String, String]

@@ -44,23 +44,23 @@ final case class SVGDefinitionReference(name: String, bounds: Bounds, extraLayou
   private def incrementRefcount() = parent.addUsage(name)
   def setNoInline() = parent.noInline(name)
 
-  def include(x: Double, y: Double): Elem = {
+  private def rawInclude(x: Double, y: Double) = {
     incrementRefcount()
     <use x={x.toString} y={y.toString} xlink:href={s"#$name"} princess:reference={name}/>
   }
-  def includeInRect(x0: Double, y0: Double, width: Double, height: Double): Elem = {
-    val (x, y) = (x0 - bounds.minX, y0 - bounds.minY)
+  def include(x: Double, y: Double): Elem = rawInclude(x + bounds.minX, y + bounds.minY)
+  def includeInRect(x: Double, y: Double, width: Double, height: Double): Elem = {
     val boundSize = bounds.size
-    if(Size(width, height) == boundSize) include(x, y)
-    else (include(x, y) % Attribute(null : String, "transform",
-                                    s"translate(-$x -$y) "+
-                                    s"scale(${width/boundSize.width} ${height/boundSize.height}) "+
-                                    s"translate($x $y)", Null)
-                        % Attribute("princess", "newX", width.toString , Null)
-                        % Attribute("princess", "newY", height.toString, Null))
+    if(boundSize == Size(width, height)) rawInclude(x, y)
+    else (rawInclude(x, y) % Attribute(null : String, "transform",
+                                       s"translate(${-x} ${-y}) "+
+                                       s"scale(${width/boundSize.width} ${height/boundSize.height}) "+
+                                       s"translate($x $y)", Null)
+                           % Attribute("princess", "newX", width.toString , Null)
+                           % Attribute("princess", "newY", height.toString, Null))
   }
   def includeInBounds(minX: Double, minY: Double, maxX: Double, maxY: Double): Elem =
-    includeInRect(minX, minY, maxX - minX, maxY - minX)
+    includeInRect(minX, minY, maxX - minX, maxY - minY)
 }
 final class SVGBuilder(val settings: RenderSettings) {
   private val id = GenID.makeId()
@@ -120,15 +120,20 @@ final class SVGBuilder(val settings: RenderSettings) {
           % attribute("preserveAspectRatio", "none"))
   def createDefinitionFromContainer(name: String, bounds: Bounds, elems: Elem,
                                     extraLayout: Option[LuaTable] = None) = {
-    val size = Size(bounds.maxX, bounds.maxY)
-    SVGDefinitionReference(createDefinition(name, setSize(elems, size)), bounds, extraLayout, this)
+    SVGDefinitionReference(createDefinition(name, setSize(elems, bounds.size)), bounds, extraLayout, this)
+  }
+  def createDefinitionFromSVG(name: String, bounds: Bounds, elem: Elem,
+                              extraLayout: Option[LuaTable] = None, allowOverflow: Boolean = false) = {
+    val size = bounds.size
+    val withViewbox =
+      elem % Attribute(null, "viewBox", s"${bounds.minX} ${bounds.minY} ${size.width} ${size.height}", Null)
+    createDefinitionFromContainer(name, bounds,
+      if(!allowOverflow) withViewbox else withViewbox % Attribute(null, "overflow", "visible", Null),
+      extraLayout = extraLayout)
   }
   def createDefinitionFromFragment(name: String, bounds: Bounds, elems: NodeSeq,
-                                   extraLayout: Option[LuaTable] = None, allowOverflow: Boolean = false) = {
-    val svg = <svg viewBox={s"0 0 ${bounds.maxX} ${bounds.maxY}"}>{elems}</svg>
-    createDefinitionFromContainer(name, bounds,
-      if(!allowOverflow) svg else svg % Attribute(null, "overflow", "visible", Null), extraLayout = extraLayout)
-  }
+                                   extraLayout: Option[LuaTable] = None, allowOverflow: Boolean = false) =
+    createDefinitionFromSVG(name, bounds, <svg>{elems}</svg>, extraLayout = extraLayout, allowOverflow = allowOverflow)
 
   def createRenderer() = new SVGGraphicsRenderer(settings)
 

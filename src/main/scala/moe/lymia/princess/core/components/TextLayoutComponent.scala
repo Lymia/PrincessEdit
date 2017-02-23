@@ -156,7 +156,7 @@ private class TextLayoutAreaManager(parent: TextLayoutComponent) extends HasLuaM
   override def setField(L: LuaState, name: String, obj: Any) = L.error(s"cannot set fields in 'area'")
 }
 
-class TextLayoutComponent(protected val boundsParam: Bounds) extends GraphicsComponent(false) with BoundedBase {
+class TextLayoutComponent(protected val boundsParam: Bounds) extends GraphicsComponent with BoundedBase {
   private val areaManager = new TextLayoutAreaManager(this)
 
   private[components] var emLineBreakSize: Double = 1

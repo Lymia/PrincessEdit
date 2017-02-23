@@ -35,18 +35,11 @@ function component.BasicLayout(size)
             bounds     = layout.bounds,
         }
     end
-    layout._method("addComponent", function(x, y, component, bounds)
-        local bounds = bounds or component.bounds
-        local size
-        if bounds then
-            size = bounds and { bounds[3] - bounds[1], bounds[4] - bounds[2] }
-            x = x + bounds[1]
-            y = y + bounds[2]
-        end
+    layout._method("addComponent", function(x, y, component, size)
         table_insert(components, {component = component, x = x, y = y, size = size})
     end)
-    layout._method("addUnsizedComponent", function(x, y, component)
-        table_insert(components, {component = component, x = x, y = y})
+    layout._method("addComponentInBounds", function(component, bounds)
+        table_insert(components, {component = component, bounds = bounds})
     end)
 
     return layout
@@ -54,7 +47,6 @@ end
 
 local function SingleComponentLayout(component)
     local layout = BaseLayout()
-    layout.allowOverflow = true
 
     local boundsHandler = function() error("no bounds function given") end
     layout._property("boundsHandler", function() return boundsHandler end, function(f) boundsHandler = f end)
