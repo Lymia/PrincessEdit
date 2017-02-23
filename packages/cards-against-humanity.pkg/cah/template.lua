@@ -51,7 +51,6 @@ function layoutComponents(cardData)
 
     textLayout.lineBreakSize = 1.25
     textLayout.startFontSize = 15
-    textLayout.tryExtra = 1
 
     textLayout.areas.new("main", textLayoutBounds)
     textLayout.areas.main.text = formatter.getFormattedString()

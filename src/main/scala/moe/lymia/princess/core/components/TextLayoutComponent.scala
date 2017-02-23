@@ -196,7 +196,7 @@ class TextLayoutComponent(protected val boundsParam: Bounds) extends GraphicsCom
   private var startFontSize: Double = 12
   private var fontSizeDecrement: Double = 0.25
   private var minFontSize: Double = 1
-  private var tryExtra: Int = 4
+  private var tryExtra: Int = 1
 
   def findTextSize(manager: ComponentRenderManager, frc: FontRenderContext) = {
     var fontSize = startFontSize
