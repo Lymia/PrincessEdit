@@ -39,6 +39,7 @@ import scala.xml.{Elem, SAXParser}
 final case class Size(width: Double, height: Double)
 final case class Bounds(minX: Double, minY: Double, maxX: Double, maxY: Double) {
   def size = Size(maxX - minX, maxY - minY)
+  def translate(x: Double, y: Double) = Bounds(minX + x, minY + y, maxX + x, maxY + y)
 }
 object Bounds {
   def apply(width: Double, height: Double) = new Bounds(0, 0, width, height)

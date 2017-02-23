@@ -51,7 +51,7 @@ function TextFormatter()
         copyAttrs(underlying, v)
     end)
 
-    for _, name in ipairs({"getFormattedString", "paragraphBreak", "lineBreak", "bulletStop"}) do
+    for _, name in ipairs({"getFormattedString", "paragraphBreak", "lineBreak", "bulletStop", "noStartLineHint"}) do
         local fn = underlying[name]
         formatter._method(name, function(...) return fn(underlying, ...) end)
     end

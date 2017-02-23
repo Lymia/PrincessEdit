@@ -44,6 +44,7 @@ private[components] object FormatInstruction {
   case object NewLine extends SharedFormatInstruction
   case object NewParagraph extends SharedFormatInstruction
   case object BulletStop extends SharedFormatInstruction
+  case object NoStartLineHint extends SharedFormatInstruction
 }
 private[components] object RawFormatInstruction {
   case class RenderString(data: Seq[(String, TextAttributes)]) extends RawFormatInstruction {
@@ -89,6 +90,10 @@ class FormattedStringBuffer {
   def bulletStop(): Unit = {
     outputBuffer()
     data.append(FormatInstruction.BulletStop)
+  }
+  def noStartLineHint(): Unit = {
+    outputBuffer()
+    data.append(FormatInstruction.NoStartLineHint)
   }
   def finish() =
     FormattedString(if(lineBuffer.isEmpty) data else data :+ RawFormatInstruction.RenderString(lineBuffer.clone()))

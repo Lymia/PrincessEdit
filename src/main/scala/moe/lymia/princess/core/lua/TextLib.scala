@@ -71,6 +71,7 @@ trait LuaTextImplicits {
     unboundMethod("paragraphBreak"    )((a: FormattedStringBuffer) => a.paragraphBreak())
     unboundMethod("lineBreak"         )((a: FormattedStringBuffer) => a.lineBreak())
     unboundMethod("bulletStop"        )((a: FormattedStringBuffer) => a.bulletStop())
+    unboundMethod("noStartLineHint"   )((a: FormattedStringBuffer) => a.noStartLineHint())
   }
 }
 

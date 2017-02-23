@@ -22,7 +22,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -37,35 +37,30 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="765"
-     inkscape:window-height="480"
+     inkscape:window-width="1920"
+     inkscape:window-height="1014"
      id="namedview12"
      showgrid="false"
-     inkscape:zoom="0.67428571"
-     inkscape:cx="125"
-     inkscape:cy="175"
+     inkscape:zoom="15.257344"
+     inkscape:cx="27.641687"
+     inkscape:cy="31.038669"
      inkscape:window-x="0"
      inkscape:window-y="21"
-     inkscape:window-maximized="0"
+     inkscape:window-maximized="1"
      inkscape:current-layer="svg10" />
-  <g
-     stroke-width=".3"
-     id="g8">
-    <path
-       d="m-71.990425 302.63684h15.456506v15.456506h-15.456506z"
-       stroke="#fff"
-       transform="rotate(-18.201793)"
-       id="path2" />
-    <path
-       d="m34.28289 307.85406h15.456506v15.456506h-15.456506z"
-       fill="#fff"
-       stroke="#000"
-       id="path4" />
-    <path
-       d="m115.70701 288.12344h15.456506v15.456506h-15.456506z"
-       fill="#fff"
-       stroke="#000"
-       transform="rotate(14.167652)"
-       id="path6" />
-  </g>
+  <path
+     style="stroke:#ffffff;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none"
+     inkscape:connector-curvature="0"
+     id="path2"
+     d="m 26.144862,309.98085 14.683097,-4.82807 4.828067,14.6831 -14.683097,4.82807 z" />
+  <path
+     style="fill:#ffffff;stroke:#000000;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none"
+     inkscape:connector-curvature="0"
+     id="path4"
+     d="m 34.28289,307.85406 h 15.456506 v 15.45651 H 34.28289 Z" />
+  <path
+     inkscape:connector-curvature="0"
+     style="fill:#ffffff;stroke:#000000;stroke-width:0.5;stroke-miterlimit:4;stroke-dasharray:none"
+     id="path6"
+     d="m 41.666531,307.68024 14.98638,3.78313 -3.783135,14.98638 -14.98638,-3.78313 z" />
 </svg>

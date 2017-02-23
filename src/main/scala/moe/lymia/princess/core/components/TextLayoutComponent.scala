@@ -40,7 +40,6 @@ private object TextLayoutResult {
 
 // TODO: Eventually add support for RTL languages and maybe even vertical text
 // TODO: Support for horizontal centering of text
-// TODO: Add support for programmatically defined start of line problems (like mana symbols in MTG)
 
 private class TextLayoutArea(parent: TextLayoutComponent, protected val boundsParam: Bounds)
   extends LuaLookup with BoundedBase {
@@ -58,21 +57,25 @@ private class TextLayoutArea(parent: TextLayoutComponent, protected val boundsPa
     (manager.settings.coordUnitsPerIn / 72) * fontSize
 
   private def doTextLayout(manager: ComponentRenderManager, frc: FontRenderContext, fontSize: Double,
-                           startYOffset: Double) = {
+                           startYOffset: Double): Option[(Double, Double, Int, Seq[(Double, Double, TextLayout)])] = {
     val em = emSize(manager, fontSize)
 
-    var isolates: Int = 0
+    var problems: Int = 0
 
     val data = new mutable.ArrayBuffer[(Double, Double, TextLayout)]
+    var lineStart = true
     var currentBaseline: Double = -1
     var currentXPosition: Double = bounds.minX
+    var currentLineEnd: Double = bounds.maxX
     var currentBulletXPosition: Double = bounds.minX
     var bottomBounds: Double = startYOffset
     var lastLineWords: Int = 0
 
     def finishLine() = {
-      if(lastLineWords == 1) isolates = isolates + 1
+      if(lastLineWords == 1) problems = problems + 1 // isolate line
+      currentLineEnd = bounds.maxX
       lastLineWords = 0
+      lineStart = true
     }
     def newLine(): Unit = {
       currentXPosition = currentBulletXPosition
@@ -88,50 +91,73 @@ private class TextLayoutArea(parent: TextLayoutComponent, protected val boundsPa
 
     text.execute(manager, fontSize) {
       case FormatInstruction.RenderString(str) =>
-        val measurer = new LineBreakMeasurer(str.getIterator, frc)
-        val remainingSpace = bounds.maxX - currentXPosition
+        val iter = str.getIterator
+        val len = iter.getEndIndex
+        val measurer = new LineBreakMeasurer(iter, frc)
 
+        var restorePosition: Int = 0
         var nextLayout: TextLayout = null
-        var insertNewline: Boolean = false
-        while({ nextLayout = measurer.nextLayout(remainingSpace.toFloat); nextLayout != null }) {
-          val position = measurer.getPosition
-          var nextBounds = Bounds(nextLayout.getBounds)
-          val actualBounds = hitTest(nextBounds)
-          if(actualBounds != nextBounds) {
-            measurer.setPosition(position)
-            nextLayout = measurer.nextLayout(actualBounds.size.width.toFloat)
-            nextBounds = actualBounds
+        var firstSection: Boolean = true
+        while(measurer.getPosition != len && {
+          def tryRemaining(requireWord: Boolean) = {
+            val remainingSpace = currentLineEnd - currentXPosition
+            nextLayout = measurer.nextLayout(remainingSpace.toFloat, len, requireWord)
           }
 
-          if(currentBaseline == -1) currentBaseline = startYOffset - nextBounds.minY
-          if(insertNewline) newLine()
-          insertNewline = true
+          restorePosition = measurer.getPosition
+          if(!firstSection) newLine()
+          tryRemaining(true)
+          if(nextLayout == null) {
+            if(!lineStart && firstSection) newLine()
+            tryRemaining(false)
+          }
+          firstSection = false
+          nextLayout != null
+        }) {
+          lineStart = false
 
-          bottomBounds = math.max(bottomBounds, currentBaseline + nextBounds.maxY)
-          lastLineWords = lastLineWords + nextLayout.toString.count(_ == ' ') + 1
+          var nextBounds = Bounds(nextLayout.getBounds).translate(currentXPosition, currentBaseline)
+          val actualBounds = hitTest(nextBounds)
+          if(actualBounds != nextBounds) {
+            measurer.setPosition(restorePosition)
+            currentLineEnd = actualBounds.maxX
+          } else {
+            nextBounds = nextBounds.translate(-currentXPosition, -currentBaseline)
 
-          data.append((currentXPosition, currentBaseline, nextLayout))
-          currentXPosition = currentXPosition + nextBounds.size.width
+            if(currentBaseline == -1) currentBaseline = startYOffset - nextBounds.minY
+
+            bottomBounds = math.max(bottomBounds, currentBaseline + nextBounds.maxY)
+            lastLineWords = lastLineWords + nextLayout.toString.count(_ == ' ') + 1
+
+            if(bottomBounds > bounds.maxY) return None
+
+            data.append((currentXPosition, currentBaseline, nextLayout))
+            currentXPosition = currentXPosition + nextBounds.size.width
+          }
         }
       case FormatInstruction.BulletStop =>
         currentXPosition = currentXPosition + parent.emBulletStopOffset * em
         currentBulletXPosition = currentXPosition
       case FormatInstruction.NewLine => newLine()
       case FormatInstruction.NewParagraph => newParagraph()
+      case FormatInstruction.NoStartLineHint => if(lineStart) problems = problems + 1
     }
 
-    (startYOffset, bottomBounds, isolates, data)
+    finishLine() // for isolate tracking
+
+    Some((startYOffset, bottomBounds, problems, data))
   }
 
   def layout(manager: ComponentRenderManager, frc: FontRenderContext, fontSize: Double): TextLayoutResult = {
     var verticalOffset: Double = 0
     var result: TextLayoutResult = TextLayoutResult.Failure
-    for(i <- 0 until (if(parent.centerVertical) parent.centerVerticalCycles else 1)) {
-      val (minY, maxY, problems, data) = doTextLayout(manager, frc, fontSize, bounds.minY + verticalOffset)
-      if(maxY > bounds.maxY) return result
-      verticalOffset = (bounds.size.height - (maxY - minY)) / 2
-      result = TextLayoutResult.Success(data, problems)
-    }
+    for(i <- 0 until (if(parent.centerVertical) parent.centerVerticalCycles else 1))
+      doTextLayout(manager, frc, fontSize, bounds.minY + verticalOffset) match {
+        case Some((minY, maxY, problems, data)) =>
+          verticalOffset = (bounds.size.height - (maxY - minY)) / 2
+          result = TextLayoutResult.Success(data, problems)
+        case None => return result
+      }
     result
   }
 
@@ -165,6 +191,8 @@ class TextLayoutComponent(protected val boundsParam: Bounds) extends GraphicsCom
   private[components] var centerVertical: Boolean = false
   private[components] var centerVerticalCycles: Int = 3
 
+  // TODO: Find a font size scaling system that fits text better at very small sizes
+  // TODO: Implement some kind of binary search to speed up searches
   private var startFontSize: Double = 12
   private var fontSizeDecrement: Double = 0.25
   private var minFontSize: Double = 1
