@@ -57,24 +57,6 @@ abstract class GraphicsComponent(protected var allowOverflow: Boolean = false) e
   }
 }
 
-trait SizedBase extends LuaLookup {
-  private def checkSize(size: Size) =
-    if(size.width <= 0 || size.height <= 0) throw TemplateException("Invalid size value.")
-  protected def sizeParam: Size
-  checkSize(sizeParam)
-  protected var size: Size = sizeParam
-  property("size", _ => size, (_, v: Size) => {
-    checkSize(v)
-    size = v
-  })
-  property("bounds", _ => Bounds(size), (L, v: Bounds) => {
-    if(v.minX != 0 || v.minY != 0)
-      L.error("cannot convert given bounds into size (minX or minY is non-zero)")
-    val ns = Size(v.maxX, v.maxY)
-    checkSize(ns)
-    size = ns
-  })
-}
 trait BoundedBase extends LuaLookup {
   protected def boundsParam: Bounds
   protected var bounds: Bounds = boundsParam

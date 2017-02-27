@@ -107,7 +107,7 @@ case class ComponentLib(packages: PackageList) {
     L.register(princess, "ComponentManager", () => new ComponentManager())
     L.register(princess, "Template", (s: String, bounds: Bounds) =>
       new XMLTemplateComponent(bounds, getXMLTemplateData(s)).ref)
-    L.register(princess, "Resource", (s: String, size: Size) => new ResourceComponent(size, s).ref)
+    L.register(princess, "Resource", (s: String, bounds: Bounds) => new ResourceComponent(bounds, s).ref)
     L.register(princess, "ComponentWrapper", (ref: ComponentReference) => new ComponentWrapper(ref).ref)
 
     L.register(princess, "BaseLayout", (L: LuaState, overflow: Boolean) => new LayoutComponent(L, overflow).ref)

@@ -37,9 +37,9 @@ import scala.xml.{XML => _, _}
 
 trait ResourceLoader {
   def loadRaster    (builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
-                     path: Path, expectedSize: Size): SVGDefinitionReference
+                     path: Path, bounds: Bounds): SVGDefinitionReference
   def loadVector    (builder: SVGBuilder, name: String, compression: Boolean,
-                     path: Path, expectedSize: Size): SVGDefinitionReference
+                     path: Path, bounds: Bounds): SVGDefinitionReference
   def loadDefinition(builder: SVGBuilder, name: String, path: Path): String
 }
 
@@ -49,20 +49,20 @@ trait IncludeDefinitionLoader {
 }
 
 trait IncludeVectorLoader {
-  def loadVector(builder: SVGBuilder, name: String, compression: Boolean, path: Path, expectedSize: Size) =
-    builder.createDefinitionFromContainer(name, Bounds(expectedSize),
+  def loadVector(builder: SVGBuilder, name: String, compression: Boolean, path: Path, bounds: Bounds) =
+    builder.createDefinitionFromContainer(name, bounds,
       XML.load(if(compression) new GZIPInputStream(Files.newInputStream(path)) else Files.newInputStream(path))
         % Attribute(null, "overflow", "hidden", Null))
 }
 
 trait LinkRasterLoader {
   def loadRaster(builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
-                 path: Path, expectedSize: Size) = {
+                 path: Path, bounds: Bounds) = {
     val uri = path.toUri
     if(LinkRasterLoader.normalSchemes.contains(uri.getScheme))
-      builder.createDefinitionFromContainer(name, Bounds(expectedSize),
+      builder.createDefinitionFromContainer(name, bounds,
                                             <image xlink:href={path.toUri.toASCIIString}/>)
-    else LinkRasterLoader.fallback.loadRaster(builder, name, reencode, expectedMime, path, expectedSize)
+    else LinkRasterLoader.fallback.loadRaster(builder, name, reencode, expectedMime, path, bounds)
   }
 }
 object LinkRasterLoader {
@@ -71,7 +71,7 @@ object LinkRasterLoader {
 }
 trait DataURLRasterLoader {
   def loadRaster(builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
-                 path: Path, expectedSize: Size) = {
+                 path: Path, bounds: Bounds) = {
     val data = reencode match {
       case None => Files.readAllBytes(path)
       case Some(reencodeTo) =>
@@ -81,7 +81,7 @@ trait DataURLRasterLoader {
         byteOut.toByteArray
     }
     val uri = s"data:$expectedMime;base64,${DatatypeConverter.printBase64Binary(Files.readAllBytes(path))}"
-    builder.createDefinitionFromContainer(name, Bounds(expectedSize), <image xlink:href={uri}/>)
+    builder.createDefinitionFromContainer(name, bounds, <image xlink:href={uri}/>)
   }
 }
 
@@ -106,20 +106,20 @@ final class ResourceManager(builder: SVGBuilder, settings: RenderSettings,
     (split.init :+ (if(components.length == 1) components.head else components.init.mkString("."))).mkString("/")
   }
 
-  private def tryFindImageResource(name: String, size: Size) =
+  private def tryFindImageResource(name: String, bounds: Bounds) =
     ResourceManager.formatSearchList.view.map { case (extension, format) =>
       packages.resolve(s"$name.$extension").map(fullPath =>
         format.formatType match {
           case ResourceFormatType.Raster(mime, reencode) =>
-            loader.loadRaster(builder, name, reencode, mime, fullPath, size)
+            loader.loadRaster(builder, name, reencode, mime, fullPath, bounds)
           case ResourceFormatType.Vector(compression) =>
-            loader.loadVector(builder, name, compression, fullPath, size)
+            loader.loadVector(builder, name, compression, fullPath, bounds)
         }
       )
     }.find(_.isDefined).flatten
   val imageResourceCache = new mutable.HashMap[String, Option[SVGDefinitionReference]]
-  def loadImageResource(name: String, size: Size) =
-    imageResourceCache.getOrElseUpdate(stripExtension(name), tryFindImageResource(stripExtension(name), size))
+  def loadImageResource(name: String, bounds: Bounds) =
+    imageResourceCache.getOrElseUpdate(stripExtension(name), tryFindImageResource(stripExtension(name), bounds))
                       .getOrElse(throw TemplateException(s"image '$name' not found"))
 
   private def tryFindDefinition(name: String) =
