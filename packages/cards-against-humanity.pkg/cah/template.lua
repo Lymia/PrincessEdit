@@ -53,8 +53,13 @@ function layoutComponents(cardData)
     textLayout.lineBreakSize = 1.25
     layout.addComponent(0, 0, textLayout)
 
-    if blankCount > 1 then indicatorLine(layout, 200, 324, "PICK", blankCount    , fgColor, bgColor) end
-    if blankCount > 2 then indicatorLine(layout, 200, 299, "DRAW", blankCount - 1, fgColor, bgColor) end
+    if blankCount > 1 then
+        indicatorLine(layout, 200, 324, "PICK", blankCount    , fgColor, bgColor)
+    end
+    if blankCount > 2 then
+        indicatorLine(layout, 200, 299, "DRAW", blankCount - 1, fgColor, bgColor)
+        textLayout.addExclusion({150, 275, 250, 350})
+    end
 
     return component.Mask(component.Resource("cah/card-mask.svg", size), layout)
 end
