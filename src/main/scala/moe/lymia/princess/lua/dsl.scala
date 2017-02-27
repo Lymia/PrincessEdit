@@ -72,7 +72,7 @@ class LuaReturnWrapper(L: LuaState, val wrapped: Any, source: => Option[String] 
 
 case object LuaNil
 
-trait LuaImplicits extends LuaGeneratedImplicits {
+class LuaImplicits extends LuaGeneratedImplicits {
   type LuaRet = Seq[LuaObject]
   def LuaRet(v: LuaObject*) = Seq(v : _*)
 

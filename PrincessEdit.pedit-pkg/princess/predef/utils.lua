@@ -18,9 +18,38 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-ComponentManager = _princess.ComponentManager
+local ipairs = ipairs
 
-component = {}
+function _princess.lockAll(obj)
+    obj._deleteProperty("_listProperties")
+    obj._deleteProperty("_getProperty")
+    obj._deleteProperty("_hasProperty")
+    obj._lock()
+end
 
-component.Resource = _princess.Resource
-component.ComponentWrapper = _princess.ComponentWrapper
+function _princess.inheritProperty(obj, underlying, ...)
+    for _, name in ipairs({...}) do
+        local get, set = underlying._getProperty(name)
+        obj._property(name, function() return get() end, function(v) set(v) end)
+    end
+end
+
+function _princess.inheritLockedProperty(obj, underlying, ...)
+    for _, name in ipairs({...}) do
+        obj._property(name, function() return underlying[name] end, function(v) underlying[name] = v end)
+    end
+end
+
+function _princess.inheritUnboundMethod(obj, underlying, ...)
+    for _, name in ipairs({...}) do
+        local fn = underlying[name]
+        obj._method(name, function(...) return fn(underlying, ...) end)
+    end
+end
+
+function _princess.inheritMethod(obj, underlying, ...)
+    for _, name in ipairs({...}) do
+        local fn = underlying[name]
+        obj._method(name, function(...) return fn(...) end)
+    end
+end

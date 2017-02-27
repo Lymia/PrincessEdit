@@ -35,17 +35,25 @@ trait HasLuaMethods {
 private object LuaLookup {
   type SetPropertyFn = (LuaState, Any) => Unit
   type GetPropertyFn = (LuaState) => LuaObject
-  case class Property(set: LuaLookup.SetPropertyFn, get: LuaLookup.GetPropertyFn)
+  case class Property(get: LuaLookup.GetPropertyFn, set: LuaLookup.SetPropertyFn)
   val lockProps = Set("_lock", "_property", "_overideProperty", "_method", "_overrideMethod", "_deleteProperty")
   val fullLockProps = Set("_listProperties", "_getProperty", "_hasProperty")
 }
+
+private case class LuaGetFn(fn: LuaClosure) extends LuaLookup.GetPropertyFn {
+  override def apply(L: LuaState): LuaObject = L.call(fn, 1).head
+}
+private case class LuaSetFn(fn: LuaClosure) extends LuaLookup.SetPropertyFn {
+  override def apply(L: LuaState, v: Any): Unit = L.call(fn, 0, v)
+}
+
 trait LuaLookup extends HasLuaMethods {
   private val properties = new mutable.HashMap[String, LuaLookup.Property]
 
   protected def property(name: String, get: LuaLookup.GetPropertyFn): Unit =
-    properties.put(name, LuaLookup.Property((L, _) => L.error(s"property '$name' is immutable"), get))
+    properties.put(name, LuaLookup.Property(get, (L, _) => L.error(s"property '$name' is immutable")))
   protected def property[R: FromLua](name: String, get: LuaLookup.GetPropertyFn, set: (LuaState, R) => Unit): Unit =
-    properties.put(name, LuaLookup.Property((L, v) => set(L, v.fromLua[R](L, Some(s"invalid property value"))), get))
+    properties.put(name, LuaLookup.Property(get, (L, v) => set(L, v.fromLua[R](L, Some(s"invalid property value")))))
 
   private def luaMethod(name: String)(fn: LuaClosure) =
     property(name, L => fn, (L, _ : Any) => L.error(s"cannot set method '$name'"))
@@ -56,13 +64,12 @@ trait LuaLookup extends HasLuaMethods {
     properties.remove(name)
   }
 
-
   private def setLuaProperty(doOverride: Boolean)
                             (L: LuaState, name: String, get: Option[LuaClosure], set: Option[LuaClosure]) = {
     if(!doOverride && properties.contains(name)) L.error(s"property '$name' already defined!")
     val getFn = get.getOrElse(LuaClosure { () => L.error(s"property '$name' is immutable") ; () })
     val setFn = set.getOrElse(LuaClosure { () => L.error(s"property '$name' is write-only"); () })
-    property(name, L => L.call(getFn, 1).head, (L, v: Any) => L.call(setFn, 0, v))
+    property(name, LuaGetFn(getFn), LuaSetFn(setFn))
   }
   private def setLuaMethod(doOverride: Boolean)(L: LuaState, name: String, m: LuaClosure) = {
     if(!doOverride && properties.contains(name)) L.error(s"method '$name' already defined!")
@@ -81,11 +88,16 @@ trait LuaLookup extends HasLuaMethods {
 
   method("_getProperty")((L: LuaState, k: String) => properties.get(k) match {
     case Some(x) =>
-      val t = new LuaTable()
-      L.register(t, "set", x.set)
-      L.register(t, "get", (L: LuaState) => LuaRet(x.get(L)))
-      LuaRet(t)
-    case None => LuaRet(LuaNil)
+      val get: LuaObject = x.get match {
+        case LuaGetFn(closure) => closure
+        case fn                => fn : ScalaLuaClosure
+      }
+      val set: LuaObject = x.set match {
+        case LuaSetFn(closure) => closure
+        case fn                => fn : ScalaLuaClosure
+      }
+      LuaRet(get, set)
+    case None    => LuaRet()
   })
   method("_listProperties")(() => properties.keySet.toSeq)
   method("_hasProperty")((k: String) => properties.contains(k))

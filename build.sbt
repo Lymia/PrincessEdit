@@ -72,7 +72,7 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Proguar
 
   libraryDependencies +=  "org.ini4j" % "ini4j" % "0.5.2",
   shadeMappings       +=  "org.ini4j.**" -> "moe.lymia.princess.lib.ini4j.@1"
-) ++ VersionBuild.settings)
+) ++ VersionBuild.settings ++ CodeGeneration.settings)
 
 Launch4JBuild.settings
 Launch4JBuild.Keys.launch4jSourceJar := (ProguardKeys.proguard in Proguard in princessEdit).value.head

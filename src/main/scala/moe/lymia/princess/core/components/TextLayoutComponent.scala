@@ -191,15 +191,17 @@ class TextLayoutComponent(protected val boundsParam: Bounds) extends GraphicsCom
   private[components] var centerVertical: Boolean = false
   private[components] var centerVerticalCycles: Int = 3
 
+  private var fontSize: Double = 12
+
   // TODO: Find a font size scaling system that fits text better at very small sizes
   // TODO: Implement some kind of binary search to speed up searches
-  private var startFontSize: Double = 12
+  private var tryScaleText: Boolean = false
   private var fontSizeDecrement: Double = 0.25
   private var minFontSize: Double = 1
   private var tryExtra: Int = 1
 
   def findTextSize(manager: ComponentRenderManager, frc: FontRenderContext) = {
-    var fontSize = startFontSize
+    var fontSize = this.fontSize
 
     var bestData: Seq[(Double, Double, TextLayout)] = null
     var bestProblems: Int = Int.MaxValue
@@ -216,19 +218,19 @@ class TextLayoutComponent(protected val boundsParam: Bounds) extends GraphicsCom
       }
     }
 
-    while(fontSize >= minFontSize) {
+    do {
       val results = layoutCurrentSize()
       if(isSolutionGood(results)) {
         checkIsBest(results)
 
-        for(i <- 1 until tryExtra) if(fontSize >= minFontSize) {
+        if(tryScaleText) for(i <- 1 until tryExtra) if(fontSize >= minFontSize) {
           fontSize = fontSize - fontSizeDecrement
           val results = layoutCurrentSize()
           if(isSolutionGood(results)) checkIsBest(results)
         }
       }
       fontSize = fontSize - fontSizeDecrement
-    }
+    } while(tryScaleText && fontSize >= minFontSize)
 
     if(bestData != null) Some(bestData) else null
   }
@@ -249,8 +251,10 @@ class TextLayoutComponent(protected val boundsParam: Bounds) extends GraphicsCom
   property("centerVertical"      , _ => centerVertical      , (_, b: Boolean) => centerVertical       = b)
   property("centerVerticalCycles", _ => centerVerticalCycles, (_, i: Int    ) => centerVerticalCycles = i)
 
-  property("startFontSize"       , _ => startFontSize       , (_, d: Double) => startFontSize         = d)
-  property("fontSizeDecrement"   , _ => fontSizeDecrement   , (_, d: Double) => fontSizeDecrement     = d)
-  property("minFontSize"         , _ => minFontSize         , (_, d: Double) => minFontSize           = d)
-  property("tryExtra"            , _ => tryExtra            , (_, i: Int   ) => tryExtra              = i)
+  property("fontSize"            , _ => fontSize            , (_, d: Double ) => fontSize             = d)
+
+  property("tryScaleText"        , _ => tryScaleText        , (_, b: Boolean) => tryScaleText         = b)
+  property("fontSizeDecrement"   , _ => fontSizeDecrement   , (_, d: Double ) => fontSizeDecrement    = d)
+  property("minFontSize"         , _ => minFontSize         , (_, d: Double ) => minFontSize          = d)
+  property("tryExtra"            , _ => tryExtra            , (_, i: Int    ) => tryExtra             = i)
 }

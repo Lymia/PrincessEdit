@@ -19,10 +19,3 @@
 -- THE SOFTWARE.
 
 warn = _princess.warn
-
-function _princess.lockAll(obj)
-    obj._deleteProperty("_listProperties")
-    obj._deleteProperty("_getProperty")
-    obj._deleteProperty("_hasProperty")
-    obj._lock()
-end

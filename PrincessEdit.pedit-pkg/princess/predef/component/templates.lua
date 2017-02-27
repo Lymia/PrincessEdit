@@ -27,10 +27,10 @@ local function colorToHex(color)
 end
 local function wrapColor(component)
     local color
-    local _ulColor =  component._getProperty("_ulColor")
+    local _, _ulColor_set =  component._getProperty("_ulColor")
     component._deleteProperty("_ulColor")
     component._property("color", function() return color end,
-                                 function(newColor) _ulColor.set(colorToHex(newColor)); color = newColor end)
+                                 function(newColor) _ulColor_set(colorToHex(newColor)); color = newColor end)
 end
 
 local function Mask(maskComponent, dataComponent, bounds)
@@ -82,12 +82,12 @@ end
 function component.Circle(radius, color)
     local circle = Template("princess/templates/circle.xml", {0, 0})
     circle.allowOverflow = true
-    local _ulRadius = circle._getProperty("_ulRadius")
+    local _ulRadius_get, _ulRadius_set = circle._getProperty("_ulRadius")
     circle._deleteProperty("_ulRadius")
     wrapColor(circle)
 
-    circle._property("radius", function() return _ulRadius.get() end, function(r)
-        _ulRadius.set(r)
+    circle._property("radius", function() return _ulRadius_get() end, function(r)
+        _ulRadius_set(r)
         circle.bounds = {-radius, -radius, radius, radius}
     end)
 

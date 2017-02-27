@@ -24,6 +24,14 @@ scale = 0.01 * inch
 local black = {0, 0, 0}
 local white = {255, 255, 255}
 
+local font  = "FreeSans-Bold"
+
+local function indicatorLine(layout, x, y, header, count, fgColor, bgColor)
+    layout.addComponent(x, y, component.LeftAlign(component.SimpleText(header, font, 10, fgColor)))
+    layout.addComponent(x + 15, y - 5, component.Circle(10, fgColor))
+    layout.addComponent(x + 15, y - 5, component.Center(component.SimpleText(tostring(count), font, 12, bgColor)))
+end
+
 function layoutComponents(cardData)
     local text = cardData.text
     local blankCount = cardData.blankCount
@@ -39,37 +47,14 @@ function layoutComponents(cardData)
     local layout = component.BasicLayout(size)
     layout.addComponent(0, 0, component.Fill(size, bgColor))
     layout.addComponent(0, 0, component.Resource("cah/cah-logo.svg", size))
-    layout.addComponent(59, 322.5, component.SimpleText("Cards Against Humanity", "FreeSans-Bold", 5.25, fgColor))
+    layout.addComponent(59, 322.5, component.SimpleText("Cards Against Humanity", font, 5.25, fgColor))
 
-    local formatter = TextFormatter()
-    formatter.font = "FreeSans-Bold"
-    formatter.color = fgColor
-    formatter.append(text)
-
-    local textLayoutBounds = {25, 30, 225, 300}
-    local textLayout = component.TextLayout(textLayoutBounds)
-
+    local textLayout = component.SimpleTextLayout({25, 30, 225, 300}, text, font, 15, fgColor)
     textLayout.lineBreakSize = 1.25
-    textLayout.startFontSize = 15
-
-    textLayout.areas.new("main", textLayoutBounds)
-    textLayout.areas.main.text = formatter.getFormattedString()
     layout.addComponent(0, 0, textLayout)
 
-
-    if blankCount > 1 then
-        layout.addComponent(200, 324, component.LeftAlign(component.SimpleText("PICK", "FreeSans-Bold", 10, fgColor)))
-        layout.addComponent(215, 319, component.Circle(10, fgColor))
-        layout.addComponent(215, 319    ,
-            component.Center(component.SimpleText(tostring(blankCount), "FreeSans-Bold", 12, bgColor)))
-    end
-    if blankCount > 2 then
-        layout.addComponent(200, 299, component.LeftAlign(component.SimpleText("DRAW", "FreeSans-Bold", 10, fgColor)))
-        layout.addComponent(215, 294, component.Circle(10, fgColor))
-        layout.addComponent(215, 294    ,
-            component.Center(component.SimpleText(tostring(blankCount - 1), "FreeSans-Bold", 12, bgColor)))
-        textLayout.areas.main.addExclusion({150, 275, 250, 350})
-    end
+    if blankCount > 1 then indicatorLine(layout, 200, 324, "PICK", blankCount    , fgColor, bgColor) end
+    if blankCount > 2 then indicatorLine(layout, 200, 299, "DRAW", blankCount - 1, fgColor, bgColor) end
 
     return component.Mask(component.Resource("cah/card-mask.svg", size), layout)
 end

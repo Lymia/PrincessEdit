@@ -32,17 +32,12 @@ trait LuaTemplateImplicits {
       L.register(mt, "__mul", (scale: Double, s: PhysicalScale) => PhysicalScale(scale * s.unPerViewport, s.unit))
     }
   }
-  implicit object LuaPhysicalUnit extends LuaUserdataType[PhysicalUnit] {
-    metatable { (L, mt) =>
-      L.register(mt, "__mul", (scale: Double, unit: PhysicalUnit) => PhysicalScale(scale, unit))
-    }
-  }
 }
 
 object TemplateLib {
   def open(L: LuaState) = {
     val table = L.newLib("_princess", "PhysicalUnit")
-    L.rawSet(table, "mm", PhysicalUnit.mm)
-    L.rawSet(table, "in", PhysicalUnit.in)
+    L.rawSet(table, "mm", PhysicalScale(1, PhysicalUnit.mm))
+    L.rawSet(table, "in", PhysicalScale(1, PhysicalUnit.in))
   }
 }
