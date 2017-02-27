@@ -26,6 +26,7 @@ import java.awt.geom.Rectangle2D
 import java.nio.file.Path
 import java.security.SecureRandom
 import java.util.Map.Entry
+import java.util.concurrent.atomic.AtomicInteger
 import javax.xml.parsers.SAXParserFactory
 
 import moe.lymia.princess.lua.LuaErrorMarker
@@ -107,18 +108,14 @@ private[core] object INI {
 }
 
 private[core] object GenID {
-  private var globalId = 0
-  private val globalIdLock = new Object
-  private def makeGlobalId() = globalIdLock synchronized {
-    val id = globalId
-    globalId = globalId + 1
-    id
-  }
+  private var globalId = new AtomicInteger(0)
+  private def makeGlobalId() = globalId.incrementAndGet()
 
   private val      chars = "abcdefghijklmnopqrstuvwxyz0123456789"
   private lazy val rng   = new SecureRandom()
   def makeId() =
-    makeGlobalId()+"_"+new String((for(i <- 0 until 16) yield chars.charAt(rng.nextInt(chars.length))).toArray)
+    makeGlobalId()+"_"+new String((for(i <- 0 until 16) yield
+      chars.charAt(math.abs(rng.nextInt() % chars.length))).toArray)
 }
 
 private[core] object XML extends XMLLoader[Elem] {
