@@ -114,19 +114,18 @@ final class SVGBuilder(val settings: RenderSettings) {
     }
     resourceName
   }
-  private def setSize(elem: Elem, size: Size) =
-    (elem % attribute("width"              , size.width.toString)
-          % attribute("height"             , size.height.toString)
+  private def setSize(elem: Elem, bounds: Bounds) =
+    (elem % attribute("width"              , bounds.width.toString)
+          % attribute("height"             , bounds.height.toString)
           % attribute("preserveAspectRatio", "none"))
   def createDefinitionFromContainer(name: String, bounds: Bounds, elems: Elem,
                                     extraLayout: Option[LuaTable] = None) = {
-    SVGDefinitionReference(createDefinition(name, setSize(elems, bounds.size)), bounds, extraLayout, this)
+    SVGDefinitionReference(createDefinition(name, setSize(elems, bounds)), bounds, extraLayout, this)
   }
   def createDefinitionFromSVG(name: String, bounds: Bounds, elem: Elem,
                               extraLayout: Option[LuaTable] = None, allowOverflow: Boolean = false) = {
-    val size = bounds.size
     val withViewbox =
-      elem % Attribute(null, "viewBox", s"${bounds.minX} ${bounds.minY} ${size.width} ${size.height}", Null)
+      elem % Attribute(null, "viewBox", s"${bounds.minX} ${bounds.minY} ${bounds.width} ${bounds.height}", Null)
     createDefinitionFromContainer(name, bounds,
       if(!allowOverflow) withViewbox else withViewbox % Attribute(null, "overflow", "visible", Null),
       extraLayout = extraLayout)

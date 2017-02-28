@@ -22,6 +22,7 @@
 
 package moe.lymia.princess.core.builder
 
+import java.awt.Font
 import java.io.ByteArrayOutputStream
 import java.nio.file.{Files, Path}
 import java.util.zip.GZIPInputStream
@@ -100,6 +101,12 @@ private case class ImageFormat(extensions: Seq[String], formatType: ImageFormatT
 
 final class ResourceManager(builder: SVGBuilder, settings: RenderSettings,
                             loader: ResourceLoader, packages: PackageList) {
+  lazy val systemFont = {
+    val tryResolve = packages.getSystemExports("princess/system_font").headOption.flatMap(x =>
+      packages.resolve(x.path).map(path => Font.createFont(Font.TRUETYPE_FONT, Files.newInputStream(path))))
+    tryResolve.getOrElse(new Font(Font.SANS_SERIF, Font.PLAIN, 1))
+  }
+
   private def stripExtension(name: String) = {
     val split      = name.split("/")
     val components = split.last.split("\\.")

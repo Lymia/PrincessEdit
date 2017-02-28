@@ -60,6 +60,8 @@ abstract class GraphicsComponent(protected var allowOverflow: Boolean = false) e
 trait BoundedBase extends LuaLookup {
   protected def boundsParam: Bounds
   protected var bounds: Bounds = boundsParam
+  def getBounds = bounds
+
   property("size", L => bounds.size, (_, v: Size) => {bounds = Bounds(v)})
   property("bounds", _ => bounds, (_, v: Bounds) => bounds = v)
 }

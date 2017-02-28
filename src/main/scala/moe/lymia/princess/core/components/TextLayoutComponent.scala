@@ -22,10 +22,11 @@
 
 package moe.lymia.princess.core.components
 
+import java.awt.{BasicStroke, Color, Font}
 import java.awt.font.{FontRenderContext, LineBreakMeasurer, TextLayout}
-import java.text.AttributedString
+import java.awt.geom.Area
 
-import moe.lymia.princess.core.{Bounds, TemplateException}
+import moe.lymia.princess.core._
 import moe.lymia.princess.core.lua._
 import moe.lymia.princess.lua._
 import org.jfree.graphics2d.svg.SVGGraphics2D
@@ -52,6 +53,12 @@ private class TextLayoutArea(parent: TextLayoutComponent, protected val boundsPa
     a.minY < b.maxY && a.maxY > b.minY
   private def hitTest(bound: Bounds) =
     exclusions.foldLeft(bound)((x, y) => if(aabbCollision(x, y)) x.copy(maxX = y.maxX) else x)
+
+  def getOutlineShape = {
+    val accum = new Area(bounds.toRectangle2D)
+    for(exclusion <- exclusions) accum.subtract(new Area(exclusion.toRectangle2D))
+    accum
+  }
 
   private def emSize(manager: ComponentRenderManager, fontSize: Double) =
     (manager.settings.coordUnitsPerIn / 72) * fontSize
@@ -132,7 +139,7 @@ private class TextLayoutArea(parent: TextLayoutComponent, protected val boundsPa
             if(bottomBounds > bounds.maxY) return None
 
             data.append((currentXPosition, currentBaseline, nextLayout))
-            currentXPosition = currentXPosition + nextBounds.size.width
+            currentXPosition = currentXPosition + nextBounds.width
           }
         }
       case FormatInstruction.BulletStop =>
@@ -154,7 +161,7 @@ private class TextLayoutArea(parent: TextLayoutComponent, protected val boundsPa
     for(i <- 0 until (if(parent.centerVertical) parent.centerVerticalCycles else 1))
       doTextLayout(manager, frc, fontSize, bounds.minY + verticalOffset) match {
         case Some((minY, maxY, problems, data)) =>
-          verticalOffset = (bounds.size.height - (maxY - minY)) / 2
+          verticalOffset = (bounds.height - (maxY - minY)) / 2
           result = TextLayoutResult.Success(data, problems)
         case None => return result
       }
@@ -232,16 +239,32 @@ class TextLayoutComponent(protected val boundsParam: Bounds) extends GraphicsCom
       fontSize = fontSize - fontSizeDecrement
     } while(tryScaleText && fontSize >= minFontSize)
 
-    if(bestData != null) Some(bestData) else null
+    Option(bestData)
   }
 
+  // TODO: Make an best attempt to fit areas, and improve the error message (make a consistant way to show errors?)
   override def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D, table: LuaTable): Bounds = {
-    // TODO: Proper error handling
-    val layouts =
-      findTextSize(manager, graphics.getFontRenderContext).getOrElse(throw TemplateException("Error laying out text"))
-    for((x, y, layout) <- layouts) layout.draw(graphics, x.toFloat, y.toFloat)
+    findTextSize(manager, graphics.getFontRenderContext) match {
+      case Some(layouts) =>
+        for((x, y, layout) <- layouts) layout.draw(graphics, x.toFloat, y.toFloat)
+      case None =>
+        val font = manager.settings.scaleFont(manager.resources.systemFont, fontSize)
+        val layout = new TextLayout("Could not fit text!", font, graphics.getFontRenderContext)
+        val textBounds = layout.getBounds
+        graphics.setColor(Color.RED)
+        graphics.setStroke(new BasicStroke((manager.settings.coordUnitsPerIn / 25.4 / 2).toFloat /* .5 mm */))
+        for(area <- areaManager.layoutAreas.values) {
+          val areaBounds = area.getBounds
+          graphics.draw(area.getOutlineShape)
+          val x = areaBounds.minX + (areaBounds.width  / 2) - (textBounds.getWidth  / 2) - textBounds.getMinX
+          val y = areaBounds.minY + (areaBounds.height / 2) - (textBounds.getHeight / 2) - textBounds.getMinY
+          layout.draw(graphics, x.toFloat, y.toFloat)
+        }
+    }
     bounds
   }
+
+  allowOverflow = true // TODO: Should we really do this only for the error case?
 
   property("areas", _ => areaManager : HasLuaMethods)
 

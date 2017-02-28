@@ -39,8 +39,13 @@ import scala.xml.{Elem, SAXParser}
 
 final case class Size(width: Double, height: Double)
 final case class Bounds(minX: Double, minY: Double, maxX: Double, maxY: Double) {
-  def size = Size(maxX - minX, maxY - minY)
+  def width  = maxX - minX
+  def height = maxY - minY
+
+  def size = Size(width, height)
   def translate(x: Double, y: Double) = Bounds(minX + x, minY + y, maxX + x, maxY + y)
+
+  def toRectangle2D = new Rectangle2D.Double(minX, minY, width, height)
 }
 object Bounds {
   def apply(width: Double, height: Double) = new Bounds(0, 0, width, height)
