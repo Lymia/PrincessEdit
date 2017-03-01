@@ -37,33 +37,27 @@ import scala.xml.{XML => _, _}
 // TODO: Add caching for these resources between renders
 
 trait ResourceLoader {
-  def loadRaster    (builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
-                     path: Path, bounds: Bounds): SVGDefinitionReference
-  def loadVector    (builder: SVGBuilder, name: String, compression: Boolean,
-                     path: Path, bounds: Bounds): SVGDefinitionReference
-  def loadDefinition(builder: SVGBuilder, name: String, path: Path): String
+  def loadRaster    (reencode: Option[String], expectedMime: String, path: Path): Elem
+  def loadVector    (compression: Boolean, path: Path): Elem
+  def loadDefinition(path: Path): Elem
 }
 
 trait IncludeDefinitionLoader {
-  def loadDefinition(builder: SVGBuilder, name: String, path: Path) =
-    builder.createDefinition(name, XML.load(Files.newInputStream(path)), isDef = true)
+  def loadDefinition(path: Path) = XML.load(Files.newInputStream(path))
 }
 
 trait IncludeVectorLoader {
-  def loadVector(builder: SVGBuilder, name: String, compression: Boolean, path: Path, bounds: Bounds) =
-    builder.createDefinitionFromContainer(name, bounds,
-      XML.load(if(compression) new GZIPInputStream(Files.newInputStream(path)) else Files.newInputStream(path))
-        % Attribute(null, "overflow", "hidden", Null))
+  def loadVector(compression: Boolean, path: Path) =
+    (XML.load(if(compression) new GZIPInputStream(Files.newInputStream(path)) else Files.newInputStream(path))
+      % Attribute(null, "overflow", "hidden", Null))
 }
 
 trait LinkRasterLoader {
-  def loadRaster(builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
-                 path: Path, bounds: Bounds) = {
+  def loadRaster(reencode: Option[String], expectedMime: String, path: Path) = {
     val uri = path.toUri
     if(LinkRasterLoader.normalSchemes.contains(uri.getScheme))
-      builder.createDefinitionFromContainer(name, bounds,
-                                            <image xlink:href={path.toUri.toASCIIString}/>)
-    else LinkRasterLoader.fallback.loadRaster(builder, name, reencode, expectedMime, path, bounds)
+      <image xlink:href={path.toUri.toASCIIString}/>
+    else LinkRasterLoader.fallback.loadRaster(reencode, expectedMime, path)
   }
 }
 object LinkRasterLoader {
@@ -71,8 +65,7 @@ object LinkRasterLoader {
   private val normalSchemes = Set("http", "https", "ftp", "file")
 }
 trait DataURLRasterLoader {
-  def loadRaster(builder: SVGBuilder, name: String, reencode: Option[String], expectedMime: String,
-                 path: Path, bounds: Bounds) = {
+  def loadRaster(reencode: Option[String], expectedMime: String, path: Path) = {
     val data = reencode match {
       case None => Files.readAllBytes(path)
       case Some(reencodeTo) =>
@@ -82,7 +75,7 @@ trait DataURLRasterLoader {
         byteOut.toByteArray
     }
     val uri = s"data:$expectedMime;base64,${DatatypeConverter.printBase64Binary(Files.readAllBytes(path))}"
-    builder.createDefinitionFromContainer(name, bounds, <image xlink:href={uri}/>)
+    <image xlink:href={uri}/>
   }
 }
 
@@ -118,9 +111,9 @@ final class ResourceManager(builder: SVGBuilder, settings: RenderSettings,
       packages.resolve(s"$name.$extension").map(fullPath =>
         format.formatType match {
           case ResourceFormatType.Raster(mime, reencode) =>
-            loader.loadRaster(builder, name, reencode, mime, fullPath, bounds)
+            builder.createDefinitionFromContainer(name, bounds, loader.loadRaster(reencode, mime, fullPath))
           case ResourceFormatType.Vector(compression) =>
-            loader.loadVector(builder, name, compression, fullPath, bounds)
+            builder.createDefinitionFromContainer(name, bounds, loader.loadVector(compression, fullPath))
         }
       )
     }.find(_.isDefined).flatten
@@ -130,9 +123,7 @@ final class ResourceManager(builder: SVGBuilder, settings: RenderSettings,
                       .getOrElse(throw TemplateException(s"image '$name' not found"))
 
   private def tryFindDefinition(name: String) =
-    packages.resolve(name).map(path =>
-      loader.loadDefinition(builder, name, path)
-    )
+    packages.resolve(name).map(path => builder.createDefinition(name, loader.loadDefinition(path), isDef = true))
   val definitionCache = new mutable.HashMap[String, Option[String]]
   def loadDefinition(name: String) =
     definitionCache.getOrElseUpdate(name, tryFindDefinition(name))
