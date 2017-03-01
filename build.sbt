@@ -70,6 +70,9 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Proguar
   libraryDependencies +=  "com.github.scopt" %% "scopt" % "3.5.0",
   shadeMappings       +=  "scopt.**" -> "moe.lymia.princess.lib.scopt.@1",
 
+  libraryDependencies +=  "com.lihaoyi" %% "scalarx" % "0.3.2",
+  shadeMappings       +=  "rx.**" -> "moe.lymia.princess.lib.rx.@1",
+
   libraryDependencies +=  "org.ini4j" % "ini4j" % "0.5.2",
   shadeMappings       +=  "org.ini4j.**" -> "moe.lymia.princess.lib.ini4j.@1"
 ) ++ VersionBuild.settings ++ CodeGeneration.settings)

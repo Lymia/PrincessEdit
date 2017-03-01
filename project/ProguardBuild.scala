@@ -54,7 +54,7 @@ object ProguardBuild {
         oldStrategy(x)
     },
 
-    ProguardKeys.proguard in Proguard <<= (ProguardKeys.proguard in Proguard).dependsOn(assembly)
+    ProguardKeys.proguard in Proguard := (ProguardKeys.proguard in Proguard).dependsOn(assembly).value
   ) ++ inConfig(Proguard)(Seq(
     ProguardKeys.proguardVersion := "5.3.1",
     ProguardKeys.options ++= Seq("-verbose", "-include",

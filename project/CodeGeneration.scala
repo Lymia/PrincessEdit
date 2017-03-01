@@ -25,7 +25,7 @@ import sbt.Keys._
 
 object CodeGeneration {
   val settings = Seq(
-    sourceGenerators in Compile <+= Def.task {
+    sourceGenerators in Compile += Def.task {
       val maxTuple = 5
       def makeImplicit(count: Int) = {
         val n = 1 to count
@@ -90,6 +90,6 @@ object CodeGeneration {
       val out = (sourceManaged in Compile).value / "moe" / "lymia" / "princess" / "lua" / "LuaGeneratedImplicits.scala"
       IO.write(out, generatedFile)
       Seq(out)
-    }
+    }.taskValue
   )
 }
