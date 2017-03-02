@@ -26,7 +26,7 @@ import java.io.Writer
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.lua.LuaTable
-import moe.lymia.princess.svg.SVGRenderer
+import moe.lymia.princess.core.svg.SVGRenderer
 import org.jfree.graphics2d.svg.{SVGGraphics2D, SVGHints}
 
 import scala.collection.mutable

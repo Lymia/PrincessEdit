@@ -29,7 +29,7 @@ import javax.imageio.ImageIO
 import moe.lymia.princess.core.PackageManager
 import moe.lymia.princess.core.builder.{ExportResourceLoader, RasterizeResourceLoader}
 import moe.lymia.princess.lua._
-import moe.lymia.princess.svg.InkscapeConnectionFactory
+import moe.lymia.princess.core.svg.InkscapeConnectionFactory
 import moe.lymia.princess.util.IOUtils
 
 private case class CLIException(message: String) extends Exception

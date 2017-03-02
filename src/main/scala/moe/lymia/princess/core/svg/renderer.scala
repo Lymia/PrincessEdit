@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.svg
+package moe.lymia.princess.core.svg
 
 import java.awt.image.BufferedImage
 import java.nio.file.Path

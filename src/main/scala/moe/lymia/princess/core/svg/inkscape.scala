@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.svg
+package moe.lymia.princess.core.svg
 
 import java.io._
 import java.nio.charset.StandardCharsets

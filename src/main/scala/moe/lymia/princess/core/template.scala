@@ -28,7 +28,7 @@ import moe.lymia.princess.core.components._
 import moe.lymia.princess.core.lua._
 import moe.lymia.princess.core.builder._
 import moe.lymia.princess.lua._
-import moe.lymia.princess.svg.SVGRenderer
+import moe.lymia.princess.core.svg.SVGRenderer
 import moe.lymia.princess.util.SizedCache
 
 trait Template {
