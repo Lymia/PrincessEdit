@@ -34,6 +34,6 @@ object PrincessEdit {
 
     if(args.length == 0) {
       sys.error("GUI not implemented.")
-    } else new ui.CLI().main(args)
+    } else new CLI().main(args)
   }
 }

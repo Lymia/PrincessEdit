@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.ui
+package moe.lymia.princess
 
 import java.io.{FileOutputStream, FileWriter}
 import java.nio.file.Paths
@@ -28,8 +28,8 @@ import javax.imageio.ImageIO
 
 import moe.lymia.princess.core.PackageManager
 import moe.lymia.princess.core.builder.{ExportResourceLoader, RasterizeResourceLoader}
-import moe.lymia.princess.lua._
 import moe.lymia.princess.core.svg.InkscapeConnectionFactory
+import moe.lymia.princess.lua._
 import moe.lymia.princess.util.IOUtils
 
 private case class CLIException(message: String) extends Exception
