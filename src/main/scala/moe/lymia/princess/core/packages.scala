@@ -24,8 +24,7 @@ package moe.lymia.princess.core
 
 import java.nio.file.{FileSystems, Files, Path}
 
-import moe.lymia.princess.ui.CountedCache
-import moe.lymia.princess.util._
+import moe.lymia.princess.util.{CountedCache, _}
 
 import scala.collection.mutable
 

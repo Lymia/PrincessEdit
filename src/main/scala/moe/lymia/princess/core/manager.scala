@@ -26,7 +26,7 @@ import java.nio.file.{Path, Paths}
 
 import moe.lymia.princess.core.lua.LuaContext
 import moe.lymia.princess.lua.LuaTable
-import moe.lymia.princess.ui.SizedCache
+import moe.lymia.princess.util.SizedCache
 
 case class TemplateExport(path: String, manager: GameManager, packages: PackageList, cache: SizedCache,
                           displayName: String, icon: Option[String]) {

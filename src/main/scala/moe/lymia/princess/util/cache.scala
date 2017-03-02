@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.ui
+package moe.lymia.princess.util
 
 import java.util
 import java.util.Map.Entry
@@ -70,7 +70,7 @@ private class SizedCacheImpl(var maxSize: Long) extends SizedCache {
   def cached[K, V](section: CacheSection[K, V])(key: K, value: => (V, Long)): V = {
     val ulKey: (CacheSection[_, _], Any) = (section, key)
     underlying.get(ulKey) match {
-      case Some(x) => x.asInstanceOf[V]
+      case Some(x) => x._1.asInstanceOf[V]
       case None =>
         val t = {
           val rt = value

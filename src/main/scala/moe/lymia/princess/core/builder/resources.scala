@@ -25,12 +25,11 @@ package moe.lymia.princess.core.builder
 import java.awt.Font
 import java.io.ByteArrayOutputStream
 import java.nio.file.{Files, Path}
-import java.util.zip.GZIPInputStream
 import javax.imageio.ImageIO
 import javax.xml.bind.DatatypeConverter
 
 import moe.lymia.princess.core._
-import moe.lymia.princess.ui.{CacheSection, SizedCache}
+import moe.lymia.princess.util.{CacheSection, SizedCache}
 
 import scala.collection.mutable
 import scala.xml.{XML => _, _}
