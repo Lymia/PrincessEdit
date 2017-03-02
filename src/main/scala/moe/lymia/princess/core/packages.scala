@@ -22,12 +22,12 @@
 
 package moe.lymia.princess.core
 
-import java.nio.file.{FileSystems, Files, Path, Paths}
+import java.nio.file.{FileSystems, Files, Path}
 
-import moe.lymia.princess.util.IOUtils
+import moe.lymia.princess.ui.CountedCache
+import moe.lymia.princess.util._
 
 import scala.collection.mutable
-import scala.collection.JavaConverters._
 
 case class DepVersion(minMajor: Int, maxMajor: Int, minor: Int) {
   override def toString =
@@ -149,11 +149,11 @@ case class PackageList(gameId: String, packages: Seq[Package]) {
     if(key == "*") allExports else exportMap.getOrElse(key, Seq()).map(_._2)
 
   private val (systemPackages, userPackages) = packages.partition(_.isSystem)
-  private val resolveCache = CacheHashMap[String, Option[(Package, Path)]](4096)
+  private val resolveCache = CountedCache[String, Option[(Package, Path)]](4096)
   private def resolveInPath(packages: Seq[Package], path: String) =
     packages.view.map(x => IOUtils.paranoidResolve(x.rootPath, path).map(y => (x, y))).find(_.isDefined).flatten
   private def internalResolve(path: String) =
-    resolveCache.getOrElseUpdate(path, resolveInPath(systemPackages, path).orElse(resolveInPath(userPackages, path)))
+    resolveCache.cached(path, resolveInPath(systemPackages, path).orElse(resolveInPath(userPackages, path)))
 
   def resolve(path: String) = internalResolve(path).map(_._2)
   def forceResolve(path: String) = resolve(path).getOrElse(throw TemplateException(s"File '$path' not found."))

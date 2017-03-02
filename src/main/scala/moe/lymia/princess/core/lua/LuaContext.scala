@@ -24,7 +24,7 @@ package moe.lymia.princess.core.lua
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.lua._
-import moe.lymia.princess.util.IOUtils
+import moe.lymia.princess.util._
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._

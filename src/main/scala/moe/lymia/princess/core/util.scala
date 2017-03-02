@@ -23,17 +23,12 @@
 package moe.lymia.princess.core
 
 import java.awt.geom.Rectangle2D
-import java.nio.file.Path
 import java.security.SecureRandom
-import java.util.Map.Entry
 import java.util.concurrent.atomic.AtomicInteger
 import javax.xml.parsers.SAXParserFactory
 
 import moe.lymia.princess.lua.LuaErrorMarker
-import moe.lymia.princess.util.IOUtils
-import org.ini4j.Ini
 
-import scala.collection.JavaConverters._
 import scala.xml.factory.XMLLoader
 import scala.xml.{Elem, SAXParser}
 
@@ -68,48 +63,6 @@ object TemplateException {
     case ex @ TemplateException(msg, _, context, _, _) =>
       throw TemplateException(msg, ex, s"While $contextString" +: context, suppressTrace = true, noCause = true)
   }
-}
-
-private[core] object CacheHashMap {
-  def apply[K, V](maxSize: Int) = new java.util.LinkedHashMap[K, V] {
-    override def removeEldestEntry(eldest: Entry[K, V]): Boolean = size() > maxSize
-  }.asScala
-}
-
-private[core] class INISection(section: String, val underlying: Map[String, Seq[String]]) {
-  def getMultiOptional(key: String) = underlying.getOrElse(key, Seq())
-  def getMulti(key: String) = underlying.get(key) match {
-    case None => throw TemplateException(s"No value '$key' found in section '$section'")
-    case Some(v) => v
-  }
-  def getSingleOption(key: String) = underlying.get(key) match {
-    case None => None
-    case Some(Seq(v)) => Some(v)
-    case _ => throw TemplateException(s"More than one value '$key' in section '$section'")
-  }
-  def getSingle(key: String) = getMulti(key) match {
-    case Seq(v) => v
-    case _ => throw TemplateException(s"More than one value '$key' in section '$section'")
-  }
-}
-private[core] class INI(sections: Map[String, INISection]) extends Iterable[(String, INISection)] {
-  def getSection(name: String) = sections.getOrElse(name, throw TemplateException(s"No section '$name' found"))
-  def getSectionOptional(name: String) = sections.getOrElse(name, new INISection(name, Map()))
-  override def iterator: Iterator[(String, INISection)] = sections.iterator
-}
-private[core] object INI {
-  def loadRaw(path: Path) = try {
-    val ini = new Ini
-    ini.load(IOUtils.getFileReader(path))
-    ini.asScala.mapValues(x =>
-      x.keySet.asScala.toSeq.map(key =>
-        key -> x.getAll(key, classOf[Array[String]]).toSeq).toMap).filter(_._2.nonEmpty).toMap
-  } catch {
-    case e: Exception =>
-      throw TemplateException(s"Failed to parse .ini: ${e.getClass.getClass}: ${e.getMessage}")
-  }
-
-  def load(path: Path) = new INI(loadRaw(path).map(x => x._1 -> new INISection(x._1, x._2)))
 }
 
 private[core] object GenID {
