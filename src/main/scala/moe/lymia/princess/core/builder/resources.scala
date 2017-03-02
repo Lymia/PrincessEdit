@@ -30,6 +30,7 @@ import javax.imageio.ImageIO
 import javax.xml.bind.DatatypeConverter
 
 import moe.lymia.princess.core._
+import moe.lymia.princess.ui.{CacheSection, SizedCache}
 
 import scala.collection.mutable
 import scala.xml.{XML => _, _}
@@ -37,46 +38,53 @@ import scala.xml.{XML => _, _}
 // TODO: Add caching for these resources between renders
 
 trait ResourceLoader {
-  def loadRaster    (reencode: Option[String], expectedMime: String, path: Path): Elem
-  def loadVector    (compression: Boolean, path: Path): Elem
-  def loadDefinition(path: Path): Elem
+  def loadRaster    (cache: SizedCache, reencode: Option[String], expectedMime: String, path: Path): Elem
+  def loadVector    (cache: SizedCache, path: Path): Elem
+  def loadDefinition(cache: SizedCache, path: Path): Elem
+}
+private object ResourceLoader {
+  val dataURLLoader = new DataURLRasterLoader {}
+  val normalSchemes = Set("http", "https", "ftp", "file")
+
+  val loadXMLCache   = new CacheSection[Path, Elem]
+  val loadImageCache = new CacheSection[Path, String]
+
+  def cachedLoadXML(cache: SizedCache, path: Path) = cache.cached(loadXMLCache)(path, {
+    val size = Files.size(path)
+    (XML.load(Files.newInputStream(path)), size)
+  })
 }
 
 trait IncludeDefinitionLoader {
-  def loadDefinition(path: Path) = XML.load(Files.newInputStream(path))
+  def loadDefinition(cache: SizedCache, path: Path) = ResourceLoader.cachedLoadXML(cache, path)
 }
-
 trait IncludeVectorLoader {
-  def loadVector(compression: Boolean, path: Path) =
-    (XML.load(if(compression) new GZIPInputStream(Files.newInputStream(path)) else Files.newInputStream(path))
-      % Attribute(null, "overflow", "hidden", Null))
+  def loadVector(cache: SizedCache, path: Path) =
+    ResourceLoader.cachedLoadXML(cache, path) % Attribute(null, "overflow", "hidden", Null)
 }
 
 trait LinkRasterLoader {
-  def loadRaster(reencode: Option[String], expectedMime: String, path: Path) = {
+  def loadRaster(cache: SizedCache, reencode: Option[String], expectedMime: String, path: Path) = {
     val uri = path.toUri
-    if(LinkRasterLoader.normalSchemes.contains(uri.getScheme))
+    if(ResourceLoader.normalSchemes.contains(uri.getScheme))
       <image xlink:href={path.toUri.toASCIIString}/>
-    else LinkRasterLoader.fallback.loadRaster(reencode, expectedMime, path)
+    else ResourceLoader.dataURLLoader.loadRaster(cache, reencode, expectedMime, path)
   }
-}
-object LinkRasterLoader {
-  private val fallback = new DataURLRasterLoader {}
-  private val normalSchemes = Set("http", "https", "ftp", "file")
 }
 trait DataURLRasterLoader {
-  def loadRaster(reencode: Option[String], expectedMime: String, path: Path) = {
-    val data = reencode match {
-      case None => Files.readAllBytes(path)
-      case Some(reencodeTo) =>
-        val image = ImageIO.read(Files.newInputStream(path))
-        val byteOut = new ByteArrayOutputStream()
-        ImageIO.write(image, reencodeTo, byteOut)
-        byteOut.toByteArray
-    }
-    val uri = s"data:$expectedMime;base64,${DatatypeConverter.printBase64Binary(Files.readAllBytes(path))}"
-    <image xlink:href={uri}/>
-  }
+  def loadRaster(cache: SizedCache, reencode: Option[String], expectedMime: String, path: Path) =
+    <image xlink:href={cache.cached(ResourceLoader.loadImageCache)(path, {
+      val data = reencode match {
+        case None => Files.readAllBytes(path)
+        case Some(reencodeTo) =>
+          val image = ImageIO.read(Files.newInputStream(path))
+          val byteOut = new ByteArrayOutputStream()
+          ImageIO.write(image, reencodeTo, byteOut)
+          byteOut.toByteArray
+      }
+      val uri = s"data:$expectedMime;base64,${DatatypeConverter.printBase64Binary(Files.readAllBytes(path))}"
+      (uri, uri.length)
+    })}/>
 }
 
 object RasterizeResourceLoader
@@ -87,12 +95,12 @@ object ExportResourceLoader
 private sealed trait ImageFormatType
 private object ResourceFormatType {
   case class Raster(mime: String, reencode: Option[String] = None) extends ImageFormatType
-  case class Vector(compression: Boolean) extends ImageFormatType
+  case object Vector extends ImageFormatType
 }
 
 private case class ImageFormat(extensions: Seq[String], formatType: ImageFormatType)
 
-final class ResourceManager(builder: SVGBuilder, settings: RenderSettings,
+final class ResourceManager(builder: SVGBuilder, settings: RenderSettings, cache: SizedCache,
                             loader: ResourceLoader, packages: PackageList) {
   lazy val systemFont = {
     val tryResolve = packages.getSystemExports("princess/system_font").headOption.flatMap(x =>
@@ -111,9 +119,9 @@ final class ResourceManager(builder: SVGBuilder, settings: RenderSettings,
       packages.resolve(s"$name.$extension").map(fullPath =>
         format.formatType match {
           case ResourceFormatType.Raster(mime, reencode) =>
-            builder.createDefinitionFromContainer(name, bounds, loader.loadRaster(reencode, mime, fullPath))
-          case ResourceFormatType.Vector(compression) =>
-            builder.createDefinitionFromContainer(name, bounds, loader.loadVector(compression, fullPath))
+            builder.createDefinitionFromContainer(name, bounds, loader.loadRaster(cache, reencode, mime, fullPath))
+          case ResourceFormatType.Vector =>
+            builder.createDefinitionFromContainer(name, bounds, loader.loadVector(cache, fullPath))
         }
       )
     }.find(_.isDefined).flatten
@@ -123,7 +131,8 @@ final class ResourceManager(builder: SVGBuilder, settings: RenderSettings,
                       .getOrElse(throw TemplateException(s"image '$name' not found"))
 
   private def tryFindDefinition(name: String) =
-    packages.resolve(name).map(path => builder.createDefinition(name, loader.loadDefinition(path), isDef = true))
+    packages.resolve(name).map(path =>
+      builder.createDefinition(name, loader.loadDefinition(cache, path), isDef = true))
   val definitionCache = new mutable.HashMap[String, Option[String]]
   def loadDefinition(name: String) =
     definitionCache.getOrElseUpdate(name, tryFindDefinition(name))
@@ -131,8 +140,7 @@ final class ResourceManager(builder: SVGBuilder, settings: RenderSettings,
 }
 object ResourceManager {
   private val imageFormats = Seq(
-    ImageFormat(Seq("svgz"), ResourceFormatType.Vector(compression = true)),
-    ImageFormat(Seq("svg"), ResourceFormatType.Vector(compression = false)),
+    ImageFormat(Seq("svg"), ResourceFormatType.Vector),
     ImageFormat(Seq("png"), ResourceFormatType.Raster("image/png")),
     ImageFormat(Seq("bmp"), ResourceFormatType.Raster("image/png", Some("png"))), // bmp is lossless but big
     ImageFormat(Seq("jpg", "jpeg"), ResourceFormatType.Raster("image/jpeg"))

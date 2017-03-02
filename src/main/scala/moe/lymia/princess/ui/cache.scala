@@ -36,15 +36,30 @@ case class CountedCache[K, V](var maxSize: Int) {
 }
 
 case class CacheSection[K, V]()
-case class SizedCache(var maxSize: Int) {
-  private var currentSize = 0
-  private val underlying = new util.LinkedHashMap[(CacheSection[_, _], Any), (Any, Int)] {
-    override def removeEldestEntry(eldest: Entry[(CacheSection[_, _], Any), (Any, Int)]): Boolean = {
+trait SizedCache {
+  var maxSize: Long
+  def cached[K, V](section: CacheSection[K, V])(key: K, value: => (V, Long)): V
+}
+object SizedCache {
+  def apply(maxSize: Long): SizedCache = new SizedCacheImpl(maxSize)
+}
+
+case class NullCache() extends SizedCache {
+  override var maxSize: Long = _
+  override def cached[K, V](section: CacheSection[K, V])(key: K, value: => (V, Long)): V = value._1
+}
+
+private class SizedCacheImpl(var maxSize: Long) extends SizedCache {
+  private val entryOverhead = 16
+
+  private var currentSize = 0l
+  private val underlying = new util.LinkedHashMap[(CacheSection[_, _], Any), (Any, Long)] {
+    override def removeEldestEntry(eldest: Entry[(CacheSection[_, _], Any), (Any, Long)]): Boolean = {
       if(currentSize > maxSize && !this.isEmpty) {
         val iter = this.entrySet().iterator()
         do {
           val entry = iter.next()
-          currentSize = currentSize - entry.getValue._2
+          currentSize = Math.subtractExact(currentSize, entry.getValue._2)
           iter.remove()
         } while(currentSize > maxSize && iter.hasNext)
       }
@@ -52,12 +67,21 @@ case class SizedCache(var maxSize: Int) {
     }
   }.asScala
 
-  def cached[K, V](section: CacheSection[K, V])(key: K, value: => (V, Int)): V = {
+  def cached[K, V](section: CacheSection[K, V])(key: K, value: => (V, Long)): V = {
     val ulKey: (CacheSection[_, _], Any) = (section, key)
-    underlying.getOrElseUpdate(ulKey, {
-      val t = value
-      currentSize = currentSize + t._2
-      t
-    })._1.asInstanceOf[V]
+    underlying.get(ulKey) match {
+      case Some(x) => x.asInstanceOf[V]
+      case None =>
+        val t = {
+          val rt = value
+          if(rt._2 < 0) sys.error("Cache object size must be positive")
+          rt.copy(_2 = rt._2 + entryOverhead)
+        }
+        if(t._2 < maxSize) {
+          underlying.put(ulKey, t)
+          currentSize = Math.addExact(currentSize, t._2)
+        }
+        t._1
+    }
   }
 }

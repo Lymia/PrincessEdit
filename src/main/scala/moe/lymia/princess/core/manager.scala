@@ -26,14 +26,15 @@ import java.nio.file.{Path, Paths}
 
 import moe.lymia.princess.core.lua.LuaContext
 import moe.lymia.princess.lua.LuaTable
+import moe.lymia.princess.ui.SizedCache
 
-case class TemplateExport(path: String, manager: GameManager, packages: PackageList,
+case class TemplateExport(path: String, manager: GameManager, packages: PackageList, cache: SizedCache,
                           displayName: String, icon: Option[String]) {
-  lazy val template = new LuaTemplate(path, packages, manager.lua, manager.getLuaExport(path))
+  lazy val template = new LuaTemplate(path, packages, manager.lua, manager.getLuaExport(path), cache)
 }
 object TemplateExport {
-  def loadTemplateExport(e: Export, manager: GameManager, packages: PackageList) =
-    TemplateExport(e.path, manager, packages,
+  def loadTemplateExport(e: Export, manager: GameManager, packages: PackageList, cache: SizedCache) =
+    TemplateExport(e.path, manager, packages, cache,
                    e.metadata.getOrElse("displayName",
                                         throw TemplateException("No value 'displayName' found")).head,
                    e.metadata.getOrElse("icon", Seq()).headOption)
@@ -42,6 +43,8 @@ object TemplateExport {
 class GameManager(packages: PackageList) {
   val gameId = packages.gameId
   val lua = new LuaContext(packages)
+
+  private val cache = SizedCache(128 * 1024 * 1024 /* About 128 MB */)
 
   def getExportKeys: Set[String] = packages.getExportKeys
   def getExports(key: String): Seq[Export] = packages.getExports(key)
@@ -52,7 +55,8 @@ class GameManager(packages: PackageList) {
   def getLuaExport(path: String): LuaTable = lua.getLuaExport(path)
 
   lazy val templates =
-    getExports(StaticExportIDs.Template(gameId)).map(x => TemplateExport.loadTemplateExport(x, this, packages))
+    getExports(StaticExportIDs.Template(gameId)).map(x =>
+      TemplateExport.loadTemplateExport(x, this, packages, cache))
 }
 
 class PackageManager(packages: Path, systemPackages: Path*) {

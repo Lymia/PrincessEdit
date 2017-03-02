@@ -29,6 +29,7 @@ import moe.lymia.princess.core.lua._
 import moe.lymia.princess.core.builder._
 import moe.lymia.princess.lua._
 import moe.lymia.princess.svg.SVGRenderer
+import moe.lymia.princess.ui.SizedCache
 
 trait Template {
   protected def renderSettings: RenderSettings
@@ -55,7 +56,8 @@ trait Template {
   }
 }
 
-class LuaTemplate(name: String, packages: PackageList, context: LuaContext, table: LuaTable) extends Template {
+class LuaTemplate(name: String, packages: PackageList, context: LuaContext, table: LuaTable,
+                  cache: SizedCache) extends Template {
   override protected def renderSettings = TemplateException.context(s"rendering template $name") {
     val L = context.L.newThread()
     val scale = L.getTable(table, "scale").as[PhysicalScale]
@@ -76,7 +78,7 @@ class LuaTemplate(name: String, packages: PackageList, context: LuaContext, tabl
         case Right(e) => throw TemplateException(e)
       }
 
-      val resources = new ResourceManager(builder, renderSettings, res, packages)
+      val resources = new ResourceManager(builder, renderSettings, cache, res, packages)
       val renderManager = new ComponentRenderManager(builder, resources)
       renderManager.renderComponent(reference)
     }
