@@ -48,7 +48,6 @@ private final case class ExportLib(context: LuaContext, packages: PackageList) {
 
 final class LuaContext(packages: PackageList, logger: Logger) {
   val L = LuaState.makeSafeContext()
-  L.setGlobal("print", LuaNil)
   CoreLib(logger).open(L)
   ComponentLib(packages).open(L)
   ExportLib(this, packages).open(L)
