@@ -32,7 +32,19 @@ case class CountedCache[K, V](var maxSize: Int) {
     override def removeEldestEntry(eldest: Entry[K, V]): Boolean = size() > maxSize
   }.asScala
 
-  def cached(key: K, value: => V) = underlying.getOrElseUpdate(key, value)
+  def cached(key: K, value: => V) =
+    underlying.get(key) match {
+      case Some(x) =>
+        // refresh the current entry, bumping it to the top of the list
+        underlying.remove(key)
+        underlying.put(key, x)
+        
+        x
+      case None =>
+        val res = value
+        underlying.put(key, res)
+        res
+    }
 }
 
 case class CacheSection[K, V]()
@@ -70,7 +82,12 @@ private class SizedCacheImpl(var maxSize: Long) extends SizedCache {
   def cached[K, V](section: CacheSection[K, V])(key: K, value: => (V, Long)): V = {
     val ulKey: (CacheSection[_, _], Any) = (section, key)
     underlying.get(ulKey) match {
-      case Some(x) => x._1.asInstanceOf[V]
+      case Some(x) =>
+        // refresh the current entry, bumping it to the top of the list
+        underlying.remove(ulKey)
+        underlying.put(ulKey, x)
+
+        x._1.asInstanceOf[V]
       case None =>
         val t = {
           val rt = value
