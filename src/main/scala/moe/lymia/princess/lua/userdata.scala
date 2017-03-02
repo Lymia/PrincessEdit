@@ -108,10 +108,21 @@ trait LuaLookup extends HasLuaMethods {
     properties.getOrElse(name, L.error(s"no such property $name")).set(L, obj)
 }
 
-class LuaUserdataType[T : ClassTag] {
+class LuaUserdataInput[T : ClassTag] extends FromLua[T] {
+  final def tag = implicitly[ClassTag[T]]
+
+  override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
+    case v: LuaUserdata =>
+      val obj = v.getUserdata
+      if(!tag.runtimeClass.isAssignableFrom(obj.getClass))
+        typerror(L, source, obj.getClass.toString, tag.toString)
+      obj.asInstanceOf[T]
+    case _ => typerror(L, source, v, Lua.TUSERDATA)
+  }
+}
+class LuaUserdataType[T : ClassTag] extends LuaUserdataInput[T] with ToLua[T] {
   private val metatableInitializers = new mutable.ArrayBuffer[(LuaState, LuaTable) => Unit]
   protected final def metatable(fn: (LuaState, LuaTable) => Unit) = metatableInitializers.append(fn)
-  final def tag = implicitly[ClassTag[T]]
   final def getMetatable(L: LuaState) = {
     val mt = new LuaTable()
     L.register(mt, "__tostring" , (o: Any) => s"${tag.toString()}: 0x${"%08x" format System.identityHashCode(o)}")
@@ -119,6 +130,18 @@ class LuaUserdataType[T : ClassTag] {
     metatableInitializers.foreach(_(L, mt))
     mt
   }
+
+  override def toLua(t: T) = new LuaObject(LuaExecWrapper { L =>
+    val cache = L.getRegistry(LuaUserdataType.metatableCache, new LuaUserdataType.MetatableCacheType)
+    val mt = cache.getOrElseUpdate(this, this.getMetatable(L))
+    val ud = new LuaUserdata(t)
+    ud.setMetatable(mt)
+    ud
+  })
+}
+object LuaUserdataType {
+  private type MetatableCacheType = mutable.HashMap[LuaUserdataType[_], LuaTable]
+  private val metatableCache = LuaRegistryEntry[MetatableCacheType]()
 }
 
 class PropertiesUserdataType[T : ClassTag] extends LuaUserdataType[T] {

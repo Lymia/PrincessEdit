@@ -169,28 +169,6 @@ class LuaImplicits extends LuaGeneratedImplicits {
     }
   }
 
-  private val userdataMetatableCache = new mutable.WeakHashMap[LuaUserdataType[_], Any]
-  private type MetatableCacheType = mutable.HashMap[LuaUserdataType[_], LuaTable]
-  private val metatableCache = LuaRegistryEntry[MetatableCacheType]()
-  implicit def luaParameterUnwrapUserdata[T : LuaUserdataType] = new LuaParameter[T] {
-    private def metadata = implicitly[LuaUserdataType[T]]
-    override def toLua(t: T) = new LuaObject(LuaExecWrapper { L =>
-      val cache = L.getRegistry(metatableCache, new MetatableCacheType)
-      val mt = cache.getOrElseUpdate(metadata, metadata.getMetatable(L))
-      val ud = new LuaUserdata(t)
-      ud.setMetatable(mt)
-      ud
-    })
-    override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
-      case v: LuaUserdata =>
-        val obj = v.getUserdata
-        if(!metadata.tag.runtimeClass.isAssignableFrom(obj.getClass))
-          typerror(L, source, obj.getClass.toString, metadata.tag.toString)
-        obj.asInstanceOf[T]
-      case _ => typerror(L, source, v, Lua.TUSERDATA)
-    }
-  }
-
   implicit object LuaParameterLuaClosure extends LuaParameter[LuaClosure] {
     override def toLua(t: LuaClosure) = new LuaObject(t.fn)
     override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
