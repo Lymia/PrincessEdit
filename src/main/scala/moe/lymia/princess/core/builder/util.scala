@@ -58,11 +58,6 @@ object XMLUtils {
     for(md <- m) newMetadata = fn(md).copy(newMetadata)
     newMetadata
   }
-  def getAttribute(e: Elem, ns: String, key: String) =
-    e.attributes.find {
-      case PrefixedAttribute(`ns`, `key`, _, _) => true
-      case _ => false
-    }.map(_.value)
 }
 
 // TODO: Take care of some of the code repetition here.

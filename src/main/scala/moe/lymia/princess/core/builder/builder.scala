@@ -46,7 +46,8 @@ final case class SVGDefinitionReference(name: String, bounds: Bounds, extraLayou
 
   private def rawInclude(x: Double, y: Double) = {
     incrementRefcount()
-    <use x={x.toString} y={y.toString} xlink:href={s"#$name"} princess:reference={name}/>
+    <use x={x.toString} y={y.toString} xlink:href={s"#$name"}
+         princess:reference={name}/>.copy(scope = SVGBuilder.princessOnlyScope)
   }
   def include(x: Double, y: Double): Elem = rawInclude(x + bounds.minX, y + bounds.minY)
   def includeInRect(x: Double, y: Double, width: Double, height: Double): Elem = {
@@ -85,10 +86,10 @@ final class SVGBuilder(val settings: RenderSettings) {
       case e => e
     })
   private def inlineReferencesIter(elem: Elem): Node =
-    if(elem.label == "use") XMLUtils.getAttribute(elem, "princess", "reference") match {
+    if(elem.label == "use") elem.attribute(XMLNS.princess, "reference") match {
       case Some(x) if doInline(x.text) =>
-        val newX = XMLUtils.getAttribute(elem, "princess", "newX")
-        val newY = XMLUtils.getAttribute(elem, "princess", "newY")
+        val newX = elem.attribute(XMLNS.princess, "newX")
+        val newY = elem.attribute(XMLNS.princess, "newY")
         var node = definitionMap(x.text)
 
         if(newX.isDefined && newY.isDefined) node = (
@@ -175,6 +176,7 @@ private[builder] object SVGBuilder {
   val scope = NamespaceBinding(null, XMLNS.svg,
               NamespaceBinding("xlink", XMLNS.xlink,  TopScope))
   val princessScope = NamespaceBinding("princess", XMLNS.princess, scope)
+  val princessOnlyScope = princessScope.copy(parent = TopScope)
   val prettyPrinter = new PrettyPrinter(Int.MaxValue, 2)
   val useExcludeSet = Set("transform", "href")
 }
