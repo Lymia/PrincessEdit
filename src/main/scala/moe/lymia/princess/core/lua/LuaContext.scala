@@ -56,6 +56,8 @@ final class LuaContext(packages: PackageList, logger: Logger) {
   TextLib(packages).open(L)
 
   private def loadLuaPredef(path: String) = TemplateException.context(s"loading Lua predef $path") {
+    logger.trace(s"Loading predef $path")
+
     val fullPath = packages.forceResolve(path)
 
     val chunk = L.loadString(IOUtils.readFileAsString(fullPath), s"@$path") match {
@@ -93,6 +95,8 @@ final class LuaContext(packages: PackageList, logger: Logger) {
     wrapper
   }
   private def loadLuaExport(path: String) = TemplateException.context(s"loading Lua export $path") {
+    logger.trace(s"Loading export $path")
+
     val fullPath = packages.forceResolve(path)
 
     val L = this.L.newThread()
