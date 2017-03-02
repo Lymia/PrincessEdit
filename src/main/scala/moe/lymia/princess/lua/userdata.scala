@@ -163,6 +163,9 @@ class HasLuaMethodsUserdataType[T <: HasLuaMethods : ClassTag] extends LuaUserda
   }
 }
 
+class LuaLightUserdata
+
 trait LuaUserdataImplicits {
+  implicit object LuaLightUserdata extends LuaUserdataType[LuaLightUserdata]
   implicit object LuaHasLuaMethods extends HasLuaMethodsUserdataType[HasLuaMethods]
 }

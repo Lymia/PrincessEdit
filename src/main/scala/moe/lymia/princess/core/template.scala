@@ -56,18 +56,18 @@ trait Template {
   }
 }
 
-class LuaTemplate(name: String, packages: PackageList, context: LuaContext, table: LuaTable,
+class LuaTemplate(name: String, packages: PackageList, context: LuaContext, export: LuaObject,
                   cache: SizedCache) extends Template {
   override protected def renderSettings = TemplateException.context(s"rendering template $name") {
     val L = context.L.newThread()
-    val scale = L.getTable(table, "scale").as[PhysicalScale]
-    RenderSettings(L.getTable(table, "size").as[Size], scale.unPerViewport, scale.unit)
+    val scale = L.getTable(export, "scale").as[PhysicalScale]
+    RenderSettings(L.getTable(export, "size").as[Size], scale.unPerViewport, scale.unit)
   }
   override protected def doRender(builder: SVGBuilder, cardData: LuaTable, res: ResourceLoader) =
     TemplateException.context(s"rendering template $name") {
       val L = context.L.newThread()
-      val prerenderFn = L.getTable(table, "prerender"       ).as[Option[LuaClosure]]
-      val layoutFn    = L.getTable(table, "layoutComponents").as[LuaClosure]
+      val prerenderFn = L.getTable(export, "prerender"       ).as[Option[LuaClosure]]
+      val layoutFn    = L.getTable(export, "layoutComponents").as[LuaClosure]
 
       val prerenderData = prerenderFn.map(x => L.pcall(x, 1, cardData) match {
         case Left(Seq(ret)) => ret.as[Any]

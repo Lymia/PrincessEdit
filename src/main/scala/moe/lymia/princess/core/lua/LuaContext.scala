@@ -70,70 +70,86 @@ final class LuaContext(packages: PackageList, logger: Logger) {
       loadLuaPredef(e.path)
   loadPredefs(StaticExportIDs.Predef)
 
-  private def copyTable(L: LuaState, tbl: LuaTable, ignore: String*): LuaTable = {
-    val n = L.newTable()
+  private case class TableWrapper(name: String, contents: Map[String, Any])
+  private implicit object LuaTableWrapper extends LuaUserdataType[TableWrapper] {
+    metatable { (L, mt) =>
+      L.register(mt , "__tostring", (w: TableWrapper) => s"copy of ${w.name}")
+      L.rawSet  (mt, "__metatable", "global table metatable")
+      L.register(mt, "__index"    , (w: TableWrapper, k: String) => w.contents.getOrElse(k, Lua.NIL))
+      L.register(mt, "__newindex" , (L: LuaState) => { L.error("table is read only"); () })
+    }
+  }
+
+  private def copyTable(L: LuaState, path: Seq[String], tbl: LuaTable, ignore: String*): TableWrapper = {
+    val map = new mutable.HashMap[String, Any]
     for(k <- tbl.keySet().asScala) {
       k match {
         case s: String if !ignore.contains(s) =>
           L.push(L.rawGet(tbl, s))
           val t = L.`type`(L.getTop)
-          L.rawSet(n, s, t match {
-            case Lua.TTABLE => copyTable(L, L.popTop().as[LuaTable])
-            case _          => L.popTop()
+          map.put(s, t match {
+            case Lua.TTABLE => copyTable(L, path :+ s, L.popTop().as[LuaTable]).toLua(L)
+            case _          => L.popTop().as[Any]
           })
         case _ => // ignore remaining fields
       }
     }
-
-    val wrapper = L.newTable()
-    val mt      = L.newTable()
-    L.rawSet  (mt , "__metatable", "copied table metatable")
-    L.rawSet  (mt , "__index"    , n)
-    L.register(mt , "__newindex" , (L: LuaState) => { L.error("table is read only"); () })
-    L.setMetatable(wrapper, mt)
-    wrapper
+    TableWrapper(path.mkString("."), map.toMap)
   }
-  private def loadLuaExport(path: String) = TemplateException.context(s"loading Lua export $path") {
+
+  private case class TableReturn(path: String, env: LuaTable)
+  private implicit object LuaTableReturn extends LuaUserdataType[TableReturn] {
+    metatable { (L, mt) =>
+      L.register(mt , "__tostring" , (t: TableReturn) => s"exports for ${t.path}")
+      L.rawSet  (mt , "__metatable", s"export metatable")
+      L.register(mt, "__index"     , (L: LuaState, t: TableReturn, k: String) => L.rawGet(t.env, k))
+      L.register(mt, "__newindex"  , (L: LuaState) => { L.error("table is read only"); () })
+    }
+  }
+
+  private def loadLuaExport(path: String): LuaObject = TemplateException.context(s"loading Lua export $path") {
     logger.trace(s"Loading export $path")
 
     val fullPath = packages.forceResolve(path)
 
     val L = this.L.newThread()
 
-    val globals = L.getRegistry(LuaContext.globalsCopy, copyTable(L, L.getGlobals, "_G", "package"))
+    val globals = L.getRegistry(LuaContext.globalsWrapper, copyTable(L, Seq(), L.getGlobals, "_G", "package").toLua(L))
 
     val overwrittenKeys = new mutable.WeakHashMap[Any, Unit]
-    val env = L.newTable()
+    val exports = L.newTable()
 
-    val wrapper = L.newTable()
-    val mt      = L.newTable()
-    L.setMetatable(wrapper, mt)
-    L.register(mt , "__index"    , (L: LuaState, tbl: Any, k: Any) => {
-      if(overwrittenKeys.contains(k)) LuaRet(L.rawGet(env, k))
-      else if(k == "_G")              LuaRet(wrapper)
+    val _G = L.newTable()
+    val mt = L.newTable()
+    L.setMetatable(_G, mt)
+
+    L.register(mt , "__tostring" , (tbl: Any) => s"environment for ${path}")
+    L.rawSet  (mt , "__metatable", s"export environment metatable")
+    L.register(mt, "__index"     , (L: LuaState, tbl: Any, k: Any) => {
+      if(overwrittenKeys.contains(k)) LuaRet(L.rawGet(exports, k))
+      else if(k == "_G")              LuaRet(_G)
       else                            LuaRet(L.getTable(globals, k))
     })
-    L.register(mt , "__newindex" , (L: LuaState, tbl: Any, k: Any, v: Any) => {
+    L.register(mt, "__newindex"  , (L: LuaState, tbl: Any, k: Any, v: Any) => {
       overwrittenKeys.put(k, ())
-      L.rawSet(env, k, v)
+      L.rawSet(exports, k, v)
       ()
     })
-    L.register(mt , "__tostring" , () => s"environment for $path")
-    L.rawSet  (mt , "__metatable", s"environment metatable for $path")
 
     val chunk = L.loadString(IOUtils.readFileAsString(fullPath), s"@$path") match {
       case Left (c) => c
       case Right(e) => throw TemplateException(e)
     }
-    L.setFenv(chunk, wrapper)
-    L.pcall(chunk, 1).fold(identity, e => throw TemplateException(e)).head.as[Option[LuaTable]] match {
+    L.setFenv(chunk, _G)
+    L.pcall(chunk, 1).fold(identity, e => throw TemplateException(e)).head.as[Option[Any]] match {
       case Some(x) => x
-      case None    => env
+      case None    => TableReturn(path, exports)
     }
   }
-  private val exportCache = new mutable.HashMap[String, LuaTable]
+
+  private val exportCache = new mutable.HashMap[String, LuaObject]
   def getLuaExport(path: String) = exportCache.getOrElseUpdate(path, loadLuaExport(path))
 }
 object LuaContext {
-  private val globalsCopy = new LuaRegistryEntry[LuaTable]
+  private val globalsWrapper = new LuaRegistryEntry[Any]
 }

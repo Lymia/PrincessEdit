@@ -89,10 +89,10 @@ final case class LuaState(L: Lua) extends AnyVal {
     L.setTable(t.toLua(this), k.toLua(this), v.toLua(this))
   def setField(t: LuaObject, name: String, v: LuaObject): Unit = L.setField(t.toLua(this), name, v.toLua(this))
 
-  def rawGet(t: LuaObject, k: LuaObject) =
-    Lua.rawGet(t.toLua(this), k.toLua(this))
+  def rawGet(t: LuaTable, k: LuaObject) =
+    Lua.rawGet(t, k.toLua(this))
       .returnWrapper(this, s"invalid table field ${toPrintString(k)} of ${toPrintString(t)}")
-  def rawSet(t: LuaObject, k: LuaObject, v: LuaObject) = L.rawSet(t.toLua(this), k.toLua(this), v.toLua(this))
+  def rawSet(t: LuaTable, k: LuaObject, v: LuaObject) = L.rawSet(t, k.toLua(this), v.toLua(this))
 
   def newLib(k: String*): LuaTable = {
     var t: LuaTable = L.getGlobals
@@ -183,10 +183,11 @@ final case class LuaState(L: Lua) extends AnyVal {
   def newTable() = L.newTable()
 
   def getFenv(o: LuaObject): LuaTable = L.getFenv(o.toLua(this))
-  def setFenv(o: LuaObject, table: LuaObject): Boolean = L.setFenv(o.toLua(this), table.toLua(this))
+  def setFenv(o: LuaObject, table: LuaTable): Boolean = L.setFenv(o.toLua(this), table)
 
   def getMetatable(o: LuaObject): LuaTable = L.getMetatable(o.toLua(this))
-  def setMetatable(o: LuaObject, mt: LuaObject): Unit = L.setMetatable(o.toLua(this), mt.toLua(this))
+  def setMetatable(o: LuaObject, mt: LuaTable): Unit = L.setMetatable(o.toLua(this), mt)
+  def setMetatable(o: LuaObject, mt: Option[LuaTable]): Unit = L.setMetatable(o.toLua(this), mt.toLua(this))
 
   // operator functions
   def objLen(o: LuaObject) = Lua.objLen(o.toLua(this))

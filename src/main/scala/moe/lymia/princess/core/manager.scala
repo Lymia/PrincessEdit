@@ -25,7 +25,7 @@ package moe.lymia.princess.core
 import java.nio.file.{Path, Paths}
 
 import moe.lymia.princess.core.lua.LuaContext
-import moe.lymia.princess.lua.LuaTable
+import moe.lymia.princess.lua.{LuaObject, LuaTable}
 import moe.lymia.princess.util.SizedCache
 
 final case class TemplateExport(path: String, manager: GameManager, packages: PackageList, cache: SizedCache,
@@ -52,7 +52,7 @@ final class GameManager(packages: PackageList, logger: Logger = DefaultLogger) {
   def resolve(path: String): Option[Path] = packages.resolve(path)
   def forceResolve(path: String): Path = packages.forceResolve(path)
 
-  def getLuaExport(path: String): LuaTable = lua.getLuaExport(path)
+  def getLuaExport(path: String): LuaObject = lua.getLuaExport(path)
 
   lazy val templates =
     getExports(StaticExportIDs.Template(gameId)).map(x =>
