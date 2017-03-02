@@ -69,11 +69,12 @@ private[core] object GenID {
   private var globalId = new AtomicInteger(0)
   private def makeGlobalId() = globalId.incrementAndGet()
 
-  private val      chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-  private lazy val rng   = new SecureRandom()
+  private val chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+  private lazy val rng = new SecureRandom()
+  def makeRandomString() =
+    new String((for(i <- 0 until 16) yield chars.charAt(math.abs(rng.nextInt() % chars.length))).toArray)
   def makeId() =
-    makeGlobalId()+"_"+new String((for(i <- 0 until 16) yield
-      chars.charAt(math.abs(rng.nextInt() % chars.length))).toArray)
+    s"${makeGlobalId()}_${makeRandomString()}"
 }
 
 private[core] object XML extends XMLLoader[Elem] {

@@ -18,15 +18,21 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-local ipairs, pairs, error, print, type, _G = ipairs, pairs, error, print, type, _G
+local ipairs, pairs, error, type, _G = ipairs, pairs, error, type, _G
 local _princess = _princess
 
 if not _princess then
     error("_princess library not found")
 end
 
+local log, TRACE = _princess.log, _princess.LogLevel.TRACE
+
 -----------------------------------
 -- Remove non-whitelisted functions
+
+local function trace(...)
+    return log(TRACE, ...)
+end
 
 local function set(t)
     local n = {}
@@ -36,7 +42,7 @@ end
 _princess.set = set -- TODO: Maybe define this somewhere nicer?
 
 local absoluteWhitelist = set {
-    "assert", "error", "getmetatable", "next", "pairs", "pcall", "print", "rawequal", "rawget", "rawset", "select",
+    "assert", "error", "getmetatable", "next", "pairs", "pcall", "rawequal", "rawget", "rawset", "select",
     "setmetatable", "tonumber", "tostring", "type", "unpack", "_VERSION", "xpcall", "ipairs",
     -- tables
     "_princess", "_G",
@@ -69,7 +75,7 @@ local function cleanTable(name)
     end
     for k, _ in pairs(table) do
         if not expected[k] then
-            print("Removing "..name.."."..k.." from environment.")
+            trace("Removing "..name.."."..k.." from environment.")
             table[k] = nil
         end
     end
@@ -85,7 +91,7 @@ for k, _ in pairs(_G) do
     elseif tableWhitelist[k] then
         cleanTable(k)
     else
-        print("Removing "..k.." from environment.")
+        trace("Removing "..k.." from environment.")
         _G[k] = nil
     end
 end

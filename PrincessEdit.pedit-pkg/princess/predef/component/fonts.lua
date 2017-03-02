@@ -18,7 +18,7 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-local ipairs, warn = ipairs, warn
+local ipairs, warn = ipairs, log.warn
 local loadFont, getExports = _princess.loadFont, module.getExports
 
 local fontCache = {}

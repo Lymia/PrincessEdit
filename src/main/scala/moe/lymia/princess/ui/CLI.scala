@@ -106,7 +106,7 @@ class CLI {
     for(id <- PackageManager.default.gameIDList) println(s" - ${id.displayName} (${id.name})")
     println()
     for(id <- PackageManager.default.gameIDList) {
-      val game = PackageManager.default.loadGameId(id)
+      val game = PackageManager.default.loadGameId(id.name)
       println(s"GameID ${id.name}:")
       for(template <- game.templates) {
         println(s" - Found template: ${template.displayName} (${template.path})")

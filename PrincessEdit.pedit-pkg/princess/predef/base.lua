@@ -18,4 +18,13 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-warn = _princess.warn
+local LogLevel, log_fn = _princess.LogLevel, _princess.log
+
+log = {}
+
+for k, v in pairs(LogLevel) do
+    k = k:lower()
+    log[k] = function(...) return log_fn(v, ...) end
+end
+
+print = log.info

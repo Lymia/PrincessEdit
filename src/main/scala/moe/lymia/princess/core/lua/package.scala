@@ -26,3 +26,4 @@ package object lua
   extends LuaComponentImplicits
   with    LuaTemplateImplicits
   with    LuaTextImplicits
+  with    LuaCoreImplicits

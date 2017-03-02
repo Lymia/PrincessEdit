@@ -28,8 +28,8 @@ import moe.lymia.princess.core.lua.LuaContext
 import moe.lymia.princess.lua.LuaTable
 import moe.lymia.princess.util.SizedCache
 
-case class TemplateExport(path: String, manager: GameManager, packages: PackageList, cache: SizedCache,
-                          displayName: String, icon: Option[String]) {
+final case class TemplateExport(path: String, manager: GameManager, packages: PackageList, cache: SizedCache,
+                                displayName: String, icon: Option[String]) {
   lazy val template = new LuaTemplate(path, packages, manager.lua, manager.getLuaExport(path), cache)
 }
 object TemplateExport {
@@ -40,9 +40,9 @@ object TemplateExport {
                    e.metadata.getOrElse("icon", Seq()).headOption)
 }
 
-class GameManager(packages: PackageList) {
+final class GameManager(packages: PackageList, logger: Logger = DefaultLogger) {
   val gameId = packages.gameId
-  val lua = new LuaContext(packages)
+  val lua = new LuaContext(packages, logger)
 
   private val cache = SizedCache(128 * 1024 * 1024 /* About 128 MB */)
 
@@ -59,14 +59,14 @@ class GameManager(packages: PackageList) {
       TemplateExport.loadTemplateExport(x, this, packages, cache))
 }
 
-class PackageManager(packages: Path, systemPackages: Path*) {
+final class PackageManager(packages: Path, systemPackages: Seq[Path] = Seq(), logger: Logger = DefaultLogger) {
   val resolver = PackageResolver.loadPackageDirectory(packages, systemPackages: _*)
   lazy val gameIDs = GameID.loadGameIDs(resolver)
   lazy val gameIDList = gameIDs.values.toSeq
 
-  def loadGameId(gameId: String) = new GameManager(resolver.loadGameId(gameId))
-  def loadGameId(gameId: GameID) = new GameManager(resolver.loadGameId(gameId.name))
+  def loadGameId(gameId: String, logger: Logger = logger) =
+    new GameManager(resolver.loadGameId(gameId), logger)
 }
 object PackageManager {
-  lazy val default = new PackageManager(Paths.get("packages"), Paths.get("PrincessEdit.pedit-pkg"))
+  lazy val default = new PackageManager(Paths.get("packages"), Seq(Paths.get("PrincessEdit.pedit-pkg")))
 }

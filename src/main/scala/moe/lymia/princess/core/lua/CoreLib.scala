@@ -22,17 +22,43 @@
 
 package moe.lymia.princess.core.lua
 
+import moe.lymia.princess.core._
 import moe.lymia.princess.lua._
 
-object CoreLib {
+trait LuaCoreImplicits {
+  implicit case object LuaLogLevel extends LuaUserdataType[LogLevel]
+}
+
+final case class CoreLib(logger: Logger) {
   def open(L: LuaState) = {
     val princess = L.newLib("_princess")
 
     L.register(princess, "trimString", (s: String) => s.trim)
     L.register(princess, "splitString", (s: String, on: String) => s.split(on).toSeq)
 
-    L.rawSet(princess, "warn", L.rawGet(L.getGlobals, "print"))
-
     L.register(princess, "Object", () => new LuaLookup { } : HasLuaMethods)
+
+    val levels = L.newLib("_princess", "LogLevel")
+    L.rawSet(levels, "TRACE", LogLevel.TRACE)
+    L.rawSet(levels, "DEBUG", LogLevel.DEBUG)
+    L.rawSet(levels, "INFO" , LogLevel.INFO )
+    L.rawSet(levels, "WARN" , LogLevel.WARN )
+    L.rawSet(levels, "ERROR", LogLevel.ERROR)
+
+    val tostringFn = L.getGlobal("tostring").as[LuaClosure]
+    def tostring(L: LuaState, o: LuaObject) = L.call(tostringFn, 1, o).head.as[String]
+
+    def log(L: LuaState, level: LogLevel): Unit = {
+      logger.log(level, {
+        val buffer = new StringBuilder()
+        for(i <- 2 to L.getTop) {
+          val str = tostring(L, L.value(i))
+          if(i != 2) buffer.append("\t")
+          buffer.append(str)
+        }
+        buffer.toString()
+      })
+    }
+    L.register(princess, "log", log _)
   }
 }

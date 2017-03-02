@@ -27,7 +27,7 @@ import java.util.Map.Entry
 
 import scala.collection.JavaConverters._
 
-case class CountedCache[K, V](var maxSize: Int) {
+final case class CountedCache[K, V](var maxSize: Int) {
   private val underlying = new java.util.LinkedHashMap[K, V] {
     override def removeEldestEntry(eldest: Entry[K, V]): Boolean = size() > maxSize
   }.asScala
@@ -38,7 +38,7 @@ case class CountedCache[K, V](var maxSize: Int) {
         // refresh the current entry, bumping it to the top of the list
         underlying.remove(key)
         underlying.put(key, x)
-        
+
         x
       case None =>
         val res = value
@@ -47,7 +47,7 @@ case class CountedCache[K, V](var maxSize: Int) {
     }
 }
 
-case class CacheSection[K, V]()
+final case class CacheSection[K, V]()
 trait SizedCache {
   var maxSize: Long
   def cached[K, V](section: CacheSection[K, V])(key: K, value: => (V, Long)): V
@@ -56,12 +56,12 @@ object SizedCache {
   def apply(maxSize: Long): SizedCache = new SizedCacheImpl(maxSize)
 }
 
-case class NullCache() extends SizedCache {
+final case class NullCache() extends SizedCache {
   override var maxSize: Long = _
   override def cached[K, V](section: CacheSection[K, V])(key: K, value: => (V, Long)): V = value._1
 }
 
-private class SizedCacheImpl(var maxSize: Long) extends SizedCache {
+private final class SizedCacheImpl(var maxSize: Long) extends SizedCache {
   private val entryOverhead = 16
 
   private var currentSize = 0l
