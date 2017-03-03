@@ -92,6 +92,7 @@ class LuaImplicits extends LuaGeneratedImplicits {
   }
 
   // Lua Object wrappers
+  implicit def luaReturnWrapper2luaObject(rw: LuaReturnWrapper): LuaObject = new LuaObject(rw.wrapped)
   implicit def toLua2luaObject[T : ToLua](obj: T): LuaObject = implicitly[ToLua[T]].toLua(obj)
   implicit class FromLuaAnyExtension(obj: Any) {
     def fromLua[T : FromLua](L: LuaState) =

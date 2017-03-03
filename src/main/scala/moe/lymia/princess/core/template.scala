@@ -33,23 +33,23 @@ import moe.lymia.princess.util.SizedCache
 
 trait Template {
   protected def renderSettings: RenderSettings
-  protected def doRender(builder: SVGBuilder, cardData: LuaTable, res: ResourceLoader): SVGDefinitionReference
+  protected def doRender(builder: SVGBuilder, cardData: LuaObject, res: ResourceLoader): SVGDefinitionReference
 
-  private def doRender(cardData: LuaTable, res: ResourceLoader): (SVGBuilder, SVGDefinitionReference) = {
+  private def doRender(cardData: LuaObject, res: ResourceLoader): (SVGBuilder, SVGDefinitionReference) = {
     val builder = new SVGBuilder(renderSettings)
     (builder, doRender(builder, cardData, res))
   }
 
-  def renderSVGTag(cardData: LuaTable, res: ResourceLoader = ExportResourceLoader) = {
+  def renderSVGTag(cardData: LuaObject, res: ResourceLoader = ExportResourceLoader) = {
     val (builder, definition) = doRender(cardData, res)
     builder.renderSVGTag(definition)
   }
-  def write(w: Writer, cardData: LuaTable, encoding: String = "utf-8", pretty: Boolean = true,
+  def write(w: Writer, cardData: LuaObject, encoding: String = "utf-8", pretty: Boolean = true,
             res: ResourceLoader = ExportResourceLoader) = {
     val (builder, definition) = doRender(cardData, res)
     builder.write(w, definition, encoding, pretty = pretty)
   }
-  def renderImage(renderer: SVGRenderer, x: Int, y: Int, cardData: LuaTable,
+  def renderImage(renderer: SVGRenderer, x: Int, y: Int, cardData: LuaObject,
                   res: ResourceLoader = RasterizeResourceLoader) = {
     val (builder, definition) = doRender(cardData, res)
     builder.renderImage(renderer, x, y, definition)
@@ -63,7 +63,7 @@ class LuaTemplate(name: String, packages: PackageList, context: LuaContext, expo
     val scale = L.getTable(export, "scale").as[PhysicalScale]
     RenderSettings(L.getTable(export, "size").as[Size], scale.unPerViewport, scale.unit)
   }
-  override protected def doRender(builder: SVGBuilder, cardData: LuaTable, res: ResourceLoader) =
+  override protected def doRender(builder: SVGBuilder, cardData: LuaObject, res: ResourceLoader) =
     TemplateException.context(s"rendering template $name") {
       val L = context.L.newThread()
       val prerenderFn = L.getTable(export, "prerender"       ).as[Option[LuaClosure]]

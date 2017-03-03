@@ -123,7 +123,7 @@ class CLI {
     }
     val card = if(cardData.startsWith("@")) IOUtils.readFileAsString(Paths.get(cardData.substring(1))) else cardData
     val cardDataTable = game.lua.L.loadString(s"return $card", "@<card data>") match {
-      case Left (x) => game.lua.L.call(x, 1).head.as[LuaTable]
+      case Left (x) => game.lua.L.call(x, 1).head
       case Right(e) => error(e)
     }
     (templateObj, cardDataTable)
