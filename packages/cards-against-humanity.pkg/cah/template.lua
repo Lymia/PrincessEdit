@@ -18,8 +18,8 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-size  = {250, 350}
-scale = 0.01 * inch
+local size  = {250, 350}
+local scale = 0.01 * inch
 
 local black = {0, 0, 0}
 local white = {255, 255, 255}
@@ -32,7 +32,7 @@ local function indicatorLine(layout, x, y, header, count, fgColor, bgColor)
     layout.addComponent(x + 15, y - 5, component.Center(component.SimpleText(tostring(count), font, 12, bgColor)))
 end
 
-function layoutComponents(cardData)
+function renderCard(cardData)
     local text = cardData.text
     local blankCount = cardData.blankCount
     if not blankCount then
@@ -61,5 +61,8 @@ function layoutComponents(cardData)
         textLayout.addExclusion({150, 275, 250, 350})
     end
 
-    return component.Mask(component.Resource("cah/card-mask.svg", size), layout)
+    return {
+        component = component.Mask(component.Resource("cah/card-mask.svg", size), layout),
+        size = size, scale = scale,
+    }
 end

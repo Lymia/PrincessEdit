@@ -61,7 +61,8 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Proguar
   excludePatterns     +=  "META-INF/services/.*",
 
   libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-  excludeFiles        ++= Set("library.properties", "rootdoc.txt", "scala-xml.properties"),
+  libraryDependencies +=  "org.scala-lang" % "scala-reflect" % config_scalaVersion,
+  excludeFiles        ++= Set("library.properties", "rootdoc.txt", "scala-xml.properties", "reflect.properties"),
   shadeMappings       +=  "scala.**" -> "moe.lymia.princess.lib.scala.@1",
 
   libraryDependencies +=  "org.jfree" % "jfreesvg" % "3.2",
@@ -72,6 +73,12 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Proguar
 
   libraryDependencies +=  "com.lihaoyi" %% "scalarx" % "0.3.2",
   shadeMappings       +=  "rx.**" -> "moe.lymia.princess.lib.rx.@1",
+
+  libraryDependencies +=  "com.typesafe.play" %% "play-json" % "2.6.0-M3",
+  shadeMappings       +=  "play.**" -> "moe.lymia.princess.lib.play.@1",
+  shadeMappings       +=  "com.fasterxml.**" -> "moe.lymia.princess.lib.fasterxml.@1",
+  shadeMappings       +=  "org.joda.**" -> "moe.lymia.princess.lib.joda.@1",
+  shadeMappings       +=  "macrocompat.**" -> "moe.lymia.princess.lib.macrocompat.@1",
 
   libraryDependencies +=  "org.ini4j" % "ini4j" % "0.5.2",
   shadeMappings       +=  "org.ini4j.**" -> "moe.lymia.princess.lib.ini4j.@1"

@@ -39,7 +39,6 @@ class CLI {
   private var luaFile: String = _
 
   private var gameId: String = _
-  private var template: String = _
   private var cardData: String = _
 
   private var link: Boolean = false
@@ -66,14 +65,12 @@ class CLI {
       arg[Int   ]("<x>"       ).foreach(x        = _).hidden(),
       arg[Int   ]("<y>"       ).foreach(y        = _).hidden(),
       arg[String]("<gameId>"  ).foreach(gameId   = _).hidden(),
-      arg[String]("<template>").foreach(template = _).hidden(),
       arg[String]("<cardData>").foreach(cardData = _).hidden(),
       arg[String]("<out>"     ).foreach(out      = _).hidden()
     )
     note("")
     cmd("renderSVG").text("Renders a template to SVG").foreach(_ => mode = cmd_renderSVG _).children(
       arg[String]("<gameId>"  ).foreach(gameId   = _).hidden(),
-      arg[String]("<template>").foreach(template = _).hidden(),
       arg[String]("<cardData>").foreach(cardData = _).hidden(),
       arg[String]("<out>"     ).foreach(out      = _).hidden(),
       opt[Unit  ]("link"      ).text("Link instead of include resources").foreach(_ => link = true),
@@ -104,44 +101,32 @@ class CLI {
   private def cmd_packageStatus(): Unit = {
     println("Known game IDs:")
     for(id <- PackageManager.default.gameIDList) println(s" - ${id.displayName} (${id.name})")
-    println()
-    for(id <- PackageManager.default.gameIDList) {
-      val game = PackageManager.default.loadGameId(id.name)
-      println(s"GameID ${id.name}:")
-      for(template <- game.templates) {
-        println(s" - Found template: ${template.displayName} (${template.path})")
-      }
-      println()
-    }
   }
 
   private def renderCommon() = time("Loaded packages") {
     val game = PackageManager.default.loadGameId(gameId)
-    val templateObj = game.templates.find(_.path == template) match {
-      case Some(x) => x.template
-      case None => error(s"No such template $template")
-    }
+    val mainObj = game.main
     val card = if(cardData.startsWith("@")) IOUtils.readFileAsString(Paths.get(cardData.substring(1))) else cardData
     val cardDataTable = game.lua.L.loadString(s"return $card", "@<card data>") match {
       case Left (x) => game.lua.L.call(x, 1).head
       case Right(e) => error(e)
     }
-    (templateObj, cardDataTable)
+    (mainObj, cardDataTable)
   }
   private def cmd_render(): Unit = {
-    val (template, cardData) = renderCommon()
+    val (mainObj, cardData) = renderCommon()
     val renderer = time("Creating renderer instance") { new InkscapeConnectionFactory("inkscape").createRenderer() }
     try {
-      val image = time("Renderered image") { template.renderImage(renderer, x, y, cardData) }
+      val image = time("Renderered image") { mainObj.renderImage(renderer, x, y, cardData) }
       time("Encoding image") { ImageIO.write(image, "png", new FileOutputStream(out)) }
     } finally {
       renderer.destroy()
     }
   }
   private def cmd_renderSVG(): Unit = {
-    val (template, cardData) = renderCommon()
+    val (mainObj, cardData) = renderCommon()
     time("Renderered SVG") {
-      template.write(new FileWriter(out), cardData, pretty = !dirty, res =
+      mainObj.write(new FileWriter(out), cardData, pretty = !dirty, res =
         if(dirty) RasterizeResourceLoader else ExportResourceLoader)
     }
   }

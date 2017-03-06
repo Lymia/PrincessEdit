@@ -25,20 +25,8 @@ package moe.lymia.princess.core
 import java.nio.file.{Path, Paths}
 
 import moe.lymia.princess.core.lua.LuaContext
-import moe.lymia.princess.lua.{LuaObject, LuaTable}
+import moe.lymia.princess.lua.LuaObject
 import moe.lymia.princess.util.SizedCache
-
-final case class TemplateExport(path: String, manager: GameManager, packages: PackageList, cache: SizedCache,
-                                displayName: String, icon: Option[String]) {
-  lazy val template = new LuaTemplate(path, packages, manager.lua, manager.getLuaExport(path), cache)
-}
-object TemplateExport {
-  def loadTemplateExport(e: Export, manager: GameManager, packages: PackageList, cache: SizedCache) =
-    TemplateExport(e.path, manager, packages, cache,
-                   e.metadata.getOrElse("displayName",
-                                        throw TemplateException("No value 'displayName' found")).head,
-                   e.metadata.getOrElse("icon", Seq()).headOption)
-}
 
 final class GameManager(packages: PackageList, logger: Logger = DefaultLogger) {
   val gameId = packages.gameId
@@ -54,9 +42,15 @@ final class GameManager(packages: PackageList, logger: Logger = DefaultLogger) {
 
   def getLuaExport(path: String): LuaObject = lua.getLuaExport(path)
 
-  lazy val templates =
-    getExports(StaticExportIDs.Template(gameId)).map(x =>
-      TemplateExport.loadTemplateExport(x, this, packages, cache))
+  lazy val main = {
+    val ep = getExports(StaticExportIDs.Main(gameId))
+    if(ep.isEmpty) throw TemplateException(s"GameID '$gameId' has no entry point")
+    else if(ep.length > 1) throw TemplateException(s"GameID '$gameId' has more than one entry point")
+    else {
+      val export = ep.head
+      new LuaTemplate(export.path, packages, lua, getLuaExport(export.path), cache)
+    }
+  }
 }
 
 final class PackageManager(packages: Path, systemPackages: Seq[Path] = Seq(), logger: Logger = DefaultLogger) {

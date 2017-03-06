@@ -145,4 +145,5 @@ object ResourceManager {
     ImageFormat(Seq("jpg", "jpeg"), ResourceFormatType.Raster("image/jpeg"))
   )
   private val formatSearchList = imageFormats.flatMap(x => x.extensions.map(y => (y, x)))
+  private val extensions = formatSearchList.toMap
 }

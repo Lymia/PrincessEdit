@@ -32,13 +32,7 @@ import moe.lymia.princess.core.svg.SVGRenderer
 import moe.lymia.princess.util.SizedCache
 
 trait Template {
-  protected def renderSettings: RenderSettings
-  protected def doRender(builder: SVGBuilder, cardData: LuaObject, res: ResourceLoader): SVGDefinitionReference
-
-  private def doRender(cardData: LuaObject, res: ResourceLoader): (SVGBuilder, SVGDefinitionReference) = {
-    val builder = new SVGBuilder(renderSettings)
-    (builder, doRender(builder, cardData, res))
-  }
+  protected def doRender(cardData: LuaObject, res: ResourceLoader): (SVGBuilder, SVGDefinitionReference)
 
   def renderSVGTag(cardData: LuaObject, res: ResourceLoader = ExportResourceLoader) = {
     val (builder, definition) = doRender(cardData, res)
@@ -58,28 +52,25 @@ trait Template {
 
 class LuaTemplate(name: String, packages: PackageList, context: LuaContext, export: LuaObject,
                   cache: SizedCache) extends Template {
-  override protected def renderSettings = TemplateException.context(s"rendering template $name") {
-    val L = context.L.newThread()
-    val scale = L.getTable(export, "scale").as[PhysicalScale]
-    RenderSettings(L.getTable(export, "size").as[Size], scale.unPerViewport, scale.unit)
-  }
-  override protected def doRender(builder: SVGBuilder, cardData: LuaObject, res: ResourceLoader) =
+  override protected def doRender(cardData: LuaObject, res: ResourceLoader) =
     TemplateException.context(s"rendering template $name") {
       val L = context.L.newThread()
-      val prerenderFn = L.getTable(export, "prerender"       ).as[Option[LuaClosure]]
-      val layoutFn    = L.getTable(export, "layoutComponents").as[LuaClosure]
+      val layoutFn    = L.getTable(export, "renderCard").as[LuaClosure]
 
-      val prerenderData = prerenderFn.map(x => L.pcall(x, 1, cardData) match {
-        case Left(Seq(ret)) => ret.as[Any]
-        case Right(e) => throw TemplateException(e)
-      })
-      val reference = L.pcall(layoutFn, 1, cardData, prerenderData) match {
-        case Left(Seq(x)) => x.as[ComponentReference]
+      val table = L.pcall(layoutFn, 1, cardData) match {
+        case Left(Seq(x)) => x.as[LuaTable]
         case Right(e) => throw TemplateException(e)
       }
 
+      val reference = L.getTable(table, "component").as[ComponentReference]
+      val scale     = L.getTable(table, "scale").as[PhysicalScale]
+      val size      = L.getTable(table, "size").as[Size]
+
+      val renderSettings = RenderSettings(size, scale.unPerViewport, scale.unit)
+
+      val builder = new SVGBuilder(renderSettings)
       val resources = new ResourceManager(builder, renderSettings, cache, res, packages)
       val renderManager = new ComponentRenderManager(builder, resources)
-      renderManager.renderComponent(reference)
+      (builder, renderManager.renderComponent(reference))
     }
 }
