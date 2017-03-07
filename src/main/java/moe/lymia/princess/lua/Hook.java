@@ -29,5 +29,5 @@ package moe.lymia.princess.lua;
  */
 public interface Hook
 {
-  public int luaHook(Lua L, Debug ar);
+  int luaHook(Lua L, Debug ar);
 }

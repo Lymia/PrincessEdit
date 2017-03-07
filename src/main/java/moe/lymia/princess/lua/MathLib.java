@@ -246,7 +246,7 @@ public final class MathLib
 
   private static int pow(Lua L)
   {
-    L.pushNumber(Lua.iNumpow(L.checkNumber(1), L.checkNumber(2)));
+    L.pushNumber(Math.pow(L.checkNumber(1), L.checkNumber(2)));
     return 1;
   }
 

@@ -53,7 +53,7 @@ final class FromReader extends InputStream
     {
       reader.mark(readahead);
     }
-    catch (Exception e_)
+    catch (Exception ignored)
     {
     }
   }

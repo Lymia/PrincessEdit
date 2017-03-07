@@ -127,7 +127,7 @@ public final class OSLib
     }
     else
     {
-      StringBuffer b = new StringBuffer();
+      StringBuilder b = new StringBuilder();
       int i = 0;
       int l = s.length();
       while (i < l)
@@ -320,7 +320,7 @@ public final class OSLib
    */
   private static String format(int i, int w)
   {
-    StringBuffer b = new StringBuffer();
+    StringBuilder b = new StringBuilder();
     b.append(i);
     while (b.length() < w)
     {

@@ -127,6 +127,7 @@ PrincessEdit distribution
 Backwards incompatible changes:
  - LuaUserdata instances are compared based on the wrapped object.
  - LuaJavaCallback is now an interface.
+ - Now runs on Java SE 1.8 rather than Java ME
 
 Bug fixes in this distribution:
  - Add support for 0x... form of numbers.
@@ -135,7 +136,7 @@ Bug fixes in this distribution:
  - Fix bug that allows nil in tables
 
 Enhancements in this distribution:
- - Implemented Lua math.* functions removed due to limited J2ME functionality
+ - Fully implemente Lua math.*
  - MathLib now stores a Random pointer in all randomness related functions, isolating states better.
  - Fix chunk names for syntax errors.
  - Line info is included in Lua runtime errors.

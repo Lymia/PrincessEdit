@@ -26,6 +26,7 @@ package moe.lymia.princess.lua;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Vector;
 
 /**
@@ -102,7 +103,7 @@ public final class StringLib
   private static int charFunction(Lua L)
   {
     int n = L.getTop(); // number of arguments
-    StringBuffer b = new StringBuffer();
+    StringBuilder b = new StringBuilder();
     for (int i=1; i<=n; ++i)
     {
       int c = L.checkInt(i);
@@ -124,10 +125,9 @@ public final class StringLib
       L.dump(L.value(1), s);
       byte[] a = s.toByteArray();
       s = null;
-      StringBuffer b = new StringBuffer();
-      for (int i=0; i<a.length; ++i)
-      {
-        b.append((char)(a[i]&0xff));
+      StringBuilder b = new StringBuilder();
+      for (byte anA : a) {
+        b.append((char) (anA & 0xff));
       }
       L.pushString(b.toString());
       return 1;
@@ -208,7 +208,7 @@ public final class StringLib
     Object[] state = new Object[3];
     state[0] = L.checkString(1);
     state[1] = L.checkString(2);
-    state[2] = new Integer(0);
+    state[2] = 0;
     L.push((LuaJavaCallback) StringLib::gmatchaux);
     L.push(state);
     return 2;
@@ -223,7 +223,7 @@ public final class StringLib
     Object[] state = (Object[])L.value(1);
     String s = (String)state[0];
     String p = (String)state[1];
-    int i = ((Integer)state[2]).intValue();
+    int i = (Integer) state[2];
     MatchState ms = new MatchState(L, s, s.length());
     for ( ; i <= ms.end ; ++i)
     {
@@ -234,7 +234,7 @@ public final class StringLib
         int newstart = e;
         if (e == i)     // empty match?
           ++newstart;   // go at least one position
-        state[2] = new Integer(newstart);
+        state[2] = newstart;
         return ms.push_captures(i, e);
       }
     }
@@ -256,7 +256,7 @@ public final class StringLib
     if (anchor)
       p = p.substring(1);
     MatchState ms = new MatchState(L, s, sl);
-    StringBuffer b = new StringBuffer();
+    StringBuilder b = new StringBuilder();
 
     int n = 0;
     int si = 0;
@@ -284,7 +284,7 @@ public final class StringLib
     return 2;
   }
 
-  static void addquoted(Lua L, StringBuffer b, int arg)
+  static void addquoted(Lua L, StringBuilder b, int arg)
   {
     String s = L.checkString(arg);
     int l = s.length();
@@ -319,7 +319,7 @@ public final class StringLib
     int arg = 1;
     String strfrmt = L.checkString(1);
     int sfl = strfrmt.length();
-    StringBuffer b = new StringBuffer();
+    StringBuilder b = new StringBuilder();
     int i=0;
     while (i < sfl)
     {
@@ -398,7 +398,7 @@ public final class StringLib
   {
     String s = L.checkString(1);
     int n = L.checkInt(2);
-    StringBuffer b = new StringBuffer();
+    StringBuilder b = new StringBuilder();
     for (int i=0; i<n; ++i)
     {
       b.append(s);
@@ -411,7 +411,7 @@ public final class StringLib
   private static int reverse(Lua L)
   {
     String s = L.checkString(1);
-    StringBuffer b = new StringBuffer();
+    StringBuilder b = new StringBuilder();
     int l = s.length();
     while (--l >= 0)
     {
@@ -508,7 +508,7 @@ final class MatchState
   /** Total number of captures (finished or unfinished). */
   int level;
   /** Each capture element is a 2-element array of (index, len). */
-  Vector capture = new Vector();
+  Vector<int[]> capture = new Vector<>();
   // :todo: consider adding the pattern string as a member (and removing
   // p parameter from methods).
 
@@ -525,7 +525,7 @@ final class MatchState
    */
   private int captureLen(int i)
   {
-    int[] c = (int[])capture.elementAt(i);
+    int[] c = capture.elementAt(i);
     return c[1];
   }
 
@@ -534,7 +534,7 @@ final class MatchState
    */
   private int captureInit(int i)
   {
-    int[] c = (int[])capture.elementAt(i);
+    int[] c = capture.elementAt(i);
     return c[0];
   }
 
@@ -543,7 +543,7 @@ final class MatchState
    */
   private int[] capture(int i)
   {
-    return (int[])capture.elementAt(i);
+    return capture.elementAt(i);
   }
 
   int capInvalid()
@@ -637,7 +637,7 @@ final class MatchState
       case 'z' : res = (c == 0); break;
       default: return (cl == c);
     }
-    return Character.isLowerCase(cl) ? res : !res;
+    return Character.isLowerCase(cl) == res;
   }
 
   /**
@@ -973,7 +973,7 @@ init:   // labelled while loop emulates "goto init", which we use to
   }
 
   /** A helper for gsub.  Equivalent to add_s from lstrlib.c. */
-  void adds(StringBuffer b, int si, int ei)
+  void adds(StringBuilder b, int si, int ei)
   {
     String news = L.toString(L.value(3));
     int l = news.length();
@@ -1004,7 +1004,7 @@ init:   // labelled while loop emulates "goto init", which we use to
   }
 
   /** A helper for gsub.  Equivalent to add_value from lstrlib.c. */
-  void addvalue(StringBuffer b, int si, int ei)
+  void addvalue(StringBuilder b, int si, int ei)
   {
     switch (L.type(3))
     {
@@ -1062,11 +1062,11 @@ final class FormatItem
   /**
    * Character used in formatted output when %e or %g format is used.
    */
-  static char E_LOWER = 'E';
+  private static char E_LOWER = 'E';
   /**
    * Character used in formatted output when %E or %G format is used.
    */
-  static char E_UPPER = 'E';
+  private static char E_UPPER = 'E';
 
   /**
    * Parse a format item (starting from after the <code>L_ESC</code>).
@@ -1123,7 +1123,7 @@ flag:
       {
         width = Integer.parseInt(s.substring(widths, i));
       }
-      catch (NumberFormatException e_)
+      catch (NumberFormatException ignored)
       {
       }
     }
@@ -1147,7 +1147,7 @@ flag:
         {
           precision = Integer.parseInt(s.substring(precisions, i));
         }
-        catch (NumberFormatException e_)
+        catch (NumberFormatException ignored)
         {
         }
       }
@@ -1184,7 +1184,7 @@ flag:
    * (and width is fixed to 0 in such cases).  Therefore we can ignore
    * zero.
    */
-  private void format(StringBuffer b, String s)
+  private void format(StringBuilder b, String s)
   {
     int l = s.length();
     if (l >= width)
@@ -1192,7 +1192,7 @@ flag:
       b.append(s);
       return;
     }
-    StringBuffer pad = new StringBuffer();
+    StringBuilder pad = new StringBuilder();
     while (l < width)
     {
       pad.append(' ');
@@ -1210,20 +1210,20 @@ flag:
     }
   }
 
-  // All the format* methods take a StringBuffer and append the
+  // All the format* methods take a StringBuilder and append the
   // formatted representation of the value to it.
   // Sadly after a format* method has been invoked the object is left in
   // an unusable state and should not be used again.
 
-  void formatChar(StringBuffer b, char c)
+  void formatChar(StringBuilder b, char c)
   {
     String s = String.valueOf(c);
     format(b, s);
   }
 
-  void formatInteger(StringBuffer b, long i)
+  void formatInteger(StringBuilder b, long i)
   {
-    // :todo: improve inefficient use of implicit StringBuffer
+    // :todo: improve inefficient use of implicit StringBuilder
 
     if (left)
       zero = false;
@@ -1265,7 +1265,7 @@ flag:
     }
     if (alt && radix == 16)
       prefix = "0x";
-    if (prefix == "")
+    if (Objects.equals(prefix, ""))
     {
       if (sign)
         prefix = "+";
@@ -1282,7 +1282,7 @@ flag:
     }
     if (l < precision)
     {
-      StringBuffer p = new StringBuffer();
+      StringBuilder p = new StringBuilder();
       while (l < precision)
       {
         p.append('0');
@@ -1295,7 +1295,7 @@ flag:
     format(b, s);
   }
 
-  void formatFloat(StringBuffer b, double d)
+  void formatFloat(StringBuilder b, double d)
   {
     switch (type)
     {
@@ -1307,11 +1307,10 @@ flag:
         return;
       case 'e': case 'E':
         formatFloatE(b, d);
-        return;
     }
   }
 
-  private void formatFloatE(StringBuffer b, double d)
+  private void formatFloatE(StringBuilder b, double d)
   {
     String s = formatFloatRawE(d);
     format(b, s);
@@ -1332,7 +1331,7 @@ flag:
     }
 
     String s = Double.toString(d);
-    StringBuffer t = new StringBuffer(s);
+    StringBuilder t = new StringBuilder(s);
     int e;      // Exponent value
     if (d == 0)
     {
@@ -1366,7 +1365,7 @@ flag:
     return t.toString();
   }
 
-  private void formatFloatF(StringBuffer b, double d)
+  private void formatFloatF(StringBuilder b, double d)
   {
     String s = formatFloatRawF(d);
     format(b, s);
@@ -1379,7 +1378,7 @@ flag:
   private String formatFloatRawF(double d)
   {
     String s = Double.toString(d);
-    StringBuffer t = new StringBuffer(s);
+    StringBuilder t = new StringBuilder(s);
 
     int di = s.indexOf('.');
     int ei = s.indexOf('E');
@@ -1388,7 +1387,7 @@ flag:
       t.delete(ei, Integer.MAX_VALUE);
       int e = Integer.parseInt(s.substring(ei+1));
 
-      StringBuffer z = new StringBuffer();
+      StringBuilder z = new StringBuilder();
       for (int i=0; i<Math.abs(e); ++i)
       {
         z.append('0');
@@ -1415,7 +1414,7 @@ flag:
     return t.toString();
   }
 
-  private void formatFloatG(StringBuffer b, double d)
+  private void formatFloatG(StringBuilder b, double d)
   {
     if (precision == 0)
     {
@@ -1433,7 +1432,7 @@ flag:
       // :todo: Could test for -0 and use "-0" appropriately.
       s = "0";
     }
-    else if (m < 1e-4 || m >= Lua.iNumpow(10, precision))
+    else if (m < 1e-4 || m >= Math.pow(10, precision))
     {
       // %e style
       --precision;
@@ -1456,7 +1455,7 @@ flag:
         {
           ++i;
         }
-        StringBuffer a = new StringBuffer(s);
+        StringBuilder a = new StringBuilder(s);
         a.delete(i, ei);
         s = a.toString();
       }
@@ -1491,7 +1490,7 @@ flag:
       // That means that we can always trim the string at fsd+required
       // (this will remove the decimal point when m >=
       // (10**(precision-1)).
-      StringBuffer a = new StringBuffer(s);
+      StringBuilder a = new StringBuilder(s);
       a.delete(fsd+required, Integer.MAX_VALUE);
       if (s.indexOf('.') < a.length())
       {
@@ -1512,7 +1511,7 @@ flag:
     format(b, s);
   }
 
-  void formatString(StringBuffer b, String s)
+  void formatString(StringBuilder b, String s)
   {
     String p = s;
 
@@ -1523,7 +1522,7 @@ flag:
     format(b, p);
   }
 
-  private void precisionTrim(StringBuffer t)
+  private void precisionTrim(StringBuilder t)
   {
     if (precision < 0)
     {
@@ -1550,7 +1549,7 @@ flag:
     }
   }
 
-  private void zeroPad(StringBuffer t)
+  private void zeroPad(StringBuilder t)
   {
     if (zero && t.length() < width)
     {

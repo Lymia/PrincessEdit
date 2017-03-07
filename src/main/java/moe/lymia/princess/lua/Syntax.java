@@ -76,7 +76,7 @@ final class Syntax
   private static final int NUM_RESERVED = TK_WHILE - FIRST_RESERVED + 1;
 
   /** Equivalent to luaX_tokens.  ORDER RESERVED */
-  static String[] tokens = new String[]
+  private static String[] tokens = new String[]
   {
     "and", "break", "do", "else", "elseif",
     "end", "false", "for", "function", "if",
@@ -86,12 +86,12 @@ final class Syntax
     "<number>", "<name>", "<string>", "<eof>"
   };
 
-  static Hashtable reserved = new Hashtable();
+  static Hashtable<String, Integer> reserved = new Hashtable<>();
   static
   {
     for (int i=0; i < NUM_RESERVED; ++i)
     {
-      reserved.put(tokens[i], new Integer(FIRST_RESERVED+i));
+      reserved.put(tokens[i], FIRST_RESERVED + i);
     }
   }
 
@@ -274,7 +274,6 @@ final class Syntax
 
   private void read_long_string(boolean isString, int sep) throws IOException
   {
-    int cont = 0;
     save_and_next();  /* skip 2nd `[' */
     if (currIsNewline())  /* string starts with a newline? */
       inclinenumber();  /* skip it */
@@ -437,7 +436,6 @@ loop:
           {
             // assert !currIsNewline();
             next();
-            continue;
           }
           else if (isdigit(current))
           {
@@ -460,7 +458,7 @@ loop:
             }
             else
             {
-              return ((Integer)t).intValue();
+              return (Integer) t;
             }
           }
           else
@@ -503,7 +501,6 @@ loop:
       } else {
         semR = Double.parseDouble(buff.toString());
       }
-      return;
     }
     catch (NumberFormatException e)
     {
@@ -1184,7 +1181,6 @@ loop:
         return;
       default:
         xSyntaxerror("unexpected symbol");
-        return;
     }
   }
 
@@ -1238,7 +1234,7 @@ loop:
     // stat -> RETURN explist
     xNext();    // skip RETURN
     // registers with returned values (first, nret)
-    int first = 0;
+    int first;
     int nret;
     if (block_follow(token) || token == ';')
     {
@@ -1771,8 +1767,7 @@ loop:
 
   private void open_func(FuncState funcstate)
   {
-    Proto f = new Proto(source, 2);  /* registers 0/1 are always valid */
-    funcstate.f = f;
+    funcstate.f = new Proto(source, 2);
     funcstate.ls = this;
     funcstate.L = L;
 

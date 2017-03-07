@@ -247,8 +247,6 @@ final class Loader
     }
 
     proto.debug(lineinfo, locvar, upvalue);
-
-    return;
   }
 
   /**

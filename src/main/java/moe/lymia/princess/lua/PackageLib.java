@@ -212,7 +212,7 @@ public final class PackageLib
    * Helper for module.  <var>module</var> parameter replaces PUC-Rio
    * use of passing it on the stack.
    */
-  static void setfenv(Lua L, Object module)
+  private static void setfenv(Lua L, Object module)
   {
     Debug ar = L.getStack(1);
     L.getInfo("f", ar);
@@ -265,7 +265,7 @@ public final class PackageLib
     {
       f.close();
     }
-    catch (IOException e_)
+    catch (IOException ignored)
     {
     }
     return true;
@@ -311,7 +311,7 @@ public final class PackageLib
   /** Almost equivalent to luaL_gsub. */
   private static String gsub(String s, String p, String r)
   {
-    StringBuffer b = new StringBuffer();
+    StringBuilder b = new StringBuilder();
     // instead of incrementing the char *s, we use the index i
     int i = 0;
     int l = p.length();

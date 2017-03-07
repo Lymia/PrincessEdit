@@ -30,6 +30,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.Vector;
 
@@ -98,7 +99,7 @@ public final class Lua
    * Used by {@link #stacksetsize} to determine which stack slots
    * need nilling when growing the stack.
    */
-  int stackhighwater;   // = 0;
+  private int stackhighwater;   // = 0;
   /**
    * Number of active elemements in the VM stack.  Should always be
    * <code><= stack.length</code>.
@@ -118,14 +119,14 @@ public final class Lua
    * Vector of CallInfo records.  Actually it's a Stack which is a
    * subclass of Vector, but it mostly the Vector methods that are used.
    */
-  private Stack civ = new Stack();
+  private Stack<CallInfo> civ = new Stack<>();
   {
     civ.addElement(new CallInfo());
   }
   /** CallInfo record for currently active function. */
   private CallInfo ci()
   {
-    return (CallInfo)civ.lastElement();
+    return civ.lastElement();
   }
 
   /** Open Upvalues.  All UpVal objects that reference the VM stack.
@@ -133,13 +134,13 @@ public final class Lua
    * slot index: higher stack indexes are stored at higher Vector
    * positions.
    */
-  private Vector openupval = new Vector();
+  private Vector<UpVal> openupval = new Vector<UpVal>();
 
-  int hookcount;
-  int basehookcount;
-  boolean allowhook = true;
-  Hook hook;
-  int hookmask;
+  private int hookcount;
+  private int basehookcount;
+  private boolean allowhook = true;
+  private Hook hook;
+  private int hookmask;
 
   /** Number of list items to accumulate before a SETLIST instruction. */
   static final int LFIELDS_PER_FLUSH = 50;
@@ -1067,7 +1068,7 @@ public final class Lua
   public void pushNumber(double d)
   {
     // :todo: optimise to avoid creating Double instance
-    push(new Double(d));
+    push(d);
   }
 
   /**
@@ -1960,7 +1961,7 @@ protect:
       int c = in.read();
       if (c == '#')       // Unix exec. file?
       {
-        // :todo: handle this case
+        while(in.read() != '\n');
       }
       in.reset();
       status = load(in, "@" + filename);
@@ -2128,7 +2129,7 @@ protect:
     // :todo: complete me
     if (ar.ici() > 0)   // no tail call?
     {
-      callinfo = (CallInfo)civ.elementAt(ar.ici());
+      callinfo = civ.elementAt(ar.ici());
       f = stack[callinfo.function()].r;
       //# assert isFunction(f)
     }
@@ -2161,7 +2162,7 @@ protect:
 
     for (ici=civ.size()-1; level > 0 && ici > 0; --ici)
     {
-      CallInfo ci = (CallInfo)civ.elementAt(ici);
+      CallInfo ci = civ.elementAt(ici);
       --level;
       if (isLua(ci))                    // Lua function?
       {
@@ -2371,7 +2372,7 @@ protect:
     int i = openupval.size();
     while (--i >= 0)
     {
-      UpVal uv = (UpVal)openupval.elementAt(i);
+      UpVal uv = openupval.elementAt(i);
       if (uv.offset() < level)
       {
         break;
@@ -2379,7 +2380,6 @@ protect:
       uv.close();
     }
     openupval.setSize(i+1);
-    return;
   }
 
   private UpVal fFindupval(int idx)
@@ -2391,7 +2391,7 @@ protect:
     int i = openupval.size();
     while (--i >= 0)
     {
-      UpVal uv = (UpVal)openupval.elementAt(i);
+      UpVal uv = openupval.elementAt(i);
       if (uv.offset() == idx)
       {
         return uv;
@@ -2482,7 +2482,7 @@ protect:
     return false;
   }
 
-  String ciWhere() {
+  private String ciWhere() {
     try {
       return where(0);
     } catch (Exception e) {
@@ -2558,7 +2558,7 @@ protect:
     {
       l = len;
     }
-    StringBuffer buf = new StringBuffer();
+    StringBuilder buf = new StringBuilder();
     buf.append("[string \"");
     buf.append(source.substring(0, l));
     if (source.length() > l)    // must truncate
@@ -2934,7 +2934,7 @@ protect:
             gRunerror("string length overflow");
           }
         }
-        StringBuffer buffer = new StringBuffer(tl);
+        StringBuilder buffer = new StringBuilder(tl);
         for (int i=n; i>0; i--)         // concat all strings
         {
           buffer.append(stack[top-i].r);
@@ -2955,13 +2955,8 @@ protect:
   private boolean vmEqual(Slot a, Slot b)
   {
     // Deal with number case first
-    if (NUMBER == a.r)
-    {
-      if (NUMBER != b.r)
-      {
-        return false;
-      }
-      return a.d == b.d;
+    if (NUMBER == a.r) {
+      return NUMBER == b.r && a.d == b.d;
     }
     // Now we're only concerned with the .r field.
     return vmEqualRef(a.r, b.r);
@@ -3136,14 +3131,12 @@ reentry:
             rc = RK(k, ARGC(i));
             if (rb.r == NUMBER && rc.r == NUMBER)
             {
-              double sum = rb.d + rc.d;
-              stack[base+a].d = sum;
+              stack[base+a].d = rb.d + rc.d;
               stack[base+a].r = NUMBER;
             }
             else if (toNumberPair(rb, rc, NUMOP))
             {
-              double sum = NUMOP[0] + NUMOP[1];
-              stack[base+a].d = sum;
+              stack[base+a].d = NUMOP[0] + NUMOP[1];
               stack[base+a].r = NUMBER;
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__add"))
@@ -3157,14 +3150,12 @@ reentry:
             rc = RK(k, ARGC(i));
             if (rb.r == NUMBER && rc.r == NUMBER)
             {
-              double difference = rb.d - rc.d;
-              stack[base+a].d = difference;
+              stack[base+a].d = rb.d - rc.d;
               stack[base+a].r = NUMBER;
             }
             else if (toNumberPair(rb, rc, NUMOP))
             {
-              double difference = NUMOP[0] - NUMOP[1];
-              stack[base+a].d = difference;
+              stack[base+a].d = NUMOP[0] - NUMOP[1];
               stack[base+a].r = NUMBER;
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__sub"))
@@ -3178,14 +3169,12 @@ reentry:
             rc = RK(k, ARGC(i));
             if (rb.r == NUMBER && rc.r == NUMBER)
             {
-              double product = rb.d * rc.d;
-              stack[base+a].d = product;
+              stack[base+a].d = rb.d * rc.d;
               stack[base+a].r = NUMBER;
             }
             else if (toNumberPair(rb, rc, NUMOP))
             {
-              double product = NUMOP[0] * NUMOP[1];
-              stack[base+a].d = product;
+              stack[base+a].d = NUMOP[0] * NUMOP[1];
               stack[base+a].r = NUMBER;
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__mul"))
@@ -3199,14 +3188,12 @@ reentry:
             rc = RK(k, ARGC(i));
             if (rb.r == NUMBER && rc.r == NUMBER)
             {
-              double quotient = rb.d / rc.d;
-              stack[base+a].d = quotient;
+              stack[base+a].d = rb.d / rc.d;
               stack[base+a].r = NUMBER;
             }
             else if (toNumberPair(rb, rc, NUMOP))
             {
-              double quotient = NUMOP[0] / NUMOP[1];
-              stack[base+a].d = quotient;
+              stack[base+a].d = NUMOP[0] / NUMOP[1];
               stack[base+a].r = NUMBER;
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__div"))
@@ -3220,14 +3207,12 @@ reentry:
             rc = RK(k, ARGC(i));
             if (rb.r == NUMBER && rc.r == NUMBER)
             {
-              double modulus = modulus(rb.d, rc.d);
-              stack[base+a].d = modulus;
+              stack[base+a].d = modulus(rb.d, rc.d);
               stack[base+a].r = NUMBER;
             }
             else if (toNumberPair(rb, rc, NUMOP))
             {
-              double modulus = modulus(NUMOP[0], NUMOP[1]);
-              stack[base+a].d = modulus;
+              stack[base+a].d = modulus(NUMOP[0], NUMOP[1]);
               stack[base+a].r = NUMBER;
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__mod"))
@@ -3241,14 +3226,12 @@ reentry:
             rc = RK(k, ARGC(i));
             if (rb.r == NUMBER && rc.r == NUMBER)
             {
-              double result = iNumpow(rb.d, rc.d);
-              stack[base+a].d = result;
+              stack[base+a].d = Math.pow(rb.d, rc.d);
               stack[base+a].r = NUMBER;
             }
             else if (toNumberPair(rb, rc, NUMOP))
             {
-              double result = iNumpow(NUMOP[0], NUMOP[1]);
-              stack[base+a].d = result;
+              stack[base+a].d = Math.pow(NUMOP[0], NUMOP[1]);
               stack[base+a].r = NUMBER;
             }
             else if (!call_binTM(rb, rc, stack[base+a], "__pow"))
@@ -3414,7 +3397,7 @@ reentry:
               case PCRLUA:
               {
                 // tail call: put new frame in place of previous one.
-                CallInfo ci = (CallInfo)civ.elementAt(civ.size()-2);
+                CallInfo ci = civ.elementAt(civ.size()-2);
                 int func = ci.function();
                 CallInfo fci = ci();    // Fresh CallInfo
                 int pfunc = fci.function();
@@ -3501,8 +3484,7 @@ reentry:
               gRunerror("'for' step must be a number");
             }
             double step = stack[pstep].d;
-            double idx = stack[init].d - step;
-            stack[init].d = idx;
+            stack[init].d = stack[init].d - step;
             stack[init].r = NUMBER;
             // dojump
             pc += ARGsBx(i);
@@ -3580,8 +3562,7 @@ reentry:
                 up[j] = fFindupval(base + ARGB(in));
               }
             }
-            LuaFunction nf = new LuaFunction(p, up, function.getEnv());
-            stack[base+a].r = nf;
+            stack[base+a].r = new LuaFunction(p, up, function.getEnv());
             continue;
           }
           case OP_VARARG:
@@ -3609,16 +3590,10 @@ reentry:
                 stack[base+a+j].r = NIL;
               }
             }
-            continue;
           }
         } /* switch */
       } /* while */
     } /* reentry: while */
-  }
-
-  static double iNumpow(double a, double b)
-  {
-    return Math.pow(a, b);
   }
 
   /** Equivalent of luaV_gettable. */
@@ -3910,9 +3885,9 @@ reentry:
     // instance which would be faster than parsing the format string
     // each time.
     FormatItem f = new FormatItem(null, NUMBER_FMT);
-    StringBuffer b = new StringBuffer();
+    StringBuilder b = new StringBuilder();
     Double d = (Double)o;
-    f.formatFloat(b, d.doubleValue());
+    f.formatFloat(b, d);
     return b.toString();
   }
 
@@ -4056,12 +4031,6 @@ reentry:
     return getMetafield(o, event);
   }
 
-  /** @deprecated DO NOT CALL */
-  private Object tagmethod(Slot o, String event)
-  {
-    throw new IllegalArgumentException("tagmethod called");
-  }
-
   /**
    * Computes the result of Lua's modules operator (%).  Note that this
    * modulus operator does not match Java's %.
@@ -4178,7 +4147,6 @@ reentry:
   private void traceexec(int pc)
   {
     int mask = hookmask;
-    int oldpc = savedpc;
     savedpc = pc;
     if (mask > MASKLINE)        // instruction-hook set?
     {
@@ -4198,22 +4166,12 @@ reentry:
    * false if the argument <var>o</var> could not be converted to a number.
    * Overloaded.
    */
-  private static boolean tonumber(Slot o, double[] out)
-  {
-    if (o.r == NUMBER)
-    {
+  private static boolean tonumber(Slot o, double[] out) {
+    if (o.r == NUMBER) {
       out[0] = o.d;
       return true;
     }
-    if (!(o.r instanceof String))
-    {
-      return false;
-    }
-    if (oStr2d((String)o.r, out))
-    {
-      return true;
-    }
-    return false;
+    return o.r instanceof String && oStr2d((String) o.r, out);
   }
 
   /**
@@ -4312,8 +4270,7 @@ reentry:
   /** Pop topmost CallInfo record and return it. */
   private CallInfo dec_ci()
   {
-    CallInfo ci = (CallInfo)civ.pop();
-    return ci;
+    return civ.pop();
   }
 
   /** Equivalent to resume_error from ldo.c */
@@ -4336,7 +4293,7 @@ reentry:
     {
       return r;
     }
-    return new Double(stack[idx].d);
+    return stack[idx].d;
   }
 
   /**
@@ -4349,7 +4306,7 @@ reentry:
     if (o instanceof Double)
     {
       stack[idx].r = NUMBER;
-      stack[idx].d = ((Double)o).doubleValue();
+      stack[idx].d = (Double) o;
       return;
     }
     stack[idx].r = o;
@@ -4374,7 +4331,7 @@ reentry:
 final class DumpState
 {
   DataOutputStream writer;
-  boolean strip;
+  private boolean strip;
 
   DumpState(DataOutputStream writer, boolean strip)
   {
@@ -4408,7 +4365,7 @@ final class DumpState
 
   void DumpFunction(Proto f, String p) throws IOException
   {
-    DumpString((f.source == p || strip) ? null : f.source);
+    DumpString((Objects.equals(f.source, p) || strip) ? null : f.source);
     DumpInt(f.linedefined);
     DumpInt(f.lastlinedefined);
     writer.writeByte(f.nups);
@@ -4444,7 +4401,7 @@ final class DumpState
       else if (o instanceof Boolean)
       {
         writer.writeByte(Lua.TBOOLEAN) ;
-        writer.writeBoolean(((Boolean)o).booleanValue()) ;
+        writer.writeBoolean((Boolean) o) ;
       }
       else if (o == Lua.NUMBER)
       {
@@ -4458,7 +4415,7 @@ final class DumpState
       }
       else
       {
-        //# assert false
+        assert false;
       }
     }
     n = f.sizep ;
@@ -4549,7 +4506,7 @@ final class Slot
   {
     if (r == Lua.NUMBER)
     {
-      return new Double(d);
+      return d;
     }
     return r;
   }
@@ -4560,7 +4517,7 @@ final class Slot
     if (o instanceof Double)
     {
       r = Lua.NUMBER;
-      d = ((Double)o).doubleValue();
+      d = (Double) o;
     }
   }
 }

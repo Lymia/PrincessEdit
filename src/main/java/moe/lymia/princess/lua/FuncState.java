@@ -480,7 +480,7 @@ final class FuncState
             return false;  /* do not attempt to divide by 0 */
           r = v1 % v2;
           break;
-      case Lua.OP_POW: r = L.iNumpow(v1, v2); break;
+      case Lua.OP_POW: r = Math.pow(v1, v2); break;
       case Lua.OP_UNM: r = -v1; break;
       case Lua.OP_LEN: return false;  /* no constant folding for 'len' */
       default:

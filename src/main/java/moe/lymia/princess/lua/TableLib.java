@@ -160,7 +160,7 @@ public final class TableLib
     return 0;
   }
 
-  static void auxsort(Lua L, int l, int u)
+  private static void auxsort(Lua L, int l, int u)
   {
     Object t = L.value(1);
     while (l < u)       // for tail recursion

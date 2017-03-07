@@ -399,7 +399,6 @@ final class Proto
       k = newArray;
     }
     sizek = n ;
-    return;
   }
 
   /** Trim p (proto) array to specified size. */
