@@ -24,6 +24,8 @@
 
 package moe.lymia.princess.lua;
 
+import moe.lymia.princess.core.components.ExpectedType;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Hashtable;
@@ -37,7 +39,7 @@ final class Syntax
   /** End of File, must be -1 as that is what read() returns. */
   private static final int EOZ = -1;
 
-  private static final int FIRST_RESERVED = 257;
+  private static final int FIRST_RESERVED = 65537;
 
   // WARNING: if you change the order of this enumeration,
   // grep "ORDER RESERVED"
@@ -450,7 +452,7 @@ loop:
               save_and_next();
             } while (isalnum(current) || current == '_');
             String s = buff.toString();
-            Object t = reserved.get(s);
+            Integer t = reserved.get(s);
             if (t == null)
             {
               semS = s;
@@ -458,7 +460,7 @@ loop:
             }
             else
             {
-              return (Integer) t;
+              return t;
             }
           }
           else
