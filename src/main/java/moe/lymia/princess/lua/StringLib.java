@@ -32,98 +32,8 @@ import java.util.Vector;
  * Contains Lua's string library.
  * The library can be opened using the {@link #open} method.
  */
-public final class StringLib implements LuaJavaCallback
+public final class StringLib
 {
-  // Each function in the string library corresponds to an instance of
-  // this class which is associated (the 'which' member) with an integer
-  // which is unique within this class.  They are taken from the following
-  // set.
-  private static final int BYTE = 1;
-  private static final int CHAR = 2;
-  private static final int DUMP = 3;
-  private static final int FIND = 4;
-  private static final int FORMAT = 5;
-  private static final int GFIND = 6;
-  private static final int GMATCH = 7;
-  private static final int GSUB = 8;
-  private static final int LEN = 9;
-  private static final int LOWER = 10;
-  private static final int MATCH = 11;
-  private static final int REP = 12;
-  private static final int REVERSE = 13;
-  private static final int SUB = 14;
-  private static final int UPPER = 15;
-
-  private static final int GMATCH_AUX= 16;
-
-  private static final StringLib GMATCH_AUX_FUN = new StringLib(GMATCH_AUX);
-
-  /**
-   * Which library function this object represents.  This value should
-   * be one of the "enums" defined in the class.
-   */
-  private int which;
-
-  /** Constructs instance, filling in the 'which' member. */
-  private StringLib(int which)
-  {
-    this.which = which;
-  }
-
-  /**
-   * Adjusts the output of string.format so that %e and %g use 'e'
-   * instead of 'E' to indicate the exponent.  In other words so that
-   * string.format follows the ISO C (ISO 9899) standard for printf.
-   */
-  public void formatISO()
-  {
-    FormatItem.E_LOWER = 'e';
-  }
-
-  /**
-   * Implements all of the functions in the Lua string library.  Do not
-   * call directly.
-   * @param L  the Lua state in which to execute.
-   * @return number of returned parameters, as per convention.
-   */
-  public int luaFunction(Lua L)
-  {
-    switch (which)
-    {
-      case BYTE:
-        return byteFunction(L);
-      case CHAR:
-        return charFunction(L);
-      case DUMP:
-        return dump(L);
-      case FIND:
-        return find(L);
-      case FORMAT:
-        return format(L);
-      case GMATCH:
-        return gmatch(L);
-      case GSUB:
-        return gsub(L);
-      case LEN:
-        return len(L);
-      case LOWER:
-        return lower(L);
-      case MATCH:
-        return match(L);
-      case REP:
-        return rep(L);
-      case REVERSE:
-        return reverse(L);
-      case SUB:
-        return sub(L);
-      case UPPER:
-        return upper(L);
-      case GMATCH_AUX:
-        return gmatchaux(L);
-    }
-    return 0;
-  }
-
   /**
    * Opens the string library into the given Lua state.  This registers
    * the symbols of the string library in a newly created table called
@@ -134,21 +44,21 @@ public final class StringLib implements LuaJavaCallback
   {
     Object lib = L.register("string");
 
-    r(L, "byte", BYTE);
-    r(L, "char", CHAR);
-    r(L, "dump", DUMP);
-    r(L, "find", FIND);
-    r(L, "format", FORMAT);
-    r(L, "gfind", GFIND);
-    r(L, "gmatch", GMATCH);
-    r(L, "gsub", GSUB);
-    r(L, "len", LEN);
-    r(L, "lower", LOWER);
-    r(L, "match", MATCH);
-    r(L, "rep", REP);
-    r(L, "reverse", REVERSE);
-    r(L, "sub", SUB);
-    r(L, "upper", UPPER);
+    r(L, "byte", StringLib::byteFunction);
+    r(L, "char", StringLib::charFunction);
+    r(L, "dump", StringLib::dump);
+    r(L, "find", StringLib::find);
+    r(L, "format", StringLib::format);
+    r(L, "gfind", StringLib::gmatch);
+    r(L, "gmatch", StringLib::gmatch);
+    r(L, "gsub", StringLib::gsub);
+    r(L, "len", StringLib::len);
+    r(L, "lower", StringLib::lower);
+    r(L, "match", StringLib::match);
+    r(L, "rep", StringLib::rep);
+    r(L, "reverse", StringLib::reverse);
+    r(L, "sub", StringLib::sub);
+    r(L, "upper", StringLib::upper);
 
     LuaTable mt = new LuaTable();
     L.setMetatable("", mt);     // set string metatable
@@ -156,11 +66,10 @@ public final class StringLib implements LuaJavaCallback
   }
 
   /** Register a function. */
-  private static void r(Lua L, String name, int which)
+  private static void r(Lua L, String name, LuaJavaCallback fn)
   {
-    StringLib f = new StringLib(which);
     Object lib = L.getGlobal("string");
-    L.setField(lib, name, f);
+    L.setField(lib, name, fn);
   }
 
   /** Implements string.byte.  Name mangled to avoid keyword. */
@@ -300,7 +209,7 @@ public final class StringLib implements LuaJavaCallback
     state[0] = L.checkString(1);
     state[1] = L.checkString(2);
     state[2] = new Integer(0);
-    L.push(GMATCH_AUX_FUN);
+    L.push((LuaJavaCallback) StringLib::gmatchaux);
     L.push(state);
     return 2;
   }

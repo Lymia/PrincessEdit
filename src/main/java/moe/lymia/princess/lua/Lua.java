@@ -1593,7 +1593,7 @@ protect:
   public static Object valueOfNumber(double d)
   {
     // :todo: consider interning "common" numbers, like 0, 1, -1, etc.
-    return new Double(d);
+    return d;
   }
 
   /**

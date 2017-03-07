@@ -101,7 +101,7 @@ final class BaseLibReader extends java.io.Reader
 
   public int read(char[] cbuf, int off, int len)
   {
-    int j = 0;  // loop index required after loop
+    int j;  // loop index required after loop
     for (j=0; j<len; ++j)
     {
       int c = read();

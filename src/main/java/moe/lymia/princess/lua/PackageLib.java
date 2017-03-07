@@ -32,69 +32,8 @@ import java.io.IOException;
  * The library
  * can be opened using the {@link #open} method.
  */
-public final class PackageLib implements LuaJavaCallback
+public final class PackageLib
 {
-  // Each function in the library corresponds to an instance of
-  // this class which is associated (the 'which' member) with an integer
-  // which is unique within this class.  They are taken from the following
-  // set.
-  private static final int MODULE = 1;
-  private static final int REQUIRE = 2;
-  private static final int SEEALL = 3;
-  private static final int LOADER_PRELOAD = 4;
-  private static final int LOADER_LUA = 5;
-
-  /**
-   * Which library function this object represents.  This value should
-   * be one of the "enums" defined in the class.
-   */
-  private int which;
-
-  /**
-   * Module Environment; a reference to the package table so that
-   * package functions can access it without using the global table.
-   * In PUC-Rio this reference is stored in the function's environment.
-   * Not all instances (Lua Java functions) require this member, but
-   * another subclass would be too wasteful.
-   */
-  private LuaTable me;
-
-  /** Constructs instance, filling in the 'which' member. */
-  private PackageLib(int which)
-  {
-    this.which = which;
-  }
-
-  private PackageLib(int which, LuaTable me)
-  {
-    this.which = which;
-    this.me = me;
-  }
-
-  /**
-   * Implements all of the functions in the Lua package library.  Do not
-   * call directly.
-   * @param L  the Lua state in which to execute.
-   * @return number of returned parameters, as per convention.
-   */
-  public int luaFunction(Lua L)
-  {
-    switch (which)
-    {
-      case MODULE:
-        return module(L);
-      case REQUIRE:
-        return require(L);
-      case SEEALL:
-        return seeall(L);
-      case LOADER_LUA:
-        return loaderLua(L);
-      case LOADER_PRELOAD:
-        return loaderPreload(L);
-    }
-    return 0;
-  }
-
   /**
    * Opens the library into the given Lua state.  This registers
    * the symbols of the library in the global table.
@@ -102,46 +41,36 @@ public final class PackageLib implements LuaJavaCallback
    */
   public static void open(Lua L)
   {
-    LuaTable t = L.register("package");
+    LuaTable packageTable = L.register("package");
 
-    g(L, t, "module", MODULE);
-    g(L, t, "require", REQUIRE);
+    r(L, "module", L2 -> module(L2, packageTable));
+    r(L, "require", L2 -> require(L2, packageTable));
 
-    r(L, "seeall", SEEALL);
+    r(L, "seeall", PackageLib::seeall);
 
-    L.setField(t, "loaders", L.newTable());
-    p(L, t, LOADER_PRELOAD);
-    p(L, t, LOADER_LUA);
-    setpath(L, t, "path", PATH_DEFAULT);        // set field 'path'
+    L.setField(packageTable, "loaders", L.newTable());
+    p(L, packageTable, L2 -> loaderPreload(L2, packageTable));
+    p(L, packageTable, L2 -> loaderLua(L2, packageTable));
+    setpath(L, packageTable, "path", PATH_DEFAULT);        // set field 'path'
 
     // set field 'loaded'
     L.findTable(L.getRegistry(), Lua.LOADED, 1);
-    L.setField(t, "loaded", L.value(-1));
+    L.setField(packageTable, "loaded", L.value(-1));
     L.pop(1);
-    L.setField(t, "preload", L.newTable());
+    L.setField(packageTable, "preload", L.newTable());
   }
 
   /** Register a function. */
-  private static void r(Lua L, String name, int which)
+  private static void r(Lua L, String name, LuaJavaCallback fn)
   {
-    PackageLib f = new PackageLib(which);
-    L.setField(L.getGlobal("package"), name, f);
+    L.setField(L.getGlobal("package"), name, fn);
   }
-
-  /** Register a function in the global table. */
-  private static void g(Lua L, LuaTable t, String name, int which)
-  {
-    PackageLib f = new PackageLib(which, t);
-    L.setGlobal(name, f);
-  }
-
 
   /** Register a loader in package.loaders. */
-  private static void p(Lua L, LuaTable t, int which)
+  private static void p(Lua L, LuaTable t, LuaJavaCallback fn)
   {
-    PackageLib f = new PackageLib(which, t);
     Object loaders = L.getField(t, "loaders");
-    L.rawSetI(loaders, L.objLen(loaders)+1, f);
+    L.rawSetI(loaders, L.objLen(loaders)+1, fn);
   }
 
   private static final String DIRSEP = "/";
@@ -155,7 +84,7 @@ public final class PackageLib implements LuaJavaCallback
    * Implements the preload loader.  This is conventionally stored
    * first in the package.loaders table.
    */
-  private int loaderPreload(Lua L)
+  private static int loaderPreload(Lua L, LuaTable me)
   {
     String name = L.checkString(1);
     Object preload = L.getField(me, "preload");
@@ -172,10 +101,10 @@ public final class PackageLib implements LuaJavaCallback
    * Implements the lua loader.  This is conventionally stored second in
    * the package.loaders table.
    */
-  private int loaderLua(Lua L)
+  private static int loaderLua(Lua L, LuaTable me)
   {
     String name = L.checkString(1);
-    String filename = findfile(L, name, "path");
+    String filename = findfile(L, me, name, "path");
     if (filename == null)
       return 1; // library not found in this path
     if (L.loadFile(filename) != 0)
@@ -184,7 +113,7 @@ public final class PackageLib implements LuaJavaCallback
   }
 
   /** Implements module. */
-  private int module(Lua L)
+  private static int module(Lua L, LuaTable me)
   {
     String modname = L.checkString(1);
     Object loaded = L.getField(me, "loaded");
@@ -210,7 +139,7 @@ public final class PackageLib implements LuaJavaCallback
   }
 
   /** Implements require. */
-  private int require(Lua L)
+  private static int require(Lua L, LuaTable me)
   {
     String name = L.checkString(1);
     L.setTop(1);
@@ -357,7 +286,7 @@ public final class PackageLib implements LuaJavaCallback
     return path.substring(l);
   }
 
-  private String findfile(Lua L, String name, String pname)
+  private static String findfile(Lua L, LuaTable me, String name, String pname)
   {
     name = gsub(name, ".", DIRSEP);
     String path = L.toString(L.getField(me, pname));

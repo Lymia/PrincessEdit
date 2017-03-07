@@ -34,118 +34,8 @@ import java.util.Random;
  * (EG <code>acos</code>) and hyperbolic trigonometric functions (EG
  * <code>cosh</code>) are not provided.
  */
-public final class MathLib implements LuaJavaCallback
+public final class MathLib
 {
-  // Each function in the library corresponds to an instance of
-  // this class which is associated (the 'which' member) with an integer
-  // which is unique within this class.  They are taken from the following
-  // set.
-
-  private static final int ABS = 1;
-  private static final int ACOS = 2;
-  private static final int ASIN = 3;
-  private static final int ATAN2 = 4;
-  private static final int ATAN = 5;
-  private static final int CEIL = 6;
-  private static final int COSH = 7;
-  private static final int COS = 8;
-  private static final int DEG = 9;
-  private static final int EXP = 10;
-  private static final int FLOOR = 11;
-  private static final int FMOD = 12;
-  private static final int FREXP = 13;
-  private static final int LDEXP = 14;
-  private static final int LOG = 15;
-  private static final int LOG10 = 28;
-  private static final int MAX = 16;
-  private static final int MIN = 17;
-  private static final int MODF = 18;
-  private static final int POW = 19;
-  private static final int RAD = 20;
-  private static final int SINH = 23;
-  private static final int SIN = 24;
-  private static final int SQRT = 25;
-  private static final int TANH = 26;
-  private static final int TAN = 27;
-
-  /**
-   * Which library function this object represents.  This value should
-   * be one of the "enums" defined in the class.
-   */
-  private final int which;
-
-  /** Constructs instance, filling in the 'which' member. */
-  private MathLib(int which)
-  {
-    this.which = which;
-  }
-
-  /**
-   * Implements all of the functions in the Lua math library.  Do not
-   * call directly.
-   * @param L  the Lua state in which to execute.
-   * @return number of returned parameters, as per convention.
-   */
-  public int luaFunction(Lua L)
-  {
-    switch (which)
-    {
-      case ABS:
-        return abs(L);
-      case ACOS:
-        return acos(L);
-      case ASIN:
-        return asin(L);
-      case ATAN2:
-        return atan2(L);
-      case ATAN:
-        return atan(L);
-      case CEIL:
-        return ceil(L);
-      case COSH:
-        return cosh(L);
-      case COS:
-        return cos(L);
-      case DEG:
-        return deg(L);
-      case EXP:
-        return exp(L);
-      case FLOOR:
-        return floor(L);
-      case FMOD:
-        return fmod(L);
-      case FREXP:
-        return frexp(L);
-      case LDEXP:
-        return ldexp(L);
-      case LOG:
-        return log(L);
-      case LOG10:
-        return log10(L);
-      case MAX:
-        return max(L);
-      case MIN:
-        return min(L);
-      case MODF:
-        return modf(L);
-      case POW:
-        return pow(L);
-      case RAD:
-        return rad(L);
-      case SINH:
-        return sinh(L);
-      case SIN:
-        return sin(L);
-      case SQRT:
-        return sqrt(L);
-      case TANH:
-        return tanh(L);
-      case TAN:
-        return tan(L);
-    }
-    return 0;
-  }
-
   /**
    * Opens the library into the given Lua state.  This registers
    * the symbols of the library in the global table.
@@ -157,49 +47,42 @@ public final class MathLib implements LuaJavaCallback
 
     Random rng = new Random();
 
-    r(L, "abs", ABS);
-    r(L, "acos", ACOS);
-    r(L, "asin", ASIN);
-    r(L, "atan2", ATAN2);
-    r(L, "atan", ATAN);
-    r(L, "ceil", CEIL);
-    r(L, "cosh", COSH);
-    r(L, "cos", COS);
-    r(L, "deg", DEG);
-    r(L, "exp", EXP);
-    r(L, "floor", FLOOR);
-    r(L, "fmod", FMOD);
-    r(L, "frexp", FREXP);
-    r(L, "ldexp", LDEXP);
-    r(L, "log", LOG);
-    r(L, "log10", LOG10);
-    r(L, "max", MAX);
-    r(L, "min", MIN);
-    r(L, "modf", MODF);
-    r(L, "pow", POW);
-    r(L, "rad", RAD);
-    r(L, "random", MathLibRandom.RANDOM, rng);
-    r(L, "randomseed", MathLibRandom.RANDOMSEED, rng);
-    r(L, "sinh", SINH);
-    r(L, "sin", SIN);
-    r(L, "sqrt", SQRT);
-    r(L, "tanh", TANH);
-    r(L, "tan", TAN);
+    r(L, "abs", MathLib::abs);
+    r(L, "acos", MathLib::acos);
+    r(L, "asin", MathLib::asin);
+    r(L, "atan2", MathLib::atan2);
+    r(L, "atan", MathLib::atan);
+    r(L, "ceil", MathLib::ceil);
+    r(L, "cosh", MathLib::cosh);
+    r(L, "cos", MathLib::cos);
+    r(L, "deg", MathLib::deg);
+    r(L, "exp", MathLib::exp);
+    r(L, "floor", MathLib::floor);
+    r(L, "fmod", MathLib::fmod);
+    r(L, "frexp", MathLib::frexp);
+    r(L, "ldexp", MathLib::ldexp);
+    r(L, "log", MathLib::log);
+    r(L, "log10", MathLib::log10);
+    r(L, "max", MathLib::max);
+    r(L, "min", MathLib::min);
+    r(L, "modf", MathLib::modf);
+    r(L, "pow", MathLib::pow);
+    r(L, "rad", MathLib::rad);
+    r(L, "random", L2 -> random(L2, rng));
+    r(L, "randomseed", L2 -> randomseed(L2, rng));
+    r(L, "sinh", MathLib::sinh);
+    r(L, "sin", MathLib::sin);
+    r(L, "sqrt", MathLib::sqrt);
+    r(L, "tanh", MathLib::tanh);
+    r(L, "tan", MathLib::tan);
 
     L.setField(t, "pi", L.valueOfNumber(Math.PI));
     L.setField(t, "huge", L.valueOfNumber(Double.POSITIVE_INFINITY));
   }
 
-  /** Register a function. */
-  private static void r(Lua L, String name, int which, Random rng)
+  private static void r(Lua L, String name, LuaJavaCallback fn)
   {
-    MathLibRandom f = new MathLibRandom(which, rng);
-    L.setField(L.getGlobal("math"), name, f);
-  }
-  private static void r(Lua L, String name, int which)
-  {
-    MathLib f = new MathLib(which);
-    L.setField(L.getGlobal("math"), name, f);
+    L.setField(L.getGlobal("math"), name, fn);
   }
 
   private static int abs(Lua L)
@@ -402,43 +285,8 @@ public final class MathLib implements LuaJavaCallback
     L.pushNumber(Math.tan(L.checkNumber(1)));
     return 1;
   }
-}
 
-/**
- * Contains the random and randomseed functions
- */
-class MathLibRandom implements LuaJavaCallback {
-  static final int RANDOM = 21;
-  static final int RANDOMSEED = 22;
-
-  /**
-   * Which library function this object represents.  This value should
-   * be one of the "enums" defined in the class.
-   */
-  private final int which;
-
-  /**
-   * RNG pointer to use for this function
-   */
-  private final Random rng;
-
-  MathLibRandom(int which, Random rng) {
-    this.which = which;
-    this.rng = rng;
-  }
-
-  @Override
-  public int luaFunction(Lua L) {
-    switch(which) {
-      case RANDOM:
-        return random(L);
-      case RANDOMSEED:
-        return randomseed(L);
-    }
-    return 0;
-  }
-
-  private int random(Lua L)
+  private static int random(Lua L, Random rng)
   {
     switch (L.getTop()) // check number of arguments
     {
@@ -469,7 +317,7 @@ class MathLibRandom implements LuaJavaCallback {
     return 1;
   }
 
-  private int randomseed(Lua L)
+  private static int randomseed(Lua L, Random rng)
   {
     rng.setSeed((long)L.checkNumber(1));
     return 0;

@@ -33,175 +33,8 @@ import java.util.Enumeration;
  * considered essential for running any Lua program.  The base library
  * can be opened using the {@link #open} method.
  */
-public final class BaseLib implements LuaJavaCallback
+public final class BaseLib
 {
-  // :todo: consider making the enums contiguous so that the compiler
-  // uses the compact and faster form of switch.
-
-  // Each function in the base library corresponds to an instance of
-  // this class which is associated (the 'which' member) with an integer
-  // which is unique within this class.  They are taken from the following
-  // set.
-  private static final int ASSERT = 1;
-  private static final int COLLECTGARBAGE = 2;
-  private static final int DOFILE = 3;
-  private static final int ERROR = 4;
-  // private static final int GCINFO = 5;
-  private static final int GETFENV = 6;
-  private static final int GETMETATABLE = 7;
-  private static final int LOADFILE = 8;
-  private static final int LOAD = 9;
-  private static final int LOADSTRING = 10;
-  private static final int NEXT = 11;
-  private static final int PCALL = 12;
-  private static final int PRINT = 13;
-  private static final int RAWEQUAL = 14;
-  private static final int RAWGET = 15;
-  private static final int RAWSET = 16;
-  private static final int SELECT = 17;
-  private static final int SETFENV = 18;
-  private static final int SETMETATABLE = 19;
-  private static final int TONUMBER = 20;
-  private static final int TOSTRING = 21;
-  private static final int TYPE = 22;
-  private static final int UNPACK = 23;
-  private static final int XPCALL = 24;
-
-  private static final int IPAIRS = 25;
-  private static final int PAIRS = 26;
-  private static final int IPAIRS_AUX = 27;
-  private static final int PAIRS_AUX = 28;
-
-  // The coroutine functions (which reside in the table "coroutine") are also
-  // part of the base library.
-  private static final int CREATE = 50;
-  private static final int RESUME = 51;
-  private static final int RUNNING = 52;
-  private static final int STATUS = 53;
-  private static final int WRAP = 54;
-  private static final int YIELD = 55;
-
-  private static final int WRAP_AUX = 56;
-
-  /**
-   * Lua value that represents the generator function for ipairs.  In
-   * PUC-Rio this is implemented as an upvalue of ipairs.
-   */
-  private static final Object IPAIRS_AUX_FUN = new BaseLib(IPAIRS_AUX);
-  /**
-   * Lua value that represents the generator function for pairs.  In
-   * PUC-Rio this is implemented as an upvalue of pairs.
-   */
-  private static final Object PAIRS_AUX_FUN = new BaseLib(PAIRS_AUX);
-
-  /**
-   * Which library function this object represents.  This value should
-   * be one of the "enums" defined in the class.
-   */
-  private int which;
-
-  /**
-   * For wrapped threads created by coroutine.wrap, this references the
-   * Lua thread object.
-   */
-  private Lua thread;
-
-  /** Constructs instance, filling in the 'which' member. */
-  private BaseLib(int which)
-  {
-    this.which = which;
-  }
-
-  /** Instance constructor used by coroutine.wrap. */
-  private BaseLib(Lua L)
-  {
-    this(WRAP_AUX);
-    thread = L;
-  }
-
-  /**
-   * Implements all of the functions in the Lua base library.  Do not
-   * call directly.
-   * @param L  the Lua state in which to execute.
-   * @return number of returned parameters, as per convention.
-   */
-  public int luaFunction(Lua L)
-  {
-    switch (which)
-    {
-      case ASSERT:
-        return assertFunction(L);
-      case COLLECTGARBAGE:
-        return collectgarbage(L);
-      case DOFILE:
-        return dofile(L);
-      case ERROR:
-        return error(L);
-      case GETFENV:
-        return getfenv(L);
-      case GETMETATABLE:
-        return getmetatable(L);
-      case IPAIRS:
-        return ipairs(L);
-      case LOAD:
-        return load(L);
-      case LOADFILE:
-        return loadfile(L);
-      case LOADSTRING:
-        return loadstring(L);
-      case NEXT:
-        return next(L);
-      case PAIRS:
-        return pairs(L);
-      case PCALL:
-        return pcall(L);
-      case PRINT:
-        return print(L);
-      case RAWEQUAL:
-        return rawequal(L);
-      case RAWGET:
-        return rawget(L);
-      case RAWSET:
-        return rawset(L);
-      case SELECT:
-        return select(L);
-      case SETFENV:
-        return setfenv(L);
-      case SETMETATABLE:
-        return setmetatable(L);
-      case TONUMBER:
-        return tonumber(L);
-      case TOSTRING:
-        return tostring(L);
-      case TYPE:
-        return type(L);
-      case UNPACK:
-        return unpack(L);
-      case XPCALL:
-        return xpcall(L);
-      case IPAIRS_AUX:
-        return ipairsaux(L);
-      case PAIRS_AUX:
-        return pairsaux(L);
-
-      case CREATE:
-        return create(L);
-      case RESUME:
-        return resume(L);
-      case RUNNING:
-        return running(L);
-      case STATUS:
-        return status(L);
-      case WRAP:
-        return wrap(L);
-      case YIELD:
-        return yield(L);
-      case WRAP_AUX:
-        return wrapaux(L);
-    }
-    return 0;
-  }
-
   /**
    * Opens the base library into the given Lua state.  This registers
    * the symbols of the base library in the global table.
@@ -213,54 +46,52 @@ public final class BaseLib implements LuaJavaCallback
     L.setGlobal("_G", L.getGlobals());
     // set global _VERSION
     L.setGlobal("_VERSION", Lua.VERSION);
-    r(L, "assert", ASSERT);
-    r(L, "collectgarbage", COLLECTGARBAGE);
-    r(L, "dofile", DOFILE);
-    r(L, "error", ERROR);
-    r(L, "getfenv", GETFENV);
-    r(L, "getmetatable", GETMETATABLE);
-    r(L, "ipairs", IPAIRS);
-    r(L, "loadfile", LOADFILE);
-    r(L, "load", LOAD);
-    r(L, "loadstring", LOADSTRING);
-    r(L, "next", NEXT);
-    r(L, "pairs", PAIRS);
-    r(L, "pcall", PCALL);
-    r(L, "print", PRINT);
-    r(L, "rawequal", RAWEQUAL);
-    r(L, "rawget", RAWGET);
-    r(L, "rawset", RAWSET);
-    r(L, "select", SELECT);
-    r(L, "setfenv", SETFENV);
-    r(L, "setmetatable", SETMETATABLE);
-    r(L, "tonumber", TONUMBER);
-    r(L, "tostring", TOSTRING);
-    r(L, "type", TYPE);
-    r(L, "unpack", UNPACK);
-    r(L, "xpcall", XPCALL);
+    r(L, "assert", BaseLib::assertFunction);
+    r(L, "collectgarbage", BaseLib::collectgarbage);
+    r(L, "dofile", BaseLib::dofile);
+    r(L, "error", BaseLib::error);
+    r(L, "getfenv", BaseLib::getfenv);
+    r(L, "getmetatable", BaseLib::getmetatable);
+    r(L, "ipairs", BaseLib::ipairs);
+    r(L, "loadfile", BaseLib::loadfile);
+    r(L, "load", BaseLib::load);
+    r(L, "loadstring", BaseLib::loadstring);
+    r(L, "next", BaseLib::next);
+    r(L, "pairs", BaseLib::pairs);
+    r(L, "pcall", BaseLib::pcall);
+    r(L, "print", BaseLib::print);
+    r(L, "rawequal", BaseLib::rawequal);
+    r(L, "rawget", BaseLib::rawget);
+    r(L, "rawset", BaseLib::rawset);
+    r(L, "select", BaseLib::select);
+    r(L, "setfenv", BaseLib::setfenv);
+    r(L, "setmetatable", BaseLib::setmetatable);
+    r(L, "tonumber", BaseLib::tonumber);
+    r(L, "tostring", BaseLib::tostring);
+    r(L, "type", BaseLib::type);
+    r(L, "unpack", BaseLib::unpack);
+    r(L, "xpcall", BaseLib::xpcall);
 
     L.register("coroutine");
 
-    c(L, "create", CREATE);
-    c(L, "resume", RESUME);
-    c(L, "running", RUNNING);
-    c(L, "status", STATUS);
-    c(L, "wrap", WRAP);
-    c(L, "yield", YIELD);
+    c(L, "create", BaseLib::create);
+    c(L, "resume", BaseLib::resume);
+    c(L, "running", BaseLib::running);
+    c(L, "status", BaseLib::status);
+    c(L, "wrap", BaseLib::wrap);
+    c(L, "yield", BaseLib::yield);
   }
 
   /** Register a function. */
-  private static void r(Lua L, String name, int which)
+  private static void r(Lua L, String name, LuaJavaCallback cb)
   {
-    BaseLib f = new BaseLib(which);
-    L.setGlobal(name, f);
+    L.setGlobal(name, cb);
   }
 
   /** Register a function in the coroutine table. */
-  private static void c(Lua L, String name, int which)
+  private static void c(Lua L, String name, LuaJavaCallback cb)
   {
-    BaseLib f = new BaseLib(which);
-    L.setField(L.getGlobal("coroutine"), name, f);
+    L.setField(L.getGlobal("coroutine"), name, cb);
   }
 
   /** Implements assert.  <code>assert</code> is a keyword in some
@@ -462,7 +293,7 @@ public final class BaseLib implements LuaJavaCallback
   private static int ipairs(Lua L)
   {
     L.checkType(1, Lua.TTABLE);
-    L.push(IPAIRS_AUX_FUN);
+    L.push((LuaJavaCallback) BaseLib::ipairsaux);
     L.pushValue(1);
     L.pushNumber(0);
     return 3;
@@ -493,7 +324,7 @@ public final class BaseLib implements LuaJavaCallback
   private static int pairs(Lua L)
   {
     L.checkType(1, Lua.TTABLE);
-    L.push(PAIRS_AUX_FUN);                   // return generator,
+    L.push((LuaJavaCallback) BaseLib::pairsaux);                   // return generator,
     LuaTable t = (LuaTable)L.value(1);
     L.push(new Object[] { t, t.keys() });   // state,
     L.push(Lua.NIL);                            // and initial value.
@@ -682,7 +513,7 @@ public final class BaseLib implements LuaJavaCallback
         L.pushNumber(i);
         return 1;
       }
-      catch (NumberFormatException e_)
+      catch (NumberFormatException ignored)
       {
       }
     }
@@ -832,17 +663,16 @@ public final class BaseLib implements LuaJavaCallback
 
   /** Helper for wrap.  Returns a LuaJavaCallback that has access to the
    * Lua thread.
-   * @param L the Lua thread to be wrapped.
+   * @param thread the Lua thread to be wrapped.
    */
-  private static LuaJavaCallback wrapit(Lua L)
+  private static LuaJavaCallback wrapit(Lua thread)
   {
-    return new BaseLib(L);
+    return L -> wrapaux(L, thread);
   }
 
   /** Helper for wrap.  This implements the function returned by wrap. */
-  private int wrapaux(Lua L)
+  private static int wrapaux(Lua L, Lua co)
   {
-    Lua co = thread;
     int r = auxresume(L, co, L.getTop());
     if (r < 0)
     {

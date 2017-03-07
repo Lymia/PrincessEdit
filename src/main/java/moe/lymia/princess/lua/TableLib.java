@@ -30,54 +30,8 @@ import java.util.Enumeration;
  * Contains Lua's table library.
  * The library can be opened using the {@link #open} method.
  */
-public final class TableLib implements LuaJavaCallback
+public final class TableLib
 {
-  // Each function in the table library corresponds to an instance of
-  // this class which is associated (the 'which' member) with an integer
-  // which is unique within this class.  They are taken from the following
-  // set.
-  private static final int CONCAT = 1;
-  private static final int INSERT = 2;
-  private static final int MAXN = 3;
-  private static final int REMOVE = 4;
-  private static final int SORT = 5;
-
-  /**
-   * Which library function this object represents.  This value should
-   * be one of the "enums" defined in the class.
-   */
-  private int which;
-
-  /** Constructs instance, filling in the 'which' member. */
-  private TableLib(int which)
-  {
-    this.which = which;
-  }
-
-  /**
-   * Implements all of the functions in the Lua table library.  Do not
-   * call directly.
-   * @param L  the Lua state in which to execute.
-   * @return number of returned parameters, as per convention.
-   */
-  public int luaFunction(Lua L)
-  {
-    switch (which)
-    {
-      case CONCAT:
-        return concat(L);
-      case INSERT:
-        return insert(L);
-      case MAXN:
-        return maxn(L);
-      case REMOVE:
-        return remove(L);
-      case SORT:
-        return sort(L);
-    }
-    return 0;
-  }
-
   /**
    * Opens the string library into the given Lua state.  This registers
    * the symbols of the string library in a newly created table called
@@ -88,19 +42,18 @@ public final class TableLib implements LuaJavaCallback
   {
     L.register("table");
 
-    r(L, "concat", CONCAT);
-    r(L, "insert", INSERT);
-    r(L, "maxn", MAXN);
-    r(L, "remove", REMOVE);
-    r(L, "sort", SORT);
+    r(L, "concat", TableLib::concat);
+    r(L, "insert", TableLib::insert);
+    r(L, "maxn", TableLib::maxn);
+    r(L, "remove", TableLib::remove);
+    r(L, "sort", TableLib::sort);
   }
 
   /** Register a function. */
-  private static void r(Lua L, String name, int which)
+  private static void r(Lua L, String name, LuaJavaCallback fn)
   {
-    TableLib f = new TableLib(which);
     Object lib = L.getGlobal("table");
-    L.setField(lib, name, f);
+    L.setField(lib, name, fn);
   }
 
   /** Implements table.concat. */
@@ -110,7 +63,7 @@ public final class TableLib implements LuaJavaCallback
     L.checkType(1, Lua.TTABLE);
     int i = L.optInt(3, 1);
     int last = L.optInt(4, L.objLen(L.value(1)));
-    StringBuffer b = new StringBuffer();
+    StringBuilder b = new StringBuilder();
     Object t = L.value(1);
     for (; i <= last; ++i)
     {

@@ -35,59 +35,8 @@ import java.util.TimeZone;
  * The OS Library.  Can be opened into a {@link Lua} state by invoking
  * the {@link #open} method.
  */
-public final class OSLib implements LuaJavaCallback
+public final class OSLib
 {
-  // Each function in the library corresponds to an instance of
-  // this class which is associated (the 'which' member) with an integer
-  // which is unique within this class.  They are taken from the following
-  // set.
-  private static final int CLOCK = 1;
-  private static final int DATE = 2;
-  private static final int DIFFTIME = 3;
-  // EXECUTE = 4;
-  // EXIT = 5;
-  // GETENV = 6;
-  // REMOVE = 7;
-  // RENAME = 8;
-  private static final int SETLOCALE = 9;
-  private static final int TIME = 10;
-
-  /**
-   * Which library function this object represents.  This value should
-   * be one of the "enums" defined in the class.
-   */
-  private int which;
-
-  /** Constructs instance, filling in the 'which' member. */
-  private OSLib(int which)
-  {
-    this.which = which;
-  }
-
-  /**
-   * Implements all of the functions in the Lua os library (that are
-   * provided).  Do not call directly.
-   * @param L  the Lua state in which to execute.
-   * @return number of returned parameters, as per convention.
-   */
-  public int luaFunction(Lua L)
-  {
-    switch (which)
-    {
-      case CLOCK:
-        return clock(L);
-      case DATE:
-        return date(L);
-      case DIFFTIME:
-        return difftime(L);
-      case SETLOCALE:
-        return setlocale(L);
-      case TIME:
-        return time(L);
-    }
-    return 0;
-  }
-
   /**
    * Opens the library into the given Lua state.  This registers
    * the symbols of the library in the table "os".
@@ -97,19 +46,18 @@ public final class OSLib implements LuaJavaCallback
   {
     L.register("os");
 
-    r(L, "clock", CLOCK);
-    r(L, "date", DATE);
-    r(L, "difftime", DIFFTIME);
-    r(L, "setlocale", SETLOCALE);
-    r(L, "time", TIME);
+    r(L, "clock", OSLib::clock);
+    r(L, "date", OSLib::date);
+    r(L, "difftime", OSLib::difftime);
+    r(L, "setlocale", OSLib::setlocale);
+    r(L, "time", OSLib::time);
   }
 
   /** Register a function. */
-  private static void r(Lua L, String name, int which)
+  private static void r(Lua L, String name, LuaJavaCallback fn)
   {
-    OSLib f = new OSLib(which);
     Object lib = L.getGlobal("os");
-    L.setField(lib, name, f);
+    L.setField(lib, name, fn);
   }
 
   private static final long T0 = System.currentTimeMillis();
