@@ -18,13 +18,13 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-local setmetatable, pairs, ipairs = setmetatable, pairs, ipairs
+local setmetatable, pairs, ipairs, error = setmetatable, pairs, ipairs, error
 local getExports, loadLuaExport, loadINIExport = _princess.getExports, _princess.loadLuaExport, _princess.loadINIExport
 
-module = {}
+exports = {}
 
-module.getExportList = _princess.getExportList
-module.loadLua = loadLuaExport
+exports.getExportList = _princess.getExportList
+exports.loadLua = loadLuaExport
 
 local function wrapSection(section)
     -- We wrap the methods in a metadata so they don't show up in pairs() iteration
@@ -53,28 +53,31 @@ local function loadINI(path)
     end
     return ini
 end
-module.loadINI = loadINI
+exports.loadINI = loadINI
 
-function module.getExports(type)
-    local list = getExports(type)
+local function getExportsFn(allowSystem)
+    return function(type, system)
+        local list = getExports(type, allowSystem and system)
 
-    for _, export in ipairs(list) do
-        local mt = wrapSection(export.metadata)
-        for k, v in pairs(mt) do
-            export[k] = v
+        for _, export in ipairs(list) do
+            local path = export.path
+
+            local mt = wrapSection(export.metadata)
+            for k, v in pairs(mt) do
+                export[k] = v
+            end
+
+            function export.loadLua()
+                return loadLuaExport(path)
+            end
+            function export.loadINI()
+                return loadINI(path)
+            end
         end
 
-        function export.loadLua()
-            return loadLuaExport(export.path)
-        end
-        function export.loadINI()
-            return loadINI(path)
-        end
+        return list
     end
-
-    return list
 end
 
-function require(s)
-    return loadLuaExport(s:gsub("%.", "/")..".lua")
-end
+_princess.systemGetExports = getExportsFn(true)
+exports.getExports = getExportsFn(false)

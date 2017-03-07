@@ -33,26 +33,32 @@ private final case class ExportLib(context: LuaContext, packages: PackageList) {
   def open(L: LuaState) = {
     val princess = L.newLib("_princess")
 
+    L.rawSet(princess, "gameId", packages.gameId)
+
+    L.register(princess, "hasExport", (s: String) => packages.resolve(s).isDefined)
     L.register(princess, "loadLuaExport", (s: String) => context.getLuaExport(s))
     L.register(princess, "loadINIExport", (s: String) => INI.loadRaw(packages.forceResolve(s)))
     L.register(princess, "getExportList", () => packages.getExportKeys.toSeq)
-    L.register(princess, "getExports", (s: String) => packages.getExports(s).map{ e =>
-      val t = L.newTable()
-      L.rawSet(t, "path", e.path)
-      L.rawSet(t, "types", e.types)
-      L.rawSet(t, "metadata", e.metadata)
-      t
-    })
+    L.register(princess, "getExports", (s: String, system: Boolean) =>
+      (if(system) packages.getSystemExports(s) else packages.getExports(s)).map{ e =>
+        val t = L.newTable()
+        L.rawSet(t, "path", e.path)
+        L.rawSet(t, "types", e.types)
+        L.rawSet(t, "metadata", e.metadata)
+        t
+      })
   }
 }
 
-final class LuaContext(packages: PackageList, logger: Logger) {
+final class LuaContext(packages: PackageList, loggerP: Logger) {
   val L = LuaState.makeSafeContext()
-  CoreLib(logger).open(L)
+  CoreLib(loggerP).open(L)
   ComponentLib(packages).open(L)
   ExportLib(this, packages).open(L)
   TemplateLib.open(L)
   TextLib(packages).open(L)
+
+  private val logger = loggerP.bind("LuaContext")
 
   private def loadLuaPredef(path: String) = TemplateException.context(s"loading Lua predef $path") {
     logger.trace(s"Loading predef $path")

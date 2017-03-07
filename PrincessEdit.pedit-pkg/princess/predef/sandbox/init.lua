@@ -25,13 +25,15 @@ if not _princess then
     error("_princess library not found")
 end
 
-local log, TRACE = _princess.log, _princess.LogLevel.TRACE
+local log, TRACE, where = _princess.log, _princess.LogLevel.TRACE, _princess.where
 
 -----------------------------------
 -- Remove non-whitelisted functions
 
-local function trace(...)
-    return log(TRACE, ...)
+local function trace(str)
+    local loc = where(1)
+    if loc then loc = "script "..loc end
+    return log(TRACE, loc, function() return str end)
 end
 
 local function set(t)

@@ -18,13 +18,26 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-local LogLevel, log_fn = _princess.LogLevel, _princess.log
+local LogLevel, log_fn, tostring, where, concat, gameId =
+    _princess.LogLevel, _princess.log, tostring, _princess.where, table.concat, _princess.gameId
 
 log = {}
 
-for k, v in pairs(LogLevel) do
-    k = k:lower()
-    log[k] = function(...) return log_fn(v, ...) end
+for name, logLevel in pairs(LogLevel) do
+    name = name:lower()
+    log[name] = function(...)
+        local args = {... }
+        local loc = where(1)
+        if loc then loc = "script "..loc end
+        return log_fn(logLevel, where(1), function()
+            local len = #args
+            for i=1,len do
+                args[i] = tostring(args[i])
+            end
+            return concat(args, "\t", 1, len)
+        end)
+    end
 end
 
 print = log.info
+_G.gameId = gameId

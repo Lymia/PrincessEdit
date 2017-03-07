@@ -29,8 +29,8 @@ import moe.lymia.princess.util.INI
 import scala.collection.mutable
 
 object StaticGameIDs {
-  val System    = "princess/system_package"
-  val HasGameID = "hasgameid"
+  val System    = "princess/system-package"
+  val HasGameID = "has-gameid"
 }
 
 object StaticExportIDs {
@@ -44,7 +44,7 @@ object GameID {
   def loadGameID(path: Path) = TemplateException.context(s"loading GameID from $path") {
     val ini = INI.load(path)
     val section = ini.getSection("game")
-    GameID(section.getSingle("name"), section.getSingle("displayName"), section.getSingleOption("icon"))
+    GameID(section.getSingle("name"), section.getSingle("display-name"), section.getSingleOption("icon"))
   }
   def loadGameIDs(resolver: PackageResolver) = {
     val packages = resolver.loadGameId(StaticGameIDs.HasGameID)

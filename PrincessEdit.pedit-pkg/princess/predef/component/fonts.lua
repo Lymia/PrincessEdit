@@ -18,8 +18,8 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-local ipairs, warn = ipairs, log.warn
-local loadFont, getExports = _princess.loadFont, module.getExports
+local ipairs, warn, trace = ipairs, log.warn, log.trace
+local loadFont, getExports = _princess.loadFont, exports.getExports
 
 local fontCache = {}
 local fontList = {}
@@ -31,8 +31,9 @@ local function canonicalFontName(family, bold, italic)
 end
 local function registerFont(name, fontLoader)
     if fontList[name] then
-        warn("Font "..name.." already exists!")
+        warn("Font '"..name.."' already exists!")
     else
+        trace("Found font '"..name.."'")
         fontList[name] = fontLoader
     end
 end

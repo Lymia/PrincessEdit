@@ -42,18 +42,27 @@ object LogLevel {
 }
 
 trait Logger {
-  def log(level: LogLevel, message: => String)
+  def log(level: LogLevel, source: Option[String], message: => String)
+  def log(level: LogLevel, message: => String): Unit = log(level, None, message)
 
-  def trace(message: => String) = log(LogLevel.TRACE, message)
-  def debug(message: => String) = log(LogLevel.DEBUG, message)
-  def info (message: => String) = log(LogLevel.INFO , message)
-  def warn (message: => String) = log(LogLevel.WARN , message)
-  def error(message: => String) = log(LogLevel.ERROR, message)
+  final def trace(message: => String) = log(LogLevel.TRACE, message)
+  final def debug(message: => String) = log(LogLevel.DEBUG, message)
+  final def info (message: => String) = log(LogLevel.INFO , message)
+  final def warn (message: => String) = log(LogLevel.WARN , message)
+  final def error(message: => String) = log(LogLevel.ERROR, message)
+
+  def bind(name: String): Logger = new BoundLogger(this, name)
+}
+private class BoundLogger(parent: Logger, name: String) extends Logger {
+  override def log(level: LogLevel, source: Option[String], message: => String): Unit =
+    parent.log(level, Some(source.getOrElse(name)), message)
+  override def bind(name: String): Logger = new BoundLogger(parent, name)
 }
 
 case object DefaultLogger extends Logger {
   private val dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
   dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"))
-  override def log(level: LogLevel, message: => String): Unit =
-    println("%s [%-5s] %s".format(dateFormat.format(new Date()), level.toString, message))
+  override def log(level: LogLevel, source: Option[String], message: => String): Unit =
+    println("%s [%-5s - %s] %s".format(
+      dateFormat.format(new Date()), level.toString, source.getOrElse("<unknown>"), message))
 }

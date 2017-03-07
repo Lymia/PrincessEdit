@@ -33,6 +33,11 @@ final case class CoreLib(logger: Logger) {
   def open(L: LuaState) = {
     val princess = L.newLib("_princess")
 
+    L.register(princess, "where", (L: LuaState, i: Int) => {
+      val where = L.where(i + 1)
+      if(where.isEmpty) None else Some(where.replace(": ", ""))
+    })
+
     L.register(princess, "trimString", (s: String) => s.trim)
     L.register(princess, "splitString", (s: String, on: String) => s.split(on).toSeq)
 
@@ -45,20 +50,7 @@ final case class CoreLib(logger: Logger) {
     L.rawSet(levels, "WARN" , LogLevel.WARN )
     L.rawSet(levels, "ERROR", LogLevel.ERROR)
 
-    val tostringFn = L.getGlobal("tostring").as[LuaClosure]
-    def tostring(L: LuaState, o: LuaObject) = L.call(tostringFn, 1, o).head.as[String]
-
-    def log(L: LuaState, level: LogLevel): Unit = {
-      logger.log(level, {
-        val buffer = new StringBuilder()
-        for(i <- 2 to L.getTop) {
-          val str = tostring(L, L.value(i))
-          if(i != 2) buffer.append("\t")
-          buffer.append(str)
-        }
-        buffer.toString()
-      })
-    }
-    L.register(princess, "log", log _)
+    L.register(princess, "log", (L: LuaState, level: LogLevel, source: Option[String], fn: LuaClosure) =>
+      logger.log(level, source, L.call(fn, 1).head.as[String]))
   }
 }
