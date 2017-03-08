@@ -53,13 +53,13 @@ trait Template {
 class LuaTemplate(name: String, packages: PackageList, context: LuaContext, export: LuaObject,
                   cache: SizedCache) extends Template {
   override protected def doRender(cardData: LuaObject, res: ResourceLoader) =
-    TemplateException.context(s"rendering template $name") {
+    EditorException.context(s"rendering template $name") {
       val L = context.L.newThread()
       val layoutFn    = L.getTable(export, "renderCard").as[LuaClosure]
 
       val table = L.pcall(layoutFn, 1, cardData) match {
         case Left(Seq(x)) => x.as[LuaTable]
-        case Right(e) => throw TemplateException(e)
+        case Right(e) => throw EditorException(e)
       }
 
       val reference = L.getTable(table, "component").as[ComponentReference]

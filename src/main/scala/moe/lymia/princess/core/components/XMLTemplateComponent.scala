@@ -51,12 +51,12 @@ object XMLTemplateData {
       case "number" | "float" | "double"       => ExpectedType.Number
       case "gensym" | "unique-id" | "uniqueid" => ExpectedType.GenSym
       case "definition"                        => ExpectedType.Definition
-      case x => throw TemplateException(s"unknown parameter type '$x'")
+      case x => throw EditorException(s"unknown parameter type '$x'")
     })
   def loadTemplate(data: NodeSeq): XMLTemplateData =
     XMLTemplateData((data \ "param").map(loadParam).toMap, (data \ "elems").flatMap(_.child))
   def loadTemplate(packages: PackageList, name: String): XMLTemplateData =
-    TemplateException.context(s"while loading xml template '$name'") {
+    EditorException.context(s"while loading xml template '$name'") {
       loadTemplate(XML.load(Files.newInputStream(packages.forceResolve(name))))
     }
 }
@@ -82,7 +82,7 @@ class XMLTemplateComponent(protected val boundsParam: Bounds, data: XMLTemplateD
             manager.resources.loadDefinition(s)
           case _ => s
         }
-        case None    => throw TemplateException(s"field '${x.group(1)}' not set")
+        case None    => throw EditorException(s"field '${x.group(1)}' not set")
       }
     })
   private def processMetadata(manager: ComponentRenderManager, m: MetaData): MetaData =
@@ -95,7 +95,7 @@ class XMLTemplateComponent(protected val boundsParam: Bounds, data: XMLTemplateD
     case e: Elem if e.label == "component" =>
       val componentRef = manager.renderComponent(componentMap.get((e \ "@id").text) match {
         case Some(c) => c
-        case None    => throw TemplateException(s"field '${(e \ "@id").text}' not set")
+        case None    => throw EditorException(s"field '${(e \ "@id").text}' not set")
       })
 
       val fill = (e \ "@fillComponent").nonEmpty

@@ -49,7 +49,7 @@ class LayoutComponent(private var L_main: LuaState, private var allowOverflow: B
 
     val componentsToSize = L.pcall(prerenderHandler, 1) match {
       case Left (x) => x.head.as[Seq[ComponentReference]]
-      case Right(e) => throw TemplateException(e)
+      case Right(e) => throw EditorException(e)
     }
     val prerenderData = componentsToSize.map(x => x -> {
       val table = L.newTable()
@@ -62,7 +62,7 @@ class LayoutComponent(private var L_main: LuaState, private var allowOverflow: B
 
     val retTable = L.pcall(layoutHandler, 1, prerenderData) match {
       case Left (x) => x.head.as[LuaTable]
-      case Right(e) => throw TemplateException(e)
+      case Right(e) => throw EditorException(e)
     }
 
     val components = L.rawGet(retTable, "components").as[LuaTable]

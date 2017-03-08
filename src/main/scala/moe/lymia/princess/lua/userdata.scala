@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.lua
 
-import moe.lymia.princess.core.TemplateException
+import moe.lymia.princess.core.EditorException$
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -60,7 +60,7 @@ trait LuaLookup extends HasLuaMethods {
   protected def method(name: String)(fn: ScalaLuaClosure) = luaMethod(name)(new LuaClosure(fn.fn))
 
   protected def deleteProperty(name: String): Unit = {
-    if(!properties.contains(name)) throw TemplateException(s"property '$name' does not exist")
+    if(!properties.contains(name)) throw EditorException(s"property '$name' does not exist")
     properties.remove(name)
   }
 

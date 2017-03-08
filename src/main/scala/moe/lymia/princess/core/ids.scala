@@ -36,12 +36,12 @@ object StaticGameIDs {
 object StaticExportIDs {
   val GameID = "gameid"
   def Main(gameId: String) = s"$gameId/main"
-  val Predef = "princess/predef"
+  def Predef(t: String) = s"princess/predef/$t"
 }
 
 case class GameID(name: String, displayName: String, iconPath: Option[String])
 object GameID {
-  def loadGameID(path: Path) = TemplateException.context(s"loading GameID from $path") {
+  def loadGameID(path: Path) = EditorException.context(s"loading GameID from $path") {
     val ini = INI.load(path)
     val section = ini.getSection("game")
     GameID(section.getSingle("name"), section.getSingle("display-name"), section.getSingleOption("icon"))
@@ -52,7 +52,7 @@ object GameID {
 
     val idMap = new mutable.HashMap[String, GameID]
     for(id <- gameIDExports.map(loadGameID)) {
-      if(idMap.contains(id.name)) throw TemplateException(s"Duplicate GameID '${id.name}' found")
+      if(idMap.contains(id.name)) throw EditorException(s"Duplicate GameID '${id.name}' found")
       idMap.put(id.name, id)
     }
     idMap.toMap

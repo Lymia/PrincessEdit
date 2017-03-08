@@ -35,7 +35,7 @@ private final case class ExportLib(context: LuaContext, packages: PackageList) {
 
     L.rawSet(princess, "gameId", packages.gameId)
 
-    L.register(princess, "hasExport", (s: String) => packages.resolve(s).isDefined)
+    L.register(princess, "hasExport", (s: String) => pack)
     L.register(princess, "loadLuaExport", (s: String) => context.getLuaExport(s))
     L.register(princess, "loadINIExport", (s: String) => INI.loadRaw(packages.forceResolve(s)))
     L.register(princess, "getExportList", () => packages.getExportKeys.toSeq)
@@ -50,31 +50,29 @@ private final case class ExportLib(context: LuaContext, packages: PackageList) {
   }
 }
 
-final class LuaContext(packages: PackageList, loggerP: Logger) {
+final class LuaContext(packages: PackageList, logger: Logger) {
   val L = LuaState.makeSafeContext()
-  CoreLib(loggerP).open(L)
+  CoreLib(logger).open(L)
   ComponentLib(packages).open(L)
   ExportLib(this, packages).open(L)
   TemplateLib.open(L)
   TextLib(packages).open(L)
 
-  private val logger = loggerP.bind("LuaContext")
-
-  private def loadLuaPredef(path: String) = TemplateException.context(s"loading Lua predef $path") {
+  private def loadLuaPredef(path: String) = EditorException.context(s"loading Lua predef $path") {
     logger.trace(s"Loading predef $path")
 
     val fullPath = packages.forceResolve(path)
 
     val chunk = L.loadString(IOUtils.readFileAsString(fullPath), s"@$path") match {
       case Left (c) => c
-      case Right(e) => throw TemplateException(e)
+      case Right(e) => throw EditorException(e)
     }
-    L.pcall(chunk, 0).right.foreach(e => throw TemplateException(e))
+    L.pcall(chunk, 0).right.foreach(e => throw EditorException(e))
   }
   private def loadPredefs(exportType: String) =
     for(e <- packages.getSystemExports(exportType).sortBy(_.metadata.get("priority").map(_.head.toInt).getOrElse(0)))
       loadLuaPredef(e.path)
-  loadPredefs(StaticExportIDs.Predef)
+  loadPredefs(StaticExportIDs.Predef("core"))
 
   private case class TableWrapper(name: String, contents: Map[String, Any])
   private implicit object LuaTableWrapper extends LuaUserdataType[TableWrapper] {
@@ -113,7 +111,7 @@ final class LuaContext(packages: PackageList, loggerP: Logger) {
     }
   }
 
-  private def loadLuaExport(path: String): LuaObject = TemplateException.context(s"loading Lua export $path") {
+  private def loadLuaExport(path: String): LuaObject = EditorException.context(s"loading Lua export $path") {
     logger.trace(s"Loading export $path")
 
     val fullPath = packages.forceResolve(path)
@@ -144,10 +142,10 @@ final class LuaContext(packages: PackageList, loggerP: Logger) {
 
     val chunk = L.loadString(IOUtils.readFileAsString(fullPath), s"@$path") match {
       case Left (c) => c
-      case Right(e) => throw TemplateException(e)
+      case Right(e) => throw EditorException(e)
     }
     L.setFenv(chunk, _G)
-    L.pcall(chunk, 1).fold(identity, e => throw TemplateException(e)).head.as[Option[Any]] match {
+    L.pcall(chunk, 1).fold(identity, e => throw EditorException(e)).head.as[Option[Any]] match {
       case Some(x) => x
       case None    => TableReturn(path, exports)
     }

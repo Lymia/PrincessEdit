@@ -68,7 +68,7 @@ class SimpleFormattedTextComponent(private var text: FormattedString, fontSizePa
     var str: AttributedString = null
     text.execute(manager, fontSize) {
       case FormatInstruction.RenderString(s) => str = s
-      case _ => throw TemplateException("invalid render string in SimpleFormattedText object")
+      case _ => throw EditorException("invalid render string in SimpleFormattedText object")
     }
     new TextLayout(str.getIterator, graphics.getFontRenderContext)
   }

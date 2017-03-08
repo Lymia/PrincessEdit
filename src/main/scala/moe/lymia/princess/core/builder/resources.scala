@@ -127,7 +127,7 @@ final class ResourceManager(builder: SVGBuilder, settings: RenderSettings, cache
   val imageResourceCache = new mutable.HashMap[String, Option[SVGDefinitionReference]]
   def loadImageResource(name: String, bounds: Bounds) =
     imageResourceCache.getOrElseUpdate(stripExtension(name), tryFindImageResource(stripExtension(name), bounds))
-                      .getOrElse(throw TemplateException(s"image '$name' not found"))
+                      .getOrElse(throw EditorException(s"image '$name' not found"))
 
   private def tryFindDefinition(name: String) =
     packages.resolve(name).map(path =>
@@ -135,7 +135,7 @@ final class ResourceManager(builder: SVGBuilder, settings: RenderSettings, cache
   val definitionCache = new mutable.HashMap[String, Option[String]]
   def loadDefinition(name: String) =
     definitionCache.getOrElseUpdate(name, tryFindDefinition(name))
-                   .getOrElse(throw TemplateException(s"definition '$name' not found"))
+                   .getOrElse(throw EditorException(s"definition '$name' not found"))
 }
 object ResourceManager {
   private val imageFormats = Seq(

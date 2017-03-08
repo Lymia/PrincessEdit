@@ -48,7 +48,7 @@ object DepVersion {
       case _ => sys.error("too many '-'")
     }
   } catch {
-    case e: Exception => throw TemplateException(s"Invalid dependency version '$s'", e)
+    case e: Exception => throw EditorException(s"Invalid dependency version '$s'", e)
   }
 }
 
@@ -63,7 +63,7 @@ object Version {
     val Array(major, minor, patch) = s.split("\\.")
     Version(major.toInt, minor.toInt, patch.toInt)
   } catch {
-    case e: Exception => throw TemplateException(s"Invalid version number '$s'", e)
+    case e: Exception => throw EditorException(s"Invalid version number '$s'", e)
   }
 }
 
@@ -79,7 +79,7 @@ object Package {
   private def loadPackageFromPath(path: Path) = {
     val manifestPath = path.resolve("package.ini")
     if(!Files.exists(manifestPath) || !Files.isRegularFile(manifestPath))
-      throw TemplateException(s"No manifest found in package")
+      throw EditorException(s"No manifest found in package")
     val manifest = INI.load(manifestPath)
 
     val exportMap = new mutable.HashMap[String, mutable.ArrayBuffer[Export]]
@@ -100,7 +100,7 @@ object Package {
     val packageSection = manifest.getSection("package")
     val dependenciesSection = manifest.getSectionOptional("dependencies").underlying
 
-    if(dependenciesSection.exists(_._2.length != 1)) throw TemplateException("Dependency declared twice")
+    if(dependenciesSection.exists(_._2.length != 1)) throw EditorException("Dependency declared twice")
 
     Package(packageSection.getSingle("name"), Version.parse(packageSection.getSingle("version")),
             packageSection.getMultiOptional("gameId").toSet,
@@ -110,7 +110,7 @@ object Package {
   }
 
   // TODO: Consider allowing loading multiple packages from one .zip file
-  private def loadPackageFromZip(path: Path) = TemplateException.context(s"loading package from zip $path") {
+  private def loadPackageFromZip(path: Path) = EditorException.context(s"loading package from zip $path") {
     val fs = FileSystems.newFileSystem(path, getClass.getClassLoader)
     val root = fs.getPath("/")
     val fileList = IOUtils.list(root)
@@ -118,7 +118,7 @@ object Package {
                            fileList.length == 1 && Files.isDirectory(fileList.head)) fileList.head
                         else root)
   }
-  private def loadPackageFromDirectory(path: Path) = TemplateException.context(s"loading package from $path") {
+  private def loadPackageFromDirectory(path: Path) = EditorException.context(s"loading package from $path") {
     loadPackageFromPath(path)
   }
   def loadPackage(path: Path) =
@@ -134,7 +134,7 @@ case class PackageList(gameId: String, packages: Seq[Package]) {
     key -> packages.flatMap(pkg => {
       val exports = pkg.exports.getOrElse(key, Seq())
       exports.foreach(ex => {
-        if(existingExports.contains(ex.path)) throw TemplateException(s"Duplicate export '${ex.path}'")
+        if(existingExports.contains(ex.path)) throw EditorException(s"Duplicate export '${ex.path}'")
         existingExports.add(ex.path)
       })
       exports.map(pkg -> _)
@@ -155,7 +155,7 @@ case class PackageList(gameId: String, packages: Seq[Package]) {
     resolveCache.cached(path, resolveInPath(systemPackages, path).orElse(resolveInPath(userPackages, path)))
 
   def resolve(path: String) = internalResolve(path).map(_._2)
-  def forceResolve(path: String) = resolve(path).getOrElse(throw TemplateException(s"File '$path' not found."))
+  def forceResolve(path: String) = resolve(path).getOrElse(throw EditorException(s"File '$path' not found."))
 }
 case class PackageResolver(packages: Map[String, Package]) {
   def getPackageListForGameId(gameId: String) =
@@ -175,7 +175,7 @@ case class PackageResolver(packages: Map[String, Package]) {
     while(requiredDependencies.nonEmpty) {
       val depName = requiredDependencies.dequeue()
       packages.get(depName) match {
-        case None => throw TemplateException(s"Could not resolve dependency $depName.")
+        case None => throw EditorException(s"Could not resolve dependency $depName.")
         case Some(pkg) =>
           loadedPackages.append(pkg)
           for(dep <- pkg.dependencies) {
@@ -184,9 +184,9 @@ case class PackageResolver(packages: Map[String, Package]) {
               handledDependencies.add(dep.name)
             }
             packageVersions.get(dep.name) match {
-              case None => throw TemplateException(s"Could not resolve dependency $depName.")
+              case None => throw EditorException(s"Could not resolve dependency $depName.")
               case Some(version) => if(!(version >= dep.version))
-                throw TemplateException(s"$depName requires package $dep, but version $version is installed.")
+                throw EditorException(s"$depName requires package $dep, but version $version is installed.")
             }
           }
       }
@@ -203,7 +203,7 @@ case class PackageResolver(packages: Map[String, Package]) {
       val (resolved, unresolved) =
         unresolvedPackages.partition(_.dependencies.forall(x => loadedDependencies.contains(x.name)))
       if(resolved.isEmpty)
-        throw TemplateException(s"Dependency cycle involved in packages: [${unresolved.map(_.name).mkString(", ")}]")
+        throw EditorException(s"Dependency cycle involved in packages: [${unresolved.map(_.name).mkString(", ")}]")
       unresolvedPackages = unresolved
       loadOrder.append(resolved : _*)
       for(pkg <- resolved) loadedDependencies.add(pkg.name)
@@ -224,7 +224,7 @@ object PackageResolver {
     val map = new mutable.HashMap[String, Package]
     for(pkg <- packages) {
       if(map.contains(pkg.name))
-        throw TemplateException(s"Duplicate package ${pkg.name} (In ${pkg.rootPath} and ${map(pkg.name).rootPath})")
+        throw EditorException(s"Duplicate package ${pkg.name} (In ${pkg.rootPath} and ${map(pkg.name).rootPath})")
       map.put(pkg.name, pkg)
     }
     PackageResolver(map.toMap)

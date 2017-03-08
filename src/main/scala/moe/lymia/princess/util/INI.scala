@@ -24,7 +24,7 @@ package moe.lymia.princess.util
 
 import java.nio.file.Path
 
-import moe.lymia.princess.core.TemplateException
+import moe.lymia.princess.core.EditorException$
 import org.ini4j.Ini
 
 import scala.collection.JavaConverters._
@@ -32,22 +32,22 @@ import scala.collection.JavaConverters._
 class INISection(section: String, val underlying: Map[String, Seq[String]]) {
   def getMultiOptional(key: String) = underlying.getOrElse(key, Seq())
   def getMulti(key: String) = underlying.get(key) match {
-    case None => throw TemplateException(s"No value '$key' found in section '$section'")
+    case None => throw EditorException(s"No value '$key' found in section '$section'")
     case Some(v) => v
   }
   def getSingleOption(key: String) = underlying.get(key) match {
     case None => None
     case Some(Seq(v)) => Some(v)
-    case _ => throw TemplateException(s"More than one value '$key' in section '$section'")
+    case _ => throw EditorException(s"More than one value '$key' in section '$section'")
   }
   def getSingle(key: String) = getMulti(key) match {
     case Seq(v) => v
-    case _ => throw TemplateException(s"More than one value '$key' in section '$section'")
+    case _ => throw EditorException(s"More than one value '$key' in section '$section'")
   }
 }
 
 class INI(sections: Map[String, INISection]) extends Iterable[(String, INISection)] {
-  def getSection(name: String) = sections.getOrElse(name, throw TemplateException(s"No section '$name' found"))
+  def getSection(name: String) = sections.getOrElse(name, throw EditorException(s"No section '$name' found"))
   def getSectionOptional(name: String) = sections.getOrElse(name, new INISection(name, Map()))
   override def iterator: Iterator[(String, INISection)] = sections.iterator
 }
@@ -61,7 +61,7 @@ object INI {
         key -> x.getAll(key, classOf[Array[String]]).toSeq).toMap).filter(_._2.nonEmpty).toMap
   } catch {
     case e: Exception =>
-      throw TemplateException(s"Failed to parse .ini: ${e.getClass.getClass}: ${e.getMessage}")
+      throw EditorException(s"Failed to parse .ini: ${e.getClass.getClass}: ${e.getMessage}")
   }
 
   def load(path: Path) = new INI(loadRaw(path).map(x => x._1 -> new INISection(x._1, x._2)))

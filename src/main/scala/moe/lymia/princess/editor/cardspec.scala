@@ -64,14 +64,12 @@ class ActiveCardSpec private (t: (Seq[Rx[Any]], Map[String, Rx[Any]])) {
   def this(L: LuaState, data: CardData, spec: CardSpec) = this(ActiveCardSpec.loadSpec(L, data, spec))
 
   private val (rxs, fields) = t
-  private val objects = new mutable.HashMap[String, Any]
-  private val objectUpdateRxs = for((n, rx) <- fields) yield Rx.unsafe { objects.put(n, rx()) }
+  val objects = Rx { fields.mapValues(_()) }
 
-  def get(s: String): Any = objects.getOrElse(s, Lua.NIL)
   def kill() = {
     for(rx <- rxs) rx.kill()
     for((_, rx) <- fields) rx.kill()
-    for(rx <- objectUpdateRxs) rx.kill()
+    objects.kill()
   }
 }
 object ActiveCardSpec {

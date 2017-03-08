@@ -76,7 +76,7 @@ final case class DirectComponentReference(component: Component) extends Componen
 }
 final case class IndirectComponentReference(manager: ComponentManager, name: String) extends ComponentReference {
   def component =
-    manager.getComponent(name).getOrElse(throw TemplateException(s"No component $name in component manager $manager"))
+    manager.getComponent(name).getOrElse(throw EditorException(s"No component $name in component manager $manager"))
 }
 
 final class ComponentRenderManager(val builder: SVGBuilder, val resources: ResourceManager) {
@@ -84,10 +84,10 @@ final class ComponentRenderManager(val builder: SVGBuilder, val resources: Resou
 
   private val currentlyRendering = new mutable.HashMap[Component, String]
   private val renderCache = new mutable.HashMap[Component, SVGDefinitionReference]
-  def renderComponent(ref: ComponentReference) = TemplateException.context(s"rendering ${ref.name}") {
+  def renderComponent(ref: ComponentReference) = EditorException.context(s"rendering ${ref.name}") {
     val component = ref.component
     if(currentlyRendering.contains(component))
-      throw TemplateException(s"Attempted to render component ${ref.name} while it is already rendering. "+
+      throw EditorException(s"Attempted to render component ${ref.name} while it is already rendering. "+
                               s"Components involved: [${currentlyRendering.values.mkString(", ")}]")
     renderCache.getOrElseUpdate(component, try {
       currentlyRendering.put(component, ref.name)
@@ -106,5 +106,5 @@ final class ComponentManager {
 
   def getComponentReference(name: String): ComponentReference =
     if(componentMap.contains(name)) IndirectComponentReference(this, name)
-    else throw TemplateException(s"No component $name in component manager $this")
+    else throw EditorException(s"No component $name in component manager $this")
 }

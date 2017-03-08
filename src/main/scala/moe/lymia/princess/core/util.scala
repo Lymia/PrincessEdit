@@ -49,19 +49,19 @@ object Bounds {
                                                  rectangle.getMaxX, rectangle.getMaxY)
 }
 
-final case class TemplateException(message: String, ex: Throwable = null, context: Seq[String] = Seq(),
-                                   suppressTrace: Boolean = false, noCause: Boolean = false)
+final case class EditorException(message: String, ex: Throwable = null, context: Seq[String] = Seq(),
+                                 suppressTrace: Boolean = false, noCause: Boolean = false)
   extends RuntimeException((context :+ message).mkString(": "), if(noCause) null else ex, suppressTrace, true)
   with    LuaErrorMarker {
 
   if(ex != null && suppressTrace) setStackTrace(ex.getStackTrace)
 }
-object TemplateException {
+object EditorException {
   def context[T](contextString: String)(f: => T) = try {
     f
   } catch {
-    case ex @ TemplateException(msg, _, context, _, _) =>
-      throw TemplateException(msg, ex, s"While $contextString" +: context, suppressTrace = true, noCause = true)
+    case ex @ EditorException(msg, _, context, _, _) =>
+      throw EditorException(msg, ex, s"While $contextString" +: context, suppressTrace = true, noCause = true)
   }
 }
 

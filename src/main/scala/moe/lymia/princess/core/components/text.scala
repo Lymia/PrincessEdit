@@ -26,7 +26,7 @@ import java.awt.font.TextAttribute
 import java.awt.{Color, Font}
 import java.text.{AttributedCharacterIterator, AttributedString}
 
-import moe.lymia.princess.core.TemplateException
+import moe.lymia.princess.core.EditorException$
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -72,7 +72,7 @@ class FormattedStringBuffer {
 
   def append(s: String, attributes: TextAttributes): Unit = lineBuffer.append((s,attributes))
   def append(s: String): Unit = {
-    if(font eq null) throw TemplateException("No font set.")
+    if(font eq null) throw EditorException("No font set.")
     append(s, TextAttributes(font, fontRelativeSize, color))
   }
   private def outputBuffer() = if(lineBuffer.nonEmpty) {

@@ -44,8 +44,8 @@ final class GameManager(packages: PackageList, logger: Logger = DefaultLogger) {
 
   lazy val main = {
     val ep = getExports(StaticExportIDs.Main(gameId))
-    if(ep.isEmpty) throw TemplateException(s"GameID '$gameId' has no entry point")
-    else if(ep.length > 1) throw TemplateException(s"GameID '$gameId' has more than one entry point")
+    if(ep.isEmpty) throw EditorException(s"GameID '$gameId' has no entry point")
+    else if(ep.length > 1) throw EditorException(s"GameID '$gameId' has more than one entry point")
     else {
       val export = ep.head
       new LuaTemplate(export.path, packages, lua, getLuaExport(export.path), cache)

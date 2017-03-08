@@ -76,7 +76,7 @@ final case class CardField[T](t: CardFieldType[T], value: T) {
 }
 object CardField {
   val Nil = CardField(CardFieldType.Nil, ())
-  def deserialize(v: JsValue) = {
+  def deserialize(v: JsValue): CardField[_] = {
     val typeName = (v \ "type").as[String]
     CardFieldType.typeMap.get(typeName) match {
       case Some(t) =>
@@ -92,45 +92,36 @@ final case class EditorField[T : CardFieldType](id: UUID) {
 }
 
 sealed trait CardDataSection {
-  val notifier: Rx[Unit]
+  val fields: Rx[Map[String, CardField[_]]]
   def getField(name: String, default: => CardField[_] = sys.error("field does not already exist")): Rx[CardField[_]]
 }
 final class CardData {
-  val notifier = Rx.unsafe { () }
-
   private class CardDataSectionImpl[K : Reads : Writes] {
-    val notifier = Rx.unsafe { () }
-    private val superNotifier = {
-      import Ctx.Owner.Unsafe._
-      CardData.this.notifier.flatMap(_ => notifier)
-    }
+    private val fieldsVar = new mutable.HashMap[K, Var[CardField[_]]]
 
-    private val fields    = new mutable.HashMap[K, Var[CardField[_]]]
-    private val derivedRx = new mutable.ArrayBuffer[Rx[_]]
-
-    private def newVar(default: CardField[_]) = {
-      import Ctx.Owner.Unsafe._
-      val rx = Var[CardField[_]](default)
-      derivedRx.append(rx.flatMap(_ => notifier))
-      rx
-    }
+    def toMap = fieldsVar.mapValues(_.now).toMap
+    val fields = Rx.unsafe { fieldsVar.mapValues(_()) }
 
     def init(js: JsValue) = for(t <- js.as[Seq[JsValue]]) {
       val k = (t \ "key").as[K]
       val v = CardField.deserialize((t \ "value").as[JsValue])
-      this.fields.put(k, newVar(v))
+      this.fieldsVar.put(k, Var(v))
+      fields.recalc()
     }
-    def getField(name: K, default: => CardField[_] = CardField.Nil) =
-      fields.getOrElseUpdate(name, newVar(default))
-    def toMap = fields.mapValues(_.now).toMap
+    def getField(name: K, default: => CardField[_] = CardField.Nil) = fieldsVar.get(name) match {
+      case Some(x) => x
+      case None =>
+        val v = Var(default)
+        fieldsVar.put(name, v)
+        fields.recalc()
+        v
+    }
 
-    def serialize = fields.map(x => Json.obj("key" -> x._1, "value" -> x._2.now.serialize))
+    def serialize = fieldsVar.map(x => Json.obj("key" -> x._1, "value" -> x._2.now.serialize))
 
     def kill(): Unit = {
-      for((_, rx) <- fields) rx.kill()
-      for(rx <- derivedRx) rx.kill()
-      notifier.kill()
-      superNotifier.kill()
+      for((_, rx) <- fieldsVar) rx.kill()
+      fields.kill()
     }
   }
 
@@ -159,7 +150,6 @@ final class CardData {
   def cardData = cardFields  : CardDataSection
 
   def kill(): Unit = {
-    notifier.kill()
     styleFields.kill()
     cardFields.kill()
   }
