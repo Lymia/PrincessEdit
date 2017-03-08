@@ -64,7 +64,7 @@ class ActiveCardSpec private (t: (Seq[Rx[Any]], Map[String, Rx[Any]])) {
   def this(L: LuaState, data: CardData, spec: CardSpec) = this(ActiveCardSpec.loadSpec(L, data, spec))
 
   private val (rxs, fields) = t
-  val objects = Rx { fields.mapValues(_()) }
+  val objects = Rx.unsafe { fields.mapValues(_()) }
 
   def kill() = {
     for(rx <- rxs) rx.kill()

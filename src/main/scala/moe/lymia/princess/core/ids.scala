@@ -24,8 +24,6 @@ package moe.lymia.princess.core
 
 import java.nio.file.Path
 
-import moe.lymia.princess.util.INI
-
 import scala.collection.mutable
 
 object StaticGameIDs {

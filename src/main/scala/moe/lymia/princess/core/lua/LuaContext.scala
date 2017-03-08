@@ -35,7 +35,7 @@ private final case class ExportLib(context: LuaContext, packages: PackageList) {
 
     L.rawSet(princess, "gameId", packages.gameId)
 
-    L.register(princess, "hasExport", (s: String) => pack)
+    L.register(princess, "hasExport", (s: String) => packages.resolve(s).isDefined)
     L.register(princess, "loadLuaExport", (s: String) => context.getLuaExport(s))
     L.register(princess, "loadINIExport", (s: String) => INI.loadRaw(packages.forceResolve(s)))
     L.register(princess, "getExportList", () => packages.getExportKeys.toSeq)

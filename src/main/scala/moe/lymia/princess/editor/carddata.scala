@@ -66,17 +66,19 @@ trait CardFieldImplicits {
   implicit val CardFieldTypeBoolean = CardFieldType.Boolean
 }
 
-final case class CardField[T](t: CardFieldType[T], value: T) {
+final case class CardField private (t: CardFieldType[_], value: Any, private val disambiguateConstructors: Boolean) {
   def serialize: JsValue = Json.obj(
     "type"  -> t.typeName,
-    "value" -> t.serialize(value)
+    "value" -> t.asInstanceOf[CardFieldType[Any]].serialize(value)
   )
 
-  def toLua(L: LuaState) = t.toLua(L, value)
+  def toLua(L: LuaState) = t.asInstanceOf[CardFieldType[Any]].toLua(L, value)
 }
 object CardField {
+  def apply[T](t: CardFieldType[T], value: T): CardField = new CardField(t, value, false)
+
   val Nil = CardField(CardFieldType.Nil, ())
-  def deserialize(v: JsValue): CardField[_] = {
+  def deserialize(v: JsValue): CardField = {
     val typeName = (v \ "type").as[String]
     CardFieldType.typeMap.get(typeName) match {
       case Some(t) =>
@@ -92,15 +94,15 @@ final case class EditorField[T : CardFieldType](id: UUID) {
 }
 
 sealed trait CardDataSection {
-  val fields: Rx[Map[String, CardField[_]]]
-  def getField(name: String, default: => CardField[_] = sys.error("field does not already exist")): Rx[CardField[_]]
+  def fields: Rx[Map[String, CardField]]
+  def getField(name: String, default: => CardField = sys.error("field does not already exist")): Rx[CardField]
 }
 final class CardData {
   private class CardDataSectionImpl[K : Reads : Writes] {
-    private val fieldsVar = new mutable.HashMap[K, Var[CardField[_]]]
+    private val fieldsVar = new mutable.HashMap[K, Var[CardField]]
 
     def toMap = fieldsVar.mapValues(_.now).toMap
-    val fields = Rx.unsafe { fieldsVar.mapValues(_()) }
+    val fields = Rx.unsafe { fieldsVar.mapValues(_()).toMap }
 
     def init(js: JsValue) = for(t <- js.as[Seq[JsValue]]) {
       val k = (t \ "key").as[K]
@@ -108,13 +110,12 @@ final class CardData {
       this.fieldsVar.put(k, Var(v))
       fields.recalc()
     }
-    def getField(name: K, default: => CardField[_] = CardField.Nil) = fieldsVar.get(name) match {
-      case Some(x) => x
-      case None =>
-        val v = Var(default)
-        fieldsVar.put(name, v)
+    def getField(name: K, default: => CardField = CardField.Nil): Var[CardField] = {
+      if(!fieldsVar.contains(name)) {
+        fieldsVar.put(name, Var(default))
         fields.recalc()
-        v
+      }
+      fieldsVar(name)
     }
 
     def serialize = fieldsVar.map(x => Json.obj("key" -> x._1, "value" -> x._2.now.serialize))
