@@ -36,7 +36,7 @@ local function wrapColor(component)
 end
 
 local function Mask(maskComponent, dataComponent, bounds)
-    local mask = Template("princess/templates/mask.xml", dataComponent.bounds or bounds)
+    local mask = Template("_princess/templates/mask.xml", dataComponent.bounds or bounds)
     mask.target = dataComponent
     mask.mask   = maskComponent
     return mask
@@ -44,14 +44,14 @@ end
 component.Mask = Mask
 
 function component.Clip(clipPath, dataComponent, bounds)
-    local mask = Template("princess/templates/clip.xml", dataComponent.bounds or bounds)
+    local mask = Template("_princess/templates/clip.xml", dataComponent.bounds or bounds)
     mask.target = dataComponent
     mask.clip   = clipPath
     return mask
 end
 
 local function Fill(bounds, color)
-    local fill = Template("princess/templates/fillRect.xml", bounds)
+    local fill = Template("_princess/templates/fillRect.xml", bounds)
     wrapColor(fill)
     fill.color = color
     return fill
@@ -67,14 +67,14 @@ function component.FillShape(maskComponent, color)
 end
 
 function component.Filter(filterPath, dataComponent, bounds)
-    local filter = Template("princess/templates/filter.xml", dataComponent.bounds or bounds)
+    local filter = Template("_princess/templates/filter.xml", dataComponent.bounds or bounds)
     filter.filter = filterPath
     filter.target = dataComponent
     return filter
 end
 
 function component.Blend(dataComponent, blendMode, opacity, bounds)
-    local filter = Template("princess/templates/blend.xml", dataComponent.bounds or bounds)
+    local filter = Template("_princess/templates/blend.xml", dataComponent.bounds or bounds)
     filter.blendMode = blendMode or "normal"
     filter.opacity   = opacity or 1
     filter.target    = dataComponent
@@ -82,7 +82,7 @@ function component.Blend(dataComponent, blendMode, opacity, bounds)
 end
 
 function component.Circle(radius, color)
-    local circle = Template("princess/templates/circle.xml", {0, 0})
+    local circle = Template("_princess/templates/circle.xml", {0, 0})
     circle.allowOverflow = true
     local _ulRadius_get, _ulRadius_set = circle._getProperty("_ulRadius")
     circle._deleteProperty("_ulRadius")

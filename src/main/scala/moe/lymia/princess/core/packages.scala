@@ -151,12 +151,23 @@ case class PackageList(gameId: String, packages: Seq[Package]) {
   def getExports(key: String) =
     if(key == "*") allExports else exportMap.getOrElse(key, Seq()).map(_._2)
 
+  private def getPaths(export: String) =
+    getSystemExports(export).flatMap(x =>
+      if(!x.path.endsWith("/")) Seq(x.path, x.path+"/") else Seq(x.path))
+  private val protectedPaths = getPaths(StaticExportIDs.ProtectedPath)
+  private val ignoredPaths = getPaths(StaticExportIDs.IgnoredPath)
+
   private val (systemPackages, userPackages) = packages.partition(_.isSystem)
   private val resolveCache = CountedCache[String, Option[(Package, Path)]](4096)
   private def resolveInPath(packages: Seq[Package], path: String) =
     packages.view.map(x => IOUtils.paranoidResolve(x.rootPath, path).map(y => (x, y))).find(_.isDefined).flatten
   private def internalResolve(path: String) =
-    resolveCache.cached(path, resolveInPath(systemPackages, path).orElse(resolveInPath(userPackages, path)))
+    resolveCache.cached(path, {
+      val isPathProtected = protectedPaths.exists(x => path.startsWith(x))
+      val isPathIgnored = ignoredPaths.exists(x => path.startsWith(x))
+      val tmp = resolveInPath(systemPackages, path).orElse(resolveInPath(userPackages, path))
+      tmp.filter(x => !isPathIgnored && (!isPathProtected || x._1.isSystem))
+    })
 
   def resolve(path: String) = internalResolve(path).map(_._2)
   def forceResolve(path: String) = resolve(path).getOrElse(throw EditorException(s"File '$path' not found."))

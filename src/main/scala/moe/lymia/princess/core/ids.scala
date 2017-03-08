@@ -33,6 +33,8 @@ object StaticGameIDs {
 
 object StaticExportIDs {
   val GameID = "gameid"
+  val ProtectedPath = "princess/protected-path"
+  val IgnoredPath = "princess/ignored-path"
   def Predef(t: String) = s"princess/predef/$t"
   def EntryPoint(t: String, ep: String) = s"$t/entry-point/$ep"
 }

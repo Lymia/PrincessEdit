@@ -92,7 +92,7 @@ final class LuaContext(val packages: PackageList, val logger: Logger, modules: S
   private var isClean = true
 
   private def loadLuaPredef(path: String) = EditorException.context(s"loading Lua predef $path") {
-    logger.trace(s" - Loading predef $path")
+    logger.trace(s" - Loading predef '$path'")
 
     val fullPath = packages.forceResolve(path)
 
@@ -162,7 +162,7 @@ final class LuaContext(val packages: PackageList, val logger: Logger, modules: S
   private def loadLuaExport(path: String): LuaObject = EditorException.context(s"loading Lua export $path") {
     isClean = false
 
-    logger.trace(s"Loading export $path")
+    logger.trace(s"Loading export '$path'")
 
     val fullPath = packages.forceResolve(path)
 
