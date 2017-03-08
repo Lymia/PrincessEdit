@@ -56,8 +56,9 @@ object SizedCache {
   def apply(maxSize: Long): SizedCache = new SizedCacheImpl(maxSize)
 }
 
-final case class NullCache() extends SizedCache {
-  override var maxSize: Long = _
+object NullCache extends SizedCache {
+  override def maxSize: Long = 0
+  override def maxSize_=(l: Long) { }
   override def cached[K, V](section: CacheSection[K, V])(key: K, value: => (V, Long)): V = value._1
 }
 

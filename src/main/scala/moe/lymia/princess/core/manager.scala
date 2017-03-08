@@ -24,32 +24,29 @@ package moe.lymia.princess.core
 
 import java.nio.file.{Path, Paths}
 
-import moe.lymia.princess.core.lua.LuaContext
 import moe.lymia.princess.lua.LuaObject
-import moe.lymia.princess.util.SizedCache
 
-final class GameManager(packages: PackageList, logger: Logger = DefaultLogger) {
+final class GameManager(packages: PackageList, val logger: Logger = DefaultLogger, modules: Seq[LuaModule] = Seq()) {
   val gameId = packages.gameId
-  val lua = new LuaContext(packages, logger)
-
-  private val cache = SizedCache(128 * 1024 * 1024 /* About 128 MB */)
+  val lua = new LuaContext(packages, logger.bind("LuaContext"), modules)
 
   def getExportKeys: Set[String] = packages.getExportKeys
   def getExports(key: String): Seq[Export] = packages.getExports(key)
+  def getSystemExports(key: String): Seq[Export] = packages.getSystemExports(key)
 
   def resolve(path: String): Option[Path] = packages.resolve(path)
   def forceResolve(path: String): Path = packages.forceResolve(path)
 
   def getLuaExport(path: String): LuaObject = lua.getLuaExport(path)
 
-  lazy val main = {
-    val ep = getExports(StaticExportIDs.Main(gameId))
-    if(ep.isEmpty) throw EditorException(s"GameID '$gameId' has no entry point")
-    else if(ep.length > 1) throw EditorException(s"GameID '$gameId' has more than one entry point")
-    else {
-      val export = ep.head
-      new LuaTemplate(export.path, packages, lua, getLuaExport(export.path), cache)
-    }
+  def getEntryPoint(export: String): LuaObject = {
+    val ep = getExports(export)
+    if(ep.isEmpty) {
+      val system = getSystemExports(export)
+      if(system.length == 1) getLuaExport(system.head.path)
+      else throw EditorException(s"GameID '$gameId' has no entry point of type '$export'")
+    } else if(ep.length > 1) throw EditorException(s"GameID '$gameId' has more than one entry point of type '$export'")
+    else getLuaExport(ep.head.path)
   }
 }
 
@@ -58,8 +55,8 @@ final class PackageManager(packages: Path, systemPackages: Seq[Path] = Seq(), lo
   lazy val gameIDs = GameID.loadGameIDs(resolver)
   lazy val gameIDList = gameIDs.values.toSeq
 
-  def loadGameId(gameId: String, logger: Logger = logger) =
-    new GameManager(resolver.loadGameId(gameId), logger)
+  def loadGameId(gameId: String, logger: Logger = logger, modules: Seq[LuaModule] = Seq()) =
+    new GameManager(resolver.loadGameId(gameId), logger, modules)
 }
 object PackageManager {
   lazy val default = new PackageManager(Paths.get("packages"), Seq(Paths.get("PrincessEdit.pedit-pkg")))

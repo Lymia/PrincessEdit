@@ -47,7 +47,7 @@ object Bounds {
                                                  rectangle.getMaxX, rectangle.getMaxY)
 }
 
-private[core] object GenID {
+private[renderer] object GenID {
   private var globalId = new AtomicInteger(0)
   private def makeGlobalId() = globalId.incrementAndGet()
 
@@ -59,7 +59,7 @@ private[core] object GenID {
     s"${makeGlobalId()}_${makeRandomString()}"
 }
 
-private[core] object XML extends XMLLoader[Elem] {
+private[renderer] object XML extends XMLLoader[Elem] {
   override def parser: SAXParser = {
     val factory = SAXParserFactory.newInstance()
     factory.setNamespaceAware(false)

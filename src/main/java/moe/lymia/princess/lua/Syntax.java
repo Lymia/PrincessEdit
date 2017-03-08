@@ -24,8 +24,6 @@
 
 package moe.lymia.princess.lua;
 
-import moe.lymia.princess.core.components.ExpectedType;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Hashtable;

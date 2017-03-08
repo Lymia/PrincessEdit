@@ -27,10 +27,11 @@ import java.nio.file.Paths
 import javax.imageio.ImageIO
 
 import moe.lymia.princess.core.PackageManager
-import moe.lymia.princess.core.builder.{ExportResourceLoader, RasterizeResourceLoader}
-import moe.lymia.princess.core.svg.InkscapeConnectionFactory
+import moe.lymia.princess.renderer.builder.{ExportResourceLoader, RasterizeResourceLoader}
+import moe.lymia.princess.renderer.svg.InkscapeConnectionFactory
 import moe.lymia.princess.lua._
-import moe.lymia.princess.util.IOUtils
+import moe.lymia.princess.renderer.RenderManager
+import moe.lymia.princess.util.{IOUtils, NullCache}
 
 private case class CLIException(message: String) extends Exception
 
@@ -103,15 +104,15 @@ class CLI {
     for(id <- PackageManager.default.gameIDList) println(s" - ${id.displayName} (${id.name})")
   }
 
-  private def renderCommon() = time("Loaded packages") {
+  private def renderCommon() = time("Loaded Lua context") {
     val game = PackageManager.default.loadGameId(gameId)
-    val mainObj = game.main
+    val renderer = new RenderManager(game, NullCache)
     val card = if(cardData.startsWith("@")) IOUtils.readFileAsString(Paths.get(cardData.substring(1))) else cardData
     val cardDataTable = game.lua.L.loadString(s"return $card", "@<card data>") match {
       case Left (x) => game.lua.L.call(x, 1).head
       case Right(e) => error(e)
     }
-    (mainObj, cardDataTable)
+    (renderer, cardDataTable)
   }
   private def cmd_render(): Unit = {
     val (mainObj, cardData) = renderCommon()

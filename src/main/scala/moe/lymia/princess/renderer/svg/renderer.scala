@@ -20,39 +20,19 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess.renderer.svg
 
+import java.awt.image.BufferedImage
 import java.nio.file.Path
 
-import scala.collection.mutable
+import scala.xml.Elem
 
-object StaticGameIDs {
-  val System    = "princess/system-package"
-  val HasGameID = "has-gameid"
+trait SVGRendererFactory {
+  def createRenderer(): SVGRenderer
 }
 
-object StaticExportIDs {
-  val GameID = "gameid"
-  def Predef(t: String) = s"princess/predef/$t"
-  def EntryPoint(t: String, ep: String) = s"$t/entry-point/$ep"
-}
-
-case class GameID(name: String, displayName: String, iconPath: Option[String])
-object GameID {
-  def loadGameID(path: Path) = EditorException.context(s"loading GameID from $path") {
-    val ini = INI.load(path)
-    val section = ini.getSection("game")
-    GameID(section.getSingle("name"), section.getSingle("display-name"), section.getSingleOption("icon"))
-  }
-  def loadGameIDs(resolver: PackageResolver) = {
-    val packages = resolver.loadGameId(StaticGameIDs.HasGameID)
-    val gameIDExports = packages.getExports(StaticExportIDs.GameID).map(_.path).map(packages.forceResolve)
-
-    val idMap = new mutable.HashMap[String, GameID]
-    for(id <- gameIDExports.map(loadGameID)) {
-      if(idMap.contains(id.name)) throw EditorException(s"Duplicate GameID '${id.name}' found")
-      idMap.put(id.name, id)
-    }
-    idMap.toMap
-  }
+trait SVGRenderer {
+  def renderSVGToPNG(x: Int, y: Int, svg: Elem, out: Path)
+  def renderSVG(x: Int, y: Int, svg: Elem): BufferedImage
+  def destroy(): Unit
 }

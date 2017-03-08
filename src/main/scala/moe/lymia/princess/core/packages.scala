@@ -92,10 +92,14 @@ object Package {
     val exportsPath = path.resolve("exports.ini")
     if(Files.exists(exportsPath) && Files.isRegularFile(exportsPath)) loadExports(INI.load(exportsPath))
 
+    def iterExportPath(path: Path): Unit =
+        for(newFile <- IOUtils.list(path))
+          if(Files.isDirectory(newFile)) iterExportPath(newFile)
+          else loadExports(INI.load(newFile))
+
     val exportsDirPath = path.resolve("exports")
     if(Files.exists(exportsDirPath) && Files.isDirectory(exportsDirPath))
-      for(file <- IOUtils.list(exportsDirPath))
-        loadExports(INI.load(file))
+      iterExportPath(exportsDirPath)
 
     val packageSection = manifest.getSection("package")
     val dependenciesSection = manifest.getSectionOptional("dependencies").underlying
