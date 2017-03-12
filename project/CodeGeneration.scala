@@ -51,7 +51,7 @@ object CodeGeneration {
           }
 
           s"""  implicit def luaObjectFunction${count}_${functionNameHeader}2luaClosure$fullTypeParams(fn: ($luaStateSig$fnTpParameters) => LuaObject): ScalaLuaClosure =
-             |    ScalaLuaClosure(L => { L.push(fn($luaStateParam$passParameters)); 1 })
+             |    ScalaLuaClosure(L => { L.push(fn($luaStateParam$passParameters).toLua(new LuaState(L))); 1 })
              |  implicit def singleFunction${count}_${functionNameHeader}2luaClosure[$typeParameters${comma}ReturnT: ToLua](fn: ($luaStateSig$fnTpParameters) => ReturnT): ScalaLuaClosure =
              |    ScalaLuaClosure(L => { L.push(implicitly[ToLua[ReturnT]].toLua(fn($luaStateParam$passParameters)).toLua(new LuaState(L))); 1 })
              |  implicit def function${count}_${functionNameHeader}2luaClosure$fullTypeParams(fn: ($luaStateSig$fnTpParameters) => Seq[LuaObject]): ScalaLuaClosure =

@@ -20,19 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer.svg
+package moe.lymia.princess.editor
 
-import java.awt.image.BufferedImage
-import java.nio.file.Path
-
-import scala.xml.Elem
-
-trait SVGRendererFactory {
-  def createRenderer(): SVGRenderer
-}
-
-trait SVGRenderer {
-  def renderSVGToPNG(x: Int, y: Int, svg: Elem, out: Path)
-  def renderSVG(x: Int, y: Int, svg: Elem): BufferedImage
-  def destroy(): Unit
-}
+package object lua
+  extends LuaCardSpecImplicits

@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer.svg
+package moe.lymia.princess.rasterizer
 
 import java.io._
 import java.nio.charset.StandardCharsets
@@ -32,8 +32,8 @@ import moe.lymia.princess.util.IOUtils
 
 import scala.xml.Elem
 
-class InkscapeConnectionFactory(inkscapePath: String) extends SVGRendererFactory {
-  private[svg] def inkscape(args: String*) =
+class InkscapeConnectionFactory(inkscapePath: String) extends SVGRasterizerFactory {
+  private[rasterizer] def inkscape(args: String*) =
     new ProcessBuilder().command(inkscapePath +: args : _*).redirectError(ProcessBuilder.Redirect.INHERIT)
 
   private var pathChecked = false
@@ -49,7 +49,7 @@ class InkscapeConnectionFactory(inkscapePath: String) extends SVGRendererFactory
     case e: Exception => Right(s"${e.getClass.getName}: ${e.getMessage}")
   }
 
-  def createRenderer() = {
+  def createRasterizer() = {
     if(!pathChecked) checkPath() match {
       case Right(error) => sys.error(s"Invalid Inkscape path: $error")
       case _ =>
@@ -58,7 +58,7 @@ class InkscapeConnectionFactory(inkscapePath: String) extends SVGRendererFactory
   }
 }
 
-class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRenderer {
+class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRasterizer {
   private val inkscapeProcess =
     parent.inkscape("-z", "--shell").start()
   private val stdout  = inkscapeProcess.getInputStream
@@ -87,17 +87,17 @@ class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRenderer 
     handleUntilCommandEnd()
   }
 
-  def renderSVGToPNG(x: Int, y: Int, svg: Elem, out: Path): Unit = lock.synchronized {
+  def rasterizeSVGToPNG(x: Int, y: Int, svg: Elem, out: Path): Unit = lock.synchronized {
     if(destroyed) sys.error("instance already destroyed")
     IOUtils.withTemporaryFile(extension = "svg") { svgFile =>
       IOUtils.writeFile(svgFile.toPath, svg.toString().getBytes("UTF-8"))
       command(svgFile.getAbsolutePath, "-w", x.toString, "-h", y.toString, "--export-png", out.toAbsolutePath.toString)
     }
   }
-  def renderSVG(x: Int, y: Int, svg: Elem) = lock.synchronized {
+  def rasterizeSVG(x: Int, y: Int, svg: Elem) = lock.synchronized {
     if(destroyed) sys.error("instance already destroyed")
     IOUtils.withTemporaryFile(extension = "png") { svgFile =>
-      renderSVGToPNG(x, y, svg, svgFile.toPath)
+      rasterizeSVGToPNG(x, y, svg, svgFile.toPath)
       ImageIO.read(svgFile)
     }
   }

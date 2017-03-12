@@ -107,12 +107,13 @@ trait LuaLookup extends HasLuaMethods {
 }
 
 class LuaUserdataInput[T : ClassTag] extends FromLua[T] {
-  final def tag = implicitly[ClassTag[T]]
+  final val tag = implicitly[ClassTag[T]]
+  private final val runtimeClass = tag.runtimeClass
 
   override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
     case v: LuaUserdata =>
       val obj = v.getUserdata
-      if(!tag.runtimeClass.isAssignableFrom(obj.getClass))
+      if(!runtimeClass.isInstance(obj))
         typerror(L, source, obj.getClass.toString, tag.toString)
       obj.asInstanceOf[T]
     case _ => typerror(L, source, v, Lua.TUSERDATA)
@@ -170,7 +171,7 @@ class PropertiesUserdataType[T : ClassTag] extends LuaUserdataType[T] {
 
   metatable { (L, mt) =>
     implicit val tud = this
-    L.register(mt, "__index"   , (L: LuaState, o: T, k: String) => LuaRet(getField(L, o, k)))
+    L.register(mt, "__index"   , (L: LuaState, o: T, k: String) => getField(L, o, k))
     L.register(mt, "__newindex", (L: LuaState, o: T, k: String, v: Any) => setField(L, o, k, v))
   }
 }
@@ -179,7 +180,7 @@ class HasLuaMethodsUserdataType[T <: HasLuaMethods : ClassTag] extends LuaUserda
   metatable { (L, mt) =>
     implicit val tud = this
     L.register(mt, "__tostring", (o: Any) => s"${o.getClass.getName}: 0x${"%08x" format System.identityHashCode(o)}")
-    L.register(mt, "__index"   , (L: LuaState, o: T, k: String) => LuaRet(o.getField(L, k)))
+    L.register(mt, "__index"   , (L: LuaState, o: T, k: String) => o.getField(L, k))
     L.register(mt, "__newindex", (L: LuaState, o: T, k: String, v: Any) => o.setField(L, k, v))
   }
 }

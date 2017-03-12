@@ -25,7 +25,6 @@ package moe.lymia.princess.renderer.components
 import moe.lymia.princess.core._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.renderer.lua._
-import moe.lymia.princess.renderer.builder._
 import moe.lymia.princess.lua._
 
 import org.jfree.graphics2d.svg.SVGGraphics2D

@@ -20,32 +20,10 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer.builder
-
-import java.awt.Font
-
-import moe.lymia.princess.renderer._
+package moe.lymia.princess.renderer
 
 import scala.collection.mutable
 import scala.xml._
-
-case class PhysicalUnit(svgName: String, unPerInch: Double)
-object PhysicalUnit {
-  val mm = PhysicalUnit("mm", 25.4)
-  val in = PhysicalUnit("in", 1)
-}
-
-final case class PhysicalSize(width: Double, height: Double, unit: PhysicalUnit) {
-  val widthString  = s"$width${unit.svgName}"
-  val heightString = s"$height${unit.svgName}"
-}
-
-final case class RenderSettings(viewport: Size, unPerViewport: Double, physicalUnit: PhysicalUnit) {
-  val size            = PhysicalSize(viewport.width * unPerViewport, viewport.height * unPerViewport, physicalUnit)
-  val coordUnitsPerIn = size.unit.unPerInch / unPerViewport
-  def scaleFont(font: Font, ptSize: Double) =
-    font.deriveFont((ptSize * (coordUnitsPerIn / 72.0)).toFloat)
-}
 
 object XMLUtils {
   def filterAttributes(m: MetaData)(fn: MetaData => Boolean) = {

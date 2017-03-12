@@ -26,10 +26,9 @@ import java.io.Writer
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.lua._
-import moe.lymia.princess.renderer.builder._
 import moe.lymia.princess.renderer.components._
 import moe.lymia.princess.renderer.lua._
-import moe.lymia.princess.renderer.svg.SVGRenderer
+import moe.lymia.princess.rasterizer.SVGRasterizer
 import moe.lymia.princess.util.SizedCache
 
 trait Renderer {
@@ -44,10 +43,10 @@ trait Renderer {
     val (builder, definition) = doRender(cardData, res)
     builder.write(w, definition, encoding, pretty = pretty)
   }
-  def renderImage(renderer: SVGRenderer, x: Int, y: Int, cardData: LuaObject,
-                  res: ResourceLoader = RasterizeResourceLoader) = {
+  def rasterize(rasterize: SVGRasterizer, x: Int, y: Int, cardData: LuaObject,
+                res: ResourceLoader = RasterizeResourceLoader) = {
     val (builder, definition) = doRender(cardData, res)
-    builder.renderImage(renderer, x, y, definition)
+    builder.rasterize(rasterize, x, y, definition)
   }
 }
 

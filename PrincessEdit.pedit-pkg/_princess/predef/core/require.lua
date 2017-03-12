@@ -40,7 +40,7 @@
 
 local _princess = ...
 
-local ipairs, error, trace, insert = ipairs, error, log.trace, log.insert
+local ipairs, error, trace, insert = ipairs, error, log.trace, table.insert
 local systemGetExports, loadLuaExport, hasExport, gameId =
     _princess.systemGetExports, _princess.loadLuaExport, _princess.hasExport, _princess.gameId
 

@@ -20,26 +20,19 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer.lua
+package moe.lymia.princess.rasterizer
 
-import moe.lymia.princess.core._
-import moe.lymia.princess.renderer._
-import moe.lymia.princess.lua._
+import java.awt.image.BufferedImage
+import java.nio.file.Path
 
-case class PhysicalScale(unPerViewport: Double, unit: PhysicalUnit)
-trait LuaTemplateImplicits {
-  implicit object LuaPhysicalScale extends LuaUserdataType[PhysicalScale] {
-    metatable { (L, mt) =>
-      L.register(mt, "__mul", (scale: Double, s: PhysicalScale) => PhysicalScale(scale * s.unPerViewport, s.unit))
-    }
-  }
+import scala.xml.Elem
+
+trait SVGRasterizerFactory {
+  def createRasterizer(): SVGRasterizer
 }
 
-object TemplateLib extends LuaLibrary {
-  def open(L: LuaState, table: LuaTable) = {
-    val unit = L.newTable()
-    L.rawSet(unit, "mm", PhysicalScale(1, PhysicalUnit.mm))
-    L.rawSet(unit, "in", PhysicalScale(1, PhysicalUnit.in))
-    L.rawSet(table, "PhysicalUnit", unit)
-  }
+trait SVGRasterizer {
+  def rasterizeSVGToPNG(x: Int, y: Int, svg: Elem, out: Path)
+  def rasterizeSVG(x: Int, y: Int, svg: Elem): BufferedImage
+  def destroy(): Unit
 }

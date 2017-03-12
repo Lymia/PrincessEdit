@@ -26,17 +26,9 @@ import javax.swing._
 
 import moe.lymia.princess.lua.{LuaClosure, LuaState}
 
-sealed trait ControlType
+trait ControlType
 
-sealed trait ControlNode {
-  def makeComponent(data: CardData): JComponent
-}
-case class SimpleControl(target: String, controlType: ControlType) extends ControlNode {
-  override def makeComponent(data: CardData): JComponent = ???
-}
-case class LabeledGroup(group: Seq[(String, ControlNode)]) extends ControlNode {
-  override def makeComponent(data: CardData): JComponent = ???
-}
-case class DynamicGroup(fields: Seq[String], L: LuaState, fn: LuaClosure) extends ControlNode {
-  override def makeComponent(data: CardData): JComponent = ???
-}
+trait ControlNode
+case class SimpleControl(target: String, controlType: ControlType) extends ControlNode
+case class LabeledGroup(group: Seq[(String, ControlNode)]) extends ControlNode
+case class DynamicGroup(fields: Seq[String], L: LuaState, fn: LuaClosure) extends ControlNode

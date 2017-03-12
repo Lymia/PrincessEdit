@@ -22,6 +22,7 @@
 
 package moe.lymia.princess.renderer
 
+import java.awt.Font
 import java.awt.geom.Rectangle2D
 import java.security.SecureRandom
 import java.util.concurrent.atomic.AtomicInteger
@@ -29,6 +30,24 @@ import javax.xml.parsers.SAXParserFactory
 
 import scala.xml.factory.XMLLoader
 import scala.xml.{Elem, SAXParser}
+
+case class PhysicalUnit(svgName: String, unPerInch: Double)
+object PhysicalUnit {
+  val mm = PhysicalUnit("mm", 25.4)
+  val in = PhysicalUnit("in", 1)
+}
+
+final case class PhysicalSize(width: Double, height: Double, unit: PhysicalUnit) {
+  val widthString  = s"$width${unit.svgName}"
+  val heightString = s"$height${unit.svgName}"
+}
+
+final case class RenderSettings(viewport: Size, unPerViewport: Double, physicalUnit: PhysicalUnit) {
+  val size            = PhysicalSize(viewport.width * unPerViewport, viewport.height * unPerViewport, physicalUnit)
+  val coordUnitsPerIn = size.unit.unPerInch / unPerViewport
+  def scaleFont(font: Font, ptSize: Double) =
+    font.deriveFont((ptSize * (coordUnitsPerIn / 72.0)).toFloat)
+}
 
 final case class Size(width: Double, height: Double)
 final case class Bounds(minX: Double, minY: Double, maxX: Double, maxY: Double) {

@@ -25,8 +25,6 @@ import sbt.Keys._
 import Config._
 import ProguardBuild.Keys._
 
-// Additional keys
-
 val commonSettings = versionWithGit ++ Seq(
   // Organization configuration
   organization := "moe.lymia",

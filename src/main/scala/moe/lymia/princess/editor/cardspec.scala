@@ -33,7 +33,8 @@ sealed trait CardSpecField {
   def deps: Set[CardSpecField] = Set()
   override val hashCode = super.hashCode
 }
-case class CardSpecInputField(dataStoreName: String) extends CardSpecField
+case class CardSpecInputField(defaultValue: CardField, control: ControlType, fieldName: String)
+  extends CardSpecField with ControlNode
 case class CardSpecDerivedField(params: Seq[CardSpecField], L: LuaState, fn: LuaClosure) extends CardSpecField {
   override def deps = params.toSet
 }
@@ -76,9 +77,9 @@ object ActiveCardSpec {
   private def loadSpec(L: LuaState, data: CardData, spec: CardSpec): (Seq[Rx[Any]], Map[String, Rx[Any]]) = {
     val rxLoaded = new mutable.HashMap[CardSpecField, Rx[Any]]
     spec.loadOrder.foreach(x => rxLoaded.put(x, x match {
-      case CardSpecInputField(name) =>
-        val field = data.cardData.getField(name)
-        Rx.unsafe { field().toLua(L) }
+      /*case CardSpecInputField(_, name) =>
+        val field = data.getCardField(name)
+        Rx.unsafe { field().toLua(L) }*/
       case CardSpecDerivedField(deps, l_in, fn) =>
         val L = l_in.newThread()
         val rxs = deps.map(rxLoaded)

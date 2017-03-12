@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer.builder
+package moe.lymia.princess.renderer
 
 import java.awt.Font
 import java.io.ByteArrayOutputStream
@@ -29,7 +29,6 @@ import javax.imageio.ImageIO
 import javax.xml.bind.DatatypeConverter
 
 import moe.lymia.princess.core._
-import moe.lymia.princess.renderer._
 import moe.lymia.princess.util._
 
 import scala.collection.mutable

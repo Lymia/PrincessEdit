@@ -28,16 +28,13 @@ import moe.lymia.princess.lua._
 import play.api.libs.json._
 
 import scala.collection.mutable
-import scala.reflect.ClassTag
 import rx._
 
-sealed abstract class CardFieldType[T : ClassTag : Reads : Writes : ToLua]() {
-  val typeName = implicitly[ClassTag[T]].toString()
-
+sealed abstract class CardFieldType[T : Reads : Writes : ToLua](val typeName: String) {
   def serialize(t: T): JsValue = Json.toJson(t)
   def deserialize(v: JsValue): T = v.as[T]
 
-  def toLua  (L: LuaState, t: T) = t.toLua(L)
+  def toLua(L: LuaState, t: T) = t.toLua(L)
 }
 object CardFieldType {
   private implicit object LuaUnit extends LuaParameter[Unit] {
@@ -49,11 +46,11 @@ object CardFieldType {
     override def reads(json: JsValue): JsResult[Unit] = JsSuccess(())
   }
 
-  case object Nil extends CardFieldType[Unit]
-  case object Int extends CardFieldType[Int]
-  case object Double extends CardFieldType[Double]
-  case object String extends CardFieldType[String]
-  case object Boolean extends CardFieldType[Boolean]
+  case object Nil extends CardFieldType[Unit]("nil")
+  case object Int extends CardFieldType[Int]("int")
+  case object Double extends CardFieldType[Double]("double")
+  case object String extends CardFieldType[String]("string")
+  case object Boolean extends CardFieldType[Boolean]("boolean")
 
   val allTypes: Seq[CardFieldType[_]] = Seq(Nil, Int, Double, String, Boolean)
   val typeMap = allTypes.map(x => (x.typeName -> x).asInstanceOf[(String, CardFieldType[_])]).toMap
@@ -67,23 +64,20 @@ trait CardFieldImplicits {
 }
 
 final case class CardField private (t: CardFieldType[_], value: Any, private val disambiguateConstructors: Boolean) {
-  def serialize: JsValue = Json.obj(
-    "type"  -> t.typeName,
-    "value" -> t.asInstanceOf[CardFieldType[Any]].serialize(value)
-  )
-
+  def serialize: JsValue = Json.arr(t.typeName, t.asInstanceOf[CardFieldType[Any]].serialize(value))
   def toLua(L: LuaState) = t.asInstanceOf[CardFieldType[Any]].toLua(L, value)
+  override def toString: String = s"CardField($t, $value)"
 }
 object CardField {
   def apply[T](t: CardFieldType[T], value: T): CardField = new CardField(t, value, false)
 
   val Nil = CardField(CardFieldType.Nil, ())
   def deserialize(v: JsValue): CardField = {
-    val typeName = (v \ "type").as[String]
-    CardFieldType.typeMap.get(typeName) match {
+    val Seq(typeName, data) = v.as[Seq[JsValue]]
+    CardFieldType.typeMap.get(typeName.as[String]) match {
       case Some(t) =>
         val t2 = t.asInstanceOf[CardFieldType[Any]]
-        CardField(t2.asInstanceOf, t2.deserialize((v \ "value").as[JsValue]))
+        CardField(t2, t2.deserialize(data))
       case None    => sys.error(s"unknown field type $typeName")
     }
   }
@@ -93,66 +87,57 @@ final case class EditorField[T : CardFieldType](id: UUID) {
   val t: CardFieldType[T] = implicitly[CardFieldType[T]]
 }
 
-sealed trait CardDataSection {
-  def fields: Rx[Map[String, CardField]]
-  def getField(name: String, default: => CardField = sys.error("field does not already exist")): Rx[CardField]
-}
-final class CardData {
-  private class CardDataSectionImpl[K : Reads : Writes] {
-    private val fieldsVar = new mutable.HashMap[K, Var[CardField]]
+private class CardDataSection {
+  protected val fieldsVar = new mutable.HashMap[String, Var[CardField]]
+  protected def setFieldVar(name: String, field: Var[CardField]) = fieldsVar.put(name, field)
 
-    def toMap = fieldsVar.mapValues(_.now).toMap
-    val fields = Rx.unsafe { fieldsVar.mapValues(_()).toMap }
-
-    def init(js: JsValue) = for(t <- js.as[Seq[JsValue]]) {
-      val k = (t \ "key").as[K]
-      val v = CardField.deserialize((t \ "value").as[JsValue])
-      this.fieldsVar.put(k, Var(v))
-      fields.recalc()
-    }
-    def getField(name: K, default: => CardField = CardField.Nil): Var[CardField] = {
-      if(!fieldsVar.contains(name)) {
-        fieldsVar.put(name, Var(default))
-        fields.recalc()
-      }
-      fieldsVar(name)
-    }
-
-    def serialize = fieldsVar.map(x => Json.obj("key" -> x._1, "value" -> x._2.now.serialize))
-
-    def kill(): Unit = {
-      for((_, rx) <- fieldsVar) rx.kill()
-      fields.kill()
-    }
+  def init(js: JsValue) = for((k, v) <- js.as[Map[String, JsValue]])
+    setFieldVar(k, Var(CardField.deserialize(v)))
+  def getField(name: String, default: => CardField = CardField.Nil): Var[CardField] = {
+    if(!fieldsVar.contains(name)) setFieldVar(name, Var(default))
+    fieldsVar(name)
   }
 
-  private val styleFields  = new CardDataSectionImpl[String] with CardDataSection
-  private val cardFields   = new CardDataSectionImpl[String] with CardDataSection
-  private val editorFields = new CardDataSectionImpl[UUID]
+  def serialize = Json.toJson(fieldsVar.mapValues(_.now.serialize))
+  def kill(): Unit = for((_, rx) <- fieldsVar) rx.kill()
+}
+private class CardDataSectionWithFields extends CardDataSection {
+  val fields = Rx.unsafe { fieldsVar.mapValues(_()).toMap }
+  override protected def setFieldVar(name: String, field: Var[CardField]) = {
+    val ret = super.setFieldVar(name, field)
+    fields.recalc()
+    ret
+  }
+  override def kill(): Unit = {
+    super.kill()
+    fields.kill()
+  }
+}
+final class CardData {
+  private val cardFields   = new CardDataSectionWithFields
+  private val editorFields = new CardDataSection
+
+  val cardData = cardFields.fields
+  def getCardField(name: String, default: => CardField = CardField.Nil) = cardFields.getField(name, default)
 
   def getEditorField[T](field: EditorField[T])(implicit ctx: Ctx.Owner) =
-    editorFields.getField(field.id, CardField.Nil).filter(_.t == field.t).map(_.value.asInstanceOf[T])
+    editorFields.getField(field.id.toString, CardField.Nil).filter(_.t == field.t).map(_.value.asInstanceOf[T])
   def setEditorField[T](field: EditorField[T], v: T) =
-    editorFields.getField(field.id, CardField.Nil).update(CardField(field.t, v))
+    editorFields.getField(field.id.toString, CardField.Nil).update(CardField(field.t, v))
 
   private def init(json: JsValue) = {
-    this.styleFields .init((json \ "styleFields" ).as[JsValue])
     this.cardFields  .init((json \ "cardFields"  ).as[JsValue])
     this.editorFields.init((json \ "editorFields").as[JsValue])
   }
 
   def serialize = Json.obj(
-    "styleFields"  -> styleFields .serialize,
     "cardFields"   -> cardFields  .serialize,
     "editorFields" -> editorFields.serialize
   )
 
-  def style    = styleFields : CardDataSection
-  def cardData = cardFields  : CardDataSection
-
-  def kill(): Unit = {
-    styleFields.kill()
+  def kill() = {
     cardFields.kill()
+    editorFields.kill()
   }
 }
 object CardData {

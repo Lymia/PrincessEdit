@@ -20,13 +20,12 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer.builder
+package moe.lymia.princess.renderer
 
 import java.io.Writer
 
-import moe.lymia.princess.renderer._
 import moe.lymia.princess.lua.LuaTable
-import moe.lymia.princess.renderer.svg.SVGRenderer
+import moe.lymia.princess.rasterizer.SVGRasterizer
 import org.jfree.graphics2d.svg.{SVGGraphics2D, SVGHints}
 
 import scala.collection.mutable
@@ -73,8 +72,8 @@ final class SVGBuilder(val settings: RenderSettings) {
 
   private def attribute(key: String, value: String) = Attribute(None, key, Text(value), Null)
 
-  private[builder] def addUsage(id: String) = useCount.put(id, useCount.getOrElse(id, 0) + 1)
-  private[builder] def noInline(id: String) = noInlineList.add(id)
+  private[renderer] def addUsage(id: String) = useCount.put(id, useCount.getOrElse(id, 0) + 1)
+  private[renderer] def noInline(id: String) = noInlineList.add(id)
 
   private def getUseCount(id: String) = useCount.getOrElse(id, 0)
   private def isUsed(id: String) = getUseCount(id) > 0
@@ -163,10 +162,10 @@ final class SVGBuilder(val settings: RenderSettings) {
     w.write(s"${prettyPrint(renderSVGTag(root, pretty = pretty))}\n")
     w.close()
   }
-  def renderImage(renderer: SVGRenderer, x: Int, y: Int, root: SVGDefinitionReference) =
-    renderer.renderSVG(x, y, renderSVGTag(root))
+  def rasterize(rasterizer: SVGRasterizer, x: Int, y: Int, root: SVGDefinitionReference) =
+    rasterizer.rasterizeSVG(x, y, renderSVGTag(root))
 }
-private[builder] object SVGBuilder {
+private[renderer] object SVGBuilder {
   val SVG11Doctype = DocType(
     "svg",
     PublicID("-//W3C//DTD SVG 1.1//EN",
