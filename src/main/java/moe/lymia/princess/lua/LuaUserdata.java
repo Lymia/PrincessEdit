@@ -36,76 +36,78 @@ package moe.lymia.princess.lua;
  * is possible because each <code>LuaUserdata</code> supports a
  * metatable.
  */
-public final class LuaUserdata
-{
-  private Object userdata;
-  private LuaTable metatable;
-  private LuaTable env;
-  /**
-   * Wraps an arbitrary Java reference.  To retrieve the reference that
-   * was wrapped, use {@link Lua#toUserdata}.
-   * @param  o The Java reference to wrap.
-   */
-  public LuaUserdata(Object o)
-  {
-    userdata = o;
-  }
+public final class LuaUserdata {
+    private Object userdata;
+    private LuaTable metatable;
+    private LuaTable env;
 
-  /**
-   * Getter for userdata.
-   * @return the userdata that was passed to the constructor of this
-   * instance.
-   */
-  Object getUserdata()
-  {
-    return userdata;
-  }
-
-  /**
-   * Getter for metatable.
-   * @return the metatable.
-   */
-  LuaTable getMetatable()
-  {
-    return metatable;
-  }
-  /**
-   * Setter for metatable.
-   * @param metatable The metatable.
-   */
-  void setMetatable(LuaTable metatable)
-  {
-    this.metatable = metatable;
-  }
-
-  /**
-   * Getter for environment.
-   * @return The environment.
-   */
-  LuaTable getEnv()
-  {
-    return env;
-  }
-  /**
-   * Setter for environment.
-   * @param env  The environment.
-   */
-  void setEnv(LuaTable env)
-  {
-    this.env = env;
-  }
-
-  @Override
-  public int hashCode() {
-    return System.identityHashCode(userdata);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if(obj instanceof LuaUserdata) {
-      LuaUserdata u = (LuaUserdata) obj;
-      return userdata == u.userdata;
+    /**
+     * Wraps an arbitrary Java reference.  To retrieve the reference that
+     * was wrapped, use {@link Lua#toUserdata}.
+     *
+     * @param o The Java reference to wrap.
+     */
+    public LuaUserdata(Object o) {
+        userdata = o;
     }
-    return false;
-  }
+
+    /**
+     * Getter for userdata.
+     *
+     * @return the userdata that was passed to the constructor of this
+     * instance.
+     */
+    Object getUserdata() {
+        return userdata;
+    }
+
+    /**
+     * Getter for metatable.
+     *
+     * @return the metatable.
+     */
+    LuaTable getMetatable() {
+        return metatable;
+    }
+
+    /**
+     * Setter for metatable.
+     *
+     * @param metatable The metatable.
+     */
+    void setMetatable(LuaTable metatable) {
+        this.metatable = metatable;
+    }
+
+    /**
+     * Getter for environment.
+     *
+     * @return The environment.
+     */
+    LuaTable getEnv() {
+        return env;
+    }
+
+    /**
+     * Setter for environment.
+     *
+     * @param env The environment.
+     */
+    void setEnv(LuaTable env) {
+        this.env = env;
+    }
+
+    @Override
+    public int hashCode() {
+        return System.identityHashCode(userdata);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof LuaUserdata) {
+            LuaUserdata u = (LuaUserdata) obj;
+            return userdata == u.userdata;
+        }
+        return false;
+    }
 }

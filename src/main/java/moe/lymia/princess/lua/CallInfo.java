@@ -24,112 +24,106 @@
 
 package moe.lymia.princess.lua;
 
-final class CallInfo
-{
-  private int savedpc;
-  private int func;
-  private int base;
-  private int top;
-  private int nresults;
-  private int tailcalls;
+final class CallInfo {
+    private int savedpc;
+    private int func;
+    private int base;
+    private int top;
+    private int nresults;
+    private int tailcalls;
 
-  /** Only used to create the first instance. */
-  CallInfo()
-  {
-  }
+    /**
+     * Only used to create the first instance.
+     */
+    CallInfo() {
+    }
 
-  /**
-   * @param func  stack index of function
-   * @param base  stack base for this frame
-   * @param top   top-of-stack for this frame
-   * @param nresults  number of results expected by caller
-   */
-  CallInfo(int func, int base, int top, int nresults)
-  {
-    this.func = func;
-    this.base = base;
-    this.top = top;
-    this.nresults = nresults;
-  }
+    /**
+     * @param func     stack index of function
+     * @param base     stack base for this frame
+     * @param top      top-of-stack for this frame
+     * @param nresults number of results expected by caller
+     */
+    CallInfo(int func, int base, int top, int nresults) {
+        this.func = func;
+        this.base = base;
+        this.top = top;
+        this.nresults = nresults;
+    }
 
-  /** Setter for savedpc. */
-  void setSavedpc(int pc)
-  {
-    savedpc = pc;
-  }
-  /** Getter for savedpc. */
-  int savedpc()
-  {
-    return savedpc;
-  }
+    /**
+     * Setter for savedpc.
+     */
+    void setSavedpc(int pc) {
+        savedpc = pc;
+    }
 
-  /**
-   * Get the stack index for the function object for this record.
-   */
-  int function()
-  {
-    return func;
-  }
+    /**
+     * Getter for savedpc.
+     */
+    int savedpc() {
+        return savedpc;
+    }
 
-  /**
-   * Get stack index where results should end up.  This is an absolute
-   * stack index, not relative to L.base.
-   */
-  int res()
-  {
-    // Same location as function.
-    return func;
-  }
+    /**
+     * Get the stack index for the function object for this record.
+     */
+    int function() {
+        return func;
+    }
 
-  /**
-   * Get stack base for this record.
-   */
-  int base()
-  {
-    return base;
-  }
+    /**
+     * Get stack index where results should end up.  This is an absolute
+     * stack index, not relative to L.base.
+     */
+    int res() {
+        // Same location as function.
+        return func;
+    }
 
-  /**
-   * Get top-of-stack for this record.  This is the number of elements
-   * in the stack (or will be when the function is resumed).
-   */
-  int top()
-  {
-    return top;
-  }
+    /**
+     * Get stack base for this record.
+     */
+    int base() {
+        return base;
+    }
 
-  /**
-   * Setter for top.
-   */
-  void setTop(int top)
-  {
-    this.top = top;
-  }
+    /**
+     * Get top-of-stack for this record.  This is the number of elements
+     * in the stack (or will be when the function is resumed).
+     */
+    int top() {
+        return top;
+    }
 
-  /**
-   * Get number of results expected by the caller of this function.
-   * Used to adjust the returned results to the correct number.
-   */
-  int nresults()
-  {
-    return nresults;
-  }
+    /**
+     * Setter for top.
+     */
+    void setTop(int top) {
+        this.top = top;
+    }
 
-  /**
-   * Get number of tailcalls
-   */
-  int tailcalls()
-  {
-    return tailcalls;
-  }
+    /**
+     * Get number of results expected by the caller of this function.
+     * Used to adjust the returned results to the correct number.
+     */
+    int nresults() {
+        return nresults;
+    }
 
-  /**
-   * Used during tailcall to set the base and top members.
-   */
-  void tailcall(int baseArg, int topArg)
-  {
-    this.base = baseArg;
-    this.top = topArg;
-    ++tailcalls;
-  }
+    /**
+     * Get number of tailcalls
+     */
+    int tailcalls() {
+        return tailcalls;
+    }
+
+    /**
+     * Used during tailcall to set the base and top members.
+     */
+    void tailcall(int baseArg, int topArg) {
+        this.base = baseArg;
+        this.top = topArg;
+        ++tailcalls;
+    }
 }

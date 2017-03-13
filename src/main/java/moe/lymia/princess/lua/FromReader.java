@@ -24,8 +24,8 @@
 
 package moe.lymia.princess.lua;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 
 /**
@@ -35,41 +35,32 @@ import java.io.Reader;
  * String}.  This class is used by {@link BaseLib}'s load in order to
  * load binary chunks.
  */
-final class FromReader extends InputStream
-{
-  // :todo: consider combining with DumpedInput.  No real reason except
-  // to save space in JME.
+final class FromReader extends InputStream {
+    // :todo: consider combining with DumpedInput.  No real reason except
+    // to save space in JME.
 
-  private Reader reader;
+    private Reader reader;
 
-  FromReader(Reader reader)
-  {
-    this.reader = reader;
-  }
-
-  public void mark(int readahead)
-  {
-    try
-    {
-      reader.mark(readahead);
+    FromReader(Reader reader) {
+        this.reader = reader;
     }
-    catch (Exception ignored)
-    {
-    }
-  }
 
-  public void reset() throws IOException
-  {
-    reader.reset();
-  }
-
-  public int read() throws IOException
-  {
-    int c = reader.read();
-    if (c == -1)
-    {
-      return c;
+    public void mark(int readahead) {
+        try {
+            reader.mark(readahead);
+        } catch (Exception ignored) {
+        }
     }
-    return c & 0xff;
-  }
+
+    public void reset() throws IOException {
+        reader.reset();
+    }
+
+    public int read() throws IOException {
+        int c = reader.read();
+        if (c == -1) {
+            return c;
+        }
+        return c & 0xff;
+    }
 }

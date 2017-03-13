@@ -24,19 +24,18 @@
 
 package moe.lymia.princess.lua;
 
-final class LocVar
-{
-  String varname;
-  int startpc;
-  int endpc;
+final class LocVar {
+    String varname;
+    int startpc;
+    int endpc;
 
-  LocVar() {}
+    LocVar() {
+    }
 
-  LocVar(String varname, int startpc, int endpc)
-  {
-    this.varname = varname;
-    this.startpc = startpc;
-    this.endpc = endpc;
-  }
+    LocVar(String varname, int startpc, int endpc) {
+        this.varname = varname;
+        this.startpc = startpc;
+        this.endpc = endpc;
+    }
 
 }

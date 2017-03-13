@@ -27,11 +27,10 @@ package moe.lymia.princess.lua;
 /*
 ** nodes for block list (list of active blocks)
 */
-final class BlockCnt
-{
-  BlockCnt previous;  /* chain */
-  int breaklist;      /* list of jumps out of this loop */
-  int nactvar;        /* # active locals outside the breakable structure */
-  boolean upval;      /* true if some variable in the block is an upvalue */
-  boolean isbreakable;/* true if `block' is a loop */
+final class BlockCnt {
+    BlockCnt previous;  /* chain */
+    int breaklist;      /* list of jumps out of this loop */
+    int nactvar;        /* # active locals outside the breakable structure */
+    boolean upval;      /* true if some variable in the block is an upvalue */
+    boolean isbreakable;/* true if `block' is a loop */
 }

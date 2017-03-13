@@ -31,51 +31,42 @@ import java.io.InputStream;
  * {@link InputStream} so that it can be passed to {@link
  * Lua#load(InputStream, String)}.
  */
-final class DumpedInput extends InputStream
-{
-  private String s;
-  private int i;        // = 0
-  int mark = -1;
+final class DumpedInput extends InputStream {
+    private String s;
+    private int i;        // = 0
+    int mark = -1;
 
-  DumpedInput(String s)
-  {
-    this.s = s;
-  }
-
-  public int available()
-  {
-    return s.length() - i;
-  }
-
-  public void close()
-  {
-    s = null;
-    i = -1;
-  }
-
-  public void mark(int readlimit)
-  {
-    mark = i;
-  }
-
-  public boolean markSupported()
-  {
-    return true;
-  }
-
-  public int read()
-  {
-    if (i >= s.length())
-    {
-      return -1;
+    DumpedInput(String s) {
+        this.s = s;
     }
-    char c = s.charAt(i);
-    ++i;
-    return c&0xff;
-  }
 
-  public void reset()
-  {
-    i = mark;
-  }
+    public int available() {
+        return s.length() - i;
+    }
+
+    public void close() {
+        s = null;
+        i = -1;
+    }
+
+    public void mark(int readlimit) {
+        mark = i;
+    }
+
+    public boolean markSupported() {
+        return true;
+    }
+
+    public int read() {
+        if (i >= s.length()) {
+            return -1;
+        }
+        char c = s.charAt(i);
+        ++i;
+        return c & 0xff;
+    }
+
+    public void reset() {
+        i = mark;
+    }
 }
