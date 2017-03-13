@@ -20,15 +20,35 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor
+package moe.lymia.princess.editor.lua
 
-import javax.swing._
+import moe.lymia.princess.core._
+import moe.lymia.princess.editor.data._
+import moe.lymia.princess.lua._
 
-import moe.lymia.princess.lua.{LuaClosure, LuaState}
+case class DeriveList(elements: Seq[FieldNode])
 
-trait ControlType
+trait LuaFieldNodeImplicits {
+  implicit object LuaInputFieldNode extends LuaUserdataInput[FieldNode]
 
-trait ControlNode
-case class SimpleControl(target: String, controlType: ControlType) extends ControlNode
-case class LabeledGroup(group: Seq[(String, ControlNode)]) extends ControlNode
-case class DynamicGroup(fields: Seq[String], L: LuaState, fn: LuaClosure) extends ControlNode
+  implicit object LuaDerivedFieldNode extends LuaFieldNodeBase[DerivedFieldNode]
+
+  implicit object LuaDerivedDSLWrapper extends LuaUserdataType[DeriveList] {
+    metatable { (L, mt) =>
+      L.register(mt, "__add", (wrapper: DeriveList, node: FieldNode) => DeriveList(wrapper.elements :+ node))
+      L.register(mt, "__call", (wrapper: DeriveList, fn: LuaClosure) => DerivedFieldNode(wrapper.elements, fn))
+    }
+  }
+  trait LuaFieldNodeBase[T] extends LuaUserdataType[T] {
+    metatable { (L, mt) =>
+      L.register(mt, "__add", (n1: FieldNode, n2: FieldNode) => DeriveList(Seq(n1, n2)))
+      L.register(mt, "__call", (n: FieldNode, fn: LuaClosure) => DerivedFieldNode(Seq(n), fn))
+    }
+  }
+}
+
+object FieldLib extends LuaLibrary {
+  override def open(L: LuaState, table: LuaTable): Unit = {
+
+  }
+}

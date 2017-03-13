@@ -44,7 +44,7 @@ final class FuncState
    * Table to find (and reuse) elements in <var>f.k</var>.  Maps from
    * Object (a constant Lua value) to an index into <var>f.k</var>.
    */
-  Hashtable h = new Hashtable();
+  Hashtable<Object, Integer> h = new Hashtable<Object, Integer>();
 
   /** Enclosing function. */
   FuncState prev;
@@ -430,24 +430,21 @@ final class FuncState
 
   private int addk(Object o)
   {
-    Object hash = o;
-    Object v = h.get(hash);
+    Object v = h.get(o);
     if (v != null)
     {
       // :todo: assert
-      return ((Integer)v).intValue();
+      return (Integer) v;
     }
     // constant not found; create a new entry
     f.constantAppend(nk, o);
-    h.put(hash, new Integer(nk));
+    h.put(o, nk);
     return nk++;
   }
 
   private void codearith(int op, Expdesc e1, Expdesc e2)
   {
-    if (constfolding(op, e1, e2))
-      return;
-    else
+    if (!constfolding(op, e1, e2))
     {
       int o1 = kExp2RK(e1);
       int o2 = (op != Lua.OP_UNM && op != Lua.OP_LEN) ? kExp2RK(e2) : 0;

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2017 Lymia Alusyia <lymia@lymiahugs.com>
  *
@@ -22,6 +23,5 @@
 
 package moe.lymia.princess.editor
 
-package object lua
-  extends LuaFieldNodeImplicits
-  with    LuaControlNodeImplicits
+package object data
+  extends DataFieldImplicits

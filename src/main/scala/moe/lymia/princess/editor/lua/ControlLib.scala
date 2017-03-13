@@ -20,8 +20,18 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor
+package moe.lymia.princess.editor.lua
 
-package object lua
-  extends LuaFieldNodeImplicits
-  with    LuaControlNodeImplicits
+import moe.lymia.princess.core._
+import moe.lymia.princess.editor.data._
+import moe.lymia.princess.lua._
+
+trait LuaControlNodeImplicits {
+  implicit object LuaInputControlNode extends LuaUserdataInput[ControlNode]
+}
+
+object ControlLib extends LuaLibrary {
+  override def open(L: LuaState, table: LuaTable): Unit = {
+
+  }
+}

@@ -106,8 +106,8 @@ trait LuaLookup extends HasLuaMethods {
     properties.getOrElse(name, L.error(s"no such property $name")).set(L, obj)
 }
 
-class LuaUserdataInput[T : ClassTag] extends FromLua[T] {
-  final val tag = implicitly[ClassTag[T]]
+trait LuaUserdataInputBase[T] extends FromLua[T] {
+  protected[this] def tag: ClassTag[T]
   private final val runtimeClass = tag.runtimeClass
 
   override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
@@ -119,7 +119,12 @@ class LuaUserdataInput[T : ClassTag] extends FromLua[T] {
     case _ => typerror(L, source, v, Lua.TUSERDATA)
   }
 }
-class LuaUserdataType[T : ClassTag] extends LuaUserdataInput[T] with ToLua[T] {
+class LuaUserdataInput[T : ClassTag] extends LuaUserdataInputBase[T] {
+  protected[this] val tag = implicitly[ClassTag[T]]
+}
+class LuaUserdataOutputType[T : ClassTag] extends ToLua[T] {
+  protected[this] val tag = implicitly[ClassTag[T]]
+
   private val metatableInitializers = new mutable.ArrayBuffer[(LuaState, LuaTable) => Unit]
   protected final def metatable(fn: (LuaState, LuaTable) => Unit) = metatableInitializers.append(fn)
   final def getMetatable(L: LuaState) = {
@@ -131,17 +136,19 @@ class LuaUserdataType[T : ClassTag] extends LuaUserdataInput[T] with ToLua[T] {
   }
 
   override def toLua(t: T) = new LuaObject(LuaExecWrapper { L =>
-    val cache = L.getRegistry(LuaUserdataType.metatableCache, new LuaUserdataType.MetatableCacheType)
+    val cache = L.getRegistry(LuaUserdataOutputType.metatableCache, new LuaUserdataOutputType.MetatableCacheType)
     val mt = cache.getOrElseUpdate(this, this.getMetatable(L))
     val ud = new LuaUserdata(t)
     ud.setMetatable(mt)
     ud
   })
 }
-object LuaUserdataType {
-  private type MetatableCacheType = mutable.HashMap[LuaUserdataType[_], LuaTable]
+object LuaUserdataOutputType {
+  private type MetatableCacheType = mutable.WeakHashMap[LuaUserdataOutputType[_], LuaTable]
   private val metatableCache = LuaRegistryEntry[MetatableCacheType]()
 }
+
+class LuaUserdataType[T : ClassTag] extends LuaUserdataOutputType[T] with LuaUserdataInputBase[T]
 
 class PropertiesUserdataType[T : ClassTag] extends LuaUserdataType[T] {
   private type SetPropertyFn = (LuaState, T, Any) => Unit

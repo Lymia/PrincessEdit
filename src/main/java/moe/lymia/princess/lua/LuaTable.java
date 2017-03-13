@@ -33,7 +33,7 @@ import java.util.Enumeration;
  * Calling any methods that are not defined in this class (but are
  * defined in a super class) is extremely deprecated.
  */
-public final class LuaTable extends java.util.Hashtable
+public final class LuaTable extends java.util.Hashtable<Object, Object>
 {
   private static final int MAXBITS = 26;
   private static final int MAXASIZE = 1 << MAXBITS;
@@ -117,7 +117,7 @@ public final class LuaTable extends java.util.Hashtable
   {
     if (key instanceof Double)
     {
-      double d = ((Double)key).doubleValue();
+      double d = (Double) key;
       int k = (int)d;
       if (k == d)
       {
@@ -239,7 +239,7 @@ public final class LuaTable extends java.util.Hashtable
       System.arraycopy(array, 0, newarray, 0, array.length);
       for (int i=array.length; i<nasize; ++i)
       {
-        Object key = new Double(i+1);
+        Object key = (double) (i + 1);
         Object v = super.remove(key);
         if (v == null)
         {
@@ -256,7 +256,7 @@ public final class LuaTable extends java.util.Hashtable
       {
         if (array[i] != Lua.NIL)
         {
-          Object key = new Double(i+1);
+          Object key = (double) (i + 1);
           super.put(key, array[i]);
         }
       }
@@ -304,7 +304,6 @@ public final class LuaTable extends java.util.Hashtable
   void setMetatable(LuaTable metatable)
   {
     this.metatable = metatable;
-    return;
   }
 
   /**
@@ -379,7 +378,7 @@ public final class LuaTable extends java.util.Hashtable
   {
     if (key instanceof Double)
     {
-      double d = ((Double)key).doubleValue();
+      double d = (Double) key;
       if (d <= sizeArray && d >=1)
       {
         int i = (int)d;
@@ -431,7 +430,7 @@ public final class LuaTable extends java.util.Hashtable
     {
       return array[k-1];
     }
-    Object r = super.get(new Double(k));
+    Object r = super.get((double) k);
     if (r == null)
     {
       return Lua.NIL;
@@ -461,7 +460,7 @@ public final class LuaTable extends java.util.Hashtable
     }
     if (key instanceof Double)
     {
-      d = ((Double)key).doubleValue();
+      d = (Double) key;
       int j = (int)d;
 
       if (j == d && j >= 1)
@@ -549,7 +548,7 @@ public final class LuaTable extends java.util.Hashtable
     // The key can never be NIL so putlua will never notice that its L
     // argument is null.
     // :todo: optimisation to avoid putlua checking for array part again
-    putlua(null, new Double(k), v);
+    putlua(null, (double) k, v);
   }
 
   /**
@@ -562,7 +561,7 @@ public final class LuaTable extends java.util.Hashtable
     throw new IllegalArgumentException();
   }
 
-  public Enumeration keys()
+  public Enumeration<Object> keys()
   {
     return new Enum(this, super.keys());
   }
@@ -613,7 +612,7 @@ public final class LuaTable extends java.util.Hashtable
   }
 }
 
-final class Enum implements Enumeration
+final class Enum implements Enumeration<Object>
 {
   private LuaTable t;
   private int i;        // = 0
@@ -630,7 +629,7 @@ final class Enum implements Enumeration
    * Increments {@link #i} until it either exceeds
    * <code>t.sizeArray</code> or indexes a non-nil element.
    */
-  void inci()
+  private void inci()
   {
     while (i < t.sizeArray && t.array[i] == Lua.NIL)
     {
@@ -638,13 +637,8 @@ final class Enum implements Enumeration
     }
   }
 
-  public boolean hasMoreElements()
-  {
-    if (i < t.sizeArray)
-    {
-      return true;
-    }
-    return e.hasMoreElements();
+  public boolean hasMoreElements() {
+    return i < t.sizeArray || e.hasMoreElements();
   }
 
   public Object nextElement()
@@ -653,7 +647,7 @@ final class Enum implements Enumeration
     if (i < t.sizeArray)
     {
       ++i;      // array index i corresponds to key i+1
-      r = new Double(i);
+      r = (double) i;
       inci();
     }
     else
