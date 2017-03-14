@@ -34,7 +34,6 @@ trait LuaFieldNodeImplicits {
   implicit object LuaConstFieldNode extends LuaFieldNodeBase[ConstFieldNode]
   implicit object LuaDerivedFieldNode extends LuaFieldNodeBase[DerivedFieldNode]
   implicit object LuaInputFieldNode extends LuaFieldNodeBase[InputFieldNode]
-  implicit object LuaDebugInputFieldNode extends LuaFieldNodeBase[DebugInputFieldNode]
   implicit object LuaRootNode extends LuaFieldNodeBase[RootNode]
 
   implicit object LuaDerivedDSLWrapper extends PropertiesUserdataType[DeriveList] {
@@ -69,7 +68,5 @@ object FieldLib extends LuaLibrary {
                               control.expectedFieldType.fromLua(L, defaultValue))
         InputFieldNode(checkName(L, fieldName), null, control, defaultNode)
     })
-    L.register(table, "DebugInputFieldNode", (L: LuaState, name: String) =>
-      DebugInputFieldNode(checkName(L, name)))
   }
 }
