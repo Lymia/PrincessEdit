@@ -28,18 +28,17 @@ import moe.lymia.princess.lua.LuaState
 
 import rx._
 
-class DefaultBox(checkVar: Var[DataField], tracker: RxTracker) extends JCheckBox("Default") {
-  val defaultRx = Rx.unsafe { checkVar() == DataField.True }
-  tracker.add(defaultRx)
+class DefaultBox(checkVar: Var[DataField])(implicit owner: Ctx.Owner) extends JCheckBox("Default") {
+  val defaultRx = Rx { checkVar() == DataField.True }
   addItemListener(e => checkVar.update(DataField.fromBool(isSelected)))
 }
 
 case object TextAreaControlType extends ControlType {
   override def expectedFieldType: DataFieldType[_] = DataFieldType.String
-  override def createControl(L: LuaState, data: ControlData): JComponent = ???
+  override def createControl(L: LuaState, data: ControlData)(implicit owner: Ctx.Owner): JComponent = ???
 }
 
 case object TextFieldControlType extends ControlType {
   override def expectedFieldType: DataFieldType[_] = DataFieldType.String
-  override def createControl(L: LuaState, data: ControlData): JComponent = ???
+  override def createControl(L: LuaState, data: ControlData)(implicit owner: Ctx.Owner): JComponent = ???
 }
