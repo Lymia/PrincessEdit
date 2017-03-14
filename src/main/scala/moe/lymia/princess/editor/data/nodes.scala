@@ -29,9 +29,11 @@ import rx._
 
 sealed trait TreeNode
 
-final case class ControlData(backing: Var[DataField], isDefault: Var[DataField], default: Option[Rx[DataField]])
+final case class ControlDataDefault(isDefault: Rx[Boolean], field: Rx[DataField])
+final case class ControlData(backing: Var[DataField], default: Option[ControlDataDefault])
 trait ControlType {
   def expectedFieldType: DataFieldType[_]
+  def defaultValue: DataField
   protected[data] def createControl(L: LuaState, data: ControlData)(implicit owner: Ctx.Owner): JComponent
 }
 
@@ -60,15 +62,15 @@ final case class RxFieldNode(rx: Rx[Any]) extends FieldNode {
   override protected[data] def createRx(ctx: NodeContext)(implicit owner: Ctx.Owner): Rx[Any] = rx
 }
 
-final case class InputFieldNode(fieldName: String, defaultValue: DataField, control: ControlType,
-                                default: Option[FieldNode])
+final case class InputFieldDefault(isDefault: FieldNode, field: FieldNode)
+final case class InputFieldNode(fieldName: String, control: ControlType, default: Option[InputFieldDefault])
   extends FieldNode with ControlNode {
 
   private val expected = control.expectedFieldType.asInstanceOf[DataFieldType[Any]]
 
   private def checkDefault(ctx: NodeContext) = {
-    val field = ctx.data.getDataField(ctx.prefix+fieldName, defaultValue)
-    if(field.now.t != expected) field.update(defaultValue)
+    val field = ctx.data.getDataField(ctx.prefix+fieldName, control.defaultValue)
+    if(field.now.t != expected) field.update(control.defaultValue)
     field
   }
 
@@ -83,9 +85,10 @@ final case class InputFieldNode(fieldName: String, defaultValue: DataField, cont
     ctx.activateCardField(fieldName, this, isUi = true)
 
     val data = ControlData(checkDefault(ctx),
-                           ctx.data.getDataField(s"${ctx.prefix}$fieldName:$$isDefault", DataField.False),
-                           default.map(x => ctx.activateNode(x))
-                                  .map(_.map { x => DataField(expected, expected.fromLua(ctx.L, x)) }))
+                           default.map(v => ControlDataDefault(
+                             ctx.activateNode(v.isDefault).map(_.fromLua[Boolean](ctx.L)),
+                             ctx.activateNode(v.field).map(x => DataField(expected, expected.fromLua(ctx.L, x)))
+                           )))
     control.createControl(ctx.L, data)
   }
 }

@@ -35,10 +35,12 @@ class DefaultBox(checkVar: Var[DataField])(implicit owner: Ctx.Owner) extends JC
 
 case object TextAreaControlType extends ControlType {
   override def expectedFieldType: DataFieldType[_] = DataFieldType.String
+  override def defaultValue: DataField = ???
   override protected[data] def createControl(L: LuaState, data: ControlData)(implicit owner: Ctx.Owner) = ???
 }
 
 case object TextFieldControlType extends ControlType {
   override def expectedFieldType: DataFieldType[_] = DataFieldType.String
+  override def defaultValue: DataField = ???
   override protected[data] def createControl(L: LuaState, data: ControlData)(implicit owner: Ctx.Owner) = ???
 }

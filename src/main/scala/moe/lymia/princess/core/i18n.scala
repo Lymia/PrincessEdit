@@ -20,12 +20,14 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.util
+package moe.lymia.princess.core
 
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.text.MessageFormat
 import java.util.{Locale, Properties}
+
+import moe.lymia.princess.util.IOUtils
 
 import scala.collection.JavaConverters._
 

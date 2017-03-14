@@ -63,10 +63,10 @@ object FieldLib extends LuaLibrary {
   override def open(L: LuaState, table: LuaTable): Unit = {
     L.register(table, "ConstFieldNode", (a: Any) => ConstFieldNode(a))
     L.register(table, "InputFieldNode", {
-      (L: LuaState, fieldName: String, control: ControlType, defaultValue: Any, defaultNode: Option[FieldNode]) =>
-        val field = DataField(control.expectedFieldType.asInstanceOf[DataFieldType[Any]],
-                              control.expectedFieldType.fromLua(L, defaultValue))
-        InputFieldNode(checkName(L, fieldName), null, control, defaultNode)
+      (L: LuaState, fieldName: String, control: ControlType,
+       isDefault: Option[FieldNode], defaultValue: Option[FieldNode]) =>
+        val default = isDefault.flatMap(a => defaultValue.map(b => InputFieldDefault(a, b)))
+        InputFieldNode(checkName(L, fieldName), control, default)
     })
   }
 }
