@@ -73,6 +73,11 @@ object DataField {
   def apply[T](t: DataFieldType[T], value: T): DataField = new DataField(t, value, false)
 
   val Nil = DataField(DataFieldType.Nil, ())
+  val True = DataField(DataFieldType.Boolean, true)
+  val False = DataField(DataFieldType.Boolean, false)
+
+  def fromBool(b: Boolean) = if(b) True else False
+
   def deserialize(v: JsValue): DataField = {
     val Seq(typeName, data) = v.as[Seq[JsValue]]
     DataFieldType.typeMap.get(typeName.as[String]) match {
@@ -88,58 +93,35 @@ final case class EditorField[T : DataFieldType](id: UUID) {
   val t: DataFieldType[T] = implicitly[DataFieldType[T]]
 }
 
-private class DataSection {
+final class DataStore {
   protected val fieldsVar = new mutable.HashMap[String, Var[DataField]]
-  protected def setFieldVar(name: String, field: Var[DataField]) = fieldsVar.put(name, field)
+  val fields = Rx.unsafe { fieldsVar.mapValues(_()).toMap }
 
-  def init(js: JsValue) = for((k, v) <- js.as[Map[String, JsValue]])
-    setFieldVar(k, Var(DataField.deserialize(v)))
-  def getField(name: String, default: => DataField = DataField.Nil): Var[DataField] = {
+  private def setFieldVar(name: String, field: Var[DataField]) = {
+    val ret = fieldsVar.put(name, field)
+    fields.recalc()
+    ret
+  }
+
+  def getDataField(name: String, default: => DataField = DataField.Nil) = {
     if(!fieldsVar.contains(name)) setFieldVar(name, Var(default))
     fieldsVar(name)
   }
 
-  def serialize = Json.toJson(fieldsVar.mapValues(_.now.serialize))
-  def kill(): Unit = for((_, rx) <- fieldsVar) rx.kill()
-}
-private class DataSectionWithFields extends DataSection {
-  val fields = Rx.unsafe { fieldsVar.mapValues(_()).toMap }
-  override protected def setFieldVar(name: String, field: Var[DataField]) = {
-    val ret = super.setFieldVar(name, field)
-    fields.recalc()
-    ret
-  }
-  override def kill(): Unit = {
-    super.kill()
-    fields.kill()
-  }
-}
-
-final class DataStore {
-  private val dataFields   = new DataSectionWithFields
-  private val editorFields = new DataSection
-
-  val data = dataFields.fields
-  def getDataField(name: String, default: => DataField = DataField.Nil) = dataFields.getField(name, default)
-
+  private def getEditorFieldRaw[T](field: EditorField[T]) =
+    getDataField(s"$$editor:${field.id.toString}", DataField.Nil)
   def getEditorField[T](field: EditorField[T])(implicit ctx: Ctx.Owner) =
-    editorFields.getField(field.id.toString, DataField.Nil).filter(_.t == field.t).map(_.value.asInstanceOf[T])
+    getEditorFieldRaw(field).filter(_.t == field.t).map(_.value.asInstanceOf[T])
   def setEditorField[T](field: EditorField[T], v: T) =
-    editorFields.getField(field.id.toString, DataField.Nil).update(DataField(field.t, v))
+    getEditorFieldRaw(field).update(DataField(field.t, v))
 
-  private def init(json: JsValue) = {
-    this.dataFields  .init((json \ "dataFields"  ).as[JsValue])
-    this.editorFields.init((json \ "editorFields").as[JsValue])
-  }
-
-  def serialize = Json.obj(
-    "dataFields"   -> dataFields  .serialize,
-    "editorFields" -> editorFields.serialize
-  )
+  private def init(json: JsValue) =
+    for((k, v) <- json.as[Map[String, JsValue]]) setFieldVar(k, Var(DataField.deserialize(v)))
+  def serialize = Json.toJson(fieldsVar.mapValues(_.now.serialize))
 
   def kill() = {
-    dataFields.kill()
-    editorFields.kill()
+    for((_, rx) <- fieldsVar) rx.kill()
+    fields.kill()
   }
 }
 object DataStore {

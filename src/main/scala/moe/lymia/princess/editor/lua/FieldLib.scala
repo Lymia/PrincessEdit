@@ -29,26 +29,47 @@ import moe.lymia.princess.lua._
 case class DeriveList(elements: Seq[FieldNode])
 
 trait LuaFieldNodeImplicits {
-  implicit object LuaInputFieldNode extends LuaUserdataInput[FieldNode]
+  implicit object LuaUserdataInputFieldNode extends LuaUserdataInput[FieldNode]
 
+  implicit object LuaConstFieldNode extends LuaFieldNodeBase[ConstFieldNode]
   implicit object LuaDerivedFieldNode extends LuaFieldNodeBase[DerivedFieldNode]
+  implicit object LuaInputFieldNode extends LuaFieldNodeBase[InputFieldNode]
+  implicit object LuaDebugInputFieldNode extends LuaFieldNodeBase[DebugInputFieldNode]
+  implicit object LuaRootNode extends LuaFieldNodeBase[RootNode]
 
-  implicit object LuaDerivedDSLWrapper extends LuaUserdataType[DeriveList] {
+  implicit object LuaDerivedDSLWrapper extends PropertiesUserdataType[DeriveList] {
     metatable { (L, mt) =>
       L.register(mt, "__add", (wrapper: DeriveList, node: FieldNode) => DeriveList(wrapper.elements :+ node))
-      L.register(mt, "__call", (wrapper: DeriveList, fn: LuaClosure) => DerivedFieldNode(wrapper.elements, fn))
     }
+    method("map") { wrapper => (fn: LuaClosure) => DerivedFieldNode(wrapper.elements, fn) }
+    method("newRoot") { wrapper => (L: LuaState, name: String, fn: LuaClosure) =>
+      RootNode(FieldLib.checkName(L, name), wrapper.elements, fn) }
   }
-  trait LuaFieldNodeBase[T] extends LuaUserdataType[T] {
+  trait LuaFieldNodeBase[T <: FieldNode] extends PropertiesUserdataType[T] {
     metatable { (L, mt) =>
       L.register(mt, "__add", (n1: FieldNode, n2: FieldNode) => DeriveList(Seq(n1, n2)))
-      L.register(mt, "__call", (n: FieldNode, fn: LuaClosure) => DerivedFieldNode(Seq(n), fn))
     }
+    method("map") { node => (fn: LuaClosure) => DerivedFieldNode(Seq(node), fn) }
+    method("newRoot") { node => (L: LuaState, name: String, fn: LuaClosure) =>
+      RootNode(FieldLib.checkName(L, name), Seq(node), fn) }
   }
 }
 
 object FieldLib extends LuaLibrary {
-  override def open(L: LuaState, table: LuaTable): Unit = {
+  private[lua] def checkName(L: LuaState, name: String) = {
+    if(name.contains(":") || name.contains("$")) L.error("field name cannot contain ':' or '$'")
+    name
+  }
 
+  override def open(L: LuaState, table: LuaTable): Unit = {
+    L.register(table, "ConstFieldNode", (a: Any) => ConstFieldNode(a))
+    L.register(table, "InputFieldNode", {
+      (L: LuaState, fieldName: String, control: ControlType, defaultValue: Any, defaultNode: Option[FieldNode]) =>
+        val field = DataField(control.expectedFieldType.asInstanceOf[DataFieldType[Any]],
+                              control.expectedFieldType.fromLua(L, defaultValue))
+        InputFieldNode(checkName(L, fieldName), null, control, defaultNode)
+    })
+    L.register(table, "DebugInputFieldNode", (L: LuaState, name: String) =>
+      DebugInputFieldNode(checkName(L, name)))
   }
 }

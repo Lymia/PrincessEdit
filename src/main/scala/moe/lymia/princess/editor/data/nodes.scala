@@ -34,40 +34,49 @@ sealed trait TreeNode {
   override val hashCode = super.hashCode
 }
 
-final case class ControlData(backing: Rx[DataField], default: Option[Rx[DataField]])
+final case class ControlData(backing: Var[DataField], isDefault: Var[DataField], default: Option[Rx[DataField]])
 trait ControlType {
-  protected[data] def expectedFieldType: DataFieldType[_]
+  def expectedFieldType: DataFieldType[_]
   def createControl(L: LuaState, data: ControlData): JComponent
 }
 
-case class ControlContext(L: LuaState, data: DataStore, state: TreeState)
+final case class NodeContext(L: LuaState, data: DataStore, state: TreeState)
+
 trait ControlNode extends TreeNode {
-  protected[data] def createControl(implicit ctx: ControlContext): JComponent
+  protected[data] def createControl(implicit ctx: NodeContext): JComponent
 }
 
 trait FieldNode extends TreeNode {
-  protected[data] def createRx(L: LuaState, data: DataStore, state: TreeState): Rx[Any]
+  protected[data] def createRx(ctx: NodeContext): Rx[Any]
 }
 
 final case class DebugInputFieldNode(fieldName: String) extends FieldNode {
-  override protected[data] def createRx(L: LuaState, data: DataStore, state: TreeState): Rx[Any] = {
-    val field = data.getDataField(state.prefix+fieldName)
-    Rx.unsafe { field().toLua(L) }
+  override protected[data] def managesCardField: Set[String] = Set(fieldName)
+
+  override protected[data] def createRx(ctx: NodeContext): Rx[Any] = {
+    ctx.state.activateCardField(fieldName, this, isUi = false)
+
+    val field = ctx.data.getDataField(ctx.state.prefix+fieldName)
+    Rx.unsafe { field().toLua(ctx.L) }
   }
 }
 
 final case class DerivedFieldNode(params: Seq[FieldNode], fn: LuaClosure) extends FieldNode {
   override protected[data] def deps = params.toSet
 
-  override protected[data] def createRx(L: LuaState, data: DataStore, state: TreeState) = {
-    val fields = params.map(state.activatedRxes)
-    Rx.unsafe { L.newThread().call(fn, 1, fields.map(_() : LuaObject) : _*).head.as[Any] }
+  override protected[data] def createRx(ctx: NodeContext) = {
+    val fields = params.map(ctx.state.activatedRxes)
+    Rx.unsafe { ctx.L.newThread().call(fn, 1, fields.map(_() : LuaObject) : _*).head.as[Any] }
   }
 }
 
 final case class ConstFieldNode(data: Any) extends FieldNode {
-  override protected[data] def createRx(L: LuaState, data: DataStore, state: TreeState): Rx[Any] =
+  override protected[data] def createRx(ctx: NodeContext): Rx[Any] =
     Rx.unsafe { data }
+}
+
+final case class RxFieldNode(rx: Rx[Any]) extends FieldNode {
+  override protected[data] def createRx(ctx: NodeContext): Rx[Any] = rx
 }
 
 final case class InputFieldNode(fieldName: String, defaultValue: DataField, control: ControlType,
@@ -79,24 +88,25 @@ final case class InputFieldNode(fieldName: String, defaultValue: DataField, cont
   override protected[data] def managesCardField: Set[String] = Set(fieldName)
   override protected[data] def deps = default.toSet
 
-  private def checkDefault(data: DataStore, state: TreeState) = {
-    val field = data.getDataField(state.prefix+fieldName, defaultValue)
+  private def checkDefault(ctx: NodeContext) = {
+    val field = ctx.data.getDataField(ctx.state.prefix+fieldName, defaultValue)
     if(field.now.t != expected) field.update(defaultValue)
     field
   }
 
-  override protected[data] def createRx(L: LuaState, data: DataStore, state: TreeState): Rx[Any] = {
-    state.activateCardField(fieldName, this, isUi = false)
+  override protected[data] def createRx(ctx: NodeContext): Rx[Any] = {
+    ctx.state.activateCardField(fieldName, this, isUi = false)
 
-    val field = checkDefault(data, state)
-    Rx.unsafe { field().toLua(L) }
+    val field = checkDefault(ctx)
+    Rx.unsafe { field().toLua(ctx.L) }
   }
 
-  override protected[data] def createControl(implicit ctx: ControlContext): JComponent = {
+  override protected[data] def createControl(implicit ctx: NodeContext): JComponent = {
     ctx.state.activateCardField(fieldName, this, isUi = true)
 
     import rx.Ctx.Owner.Unsafe._
-    val data = ControlData(checkDefault(ctx.data, ctx.state),
+    val data = ControlData(checkDefault(ctx),
+                           ctx.data.getDataField(s"${ctx.state.prefix}$fieldName:$$isDefault", DataField.False),
                            default.map(ctx.state.activatedRxes)
                                   .map(_.map { x => DataField(expected, expected.fromLua(ctx.L, x)) }))
     ctx.state.tracker.add(data.backing)

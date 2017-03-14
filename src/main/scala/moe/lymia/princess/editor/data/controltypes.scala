@@ -20,18 +20,26 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor
+package moe.lymia.princess.editor.data
 
-import moe.lymia.princess.core._
+import javax.swing._
 
-package object lua
-  extends LuaFieldNodeImplicits
-  with    LuaControlNodeImplicits {
+import moe.lymia.princess.lua.LuaState
 
-  object EditorModule extends LuaModule {
-    override val moduleName: String = "editor"
-    override def getLibraries(ctx: LuaContext): Seq[LuaLibrary] = Seq(
-      ControlLib, FieldLib
-    )
-  }
+import rx._
+
+class DefaultBox(checkVar: Var[DataField], tracker: RxTracker) extends JCheckBox("Default") {
+  val defaultRx = Rx.unsafe { checkVar() == DataField.True }
+  tracker.add(defaultRx)
+  addItemListener(e => checkVar.update(DataField.fromBool(isSelected)))
+}
+
+case object TextAreaControlType extends ControlType {
+  override def expectedFieldType: DataFieldType[_] = DataFieldType.String
+  override def createControl(L: LuaState, data: ControlData): JComponent = ???
+}
+
+case object TextFieldControlType extends ControlType {
+  override def expectedFieldType: DataFieldType[_] = DataFieldType.String
+  override def createControl(L: LuaState, data: ControlData): JComponent = ???
 }

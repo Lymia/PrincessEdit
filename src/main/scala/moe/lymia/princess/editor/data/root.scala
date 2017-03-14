@@ -33,7 +33,7 @@ import rx._
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-private class WeakReferenceList[T] {
+private final class WeakReferenceList[T] {
   private var queue = new ReferenceQueue[T]
   private val list  = new mutable.HashSet[Reference[_ <: T]]
 
@@ -48,7 +48,7 @@ private class WeakReferenceList[T] {
     list.clear()
   }
 }
-private[data] class RxTracker {
+private[data] final class RxTracker {
   private val rxs   = new WeakReferenceList[Rx[_]]
   private val obses = new WeakReferenceList[Obs]
 
@@ -74,11 +74,12 @@ private[data] class RxTracker {
     obses.clear()
   }
 }
-private[data] class TreeState(val prefixSeq: Seq[String] = Seq()) {
+private[data] final class TreeState(val prefixSeq: Seq[String] = Seq()) {
   val prefix = if(prefixSeq.isEmpty) "" else s"${prefixSeq.mkString(":")}:"
 
   val activatedRxes = new mutable.HashMap[FieldNode, Rx[Any]]
   val activatedRoots = new mutable.HashMap[RootNode, Rx[ActiveRootNode]]
+  val currentActiveRoot = new mutable.HashMap[RootNode, ActiveRootNode]
 
   val tracker = new RxTracker
 
@@ -98,7 +99,7 @@ private[data] class TreeState(val prefixSeq: Seq[String] = Seq()) {
   }
 }
 
-case class RxPane(componentRx: Rx[JComponent], tracker: RxTracker) extends JPanel {
+final class RxPane(componentRx: Rx[JComponent], tracker: RxTracker) extends JPanel {
   import rx.Ctx.Owner.Unsafe._
 
   private def updateContents(): Unit = {
@@ -116,14 +117,15 @@ case class RxPane(componentRx: Rx[JComponent], tracker: RxTracker) extends JPane
   tracker.add(componentObs)
 }
 
-class ActiveRootNode private (context: ControlContext, uiRoot: Option[ControlNode],
-                              fields: Option[Map[String, Rx[Any]]]) {
+final class ActiveRootNode private (context: NodeContext, uiRoot: Option[ControlNode],
+                                    fields: Option[Map[String, Rx[Any]]]) {
   lazy val uiComponent = uiRoot.map(_.createControl(context))
-  lazy val luaOutput = {
-    val out = Rx.unsafe { fields.map(_.mapValues(_())) }
+  lazy val luaOutput = fields.map { fields =>
+    val out = Rx.unsafe { fields.mapValues(_()) }
     context.state.tracker.add(out)
     out
   }
+  def kill() = context.state.tracker.kill()
 }
 object ActiveRootNode {
   def apply(L: LuaState, data: DataStore, prefix: Seq[String],
@@ -143,40 +145,70 @@ object ActiveRootNode {
       if(newUnresolved.isEmpty) combined else resolveLoadOrder(newUnresolved, combined)
     }
 
+    val ctx = NodeContext(L, data, state)
+
     for(node <- resolveLoadOrder(findSpecFields((uiRoot ++ fields.toSeq.flatMap(_.values)).toSet, Set()), Seq())) {
       for(name <- node.managesCardField) state.activateCardField(name, node, isUi = false)
       node match {
         case field: FieldNode =>
-          val curRx = field.createRx(L, data, state)
+          val curRx = field.createRx(ctx)
           state.activatedRxes.put(field, curRx)
           state.tracker.add(curRx)
         case _ =>
       }
     }
 
-    new ActiveRootNode(ControlContext(L, data, state), uiRoot, fields.map(_.mapValues(state.activatedRxes)))
+    new ActiveRootNode(ctx, uiRoot, fields.map(_.mapValues(state.activatedRxes)))
   }
 }
 
-case class RootNode(subtableName: String, params: Seq[FieldNode], fn: LuaClosure)
+final case class RootNode(subtableName: String, params: Seq[FieldNode], fn: LuaClosure)
   extends FieldNode with ControlNode {
 
   override protected[data] def managesCardField: Set[String] = Set(subtableName)
   override protected[data] def deps = params.toSet
 
-  private def makeActiveNode(L: LuaState, data: DataStore, state: TreeState) =
-    state.activatedRoots.getOrElseUpdate(this, {
-      val fields = params.map(state.activatedRxes)
+  private def makeActiveNode(ctx: NodeContext) =
+    ctx.state.activatedRoots.getOrElseUpdate(this, {
+      val fields = params.map(ctx.state.activatedRxes)
       val rx = Rx.unsafe {
         // unapply not used because apparently scala.rx's macros break on those
-        val ret = L.newThread().call(fn, 2, fields.map(_() : LuaObject) : _*)
-        ActiveRootNode(L, data, state.prefixSeq :+ subtableName,
-                       ret.last.as[Option[ControlNode]], ret.head.as[Option[Map[String, FieldNode]]])
+        val ret = ctx.L.newThread().call(fn, 2, fields.map(_() : LuaObject) : _*)
+        val node = ActiveRootNode(ctx.L, ctx.data, ctx.state.prefixSeq :+ subtableName,
+                                  ret.last.as[Option[ControlNode]], ret.head.as[Option[Map[String, FieldNode]]])
+
+        if(ctx.state.currentActiveRoot.contains(this)) {
+          ctx.state.currentActiveRoot(this).kill()
+          ctx.state.currentActiveRoot.remove(this)
+        }
+        ctx.state.currentActiveRoot.put(this, node)
+
+        node
       }
-      state.tracker.add(rx)
+      ctx.state.tracker.add(rx)
       rx
     })
 
-  override protected[data] def createRx(L: LuaState, data: DataStore, state: TreeState): Rx[Any] = ???
-  override protected[data] def createControl(implicit ctx: ControlContext): JComponent = ???
+  override protected[data] def createRx(ctx: NodeContext): Rx[Any] = {
+    ctx.state.activateCardField(subtableName, this, isUi = false)
+
+    val active = makeActiveNode(ctx)
+    Rx.unsafe { active().luaOutput.fold[Any](Lua.NIL)(_().toLua(ctx.L)) }
+  }
+
+  override protected[data] def createControl(implicit ctx: NodeContext): JComponent = {
+    ctx.state.activateCardField(subtableName, this, isUi = false)
+
+    val active = makeActiveNode(ctx)
+    val componentRx = Rx.unsafe {
+      active().uiComponent.getOrElse({
+        val area = new JTextArea()
+        area.setText("No UI component given!")
+        area.setEditable(false)
+        area
+      })
+    }
+    ctx.state.tracker.add(componentRx)
+    new RxPane(componentRx, ctx.state.tracker)
+  }
 }

@@ -27,11 +27,15 @@ import moe.lymia.princess.editor.data._
 import moe.lymia.princess.lua._
 
 trait LuaControlNodeImplicits {
-  implicit object LuaInputControlNode extends LuaUserdataInput[ControlNode]
+  implicit object LuaControlType extends LuaUserdataType[ControlType]
+  implicit object LuaControlNode extends LuaUserdataType[ControlNode]
 }
 
 object ControlLib extends LuaLibrary {
   override def open(L: LuaState, table: LuaTable): Unit = {
-
+    val controlTypes = L.newTable()
+    L.rawSet(controlTypes, "TextArea", TextAreaControlType : ControlType)
+    L.rawSet(controlTypes, "TextField", TextFieldControlType : ControlType)
+    L.rawSet(table, "ControlType", controlTypes)
   }
 }
