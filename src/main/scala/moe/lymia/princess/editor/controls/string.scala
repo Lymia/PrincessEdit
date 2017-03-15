@@ -34,8 +34,10 @@ private trait StringJTextComponent { this: JTextComponent =>
   implicit val owner: Ctx.Owner
 
   getDocument.addDocumentListener(new DocumentListener {
-    override def insertUpdate(e: DocumentEvent) =
+    override def insertUpdate(e: DocumentEvent) = {
+      data.ctx.needsSaving()
       data.ctx.queueUpdate(data.backing, DataField(DataFieldType.String, getText))
+    }
     override def removeUpdate(e: DocumentEvent) = insertUpdate(e)
     override def changedUpdate(e: DocumentEvent) = { }
   })
@@ -43,9 +45,12 @@ private trait StringJTextComponent { this: JTextComponent =>
   val obs = data.default map { default =>
     val rx = Rx { (default.isDefault(), default.field()) }
     rx.filter(_._1).foreach { case (isDefault : Boolean, field : DataField) =>
-      setEnabled(isDefault)
+      SwingUtilities.invokeLater { () =>
+        setEnabled(isDefault)
+        if(isDefault) setText(field.value.toString)
+      }
       if(isDefault) {
-        setText(field.value.toString)
+        data.ctx.needsSaving()
         data.ctx.queueUpdate(data.backing, field)
       }
     }

@@ -139,7 +139,7 @@ final class SVGBuilder(val settings: RenderSettings) {
   private val stylesheetDefs = new mutable.ArrayBuffer[String]
   def addStylesheetDefinition(str: String) = stylesheetDefs.append(str)
 
-  def renderSVGTag(root: SVGDefinitionReference, pretty: Boolean = false) = {
+  def renderSVGTag(root: SVGDefinitionReference, pretty: Boolean = false): Elem = {
     def inlineRefs(elem: Elem) = if(pretty) inlineReferencesIter(elem) else elem
     def doMinify(elem: Elem) = if(pretty) MinifyXML.SVG(elem, SVGBuilder.princessScope) else elem
     val rootTag = inlineRefs(root.includeInRect(0, 0, settings.viewport.width, settings.viewport.height))
@@ -162,6 +162,7 @@ final class SVGBuilder(val settings: RenderSettings) {
     w.write(s"${prettyPrint(renderSVGTag(root, pretty = pretty))}\n")
     w.close()
   }
+
   def rasterize(rasterizer: SVGRasterizer, x: Int, y: Int, root: SVGDefinitionReference) =
     rasterizer.rasterizeSVG(x, y, renderSVGTag(root))
 }

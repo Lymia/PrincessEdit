@@ -56,13 +56,6 @@ object DataFieldType {
   val allTypes: Seq[DataFieldType[_]] = Seq(Nil, Int, Double, String, Boolean)
   val typeMap = allTypes.map(x => (x.typeName -> x).asInstanceOf[(String, DataFieldType[_])]).toMap
 }
-trait DataFieldImplicits {
-  implicit val DataFieldTypeNil     = DataFieldType.Nil
-  implicit val DataFieldTypeInt     = DataFieldType.Int
-  implicit val DataFieldTypeDouble  = DataFieldType.Double
-  implicit val DataFieldTypeString  = DataFieldType.String
-  implicit val DataFieldTypeBoolean = DataFieldType.Boolean
-}
 
 final case class DataField private(t: DataFieldType[_], value: Any, private val disambiguateConstructors: Boolean) {
   def serialize: JsValue = Json.arr(t.typeName, t.asInstanceOf[DataFieldType[Any]].serialize(value))
@@ -90,45 +83,27 @@ object DataField {
   }
 }
 
-final case class EditorField[T : DataFieldType](id: UUID) {
-  val t: DataFieldType[T] = implicitly[DataFieldType[T]]
-}
-
 final class DataStore {
   protected val fieldsVar = new mutable.HashMap[String, Var[DataField]]
   val fields = Rx.unsafe { fieldsVar.mapValues(_()).toMap }
 
-  private def setFieldVar(name: String, field: Var[DataField]) = {
-    val ret = fieldsVar.put(name, field)
-    fields.recalc()
-    ret
-  }
-
   def getDataField(name: String, default: => DataField = DataField.Nil) = {
-    if(!fieldsVar.contains(name)) setFieldVar(name, Var(default))
+    if(!fieldsVar.contains(name)) {
+      fieldsVar.put(name, Var(default))
+      fields.recalc()
+    }
     fieldsVar(name)
   }
 
-  private def getEditorFieldRaw[T](field: EditorField[T]) =
-    getDataField(s"$$editor:${field.id.toString}", DataField.Nil)
-  def getEditorField[T](field: EditorField[T])(implicit ctx: Ctx.Owner) =
-    getEditorFieldRaw(field).filter(_.t == field.t).map(_.value.asInstanceOf[T])
-  def setEditorField[T](field: EditorField[T], v: T) =
-    getEditorFieldRaw(field).update(DataField(field.t, v))
-
-  private def init(json: JsValue) =
-    for((k, v) <- json.as[Map[String, JsValue]]) setFieldVar(k, Var(DataField.deserialize(v)))
+  def deserialize(json: JsValue) = {
+    val map = json.as[Map[String, JsValue]]
+    for((k, v) <- map) getDataField(k).update(DataField.deserialize(v))
+    for((k, v) <- fieldsVar if !map.contains(k)) getDataField(k).update(DataField.Nil)
+  }
   def serialize = Json.toJson(fieldsVar.mapValues(_.now.serialize))
 
   def kill() = {
     for((_, rx) <- fieldsVar) rx.kill()
     fields.kill()
-  }
-}
-object DataStore {
-  def deserialize(js: JsValue) = {
-    val data = new DataStore
-    data.init(js)
-    data
   }
 }

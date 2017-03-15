@@ -31,30 +31,20 @@ import moe.lymia.princess.renderer.lua._
 import moe.lymia.princess.rasterizer.SVGRasterizer
 import moe.lymia.princess.util.SizedCache
 
-trait Renderer {
-  protected def doRender(cardData: LuaObject, res: ResourceLoader): (SVGBuilder, SVGDefinitionReference)
-
-  def renderSVGTag(cardData: LuaObject, res: ResourceLoader = ExportResourceLoader) = {
-    val (builder, definition) = doRender(cardData, res)
+case class SVGData(private val builder: SVGBuilder, private val definition: SVGDefinitionReference) {
+  def renderSVGTag() =
     builder.renderSVGTag(definition)
-  }
-  def write(w: Writer, cardData: LuaObject, encoding: String = "utf-8", pretty: Boolean = true,
-            res: ResourceLoader = ExportResourceLoader) = {
-    val (builder, definition) = doRender(cardData, res)
+  def write(w: Writer, encoding: String = "utf-8", pretty: Boolean = true) =
     builder.write(w, definition, encoding, pretty = pretty)
-  }
-  def rasterize(rasterize: SVGRasterizer, x: Int, y: Int, cardData: LuaObject,
-                res: ResourceLoader = RasterizeResourceLoader) = {
-    val (builder, definition) = doRender(cardData, res)
+  def rasterize(rasterize: SVGRasterizer, x: Int, y: Int) =
     builder.rasterize(rasterize, x, y, definition)
-  }
 }
 
-final class RenderManager(game: GameManager, cache: SizedCache) extends Renderer {
+final class RenderManager(game: GameManager, cache: SizedCache) {
   if(!game.lua.isModuleLoaded(lua.RenderModule)) game.lua.loadModule(lua.RenderModule)
 
   private lazy val export = game.getEntryPoint(StaticExportIDs.EntryPoint(game.gameId, "render"))
-  override protected def doRender(cardData: LuaObject, res: ResourceLoader) =
+  def render(cardData: LuaObject, res: ResourceLoader) =
     EditorException.context(s"rendering card") {
       val L = game.lua.L.newThread()
       val layoutFn    = L.getTable(export, "render").as[LuaClosure]
@@ -73,6 +63,6 @@ final class RenderManager(game: GameManager, cache: SizedCache) extends Renderer
       val builder = new SVGBuilder(renderSettings)
       val resources = new ResourceManager(builder, renderSettings, cache, res, game)
       val renderManager = new ComponentRenderManager(builder, resources)
-      (builder, renderManager.renderComponent(reference))
+      SVGData(builder, renderManager.renderComponent(reference))
     }
 }

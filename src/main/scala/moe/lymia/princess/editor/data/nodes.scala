@@ -30,6 +30,7 @@ import rx._
 sealed trait TreeNode
 
 trait ControlContext {
+  def needsSaving()
   def queueUpdate[T](rxVar: Var[T], newValue: T)
 }
 

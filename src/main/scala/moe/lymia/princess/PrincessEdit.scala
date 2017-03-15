@@ -25,8 +25,10 @@ package moe.lymia.princess
 import java.io.{FileOutputStream, FileWriter}
 import java.nio.file.Paths
 import javax.imageio.ImageIO
+import javax.swing.UIManager
 
 import moe.lymia.princess.core._
+import moe.lymia.princess.editor._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.lua._
@@ -50,8 +52,11 @@ class CLI {
 
   private def error(s: String) = throw CLIException(s)
 
-  private val parser = new scopt.OptionParser[Unit]("./PrincessEdit") {
+  private val uiMain = new UIMain
+  private val parser = new scopt.OptionParser[Unit]("./PrincessEdit") with uiMain.ScoptArgs {
     help("help").text("Shows this help message.")
+    note("")
+    uiOptions()
     note("")
     cmd("lua").text("Runs a Lua file or starts a Lua console").foreach(_ => mode = cmd_lua _).children(
       arg[String]("<file>").foreach(x => luaFile = Some(x)).optional().hidden()
@@ -85,7 +90,8 @@ class CLI {
   }
 
   private def cmd_default() = {
-    sys.error("GUI not yet implemented")
+    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName)
+    uiMain.main()
   }
 
   private def cmd_lua(): Unit = {
@@ -121,7 +127,8 @@ class CLI {
       new InkscapeConnectionFactory("inkscape").createRasterizer()
     }
     try {
-      val image = time("Rasterized image") { mainObj.rasterize(rasterizer, xSize, ySize, cardData) }
+      val data = time("Executing components") { mainObj.render(cardData, RasterizeResourceLoader) }
+      val image = time("Rasterized image") { data.rasterize(rasterizer, xSize, ySize) }
       time("Writing .png") { ImageIO.write(image, "png", new FileOutputStream(out)) }
     } finally {
       rasterizer.destroy()
@@ -129,10 +136,10 @@ class CLI {
   }
   private def cmd_render(): Unit = {
     val (mainObj, cardData) = renderCommon()
-    time("Renderered SVG") {
-      mainObj.write(new FileWriter(out), cardData, pretty = !dirty, res =
-        if(dirty) RasterizeResourceLoader else ExportResourceLoader)
+    val data = time("Executing components") {
+      mainObj.render(cardData, if(dirty) RasterizeResourceLoader else ExportResourceLoader)
     }
+    time("Renderered SVG") { data.write(new FileWriter(out), pretty = !dirty) }
   }
 
   def main(args: Seq[String]) = try {

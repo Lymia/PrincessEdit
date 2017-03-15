@@ -35,9 +35,8 @@ case class LabelNode(label: String) extends ControlNode {
 
 private class VisibilityPane(ctx: NodeContext, isVisible: Rx[Any], contents: JComponent)
                             (implicit owner: Ctx.Owner) extends JPanel {
-
   add(contents)
-  val obs = isVisible.foreach { b => setVisible(Lua.isBoolean(b)) }
+  val obs = isVisible.foreach { b => SwingUtilities.invokeLater { () => setVisible(Lua.isBoolean(b)) } }
 }
 case class VisibilityNode(isVisible: FieldNode, contents: ControlNode) extends ControlNode {
   override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent =

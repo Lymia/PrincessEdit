@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2017 Lymia Alusyia <lymia@lymiahugs.com>
  *
@@ -23,5 +22,13 @@
 
 package moe.lymia.princess.editor
 
-package object data
-  extends DataFieldImplicits
+class UIMain {
+  trait ScoptArgs { this: scopt.OptionParser[Unit] =>
+    def uiOptions() = {
+
+    }
+  }
+  def main() = {
+
+  }
+}

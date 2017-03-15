@@ -32,14 +32,20 @@ private trait BooleanJTextComponent { this: JToggleButton =>
   val data: ControlData
   implicit val owner: Ctx.Owner
 
-  addItemListener(l => data.ctx.queueUpdate(data.backing, DataField.fromBool(isSelected)))
+  addItemListener(l => {
+    data.ctx.needsSaving()
+    data.ctx.queueUpdate(data.backing, DataField.fromBool(isSelected))
+  })
 
   val obs = data.default map { default =>
     val rx = Rx { (default.isDefault(), default.field()) }
     rx.filter(_._1).foreach { case (isDefault : Boolean, field : DataField) =>
-      setEnabled(isDefault)
+      SwingUtilities.invokeLater { () =>
+        setEnabled(isDefault)
+        if(isDefault) setSelected(Lua.isBoolean(field.toLua(data.internal_L)))
+      }
       if(isDefault) {
-        setSelected(Lua.isBoolean(field.toLua(data.internal_L)))
+        data.ctx.needsSaving()
         data.ctx.queueUpdate(data.backing, DataField.fromBool(isSelected))
       }
     }
