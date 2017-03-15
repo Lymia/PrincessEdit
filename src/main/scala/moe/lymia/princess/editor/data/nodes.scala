@@ -34,16 +34,16 @@ trait ControlContext {
 }
 
 final case class ControlDataDefault(isDefault: Rx[Boolean], field: Rx[DataField])
-final case class ControlData(L: LuaState, ctx: ControlContext,
+final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlContext,
                              backing: Var[DataField], default: Option[ControlDataDefault])
 trait ControlType {
   def expectedFieldType: DataFieldType[_]
   def defaultValue: DataField
-  protected[data] def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent
+  def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent
 }
 
 trait ControlNode extends TreeNode {
-  protected[data] def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent
+  def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent
 }
 
 trait FieldNode extends TreeNode {
@@ -83,16 +83,17 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
     ctx.activateCardField(fieldName, this, isUi = false)
 
     val field = checkDefault(ctx)
-    Rx { field().toLua(ctx.L) }
+    Rx { field().toLua(ctx.internal_L) }
   }
 
-  override protected[data] def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
+  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
     ctx.activateCardField(fieldName, this, isUi = true)
 
-    val data = ControlData(ctx.L, ctx.controlCtx, checkDefault(ctx),
+    val data = ControlData(ctx.L, ctx.internal_L, ctx.controlCtx, checkDefault(ctx),
                            default.map(v => ControlDataDefault(
-                             ctx.activateNode(v.isDefault).map(_.fromLua[Boolean](ctx.L)),
-                             ctx.activateNode(v.field).map(x => DataField(expected, expected.fromLua(ctx.L, x)))
+                             ctx.activateNode(v.isDefault).map(_.fromLua[Boolean](ctx.internal_L)),
+                             ctx.activateNode(v.field).map(x =>
+                               DataField(expected, expected.fromLua(ctx.internal_L, x)))
                            )))
     control.createComponent(data)
   }

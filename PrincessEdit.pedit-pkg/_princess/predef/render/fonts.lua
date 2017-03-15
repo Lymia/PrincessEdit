@@ -19,9 +19,10 @@
 -- THE SOFTWARE.
 
 local _princess = ...
+local render = _princess.render
 
 local ipairs, warn, trace = ipairs, log.warn, log.trace
-local loadFont, getExports = _princess.loadFont, exports.getExports
+local loadFont, getExports = render.loadFont, exports.getExports
 
 local fontCache = {}
 local fontList = {}
@@ -87,7 +88,7 @@ end
 
 local fontLoaded = {}
 local fontNameList = {}
-function _princess.getFontName(font)
+function render.getFontName(font)
     return fontNameList[font]
 end
 
@@ -111,4 +112,4 @@ local function getFont(fontName)
 
     return font
 end
-_princess.getFont = getFont
+render.getFont = getFont

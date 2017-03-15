@@ -71,7 +71,8 @@ class LayoutComponent(private var L_main: LuaState, private var allowOverflow: B
 
     (for(i <- 1 to L.objLen(components)) yield {
       val entry = L.getTable(components, i)
-      val component = L.getTable(entry, "component").as[ComponentReference]
+      val component = L.getTable(entry, "component").as[Option[ComponentReference]]
+                       .getOrElse(L.getTable(entry, 1).as[ComponentReference])
       val bounds    = L.getTable(entry, "bounds"   ).as[Option[Bounds]]
       bounds match {
         case Some(b) => manager.renderComponent(component).includeInBounds(b.minX, b.minY, b.maxX, b.maxY)

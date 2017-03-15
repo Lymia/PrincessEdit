@@ -39,37 +39,38 @@
 -- THE SOFTWARE.
 
 local _princess = ...
+local core = _princess.core
 
 local ipairs = ipairs
 
-function _princess.lockAll(obj)
+function core.lockAll(obj)
     obj._deleteProperty("_listProperties")
     obj._deleteProperty("_getProperty")
     obj._deleteProperty("_hasProperty")
     obj._lock()
 end
 
-function _princess.inheritProperty(obj, underlying, ...)
+function core.inheritProperty(obj, underlying, ...)
     for _, name in ipairs({...}) do
         local get, set = underlying._getProperty(name)
         obj._property(name, function() return get() end, function(v) set(v) end)
     end
 end
 
-function _princess.inheritLockedProperty(obj, underlying, ...)
+function core.inheritLockedProperty(obj, underlying, ...)
     for _, name in ipairs({...}) do
         obj._property(name, function() return underlying[name] end, function(v) underlying[name] = v end)
     end
 end
 
-function _princess.inheritUnboundMethod(obj, underlying, ...)
+function core.inheritUnboundMethod(obj, underlying, ...)
     for _, name in ipairs({...}) do
         local fn = underlying[name]
         obj._method(name, function(...) return fn(underlying, ...) end)
     end
 end
 
-function _princess.inheritMethod(obj, underlying, ...)
+function core.inheritMethod(obj, underlying, ...)
     for _, name in ipairs({...}) do
         local fn = underlying[name]
         obj._method(name, function(...) return fn(...) end)

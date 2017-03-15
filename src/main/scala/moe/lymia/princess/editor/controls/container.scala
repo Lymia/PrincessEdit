@@ -22,3 +22,34 @@
 
 package moe.lymia.princess.editor.controls
 
+import java.awt.{GridBagConstraints, GridBagLayout}
+import javax.swing._
+
+import moe.lymia.princess.editor.data._
+import moe.lymia.princess.lua.Lua
+import rx._
+
+case class LabelNode(label: String) extends ControlNode {
+  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = new JLabel(label)
+}
+
+private class VisibilityPane(ctx: NodeContext, isVisible: Rx[Any], contents: JComponent)
+                            (implicit owner: Ctx.Owner) extends JPanel {
+
+  add(contents)
+  val obs = isVisible.foreach { b => setVisible(Lua.isBoolean(b)) }
+}
+case class VisibilityNode(isVisible: FieldNode, contents: ControlNode) extends ControlNode {
+  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent =
+    new VisibilityPane(ctx, ctx.activateNode(isVisible), contents.createComponent)
+}
+
+case class GridBagComponent(component: ControlNode, contraints: GridBagConstraints)
+case class GridNode(components: Seq[GridBagComponent]) extends ControlNode {
+  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
+    val panel = new JPanel()
+    panel.setLayout(new GridBagLayout)
+    for(GridBagComponent(c, constraints) <- components) panel.add(c.createComponent, constraints)
+    panel
+  }
+}

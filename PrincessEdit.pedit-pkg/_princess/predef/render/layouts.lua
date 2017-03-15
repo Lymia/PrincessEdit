@@ -19,10 +19,10 @@
 -- THE SOFTWARE.
 
 local _princess = ...
+local render = _princess.render
 
-local pairs, ipairs = pairs, ipairs
 local table_insert = table.insert
-local BaseLayout, BaseSizedLayout = _princess.BaseLayout, _princess.BaseSizedLayout
+local BaseLayout, BaseSizedLayout = render.BaseLayout, render.BaseSizedLayout
 
 component.BaseLayout = BaseLayout
 component.BasicSizedLayout = BaseSizedLayout
@@ -38,10 +38,10 @@ function component.BasicLayout(size)
         }
     end
     layout._method("addComponent", function(x, y, component, size)
-        table_insert(components, {component = component, x = x, y = y, size = size})
+        table_insert(components, { component, x = x, y = y, size = size })
     end)
     layout._method("addComponentInBounds", function(component, bounds)
-        table_insert(components, {component = component, bounds = bounds})
+        table_insert(components, { component, bounds = bounds })
     end)
 
     return layout
@@ -59,7 +59,7 @@ local function SingleComponentLayout(component)
     layout.layoutHandler = function(prerender)
         local bounds = boundsHandler(prerender[component].bounds, prerender[component].size)
         return {
-            components = { { component = component, bounds = bounds } },
+            components = { { component, bounds = bounds } },
             bounds     = bounds,
         }
     end

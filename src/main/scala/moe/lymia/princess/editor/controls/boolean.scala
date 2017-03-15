@@ -39,7 +39,7 @@ private trait BooleanJTextComponent { this: JToggleButton =>
     rx.filter(_._1).foreach { case (isDefault : Boolean, field : DataField) =>
       setEnabled(isDefault)
       if(isDefault) {
-        setSelected(Lua.isBoolean(field.toLua(data.L)))
+        setSelected(Lua.isBoolean(field.toLua(data.internal_L)))
         data.ctx.queueUpdate(data.backing, DataField.fromBool(isSelected))
       }
     }
@@ -54,6 +54,6 @@ trait BooleanControlType extends ControlType {
 private case class CheckBoxComponent(title: String, data: ControlData)(implicit val owner: Ctx.Owner)
   extends JCheckBox with BooleanJTextComponent
 case class CheckBoxControlType(title: Option[String]) extends BooleanControlType {
-  override protected[editor] def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent =
+  override def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent =
     CheckBoxComponent(title.orNull, data)
 }

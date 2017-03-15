@@ -19,8 +19,9 @@
 -- THE SOFTWARE.
 
 local _princess = ...
+local render = _princess.render
 
-local Template = _princess.Template
+local Template = render.Template
 
 component.Template = Template
 

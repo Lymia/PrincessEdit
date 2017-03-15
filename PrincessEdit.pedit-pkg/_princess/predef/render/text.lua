@@ -21,16 +21,17 @@
 -- TODO: Add explicit nil checks
 
 local _princess = ...
+local core, render = _princess.core, _princess.render
 
 local ipairs = ipairs
 local getFont, getFontName, lockAll =
-    _princess.getFont, _princess.getFontName, _princess.lockAll
+    render.getFont, render.getFontName, core.lockAll
 local inheritProperty, inheritMethod, inheritUnboundMethod, inheritLockedProperty =
-    _princess.inheritProperty, _princess.inheritMethod, _princess.inheritUnboundMethod, _princess.inheritLockedProperty
+    core.inheritProperty, core.inheritMethod, core.inheritUnboundMethod, core.inheritLockedProperty
 local FormattedStringBuffer, Object, SimpleText, ComponentWrapper =
-    _princess.FormattedStringBuffer, _princess.Object, _princess.SimpleText, _princess.ComponentWrapper
+    render.FormattedStringBuffer, core.Object, render.SimpleText, render.ComponentWrapper
 local TextLayout =
-    _princess.TextLayout
+    render.TextLayout
 
 local function copyAttrs(target, v)
     if v.font         then target.font         = getFont(v.font) end
@@ -85,7 +86,7 @@ end
 
 -- TODO: Do a proper wrapper around the text scaling features
 
-component.SimpleFormattedText = _princess.SimpleFormattedText
+component.SimpleFormattedText = render.SimpleFormattedText
 
 component.TextLayout = TextLayout
 

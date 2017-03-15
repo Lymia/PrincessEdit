@@ -157,6 +157,13 @@ class LuaImplicits extends LuaGeneratedImplicits {
       case _ => typerror(L, source, v, Lua.TTABLE)
     }
   }
+  implicit object LuaParameterUserdata extends LuaParameter[LuaUserdata] {
+    def toLua(t: LuaUserdata) = new LuaObject(t)
+    override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
+      case n: LuaUserdata => n
+      case _ => typerror(L, source, v, Lua.TUSERDATA)
+    }
+  }
   implicit object LuaParameterThread extends LuaParameter[Lua] {
     def toLua(t: Lua) = new LuaObject(t)
     override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {

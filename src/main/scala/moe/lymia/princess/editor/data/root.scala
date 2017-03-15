@@ -31,8 +31,10 @@ import rx._
 
 import scala.collection.mutable
 
-private[data] final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext,
+final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext,
                                       val prefixSeq: Seq[String] = Seq()) {
+  val internal_L = L.newThread()
+
   val prefix = if(prefixSeq.isEmpty) "" else s"${prefixSeq.mkString(":")}:"
 
   private val activatedRxes = new mutable.HashMap[FieldNode, Rx[Any]]
@@ -71,10 +73,6 @@ final class RxPane(componentRx: Rx[JComponent])(implicit owner: Ctx.Owner) exten
     val contents = componentRx.now
     for(comp <- this.getComponents) this.remove(comp)
     this.add(contents)
-
-    this.setMinimumSize(contents.getMinimumSize)
-    this.setPreferredSize(contents.getPreferredSize)
-    this.setMaximumSize(contents.getMaximumSize)
   }
   updateContents()
 
@@ -113,10 +111,10 @@ final case class RootNode(subtableName: String, params: Seq[FieldNode], fn: LuaC
     ctx.activateCardField(subtableName, this, isUi = false)
 
     val active = makeActiveNode(ctx)
-    Rx { active().luaOutput.fold[Any](Lua.NIL)(_().toLua(ctx.L)) }
+    Rx { active().luaOutput.fold[Any](Lua.NIL)(_().toLua(ctx.internal_L)) }
   }
 
-  override protected[data] def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
+  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
     ctx.activateCardField(subtableName, this, isUi = false)
 
     val active = makeActiveNode(ctx)

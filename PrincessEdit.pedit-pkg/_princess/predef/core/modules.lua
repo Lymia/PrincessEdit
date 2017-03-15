@@ -39,13 +39,14 @@
 -- THE SOFTWARE.
 
 local _princess = ...
+local core = _princess.core
 
 local setmetatable, pairs, ipairs = setmetatable, pairs, ipairs
-local getExports, loadLuaExport, loadINIExport = _princess.getExports, _princess.loadLuaExport, _princess.loadINIExport
+local getExports, loadLuaExport, loadINIExport = core.getExports, core.loadLuaExport, core.loadINIExport
 
 exports = {}
 
-exports.getExportList = _princess.getExportList
+exports.getExportList = core.getExportList
 exports.loadLua = loadLuaExport
 
 local function wrapSection(section)
@@ -101,5 +102,5 @@ local function getExportsFn(allowSystem)
     end
 end
 
-_princess.systemGetExports = getExportsFn(true)
+core.systemGetExports = getExportsFn(true)
 exports.getExports = getExportsFn(false)

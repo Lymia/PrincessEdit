@@ -39,14 +39,15 @@
 -- THE SOFTWARE.
 
 local _princess = ...
+local core = _princess.core
 
 local ipairs, error, trace, insert = ipairs, error, log.trace, table.insert
 local systemGetExports, loadLuaExport, hasExport, gameId =
-    _princess.systemGetExports, _princess.loadLuaExport, _princess.hasExport, _princess.gameId
+    core.systemGetExports, core.loadLuaExport, core.hasExport, core.gameId
 
 local requirePath = {}
 local systemRequire = {}
-_princess.systemRequires = {}
+core.systemRequires = {}
 
 do
     local loaded = {}

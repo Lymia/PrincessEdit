@@ -39,9 +39,10 @@
 -- THE SOFTWARE.
 
 local _princess = ...
+local core = _princess.core
 
 local LogLevel, log_fn, tostring, where, concat, gameId =
-    _princess.LogLevel, _princess.log, tostring, _princess.where, table.concat, _princess.gameId
+    core.LogLevel, core.log, tostring, core.where, table.concat, core.gameId
 
 log = {}
 

@@ -113,7 +113,10 @@ final class LuaContext(val packages: PackageList, val logger: Logger, modules: S
 
     val libs = mod.getLibraries(this)
     if(libs.nonEmpty) logger.trace(" - Loading native libraries")
-    for(lib <- libs) lib.open(L, systemTable)
+
+    val table = L.newTable()
+    for(lib <- libs) lib.open(L, table)
+    L.rawSet(systemTable, mod.moduleName, table)
 
     loadPredefs(StaticExportIDs.Predef(mod.moduleName))
     loadedModules.add(mod.moduleName)

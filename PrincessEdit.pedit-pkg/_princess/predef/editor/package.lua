@@ -19,11 +19,8 @@
 -- THE SOFTWARE.
 
 local _princess = ...
-local render = _princess.render
+local editor = _princess.editor
 
-ComponentManager = render.ComponentManager
-
-component = {}
-
-component.Resource = render.Resource
-component.ComponentWrapper = render.ComponentWrapper
+ui = {}
+ui.node = editor.Node
+ui.control = editor.ControlType

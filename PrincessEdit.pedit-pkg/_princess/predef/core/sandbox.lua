@@ -39,9 +39,10 @@
 -- THE SOFTWARE.
 
 local _princess = ...
+local core = _princess.core
 
 local ipairs, pairs, error, type, _G = ipairs, pairs, error, type, _G
-local log, TRACE, where = _princess.log, _princess.LogLevel.TRACE, _princess.where
+local log, TRACE, where = core.log, core.LogLevel.TRACE, core.where
 
 -----------------------------------
 -- Remove non-whitelisted functions
@@ -57,7 +58,7 @@ local function set(t)
     for _, v in ipairs(t) do n[v] = true end
     return n
 end
-_princess.set = set -- TODO: Maybe define this somewhere nicer?
+core.set = set -- TODO: Maybe define this somewhere nicer?
 
 local absoluteWhitelist = set {
     "assert", "error", "getmetatable", "next", "pairs", "pcall", "rawequal", "rawget", "rawset", "select",
@@ -118,8 +119,8 @@ end
 -- Metatable wrapper
 
 local sys_setmetatable, sys_getmetatable = setmetatable, getmetatable
-_princess.setmetatable = sys_setmetatable
-_princess.getmetatable = sys_getmetatable
+core.setmetatable = sys_setmetatable
+core.getmetatable = sys_getmetatable
 
 local function checkMetatableType(obj)
     local t = type(obj)

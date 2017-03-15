@@ -39,6 +39,7 @@
 -- THE SOFTWARE.
 
 local _princess = ...
+local core = _princess.core
 
 function string.startsWith(str, prefix)
     local lpre = #prefix
@@ -58,5 +59,5 @@ function string.endsWith(str, suffix)
     end
 end
 
-string.trim = _princess.trimString
-string.split = _princess.splitString
+string.trim = core.trimString
+string.split = core.splitString

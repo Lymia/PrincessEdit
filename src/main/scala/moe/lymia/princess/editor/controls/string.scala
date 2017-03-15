@@ -60,13 +60,13 @@ trait StringControlType extends ControlType {
 private case class TextAreaComponent(data: ControlData)(implicit val owner: Ctx.Owner)
   extends JTextArea with StringJTextComponent
 case object TextAreaControlType extends StringControlType {
-  override protected[editor] def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent =
+  override def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent =
     TextAreaComponent(data)
 }
 
 private case class TextFieldComponent(data: ControlData)(implicit val owner: Ctx.Owner)
   extends JTextField with StringJTextComponent
 case object TextFieldControlType extends StringControlType {
-  override protected[editor] def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent =
+  override def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent =
     TextFieldComponent(data)
 }

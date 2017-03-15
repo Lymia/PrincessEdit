@@ -39,9 +39,10 @@
 -- THE SOFTWARE.
 
 local _princess = ...
+local render = _princess.render
 
 -- millimeter
-mm = _princess.PhysicalUnit.mm
+mm = render.PhysicalUnit.mm
 millimeter = mm
 millimetre = mm
 
@@ -56,7 +57,7 @@ meter = m
 metre = m
 
 -- inches
-inch = _princess.PhysicalUnit["in"]
+inch = render.PhysicalUnit["in"]
 
 -- feet
 ft = 12 * inch

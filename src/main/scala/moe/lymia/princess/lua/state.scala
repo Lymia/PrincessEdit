@@ -98,8 +98,8 @@ final case class LuaState(L: Lua) extends AnyVal {
       .returnWrapper(this, s"invalid table field ${toPrintString(k)} of ${toPrintString(t)}")
   def rawSet(t: LuaTable, k: LuaObject, v: LuaObject) = L.rawSet(t, k.toLua(this), v.toLua(this))
 
-  def newLib(k: String*): LuaTable = {
-    var t: LuaTable = L.getGlobals
+  def newLib(root: LuaTable, k: String*): LuaTable = {
+    var t: LuaTable = root
     for(n <- k) {
       if(Lua.`type`(Lua.rawGet(t, n)) == Lua.TNIL) L.rawSet(t, n, L.newTable())
       t = Lua.rawGet(t, n).asInstanceOf[LuaTable]
