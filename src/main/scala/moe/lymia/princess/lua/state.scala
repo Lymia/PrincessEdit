@@ -60,7 +60,11 @@ final case class LuaState(L: Lua) extends AnyVal {
 
   def xmove(to: LuaState, n: Int): Unit = L.xmove(to.L, n)
 
-  def value(idx: Int) = L.value(idx).returnWrapper(this)
+  def value(idx: Int): LuaReturnWrapper = L.value(idx).returnWrapper(this)
+
+  def valueRange(range: Range): Seq[LuaReturnWrapper] = range.map((x : Int) => value(x))
+  def valueRange(min: Int, max: Int): Seq[LuaReturnWrapper] = valueRange(min to max)
+  def valueRange(min: Int): Seq[LuaReturnWrapper] = valueRange(min, getTop)
 
   // conversion functions
   def isNoneOrNil(narg: Int): Boolean = L.isNoneOrNil(narg)

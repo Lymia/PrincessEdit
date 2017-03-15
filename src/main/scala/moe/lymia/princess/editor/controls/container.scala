@@ -20,4 +20,5 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.data
+package moe.lymia.princess.editor.controls
+

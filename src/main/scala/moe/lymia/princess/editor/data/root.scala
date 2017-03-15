@@ -31,7 +31,8 @@ import rx._
 
 import scala.collection.mutable
 
-private[data] final class NodeContext(val L: LuaState, val data: DataStore, val prefixSeq: Seq[String] = Seq()) {
+private[data] final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext,
+                                      val prefixSeq: Seq[String] = Seq()) {
   val prefix = if(prefixSeq.isEmpty) "" else s"${prefixSeq.mkString(":")}:"
 
   private val activatedRxes = new mutable.HashMap[FieldNode, Rx[Any]]
@@ -82,13 +83,13 @@ final class RxPane(componentRx: Rx[JComponent])(implicit owner: Ctx.Owner) exten
 
 final class ActiveRootNode private (context: NodeContext, uiRoot: Option[ControlNode],
                                     fields: Option[Map[String, Rx[Any]]])(implicit owner: Ctx.Owner) {
-  lazy val uiComponent = uiRoot.map(_.createControl(context, owner))
+  lazy val uiComponent = uiRoot.map(_.createComponent(context, owner))
   lazy val luaOutput = fields.map { fields => Rx { fields.mapValues(_()) } }
 }
 object ActiveRootNode {
-  def apply(L: LuaState, data: DataStore, prefix: Seq[String],
+  def apply(L: LuaState, data: DataStore, controlCtx: ControlContext, prefix: Seq[String],
             uiRoot: Option[ControlNode], fields: Option[Map[String, FieldNode]])(implicit owner: Ctx.Owner) = {
-    val ctx = new NodeContext(L, data, prefix)
+    val ctx = new NodeContext(L, data, controlCtx, prefix)
     new ActiveRootNode(ctx, uiRoot, fields.map(_.mapValues(x => ctx.activateNode(x))))
   }
 }
@@ -102,7 +103,7 @@ final case class RootNode(subtableName: String, params: Seq[FieldNode], fn: LuaC
       Rx {
         // unapply not used because apparently scala.rx's macros break on those
         val ret = ctx.L.newThread().call(fn, 2, fields.map(_() : LuaObject) : _*)
-        val node = ActiveRootNode(ctx.L, ctx.data, ctx.prefixSeq :+ subtableName,
+        val node = ActiveRootNode(ctx.L, ctx.data, ctx.controlCtx, ctx.prefixSeq :+ subtableName,
                                   ret.last.as[Option[ControlNode]], ret.head.as[Option[Map[String, FieldNode]]])
         node
       }
@@ -115,7 +116,7 @@ final case class RootNode(subtableName: String, params: Seq[FieldNode], fn: LuaC
     Rx { active().luaOutput.fold[Any](Lua.NIL)(_().toLua(ctx.L)) }
   }
 
-  override protected[data] def createControl(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
+  override protected[data] def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
     ctx.activateCardField(subtableName, this, isUi = false)
 
     val active = makeActiveNode(ctx)

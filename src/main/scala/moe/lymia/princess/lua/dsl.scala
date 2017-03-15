@@ -65,6 +65,9 @@ case class ScalaLuaClosure(fn: LuaJavaCallback) extends AnyVal {
       case e: Exception => L.error(s"Java error - ${e.getClass}: ${e.getMessage}")
     }) else this
 }
+object ScalaLuaClosure {
+  def withState(fn: LuaState => Int): ScalaLuaClosure = ScalaLuaClosure(L => fn(new LuaState(L)))
+}
 
 class LuaReturnWrapper(L: LuaState, val wrapped: Any, source: => Option[String] = None) {
   def as[T : FromLua]: T = wrapped.fromLua[T](L, source)

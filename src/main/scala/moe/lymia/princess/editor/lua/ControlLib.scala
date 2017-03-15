@@ -23,12 +23,37 @@
 package moe.lymia.princess.editor.lua
 
 import moe.lymia.princess.core._
+import moe.lymia.princess.editor.controls._
 import moe.lymia.princess.editor.data._
 import moe.lymia.princess.lua._
 
+case class ControlTypeApWrapper(default: ControlType, call: LuaClosure)
+
 trait LuaControlNodeImplicits {
-  implicit object LuaControlType extends LuaUserdataType[ControlType]
   implicit object LuaControlNode extends LuaUserdataType[ControlNode]
+
+  implicit object LuaInControlType extends FromLua[ControlType] {
+    override def fromLua(L: Lua, v: Any, source: => Option[String]): ControlType = v match {
+      case u: LuaUserdata =>
+        u.getUserdata match {
+          case wrapper: ControlTypeApWrapper => wrapper.default
+          case control: ControlType => control
+          case _ => typerror(L, source, L.getClass.getName, classOf[ControlType].getName)
+        }
+      case _ => typerror(L, source, v, Lua.TUSERDATA)
+    }
+  }
+  implicit object LuaOutControlType extends LuaUserdataOutputType[ControlType]
+  implicit object LuaOutControlTypeApWrapper extends LuaUserdataType[ControlTypeApWrapper] {
+    metatable { (L, mt) =>
+      L.register(mt, "__call", ScalaLuaClosure.withState { (L: LuaState) =>
+        val wrapper = L.value(1).as[ControlTypeApWrapper]
+        val args = L.valueRange(2)
+        L.push(L.call(wrapper.call, 1, args.map(x => x : LuaObject) : _*).head)
+        1
+      })
+    }
+  }
 }
 
 object ControlLib extends LuaLibrary {
@@ -36,6 +61,9 @@ object ControlLib extends LuaLibrary {
     val controlTypes = L.newTable()
     L.rawSet(controlTypes, "TextArea", TextAreaControlType : ControlType)
     L.rawSet(controlTypes, "TextField", TextFieldControlType : ControlType)
+    L.rawSet(controlTypes, "CheckBox",
+      ControlTypeApWrapper(CheckBoxControlType(None),
+                           LuaClosure { (s: String) => CheckBoxControlType(Some(s)) : ControlType }))
     L.rawSet(table, "ControlType", controlTypes)
   }
 }

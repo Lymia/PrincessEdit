@@ -29,16 +29,21 @@ import rx._
 
 sealed trait TreeNode
 
+trait ControlContext {
+  def queueUpdate[T](rxVar: Var[T], newValue: T)
+}
+
 final case class ControlDataDefault(isDefault: Rx[Boolean], field: Rx[DataField])
-final case class ControlData(backing: Var[DataField], default: Option[ControlDataDefault])
+final case class ControlData(L: LuaState, ctx: ControlContext,
+                             backing: Var[DataField], default: Option[ControlDataDefault])
 trait ControlType {
   def expectedFieldType: DataFieldType[_]
   def defaultValue: DataField
-  protected[data] def createControl(L: LuaState, data: ControlData)(implicit owner: Ctx.Owner): JComponent
+  protected[data] def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent
 }
 
 trait ControlNode extends TreeNode {
-  protected[data] def createControl(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent
+  protected[data] def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent
 }
 
 trait FieldNode extends TreeNode {
@@ -81,14 +86,14 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
     Rx { field().toLua(ctx.L) }
   }
 
-  override protected[data] def createControl(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
+  override protected[data] def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
     ctx.activateCardField(fieldName, this, isUi = true)
 
-    val data = ControlData(checkDefault(ctx),
+    val data = ControlData(ctx.L, ctx.controlCtx, checkDefault(ctx),
                            default.map(v => ControlDataDefault(
                              ctx.activateNode(v.isDefault).map(_.fromLua[Boolean](ctx.L)),
                              ctx.activateNode(v.field).map(x => DataField(expected, expected.fromLua(ctx.L, x)))
                            )))
-    control.createControl(ctx.L, data)
+    control.createComponent(data)
   }
 }

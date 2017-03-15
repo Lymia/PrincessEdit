@@ -75,6 +75,7 @@ object DataField {
   val Nil = DataField(DataFieldType.Nil, ())
   val True = DataField(DataFieldType.Boolean, true)
   val False = DataField(DataFieldType.Boolean, false)
+  val EmptyString = DataField(DataFieldType.String, "")
 
   def fromBool(b: Boolean) = if(b) True else False
 
