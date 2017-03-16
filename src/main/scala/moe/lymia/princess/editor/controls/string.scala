@@ -44,9 +44,9 @@ private trait StringJTextComponent { this: JTextComponent =>
 
   val obs = data.default map { default =>
     val rx = Rx { (default.isDefault(), default.field()) }
-    rx.filter(_._1).foreach { case (isDefault : Boolean, field : DataField) =>
+    rx.foreach { case (isDefault : Boolean, field : DataField) =>
       SwingUtilities.invokeLater { () =>
-        setEnabled(isDefault)
+        setEnabled(!isDefault)
         if(isDefault) setText(field.value.toString)
       }
       if(isDefault) {
@@ -66,7 +66,7 @@ private case class TextAreaComponent(data: ControlData)(implicit val owner: Ctx.
   extends JTextArea with StringJTextComponent
 case object TextAreaControlType extends StringControlType {
   override def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent =
-    TextAreaComponent(data)
+    new JScrollPane(TextAreaComponent(data))
 }
 
 private case class TextFieldComponent(data: ControlData)(implicit val owner: Ctx.Owner)

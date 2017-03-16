@@ -22,9 +22,12 @@
 
 package moe.lymia.princess.editor.data
 
+import java.awt.image.BufferedImage
 import javax.swing._
 
 import moe.lymia.princess.lua._
+import moe.lymia.princess.renderer.SVGData
+
 import rx._
 
 sealed trait TreeNode
@@ -32,6 +35,8 @@ sealed trait TreeNode
 trait ControlContext {
   def needsSaving()
   def queueUpdate[T](rxVar: Var[T], newValue: T)
+  def queueLua(f: => Unit)
+  def renderRequest(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit)
 }
 
 final case class ControlDataDefault(isDefault: Rx[Boolean], field: Rx[DataField])
@@ -48,24 +53,24 @@ trait ControlNode extends TreeNode {
 }
 
 trait FieldNode extends TreeNode {
-  protected[data] def createRx(ctx: NodeContext)(implicit owner: Ctx.Owner): Rx[Any]
+  def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any]
   override val hashCode = super.hashCode
 }
 
 final case class DerivedFieldNode(params: Seq[FieldNode], fn: LuaClosure) extends FieldNode {
-  override protected[data] def createRx(ctx: NodeContext)(implicit owner: Ctx.Owner) = {
+  override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner) = {
     val fields = params.map(x => ctx.activateNode(x))
     Rx { ctx.L.newThread().call(fn, 1, fields.map(_() : LuaObject) : _*).head.as[Any] }
   }
 }
 
 final case class ConstFieldNode(data: Any) extends FieldNode {
-  override protected[data] def createRx(ctx: NodeContext)(implicit owner: Ctx.Owner): Rx[Any] =
+  override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] =
     Rx { data }
 }
 
 final case class RxFieldNode(rx: Rx[Any]) extends FieldNode {
-  override protected[data] def createRx(ctx: NodeContext)(implicit owner: Ctx.Owner): Rx[Any] = rx
+  override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = rx
 }
 
 final case class InputFieldDefault(isDefault: FieldNode, field: FieldNode)
@@ -80,7 +85,7 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
     field
   }
 
-  override protected[data] def createRx(ctx: NodeContext)(implicit owner: Ctx.Owner): Rx[Any] = {
+  override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = {
     ctx.activateCardField(fieldName, this, isUi = false)
 
     val field = checkDefault(ctx)

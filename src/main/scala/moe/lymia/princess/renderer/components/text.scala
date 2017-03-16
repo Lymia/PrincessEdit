@@ -33,10 +33,10 @@ import scala.collection.mutable
 
 private[components] sealed trait FormatInstruction
 private[components] sealed trait RawFormatInstruction {
-  def reify(manager: ComponentRenderManager, fontSize: Double): FormatInstruction
+  def reify(manager: ComponentRenderManager, fontSize: Double): Seq[FormatInstruction]
 }
 private[components] sealed trait SharedFormatInstruction extends FormatInstruction with RawFormatInstruction {
-  override def reify(manager: ComponentRenderManager, fontSize: Double): FormatInstruction = this
+  override def reify(manager: ComponentRenderManager, fontSize: Double): Seq[FormatInstruction] = Seq(this)
 }
 
 private[components] object FormatInstruction {
@@ -48,10 +48,11 @@ private[components] object FormatInstruction {
 }
 private[components] object RawFormatInstruction {
   case class RenderString(data: Seq[(String, TextAttributes)]) extends RawFormatInstruction {
-    override def reify(manager: ComponentRenderManager, fontSize: Double): FormatInstruction = {
+    override def reify(manager: ComponentRenderManager, fontSize: Double): Seq[FormatInstruction] = {
       val buffer = new AttributedStringBuffer
       for(s <- data) buffer.append(s._1, s._2.toAttributeMap(manager, fontSize).asJava)
-      FormatInstruction.RenderString(buffer.toAttributedString)
+      val str = buffer.toAttributedString
+      if(str == null) Seq.empty else Seq(FormatInstruction.RenderString(str))
     }
   }
 }
@@ -106,5 +107,5 @@ case class FormattedString(data: Seq[RawFormatInstruction]) {
   }.mkString("\n")
 
   private[components] def execute(manager: ComponentRenderManager, fontSize: Double)(f: FormatInstruction => Unit) =
-    for(instruction <- data) f(instruction.reify(manager, fontSize))
+    for(instruction <- data) instruction.reify(manager, fontSize).foreach(f)
 }

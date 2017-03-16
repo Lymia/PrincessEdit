@@ -22,6 +22,8 @@
 
 package moe.lymia.princess.editor.data
 
+import java.awt.{GridBagConstraints, GridBagLayout}
+import java.util
 import javax.swing._
 
 import moe.lymia.princess.core._
@@ -30,9 +32,10 @@ import moe.lymia.princess.lua._
 import rx._
 
 import scala.collection.mutable
+import scala.collection.JavaConverters._
 
 final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext,
-                                      val prefixSeq: Seq[String] = Seq()) {
+                        val prefixSeq: Seq[String] = Seq()) {
   val internal_L = L.newThread()
 
   val prefix = if(prefixSeq.isEmpty) "" else s"${prefixSeq.mkString(":")}:"
@@ -44,13 +47,13 @@ final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: Co
       throw EditorException("Cycle in field nodes!")
     try {
       activatingRxes.add(node)
-      node.createRx(this)
+      node.createRx(this, owner)
     } finally {
       activatingRxes.remove(node)
     }
   })
 
-  val activatedRoots = new mutable.HashMap[RootNode, Rx[ActiveRootNode]]
+  val activatedRoots = new util.IdentityHashMap[RootNode, Rx[ActiveRootNode]].asScala
 
   private val activatedCardFields = new mutable.HashMap[String, TreeNode]
   private val uiActivatedCardField = new mutable.HashSet[String]
@@ -69,10 +72,17 @@ final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: Co
 }
 
 final class RxPane(componentRx: Rx[JComponent])(implicit owner: Ctx.Owner) extends JPanel {
+  setLayout(new GridBagLayout)
+  private val c = new GridBagConstraints()
+  c.fill = GridBagConstraints.BOTH
+  c.weightx = 1
+  c.weighty = 1
+  c.anchor = GridBagConstraints.NORTH // TODO: Figure out how to do this better
+
   private def updateContents(): Unit = {
     val contents = componentRx.now
     for(comp <- this.getComponents) this.remove(comp)
-    this.add(contents)
+    this.add(contents, c)
   }
   updateContents()
 
@@ -82,7 +92,7 @@ final class RxPane(componentRx: Rx[JComponent])(implicit owner: Ctx.Owner) exten
 final class ActiveRootNode private (context: NodeContext, uiRoot: Option[ControlNode],
                                     fields: Option[Map[String, Rx[Any]]])(implicit owner: Ctx.Owner) {
   lazy val uiComponent = uiRoot.map(_.createComponent(context, owner))
-  lazy val luaOutput = fields.map { fields => Rx { fields.mapValues(_()) } }
+  lazy val luaOutput = fields.map { fields => Rx { fields.map(x => x.copy(_2 = x._2())) } }
 }
 object ActiveRootNode {
   def apply(L: LuaState, data: DataStore, controlCtx: ControlContext, prefix: Seq[String],
@@ -107,14 +117,14 @@ final case class RootNode(subtableName: String, params: Seq[FieldNode], fn: LuaC
       }
     })
 
-  override protected[data] def createRx(ctx: NodeContext)(implicit owner: Ctx.Owner): Rx[Any] = {
+  override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = {
     ctx.activateCardField(subtableName, this, isUi = false)
 
     val active = makeActiveNode(ctx)
     Rx { active().luaOutput.fold[Any](Lua.NIL)(_().toLua(ctx.internal_L)) }
   }
 
-  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
+  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): RxPane = {
     ctx.activateCardField(subtableName, this, isUi = false)
 
     val active = makeActiveNode(ctx)

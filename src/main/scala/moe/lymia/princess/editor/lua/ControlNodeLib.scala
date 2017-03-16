@@ -29,47 +29,15 @@ import moe.lymia.princess.editor.controls._
 import moe.lymia.princess.editor.data._
 import moe.lymia.princess.lua._
 
-case class ControlTypeApWrapper(default: ControlType, call: LuaClosure)
 case class Anchor(anchor: Int)
 
 trait LuaControlNodeImplicits {
   implicit object LuaControlNode extends LuaUserdataType[ControlNode]
   implicit object LuaAnchorValue extends LuaUserdataType[Anchor]
-
-  implicit object LuaInControlType extends FromLua[ControlType] {
-    override def fromLua(L: Lua, v: Any, source: => Option[String]): ControlType = v match {
-      case u: LuaUserdata =>
-        u.getUserdata match {
-          case wrapper: ControlTypeApWrapper => wrapper.default
-          case control: ControlType => control
-          case _ => typerror(L, source, L.getClass.getName, classOf[ControlType].getName)
-        }
-      case _ => typerror(L, source, v, Lua.TUSERDATA)
-    }
-  }
-  implicit object LuaOutControlType extends LuaUserdataOutputType[ControlType]
-  implicit object LuaOutControlTypeApWrapper extends LuaUserdataType[ControlTypeApWrapper] {
-    metatable { (L, mt) =>
-      L.register(mt, "__call", ScalaLuaClosure.withState { (L: LuaState) =>
-        val wrapper = L.value(1).as[ControlTypeApWrapper]
-        val args = L.valueRange(2)
-        L.push(L.call(wrapper.call, 1, args.map(x => x : LuaObject) : _*).head)
-        1
-      })
-    }
-  }
 }
 
-object ControlLib extends LuaLibrary {
+object ControlNodeLib extends LuaLibrary {
   override def open(L: LuaState, table: LuaTable): Unit = {
-    val controlTypes = L.newTable()
-    L.rawSet(controlTypes, "TextArea", TextAreaControlType : ControlType)
-    L.rawSet(controlTypes, "TextField", TextFieldControlType : ControlType)
-    L.rawSet(controlTypes, "CheckBox",
-      ControlTypeApWrapper(CheckBoxControlType(None),
-                           LuaClosure { (s: String) => CheckBoxControlType(Some(s)) : ControlType }))
-    L.rawSet(table, "ControlType", controlTypes)
-
     val node = L.newLib(table, "Node")
     L.register(node, "Label", (text: String) => LabelNode(text) : ControlNode)
     L.register(node, "Visibility",
@@ -78,7 +46,7 @@ object ControlLib extends LuaLibrary {
     val gridUd = new LuaUserdata(())
     val gridMt = L.newTable()
     gridUd.setMetatable(gridMt)
-    L.register(gridMt, "__call", (L: LuaState, data: Seq[LuaTable]) => {
+    L.register(gridMt, "__call", (L: LuaState, _: Any, data: Seq[LuaTable]) => {
       val components = for(row <- data) yield {
         val component = L.rawGet(row, "component").as[Option[ControlNode]].getOrElse(L.rawGet(row, 1).as[ControlNode])
 
@@ -96,7 +64,7 @@ object ControlLib extends LuaLibrary {
         val xFill = L.rawGet(row, "xFill").as[Boolean]
         val yFill = L.rawGet(row, "yFill").as[Boolean]
 
-        constraints.anchor =
+        constraints.fill =
           if(xFill && yFill) GridBagConstraints.BOTH
           else if(xFill)     GridBagConstraints.HORIZONTAL
           else if(yFill)     GridBagConstraints.VERTICAL

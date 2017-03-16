@@ -26,12 +26,13 @@ import moe.lymia.princess.core._
 
 package object lua
   extends LuaFieldNodeImplicits
-  with    LuaControlNodeImplicits {
+  with    LuaControlNodeImplicits
+  with    LuaControlTypeImplicits {
 
   object EditorModule extends LuaModule {
     override val moduleName: String = "editor"
     override def getLibraries(ctx: LuaContext): Seq[LuaLibrary] = Seq(
-      ControlLib, FieldLib
+      ControlNodeLib, ControlTypeLib, FieldLib
     )
   }
 }

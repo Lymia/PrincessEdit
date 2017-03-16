@@ -85,7 +85,7 @@ object DataField {
 
 final class DataStore {
   protected val fieldsVar = new mutable.HashMap[String, Var[DataField]]
-  val fields = Rx.unsafe { fieldsVar.mapValues(_()).toMap }
+  val fields = Rx.unsafe { fieldsVar.map(x => x.copy(_2 = x._2())).toMap }
 
   def getDataField(name: String, default: => DataField = DataField.Nil) = {
     if(!fieldsVar.contains(name)) {

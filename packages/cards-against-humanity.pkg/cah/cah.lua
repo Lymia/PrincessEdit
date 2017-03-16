@@ -26,6 +26,31 @@ local white = {255, 255, 255}
 
 local font  = "FreeSans-Bold"
 
+function cardForm()
+    local textNode = ui.node.Input("text", ui.control.TextField)
+    local overrideBlankCount = ui.node.Input("overrideBlankCount", ui.control.CheckBox("Override blank count"))
+    local isDefault = overrideBlankCount.map(function(b) return not b end)
+
+    local blankCount = ui.node.Input("blankCount", ui.control.TextField, isDefault, textNode.map(
+        function(text)
+            local _, ret = text:gsub("_+", "")
+            return tostring(ret)
+        end
+    ))
+
+    return {
+        text = textNode,
+        blankCount = blankCount.map(tonumber),
+    }, ui.node.Grid {
+        {ui.node.Label("Text"), x = 0, y = 0, anchor = ui.node.Grid.WEST},
+        {textNode, x = 1, y = 0, xFill = true, xWeight = 1, yWeight = 1},
+
+        {ui.node.Label("Blank Count"), x = 0, y = 1, anchor = ui.node.Grid.WEST},
+        {overrideBlankCount, x = 1, y = 1, anchor = ui.node.Grid.WEST},
+        {blankCount, x = 1, y = 2, xFill = true},
+    }
+end
+
 local function indicatorLine(layout, x, y, header, count, fgColor, bgColor)
     layout.addComponent(x, y, component.LeftAlign(component.SimpleText(header, font, 10, fgColor)))
     layout.addComponent(x + 15, y - 5, component.Circle(10, fgColor))
@@ -35,10 +60,6 @@ end
 function render(cardData)
     local text = cardData.text
     local blankCount = cardData.blankCount
-    if not blankCount then
-        local _, ret = text:gsub("_+", "")
-        blankCount = ret
-    end
     local isBlackCard = blankCount > 0
 
     local bgColor = isBlackCard and black or white

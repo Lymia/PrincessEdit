@@ -22,13 +22,78 @@
 
 package moe.lymia.princess.editor
 
+import java.awt.{GridBagConstraints, GridBagLayout}
+import javax.swing.{UIManager => _, _}
+
+import moe.lymia.princess.core._
+import moe.lymia.princess.editor.core._
+import moe.lymia.princess.editor.data._
+import moe.lymia.princess.rasterizer._
+import moe.lymia.princess.renderer._
+
+import scala.collection.JavaConverters._
+
+// TODO: This is only a temporary test UI
 class UIMain {
+  private var gameId: String = _
   trait ScoptArgs { this: scopt.OptionParser[Unit] =>
     def uiOptions() = {
-
+      arg[String]("<gameId>").foreach(gameId = _).hidden()
     }
   }
   def main() = {
+    val monitorThread = new Thread() {
+      override def run(): Unit = {
+        while(true) {
+          Thread.sleep(1000)
 
+          println()
+          println("=====================================================================")
+          println("=====================================================================")
+          println("=====================================================================")
+          println()
+          for((thread, trace) <- Thread.getAllStackTraces.asScala) {
+            val e = new Exception(s"Stack Trace for ${thread.getName}")
+            e.setStackTrace(trace)
+            e.printStackTrace()
+          }
+        }
+      }
+    }
+    //monitorThread.start()
+
+    val frame = new JFrame("PrincessEdit Editor Test")
+    val game = PackageManager.default.loadGameId(gameId)
+    val manager = new UIManager(game, new InkscapeConnectionFactory("inkscape"))
+    val ep = new LuaNodeSource(game, "card-form", "cardForm")
+    val root = ep.createRoot(game.lua.L, new DataStore, "card", manager.ctx, Seq())
+
+    frame.setLayout(new GridBagLayout)
+    val c = new GridBagConstraints()
+
+    val label = new JLabel()
+    c.fill = GridBagConstraints.NONE
+    frame.add(label, c)
+
+    c.gridx = 1
+    c.weightx = 1
+    c.fill = GridBagConstraints.BOTH
+    c.anchor = GridBagConstraints.NORTH
+    frame.add(root.component.now, c)
+
+    import rx.Ctx.Owner.Unsafe._
+    val obs = root.luaData.now.foreach { d =>
+      manager.ctx.renderRequest(manager.render.render(d, RasterizeResourceLoader), 250, 350) { i =>
+        SwingUtilities.invokeLater { () =>
+          label.setIcon(new ImageIcon(i))
+        }
+      }
+    }
+
+    frame.pack()
+    frame.setLocationRelativeTo(null)
+    frame.setVisible(true)
+
+    while(true) Thread.sleep(1)
   }
 }

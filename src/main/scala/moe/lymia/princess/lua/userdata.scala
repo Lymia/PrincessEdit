@@ -108,7 +108,7 @@ trait LuaLookup extends HasLuaMethods {
 
 trait LuaUserdataInputBase[T] extends FromLua[T] {
   protected[this] def tag: ClassTag[T]
-  private final val runtimeClass = tag.runtimeClass
+  private final lazy val runtimeClass = tag.runtimeClass
 
   override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
     case v: LuaUserdata =>

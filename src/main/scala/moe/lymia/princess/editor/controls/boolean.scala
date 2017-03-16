@@ -39,9 +39,9 @@ private trait BooleanJTextComponent { this: JToggleButton =>
 
   val obs = data.default map { default =>
     val rx = Rx { (default.isDefault(), default.field()) }
-    rx.filter(_._1).foreach { case (isDefault : Boolean, field : DataField) =>
+    rx.foreach { case (isDefault : Boolean, field : DataField) =>
       SwingUtilities.invokeLater { () =>
-        setEnabled(isDefault)
+        setEnabled(!isDefault)
         if(isDefault) setSelected(Lua.isBoolean(field.toLua(data.internal_L)))
       }
       if(isDefault) {
@@ -58,7 +58,7 @@ trait BooleanControlType extends ControlType {
 }
 
 private case class CheckBoxComponent(title: String, data: ControlData)(implicit val owner: Ctx.Owner)
-  extends JCheckBox with BooleanJTextComponent
+  extends JCheckBox(title) with BooleanJTextComponent
 case class CheckBoxControlType(title: Option[String]) extends BooleanControlType {
   override def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent =
     CheckBoxComponent(title.orNull, data)
