@@ -131,7 +131,11 @@ private class TextLayoutArea(parent: TextLayoutComponent, protected val boundsPa
           } else {
             nextBounds = nextBounds.translate(-currentXPosition, -currentBaseline)
 
-            if(currentBaseline == -1) currentBaseline = startYOffset - nextBounds.minY
+            if(currentBaseline == -1) {
+              currentBaseline = startYOffset + parent.emFirstLineFromTop * em
+              if(currentBaseline + nextBounds.minY < startYOffset)
+                currentBaseline = startYOffset - nextBounds.minY
+            }
 
             bottomBounds = math.max(bottomBounds, currentBaseline + nextBounds.maxY)
             lastLineWords = lastLineWords + nextLayout.toString.count(_ == ' ') + 1
@@ -192,6 +196,7 @@ private class TextLayoutAreaManager(parent: TextLayoutComponent) extends HasLuaM
 class TextLayoutComponent(protected val boundsParam: Bounds) extends GraphicsComponent with BoundedBase {
   private val areaManager = new TextLayoutAreaManager(this)
 
+  private[components] var emFirstLineFromTop: Double = 0.5
   private[components] var emLineBreakSize: Double = 1
   private[components] var emParagraphBreakSize: Double = 2
   private[components] var emBulletStopOffset: Double = 0.5
@@ -268,6 +273,7 @@ class TextLayoutComponent(protected val boundsParam: Bounds) extends GraphicsCom
 
   property("areas", _ => areaManager : HasLuaMethods)
 
+  property("firstLineDistFromTop", _ => emFirstLineFromTop  , (_, d: Double ) => emFirstLineFromTop   = d)
   property("lineBreakSize"       , _ => emLineBreakSize     , (_, d: Double ) => emLineBreakSize      = d)
   property("paragraphBreakSize"  , _ => emParagraphBreakSize, (_, d: Double ) => emParagraphBreakSize = d)
   property("bulletStopOffset"    , _ => emBulletStopOffset  , (_, d: Double ) => emBulletStopOffset   = d)

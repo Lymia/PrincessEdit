@@ -31,6 +31,8 @@ import moe.lymia.princess.editor.data._
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
 
+import play.api.libs.json.Json
+
 import scala.collection.JavaConverters._
 
 // TODO: This is only a temporary test UI
@@ -66,7 +68,8 @@ class UIMain {
     val game = PackageManager.default.loadGameId(gameId)
     val manager = new UIManager(game, new InkscapeConnectionFactory("inkscape"))
     val ep = new LuaNodeSource(game, "card-form", "cardForm")
-    val root = ep.createRoot(game.lua.L, new DataStore, "card", manager.ctx, Seq())
+    val data = new DataStore
+    val root = ep.createRoot(game.lua.L, data, "card", manager.ctx, Seq())
 
     frame.setLayout(new GridBagLayout)
     val c = new GridBagConstraints()
@@ -83,6 +86,7 @@ class UIMain {
 
     import rx.Ctx.Owner.Unsafe._
     val obs = root.luaData.now.foreach { d =>
+      println(Json.prettyPrint(data.serialize))
       manager.ctx.renderRequest(manager.render.render(d, RasterizeResourceLoader), 250, 350) { i =>
         SwingUtilities.invokeLater { () =>
           label.setIcon(new ImageIcon(i))
