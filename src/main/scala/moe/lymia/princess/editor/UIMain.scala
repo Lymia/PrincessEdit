@@ -74,12 +74,13 @@ class UIMain {
       import rx.Ctx.Owner.Unsafe._
       val obs = root.luaData.foreach { d =>
         println(Json.prettyPrint(data.serialize))
-        ctx.asyncUiExec {
-          val image =
-            new Image(display, ctx.syncRenderSwt(manager.render.render(d, RasterizeResourceLoader), 250, 350))
-          if(label.getImage != null) label.getImage.dispose()
-          label.setImage(image)
-          shell.layout(true)
+        ctx.asyncRenderSwt(manager.render.render(d, RasterizeResourceLoader), 250, 350) { imageData =>
+          ctx.asyncUiExec {
+            val image = new Image(display, imageData)
+            if(label.getImage != null) label.getImage.dispose()
+            label.setImage(image)
+            shell.layout(true)
+          }
         }
       }
     }
