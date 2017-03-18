@@ -26,26 +26,20 @@ import moe.lymia.princess.core._
 import moe.lymia.princess.editor.data._
 import moe.lymia.princess.lua._
 
+import org.eclipse.swt.widgets.Composite
+
 import rx._
 
-final class LuaUIRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, node: RootNode) {
+final class LuaUIRoot(L: LuaState, parent: Composite, data: DataStore, controlCtx: ControlContext, node: RootNode) {
   private implicit val ctx = new NodeContext(L, data, controlCtx)
 
-  import rx.Ctx.Owner.Unsafe._
+  private val dummyRx = Rx.unsafe { () }
+  private implicit val owner = new Ctx.Owner(dummyRx)
 
-  private val rootRx = Rx {
-    val luaData = node.createRx
-    val component = node.createComponent
-    (luaData, component)
-  }
-  val luaData = rootRx.map(_._1)
-  val component = rootRx.map(_._2)
+  val luaData = node.createRx
+  val component = node.createComponent(parent)
 
-  def kill() = {
-    luaData.kill()
-    component.kill()
-    rootRx.kill()
-  }
+  def kill() = dummyRx.kill()
 }
 
 final class LuaNodeSource(game: GameManager, entryExport: String, entryMethod: String) {
@@ -54,7 +48,7 @@ final class LuaNodeSource(game: GameManager, entryExport: String, entryMethod: S
 
   def createRootNode(L: LuaState, subtableName: String, data: DataStore, args: Seq[Rx[LuaObject]]) =
     RootNode(subtableName, args.map(RxFieldNode), fn)
-  def createRoot(L: LuaState, data: DataStore, subtableName: String,
+  def createRoot(L: LuaState, parent: Composite, data: DataStore, subtableName: String,
                  controlCtx: ControlContext, args: Seq[Rx[LuaObject]]) =
-    new LuaUIRoot(L, data, controlCtx, createRootNode(L, subtableName, data, args))
+    new LuaUIRoot(L, parent, data, controlCtx, createRootNode(L, subtableName, data, args))
 }

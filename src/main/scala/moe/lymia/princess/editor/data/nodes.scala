@@ -23,11 +23,11 @@
 package moe.lymia.princess.editor.data
 
 import java.awt.image.BufferedImage
-import javax.swing._
 
+import org.eclipse.swt.widgets._
 import moe.lymia.princess.lua._
 import moe.lymia.princess.renderer.SVGData
-
+import org.eclipse.swt.graphics.ImageData
 import rx._
 
 sealed trait TreeNode
@@ -35,8 +35,18 @@ sealed trait TreeNode
 trait ControlContext {
   def needsSaving()
   def queueUpdate[T](rxVar: Var[T], newValue: T)
-  def queueLua(f: => Unit)
-  def renderRequest(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit)
+
+  def asyncRenderAwt(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit)
+  def syncRenderAwt(svg: SVGData, x: Int, y: Int): BufferedImage
+
+  def asyncRenderSwt(svg: SVGData, x: Int, y: Int)(callback: ImageData => Unit)
+  def syncRenderSwt(svg: SVGData, x: Int, y: Int): ImageData
+
+  def asyncLuaExec(f: => Unit)
+  def syncLuaExec[T](f: => T): T
+
+  def asyncUiExec(f: => Unit)
+  def syncUiExec[T](f: => T): T
 }
 
 final case class ControlDataDefault(isDefault: Rx[Boolean], field: Rx[DataField])
@@ -45,11 +55,11 @@ final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlCont
 trait ControlType {
   def expectedFieldType: DataFieldType[_]
   def defaultValue: DataField
-  def createComponent(data: ControlData)(implicit owner: Ctx.Owner): JComponent
+  def createComponent(parent: Composite, data: ControlData)(implicit owner: Ctx.Owner): Control
 }
 
 trait ControlNode extends TreeNode {
-  def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent
+  def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner): Control
 }
 
 trait FieldNode extends TreeNode {
@@ -92,7 +102,7 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
     Rx { field().toLua(ctx.internal_L) }
   }
 
-  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
+  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner) = {
     ctx.activateCardField(fieldName, this, isUi = true)
 
     val data = ControlData(ctx.L, ctx.internal_L, ctx.controlCtx, checkDefault(ctx),
@@ -101,6 +111,6 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
                              ctx.activateNode(v.field).map(x =>
                                DataField(expected, expected.fromLua(ctx.internal_L, x)))
                            )))
-    control.createComponent(data)
+    control.createComponent(parent, data)
   }
 }

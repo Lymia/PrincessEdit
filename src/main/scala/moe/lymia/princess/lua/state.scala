@@ -68,7 +68,7 @@ final case class LuaState(L: Lua) extends AnyVal {
 
   // conversion functions
   def isNoneOrNil(narg: Int): Boolean = L.isNoneOrNil(narg)
-  def toBoolean(o: LuaObject): Boolean = L.toBoolean(o.toLua(this))
+  def toBoolean(o: LuaObject): Boolean = Lua.toBoolean(o.toLua(this))
   def toInteger(o: LuaObject): Int = L.toInteger(o.toLua(this))
   def toNumber(o: LuaObject): Double = L.toNumber(o.toLua(this))
   def toString(o: LuaObject): String = L.toString(o.toLua(this))

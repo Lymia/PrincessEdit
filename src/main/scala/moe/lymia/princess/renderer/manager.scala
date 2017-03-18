@@ -36,8 +36,10 @@ case class SVGData(private val builder: SVGBuilder, private val definition: SVGD
     builder.renderSVGTag(definition)
   def write(w: Writer, encoding: String = "utf-8", pretty: Boolean = true) =
     builder.write(w, definition, encoding, pretty = pretty)
-  def rasterize(rasterize: SVGRasterizer, x: Int, y: Int) =
-    builder.rasterize(rasterize, x, y, definition)
+  def rasterizeAwt(rasterize: SVGRasterizer, x: Int, y: Int) =
+    builder.rasterizeAwt(rasterize, x, y, definition)
+  def rasterizeSwt(rasterize: SVGRasterizer, x: Int, y: Int) =
+    builder.rasterizeSwt(rasterize, x, y, definition)
 }
 
 final class RenderManager(game: GameManager, cache: SizedCache) {

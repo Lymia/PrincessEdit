@@ -163,8 +163,10 @@ final class SVGBuilder(val settings: RenderSettings) {
     w.close()
   }
 
-  def rasterize(rasterizer: SVGRasterizer, x: Int, y: Int, root: SVGDefinitionReference) =
-    rasterizer.rasterizeSVG(x, y, renderSVGTag(root))
+  def rasterizeAwt(rasterizer: SVGRasterizer, x: Int, y: Int, root: SVGDefinitionReference) =
+    rasterizer.rasterizeAwt(x, y, renderSVGTag(root))
+  def rasterizeSwt(rasterizer: SVGRasterizer, x: Int, y: Int, root: SVGDefinitionReference) =
+    rasterizer.rasterizeSwt(x, y, renderSVGTag(root))
 }
 private[renderer] object SVGBuilder {
   val SVG11Doctype = DocType(

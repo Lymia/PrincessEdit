@@ -57,11 +57,11 @@ trait LuaControlTypeImplicits {
 object ControlTypeLib extends LuaLibrary {
   override def open(L: LuaState, table: LuaTable): Unit = {
     val controlTypes = L.newTable()
-    L.rawSet(controlTypes, "TextArea", TextAreaControlType : ControlType)
-    L.rawSet(controlTypes, "TextField", TextFieldControlType : ControlType)
+    L.rawSet(controlTypes, "TextArea", TextControlType(true) : ControlType)
+    L.rawSet(controlTypes, "TextField", TextControlType(false) : ControlType)
     L.rawSet(controlTypes, "CheckBox",
       ControlTypeApWrapper(CheckBoxControlType(None),
-                           LuaClosure { (s: String) => CheckBoxControlType(Some(s)) : ControlType }))
+                           LuaClosure { (s: Option[String]) => CheckBoxControlType(s) : ControlType }))
     L.rawSet(table, "ControlType", controlTypes)
   }
 }

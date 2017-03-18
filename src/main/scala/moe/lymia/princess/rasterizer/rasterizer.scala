@@ -25,6 +25,8 @@ package moe.lymia.princess.rasterizer
 import java.awt.image.BufferedImage
 import java.nio.file.Path
 
+import org.eclipse.swt.graphics.ImageData
+
 import scala.xml.Elem
 
 trait SVGRasterizerFactory {
@@ -33,6 +35,9 @@ trait SVGRasterizerFactory {
 
 trait SVGRasterizer {
   def rasterizeSVGToPNG(x: Int, y: Int, svg: Elem, out: Path)
-  def rasterizeSVG(x: Int, y: Int, svg: Elem): BufferedImage
+
+  def rasterizeAwt(x: Int, y: Int, svg: Elem): BufferedImage
+  def rasterizeSwt(x: Int, y: Int, svg: Elem): ImageData
+
   def destroy(): Unit
 }

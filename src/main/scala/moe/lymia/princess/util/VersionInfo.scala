@@ -48,7 +48,7 @@ final case class PropertiesSource(prop: Properties) extends VersionInfoSource {
   }
 }
 
-sealed class VersionInfo(properties: VersionInfoSource) {
+class VersionInfo(properties: VersionInfoSource) {
   def this(resource: String) = this(VersionInfoSource.getPropertySource(resource))
 
   lazy val majorVersion  = properties("princessedit.version.major", "-1").toInt

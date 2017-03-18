@@ -56,30 +56,47 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Proguar
   name := "princess-edit",
   proguardConfig := "config.pro",
 
-  excludePatterns     +=  "META-INF/services/.*",
+  fork in run := true,
+  envVars in run += ("SWT_GTK3", "0"),
 
-  libraryDependencies +=  "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
-  libraryDependencies +=  "org.scala-lang" % "scala-reflect" % config_scalaVersion,
-  excludeFiles        ++= Set("library.properties", "rootdoc.txt", "scala-xml.properties", "reflect.properties"),
-  shadeMappings       +=  "scala.**" -> "moe.lymia.princess.lib.scala.@1",
-
-  libraryDependencies +=  "org.jfree" % "jfreesvg" % "3.2",
-  shadeMappings       +=  "org.jfree.**" -> "moe.lymia.princess.lib.jfree.@1",
-
-  libraryDependencies +=  "com.github.scopt" %% "scopt" % "3.5.0",
-  shadeMappings       +=  "scopt.**" -> "moe.lymia.princess.lib.scopt.@1",
-
-  libraryDependencies +=  "com.lihaoyi" %% "scalarx" % "0.3.2",
-  shadeMappings       +=  "rx.**" -> "moe.lymia.princess.lib.rx.@1",
-
-  libraryDependencies +=  "com.typesafe.play" %% "play-json" % "2.6.0-M3",
-  shadeMappings       +=  "play.**" -> "moe.lymia.princess.lib.play.@1",
-  shadeMappings       +=  "com.fasterxml.**" -> "moe.lymia.princess.lib.fasterxml.@1",
-  shadeMappings       +=  "org.joda.**" -> "moe.lymia.princess.lib.joda.@1",
-  shadeMappings       +=  "macrocompat.**" -> "moe.lymia.princess.lib.macrocompat.@1",
-
+  libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % config_scalaVersion,
+  libraryDependencies += "org.jfree" % "jfreesvg" % "3.2",
+  libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0",
+  libraryDependencies += "com.lihaoyi" %% "scalarx" % "0.3.2",
+  libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.0-M3",
   libraryDependencies +=  "org.ini4j" % "ini4j" % "0.5.2",
-  shadeMappings       +=  "org.ini4j.**" -> "moe.lymia.princess.lib.ini4j.@1"
+
+  // SWT Resolver
+  // Some code from http://stackoverflow.com/a/12509004/1733590
+  resolvers ++= {
+    def updateSiteResolver(name: String, url: String) = {
+      val resolver = new org.apache.ivy.osgi.updatesite.UpdateSiteResolver
+      resolver.setName(name)
+      resolver.setUrl(url)
+      new RawRepository(resolver)
+    }
+    Seq(updateSiteResolver("Eclipse updates site", "http://download.eclipse.org/eclipse/updates/4.6"),
+        updateSiteResolver("Nebula update site", "http://download.eclipse.org/nebula/releases/1.2.0/"))
+  },
+  libraryDependencies += {
+    val os = (sys.props("os.name"), sys.props("os.arch")) match {
+      case ("Linux", "amd64" | "x86_64") => "gtk.linux.x86_64"
+      case ("Linux", _) => "gtk.linux.x86"
+      case ("Mac OS X", "amd64" | "x86_64") => "cocoa.macosx.x86_64"
+      case ("Mac OS X", _) => "cocoa.macosx.x86"
+      case (os, "amd64") if os.startsWith("Windows") => "win32.win32.x86_64"
+      case (os, _) if os.startsWith("Windows") => "win32.win32.x86"
+      case (os, arch) => sys.error("Cannot obtain lib for OS '" + os + "' and architecture '" + arch + "'")
+    }
+    val artifact = "org.eclipse.swt." + os
+    ("bundle" % artifact % "3.105.2.v20161122-0613"
+      exclude("package", "org.mozilla.xpcom")
+      exclude("package", "org.eclipse.swt.accessibility2"))
+  },
+  libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
+  libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.compositetable" % "1.0.0.201703081533",
+  ignoreDuplicate += "^\\.api_description$"
 ) ++ VersionBuild.settings ++ CodeGeneration.settings)
 
 Launch4JBuild.settings

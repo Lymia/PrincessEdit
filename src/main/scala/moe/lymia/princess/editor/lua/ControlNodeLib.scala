@@ -22,18 +22,13 @@
 
 package moe.lymia.princess.editor.lua
 
-import java.awt.{GridBagConstraints, Insets}
-
 import moe.lymia.princess.core._
 import moe.lymia.princess.editor.controls._
 import moe.lymia.princess.editor.data._
 import moe.lymia.princess.lua._
 
-case class Anchor(anchor: Int)
-
 trait LuaControlNodeImplicits {
   implicit object LuaControlNode extends LuaUserdataType[ControlNode]
-  implicit object LuaAnchorValue extends LuaUserdataType[Anchor]
 }
 
 object ControlNodeLib extends LuaLibrary {
@@ -42,77 +37,5 @@ object ControlNodeLib extends LuaLibrary {
     L.register(node, "Label", (text: String) => LabelNode(text) : ControlNode)
     L.register(node, "Visibility",
       (node: FieldNode, contents: ControlNode) => VisibilityNode(node, contents) : ControlNode)
-
-    val gridUd = new LuaUserdata(())
-    val gridMt = L.newTable()
-    gridUd.setMetatable(gridMt)
-    L.register(gridMt, "__call", (L: LuaState, _: Any, data: Seq[LuaTable]) => {
-      val components = for(row <- data) yield {
-        val component = L.rawGet(row, "component").as[Option[ControlNode]].getOrElse(L.rawGet(row, 1).as[ControlNode])
-
-        val constraints = new GridBagConstraints()
-        L.rawGet(row, "x"      ).as[Option[Int   ]].foreach(v => constraints.gridx = v)
-        L.rawGet(row, "y"      ).as[Option[Int   ]].foreach(v => constraints.gridy = v)
-        L.rawGet(row, "xSpan"  ).as[Option[Int   ]].foreach(v => constraints.gridwidth = v)
-        L.rawGet(row, "ySpan"  ).as[Option[Int   ]].foreach(v => constraints.gridheight = v)
-        L.rawGet(row, "xWeight").as[Option[Double]].foreach(v => constraints.weightx = v)
-        L.rawGet(row, "yWieght").as[Option[Double]].foreach(v => constraints.weighty = v)
-        L.rawGet(row, "xPad"   ).as[Option[Int   ]].foreach(v => constraints.ipadx = v)
-        L.rawGet(row, "yPad"   ).as[Option[Int   ]].foreach(v => constraints.ipady = v)
-        L.rawGet(row, "anchor" ).as[Option[Anchor]].foreach(v => constraints.anchor = v.anchor)
-
-        val xFill = L.rawGet(row, "xFill").as[Boolean]
-        val yFill = L.rawGet(row, "yFill").as[Boolean]
-
-        constraints.fill =
-          if(xFill && yFill) GridBagConstraints.BOTH
-          else if(xFill)     GridBagConstraints.HORIZONTAL
-          else if(yFill)     GridBagConstraints.VERTICAL
-          else               GridBagConstraints.NONE
-
-        constraints.insets = new Insets(
-          L.rawGet(row, "topInset"   ).as[Option[Int]].getOrElse(0),
-          L.rawGet(row, "leftInset"  ).as[Option[Int]].getOrElse(0),
-          L.rawGet(row, "bottomInset").as[Option[Int]].getOrElse(0),
-          L.rawGet(row, "rightInset" ).as[Option[Int]].getOrElse(0)
-        )
-
-        GridBagComponent(component, constraints)
-      }
-      GridNode(components) : ControlNode
-    })
-    val anchors = L.newTable()
-
-    L.rawSet(anchors, "NORTHWEST", Anchor(GridBagConstraints.NORTHWEST))
-    L.rawSet(anchors, "NORTH", Anchor(GridBagConstraints.NORTH))
-    L.rawSet(anchors, "NORTHEAST", Anchor(GridBagConstraints.NORTHEAST))
-    L.rawSet(anchors, "EAST", Anchor(GridBagConstraints.EAST))
-    L.rawSet(anchors, "CENTER", Anchor(GridBagConstraints.CENTER))
-    L.rawSet(anchors, "WEST", Anchor(GridBagConstraints.WEST))
-    L.rawSet(anchors, "SOUTHEAST", Anchor(GridBagConstraints.SOUTHEAST))
-    L.rawSet(anchors, "SOUTH", Anchor(GridBagConstraints.SOUTH))
-    L.rawSet(anchors, "SOUTHWEST", Anchor(GridBagConstraints.SOUTHWEST))
-
-    L.rawSet(anchors, "PAGE_START", Anchor(GridBagConstraints.PAGE_START))
-    L.rawSet(anchors, "PAGE_END", Anchor(GridBagConstraints.PAGE_END))
-    L.rawSet(anchors, "LINE_START", Anchor(GridBagConstraints.LINE_START))
-    L.rawSet(anchors, "LINE_END", Anchor(GridBagConstraints.LINE_END))
-    L.rawSet(anchors, "FIRST_LINE_START", Anchor(GridBagConstraints.FIRST_LINE_START))
-    L.rawSet(anchors, "FIRST_LINE_END", Anchor(GridBagConstraints.FIRST_LINE_END))
-    L.rawSet(anchors, "LAST_LINE_START", Anchor(GridBagConstraints.LAST_LINE_START))
-    L.rawSet(anchors, "LAST_LINE_END", Anchor(GridBagConstraints.LAST_LINE_END))
-
-    L.rawSet(anchors, "ABOVE_BASELINE_LEADING", Anchor(GridBagConstraints.ABOVE_BASELINE_LEADING))
-    L.rawSet(anchors, "ABOVE_BASELINE", Anchor(GridBagConstraints.ABOVE_BASELINE))
-    L.rawSet(anchors, "ABOVE_BASELINE_TRAILING", Anchor(GridBagConstraints.ABOVE_BASELINE_TRAILING))
-    L.rawSet(anchors, "BASELINE_LEADING", Anchor(GridBagConstraints.BASELINE_LEADING))
-    L.rawSet(anchors, "BASELINE", Anchor(GridBagConstraints.BASELINE))
-    L.rawSet(anchors, "BASELINE_TRAILING", Anchor(GridBagConstraints.BASELINE_TRAILING))
-    L.rawSet(anchors, "BELOW_BASELINE_LEADING", Anchor(GridBagConstraints.BELOW_BASELINE_LEADING))
-    L.rawSet(anchors, "BELOW_BASELINE", Anchor(GridBagConstraints.BELOW_BASELINE))
-    L.rawSet(anchors, "BELOW_BASELINE_TRAILING", Anchor(GridBagConstraints.BELOW_BASELINE_TRAILING))
-
-    L.rawSet(gridMt, "__index", anchors)
-    L.rawSet(node, "Grid", gridUd)
   }
 }

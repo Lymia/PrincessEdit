@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 
 import moe.lymia.princess.util.IOUtils
+import org.eclipse.swt.graphics.ImageData
 
 import scala.xml.Elem
 
@@ -94,11 +95,19 @@ class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRasterize
       command(svgFile.getAbsolutePath, "-w", x.toString, "-h", y.toString, "--export-png", out.toAbsolutePath.toString)
     }
   }
-  def rasterizeSVG(x: Int, y: Int, svg: Elem) = lock.synchronized {
+
+  def rasterizeAwt(x: Int, y: Int, svg: Elem) = lock.synchronized {
     if(destroyed) sys.error("instance already destroyed")
-    IOUtils.withTemporaryFile(extension = "png") { svgFile =>
-      rasterizeSVGToPNG(x, y, svg, svgFile.toPath)
-      ImageIO.read(svgFile)
+    IOUtils.withTemporaryFile(extension = "png") { pngFile =>
+      rasterizeSVGToPNG(x, y, svg, pngFile.toPath)
+      ImageIO.read(pngFile)
+    }
+  }
+  def rasterizeSwt(x: Int, y: Int, svg: Elem) = lock.synchronized {
+    if(destroyed) sys.error("instance already destroyed")
+    IOUtils.withTemporaryFile(extension = "png") { pngFile =>
+      rasterizeSVGToPNG(x, y, svg, pngFile.toPath)
+      new ImageData(pngFile.getAbsolutePath)
     }
   }
 

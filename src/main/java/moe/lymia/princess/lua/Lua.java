@@ -1368,7 +1368,7 @@ public final class Lua {
      * @param o Lua value to convert.
      * @return the resulting primitive boolean.
      */
-    public boolean toBoolean(Object o) {
+    public static boolean toBoolean(Object o) {
         return !(o == NIL || Boolean.FALSE.equals(o));
     }
 

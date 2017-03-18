@@ -22,8 +22,11 @@
 
 package moe.lymia.princess.editor
 
-import java.awt.{GridBagConstraints, GridBagLayout}
-import javax.swing.{UIManager => _, _}
+import org.eclipse.swt._
+import org.eclipse.swt.graphics._
+import org.eclipse.swt.layout._
+import org.eclipse.swt.widgets._
+import org.eclipse.nebula.widgets.pgroup._
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.editor.core._
@@ -31,9 +34,8 @@ import moe.lymia.princess.editor.data._
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
 
-import play.api.libs.json.Json
 
-import scala.collection.JavaConverters._
+import play.api.libs.json.Json
 
 // TODO: This is only a temporary test UI
 class UIMain {
@@ -44,60 +46,42 @@ class UIMain {
     }
   }
   def main() = {
-    val monitorThread = new Thread() {
-      override def run(): Unit = {
-        while(true) {
-          Thread.sleep(1000)
-
-          println()
-          println("=====================================================================")
-          println("=====================================================================")
-          println("=====================================================================")
-          println()
-          for((thread, trace) <- Thread.getAllStackTraces.asScala) {
-            val e = new Exception(s"Stack Trace for ${thread.getName}")
-            e.setStackTrace(trace)
-            e.printStackTrace()
-          }
-        }
-      }
-    }
-    //monitorThread.start()
-
-    val frame = new JFrame("PrincessEdit Editor Test")
     val game = PackageManager.default.loadGameId(gameId)
     val manager = new UIManager(game, new InkscapeConnectionFactory("inkscape"))
     val ep = new LuaNodeSource(game, "card-form", "cardForm")
     val data = new DataStore
-    val root = ep.createRoot(game.lua.L, data, "card", manager.ctx, Seq())
 
-    frame.setLayout(new GridBagLayout)
-    val c = new GridBagConstraints()
+    manager.mainLoop { (display, shell, ctx) =>
+      shell.setText("PrincessEdit SWT Test")
+      shell.setSize(800, 600)
 
-    val label = new JLabel()
-    c.fill = GridBagConstraints.NONE
-    frame.add(label, c)
+      val layout = new GridLayout
+      shell.setLayout(layout)
+      layout.numColumns = 2
 
-    c.gridx = 1
-    c.weightx = 1
-    c.fill = GridBagConstraints.BOTH
-    c.anchor = GridBagConstraints.NORTH
-    frame.add(root.component.now, c)
+      val label = new Label(shell, SWT.NONE)
+      label.setLayoutData(new GridData(SWT.CENTER, SWT.BEGINNING, false, false))
 
-    import rx.Ctx.Owner.Unsafe._
-    val obs = root.luaData.now.foreach { d =>
-      println(Json.prettyPrint(data.serialize))
-      manager.ctx.renderRequest(manager.render.render(d, RasterizeResourceLoader), 250, 350) { i =>
-        SwingUtilities.invokeLater { () =>
-          label.setIcon(new ImageIcon(i))
+      val titled = new PGroup(shell, SWT.SMOOTH)
+      titled.setToggleRenderer(new TreeNodeToggleRenderer)
+      titled.setStrategy(new SimpleGroupStrategy)
+      titled.setLayout(new FillLayout)
+      val root = ep.createRoot(game.lua.L, titled, data, "card", ctx, Seq())
+      titled.setText("Card data")
+      titled.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true))
+      titled.layout(true)
+
+      import rx.Ctx.Owner.Unsafe._
+      val obs = root.luaData.foreach { d =>
+        println(Json.prettyPrint(data.serialize))
+        ctx.asyncUiExec {
+          val image =
+            new Image(display, ctx.syncRenderSwt(manager.render.render(d, RasterizeResourceLoader), 250, 350))
+          if(label.getImage != null) label.getImage.dispose()
+          label.setImage(image)
+          shell.layout(true)
         }
       }
     }
-
-    frame.pack()
-    frame.setLocationRelativeTo(null)
-    frame.setVisible(true)
-
-    while(true) Thread.sleep(1)
   }
 }

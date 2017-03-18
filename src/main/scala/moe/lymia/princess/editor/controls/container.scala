@@ -22,33 +22,93 @@
 
 package moe.lymia.princess.editor.controls
 
-import java.awt.{GridBagConstraints, GridBagLayout}
-import javax.swing._
-
+import moe.lymia.princess.core.EditorException
 import moe.lymia.princess.editor.data._
 import moe.lymia.princess.lua.Lua
+
+import org.eclipse.swt.SWT
+import org.eclipse.swt.layout._
+import org.eclipse.swt.widgets._
+
 import rx._
 
-case class LabelNode(label: String) extends ControlNode {
-  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = new JLabel(label)
+import scala.collection.mutable
+
+case class LabelNode(text: String) extends ControlNode {
+  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner) = {
+    val label = new Label(parent, SWT.NONE)
+    label.setText(text)
+    label
+  }
 }
 
-private class VisibilityPane(ctx: NodeContext, isVisible: Rx[Any], contents: JComponent)
-                            (implicit owner: Ctx.Owner) extends JPanel {
-  add(contents)
-  val obs = isVisible.foreach { b => SwingUtilities.invokeLater { () => setVisible(Lua.isBoolean(b)) } }
+case object SpacerNode extends ControlNode {
+  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner): Control =
+    new Label(parent, SWT.NONE)
 }
+
 case class VisibilityNode(isVisible: FieldNode, contents: ControlNode) extends ControlNode {
-  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent =
-    new VisibilityPane(ctx, ctx.activateNode(isVisible), contents.createComponent)
+  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner) = {
+    val container = new Composite(parent, SWT.NONE)
+    container.setLayout(new GridLayout)
+
+    val widget = contents.createComponent(container)
+    val data = new GridData(SWT.FILL, SWT.FILL, true, true)
+    widget.setLayoutData(data)
+
+    val isVisibleRx = ctx.activateNode(isVisible)
+    isVisibleRx.map(Lua.toBoolean).foreach { b => ctx.controlCtx.asyncUiExec {
+      data.exclude = !b
+      widget.setVisible(b)
+      container.layout(true)
+    }}
+
+    container
+  }
 }
 
-case class GridBagComponent(component: ControlNode, contraints: GridBagConstraints)
-case class GridNode(components: Seq[GridBagComponent]) extends ControlNode {
-  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): JComponent = {
-    val panel = new JPanel()
-    panel.setLayout(new GridBagLayout)
-    for(GridBagComponent(c, constraints) <- components) panel.add(c.createComponent, constraints)
-    panel
+case class GridComponent(component: ControlNode, x: Int, y: Int, newConstraints: () => GridData)
+private case class ComputedGridComponent(component: ControlNode, newConstraints: () => GridData)
+class GridNode private (data: Seq[ComputedGridComponent], newLayout: () => GridLayout) extends ControlNode {
+  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner) = {
+    val pane = new Composite(parent, SWT.NONE)
+    pane.setLayout(newLayout())
+    for(component <- data) component.component.createComponent(pane).setLayoutData(component.newConstraints())
+    pane
+  }
+}
+object GridNode {
+  def apply(components: Seq[GridComponent], newLayout: () => GridLayout): GridNode = {
+    val constraints = components.map(c => c -> c.newConstraints()).toMap
+
+    val numColumns = components.view.map(c => c.x + constraints(c).horizontalSpan).max
+    val numRows    = components.view.map(c => c.y + constraints(c).verticalSpan  ).max
+
+    val used = new Array[Boolean](numColumns * numRows)
+    def use(x: Int, y: Int) = used(x * numRows + y) = true
+    def isUsed(x: Int, y: Int) = used(x * numRows + y)
+
+    val componentMap = components.map(c => (c.x, c.y) -> c).toMap
+    val componentList = new mutable.ArrayBuffer[ComputedGridComponent]
+    for(y <- 0 until numRows; x <- 0 until numColumns) componentMap.get((x, y)) match {
+      case Some(c) =>
+        for(x <- c.x until c.x + constraints(c).horizontalSpan;
+            y <- c.y until c.y + constraints(c).verticalSpan  ) {
+          if(isUsed(x, y)) throw EditorException("Overlapping components in Grid!")
+          use(x, y)
+        }
+        componentList += ComputedGridComponent(c.component, c.newConstraints)
+      case None =>
+        if(!isUsed(x, y)) {
+          componentList += ComputedGridComponent(SpacerNode, () => new GridData())
+          use(x, y)
+        }
+    }
+
+    new GridNode(componentList, () => {
+      val layout = newLayout()
+      layout.numColumns = numColumns
+      layout
+    })
   }
 }

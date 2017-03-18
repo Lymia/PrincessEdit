@@ -32,23 +32,38 @@ import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.renderer.lua._
 import moe.lymia.princess.util._
+
+import org.eclipse.swt.graphics._
+import org.eclipse.swt.widgets._
+
 import rx._
 
-private case class RasterizerRequest(svg: SVGData, x: Int, y: Int, callback: BufferedImage => Unit)
+private class Condition(val lock: Object = new Object) extends AnyVal {
+  def done() = lock synchronized { lock.notify() }
+  def waitFor(length: Int = 10) = lock synchronized { lock.wait(length) }
+}
+
+private case class RasterizerRequest(svg: SVGData, x: Int, y: Int,
+                                     callback: Either[BufferedImage => Unit, ImageData => Unit])
 private class VolatileState {
   private val rasterizerRenderRequest = new AtomicReference[Option[RasterizerRequest]](None)
-  private val rasterizerRequestSync = new Object
-  def waitRequest() = rasterizerRequestSync synchronized { rasterizerRequestSync.wait(10) }
+  private val rasterizerRequestSync = new Condition
+  def waitRequest() = rasterizerRequestSync.waitFor()
   def pullRequest() = rasterizerRenderRequest.getAndSet(None)
-  def requestRender(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) = {
-    rasterizerRenderRequest.set(Some(RasterizerRequest(svg, x, y, callback)))
-    rasterizerRequestSync synchronized { rasterizerRequestSync.notify() }
+
+  def requestRenderAwt(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) = {
+    rasterizerRenderRequest.set(Some(RasterizerRequest(svg, x, y, Left(callback))))
+    rasterizerRequestSync.done()
+  }
+  def requestRenderSwt(svg: SVGData, x: Int, y: Int)(callback: ImageData => Unit) = {
+    rasterizerRenderRequest.set(Some(RasterizerRequest(svg, x, y, Right(callback))))
+    rasterizerRequestSync.done()
   }
 
   private val luaActionQueue = new AtomicReference(Seq.empty[() => Unit])
-  private val luaUpdateSync = new Object
+  private val luaUpdateSync = new Condition
   private val varUpdateQueue = new AtomicReference(Map.empty[Var[_], Any])
-  def waitLua() = luaUpdateSync synchronized { luaUpdateSync.wait(10) }
+  def waitLua() = luaUpdateSync.waitFor()
   def pullLuaActionQueue() = luaActionQueue.getAndSet(Seq.empty)
   def pullUpdateQueue() =
     varUpdateQueue.getAndSet(Map.empty).map(x => VarTuple(x._1.asInstanceOf[Var[Any]], x._2)).toSeq
@@ -57,21 +72,21 @@ private class VolatileState {
       val current = luaActionQueue.get()
       luaActionQueue.compareAndSet(current, current :+ (() => a))
     }) { }
-    luaUpdateSync synchronized { luaUpdateSync.notify() }
+    luaUpdateSync.done()
   }
   def queueUpdate[T](rxVar: Var[T], newValue: T) = {
     while(!{
       val current = varUpdateQueue.get()
       varUpdateQueue.compareAndSet(current, current + ((rxVar, newValue)))
     }) { }
-    luaUpdateSync synchronized { luaUpdateSync.notify() }
+    luaUpdateSync.done()
   }
 
   @volatile var isRunning = true
   def shutdown() = {
     isRunning = false
-    rasterizerRequestSync.notify()
-    luaUpdateSync synchronized { luaUpdateSync.notify() }
+    rasterizerRequestSync.done()
+    luaUpdateSync.done()
   }
 }
 
@@ -84,7 +99,10 @@ private class RasterizeThread(state: VolatileState, rasterizer: SVGRasterizer) e
   setName(s"PrincessEdit rasterizer thread #${ThreadId.make()}")
   override def run(): Unit =
     while(state.isRunning) state.pullRequest() match {
-      case Some(req) => req.callback(req.svg.rasterize(rasterizer, req.x, req.y))
+      case Some(req) => req.callback match {
+        case Left (fn) => fn(req.svg.rasterizeAwt(rasterizer, req.x, req.y))
+        case Right(fn) => fn(req.svg.rasterizeSwt(rasterizer, req.x, req.y))
+      }
       case None => state.waitRequest()
     }
 }
@@ -102,12 +120,58 @@ private class LuaThread(state: VolatileState) extends Thread {
     }
 }
 
-private class UIControlContext(state: VolatileState) extends ControlContext {
+private class UIControlContext(display: Display, state: VolatileState) extends ControlContext {
+  private class Syncer[T] {
+    private val lock = new Condition()
+    @volatile private var isDone = false
+    @volatile private var ret = null.asInstanceOf[T]
+    def done(t: T) = {
+      isDone = true
+      ret = t
+      lock.done()
+    }
+    def sync() = {
+      while(state.isRunning && !isDone) lock.waitFor(1)
+      ret
+    }
+  }
+
   override def needsSaving() = { }
   override def queueUpdate[T](rxVar: Var[T], newValue: T): Unit = state.queueUpdate(rxVar, newValue)
-  override def queueLua(f: => Unit) = state.queueLuaAction(f)
-  override def renderRequest(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) =
-    state.requestRender(svg, x, y)(callback)
+
+  override def asyncRenderAwt(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) =
+    state.requestRenderAwt(svg, x, y)(callback)
+  override def asyncRenderSwt(svg: SVGData, x: Int, y: Int)(callback: ImageData => Unit) =
+    state.requestRenderSwt(svg, x, y)(callback)
+
+  override def syncRenderAwt(svg: SVGData, x: Int, y: Int): BufferedImage = {
+    val sync = new Syncer[BufferedImage]
+    asyncRenderAwt(svg, x, y)(sync.done)
+    sync.sync()
+  }
+  override def syncRenderSwt(svg: SVGData, x: Int, y: Int): ImageData = {
+    val sync = new Syncer[ImageData]
+    asyncRenderSwt(svg, x, y)(sync.done)
+    sync.sync()
+  }
+
+  override def asyncLuaExec(f: => Unit) = state.queueLuaAction(f)
+  override def syncLuaExec[T](f: => T): T = {
+    val sync = new Syncer[T]
+    state.queueLuaAction {
+      sync.done(f)
+    }
+    sync.sync()
+  }
+
+  override def asyncUiExec(f: => Unit): Unit = display.asyncExec(() => f)
+  override def syncUiExec[T](f: => T): T = {
+    @volatile var ret: T = null.asInstanceOf[T]
+    display.syncExec(() =>
+      ret = f
+    )
+    ret
+  }
 }
 
 class UIManager(game: GameManager, factory: SVGRasterizerFactory) {
@@ -116,7 +180,7 @@ class UIManager(game: GameManager, factory: SVGRasterizerFactory) {
 
   private val state = new VolatileState
 
-  private val cache = SizedCache(1024 * 1024 * 64 /* 64 MB cache, make an option in the future */)
+  private val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
   val render = new RenderManager(game, cache)
 
   private val luaThread = new LuaThread(state)
@@ -125,6 +189,22 @@ class UIManager(game: GameManager, factory: SVGRasterizerFactory) {
   luaThread.start()
   rasterizeThread.start()
 
-  val ctx: ControlContext = new UIControlContext(state)
   def shutdown() = state.shutdown()
+
+  def mainLoop(init: (Display, Shell, ControlContext) => Unit) = {
+    val display = new Display()
+    try {
+      val shell = new Shell(display)
+      val ctx = new UIControlContext(display, state)
+      init(display, shell, ctx)
+      shell.layout(true)
+      shell.open()
+
+      // run the event loop as long as the window is open
+      while(!shell.isDisposed) if(!display.readAndDispatch()) display.sleep()
+    } finally {
+      display.dispose()
+    }
+    state.shutdown()
+  }
 }

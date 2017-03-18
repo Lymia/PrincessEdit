@@ -23,6 +23,7 @@
 package moe.lymia.princess
 
 import java.io.{FileOutputStream, FileWriter}
+import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 import javax.imageio.ImageIO
 import javax.swing.UIManager
@@ -128,7 +129,7 @@ class CLI {
     }
     try {
       val data = time("Executing components") { mainObj.render(cardData, RasterizeResourceLoader) }
-      val image = time("Rasterized image") { data.rasterize(rasterizer, xSize, ySize) }
+      val image = time("Rasterized image") { data.rasterizeAwt(rasterizer, xSize, ySize) }
       time("Writing .png") { ImageIO.write(image, "png", new FileOutputStream(out)) }
     } finally {
       rasterizer.destroy()

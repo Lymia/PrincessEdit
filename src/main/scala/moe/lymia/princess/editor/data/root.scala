@@ -22,13 +22,16 @@
 
 package moe.lymia.princess.editor.data
 
-import java.awt.{GridBagConstraints, GridBagLayout}
 import java.util
-import javax.swing._
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.editor.lua._
 import moe.lymia.princess.lua._
+
+import org.eclipse.swt.SWT
+import org.eclipse.swt.layout._
+import org.eclipse.swt.widgets._
+
 import rx._
 
 import scala.collection.mutable
@@ -56,6 +59,7 @@ final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: Co
   val activatedRoots = new util.IdentityHashMap[RootNode, Rx[ActiveRootNode]].asScala
 
   private val activatedCardFields = new mutable.HashMap[String, TreeNode]
+  // TODO: Make this only exist for the duration of a single rendering of a UI tree
   private val uiActivatedCardField = new mutable.HashSet[String]
   def activateCardField(name: String, node: TreeNode, isUi: Boolean) = {
     activatedCardFields.get(name) match {
@@ -65,33 +69,33 @@ final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: Co
       case None => activatedCardFields.put(name, node)
     }
     if(isUi) {
-      if(uiActivatedCardField.contains(name))
-        throw EditorException(s"Cannot reuse UI element controlling card data field '${prefix+name}'!")
+      //if(uiActivatedCardField.contains(name))
+      //  throw EditorException(s"Cannot reuse UI element controlling card data field '${prefix+name}'!")
+      uiActivatedCardField.add(name)
     }
   }
 }
 
-final class RxPane(componentRx: Rx[JComponent])(implicit owner: Ctx.Owner) extends JPanel {
-  setLayout(new GridBagLayout)
-  private val c = new GridBagConstraints()
-  c.fill = GridBagConstraints.BOTH
-  c.weightx = 1
-  c.weighty = 1
-  c.anchor = GridBagConstraints.NORTH // TODO: Figure out how to do this better
+final class RxPane(uiRoot: Composite, context: NodeContext, rootRx: Rx[ActiveRootNode])(implicit owner: Ctx.Owner) {
+  val pane = new Composite(uiRoot, SWT.NONE)
+  pane.setLayout(new FillLayout())
 
-  private def updateContents(): Unit = {
-    val contents = componentRx.now
-    for(comp <- this.getComponents) this.remove(comp)
-    this.add(contents, c)
+  private var lastComponent: Option[Control] = None
+  private val componentObs = rootRx.foreach { currentRoot =>
+    context.controlCtx.asyncUiExec {
+      if(!pane.isDisposed) {
+        println("Creating UI")
+        lastComponent.foreach(_.dispose())
+        lastComponent = currentRoot.renderUI(pane)
+      }
+    }
   }
-  updateContents()
-
-  private val componentObs = componentRx.trigger(updateContents())
 }
 
-final class ActiveRootNode private (context: NodeContext, uiRoot: Option[ControlNode],
+final class ActiveRootNode private (context: NodeContext, root: Option[ControlNode],
                                     fields: Option[Map[String, Rx[Any]]])(implicit owner: Ctx.Owner) {
-  lazy val uiComponent = uiRoot.map(_.createComponent(context, owner))
+  def renderUI(uiRoot: Composite) =
+    root.map(_.createComponent(uiRoot)(context, owner))
   lazy val luaOutput = fields.map { fields => Rx { fields.map(x => x.copy(_2 = x._2())) } }
 }
 object ActiveRootNode {
@@ -124,18 +128,8 @@ final case class RootNode(subtableName: String, params: Seq[FieldNode], fn: LuaC
     Rx { active().luaOutput.fold[Any](Lua.NIL)(_().toLua(ctx.internal_L)) }
   }
 
-  override def createComponent(implicit ctx: NodeContext, owner: Ctx.Owner): RxPane = {
-    ctx.activateCardField(subtableName, this, isUi = false)
-
-    val active = makeActiveNode(ctx)
-    val componentRx = Rx {
-      active().uiComponent.getOrElse({
-        val area = new JTextArea()
-        area.setText("No UI component given!")
-        area.setEditable(false)
-        area
-      })
-    }
-    new RxPane(componentRx)
+  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner) = {
+    ctx.activateCardField(subtableName, this, isUi = true)
+    new RxPane(parent, ctx, makeActiveNode(ctx)).pane
   }
 }

@@ -148,7 +148,7 @@ class LuaImplicits extends LuaGeneratedImplicits {
 
   implicit object LuaParameterBoolean extends LuaParameter[Boolean] {
     override def toLua(b: Boolean) = new LuaObject(b)
-    override def fromLua(L: Lua, v: Any, source: => Option[String]) = L.toBoolean(v)
+    override def fromLua(L: Lua, v: Any, source: => Option[String]) = Lua.toBoolean(v)
   }
   implicit object LuaParameterTable extends LuaParameter[LuaTable] {
     def toLua(t: LuaTable) = new LuaObject(t)
