@@ -26,8 +26,7 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.layout._
 
 import moe.lymia.princess.core._
-import moe.lymia.princess.editor.controls._
-import moe.lymia.princess.editor.data._
+import moe.lymia.princess.editor.nodes._
 import moe.lymia.princess.lua._
 
 import scala.collection.mutable

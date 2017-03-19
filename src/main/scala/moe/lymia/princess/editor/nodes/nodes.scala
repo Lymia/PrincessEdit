@@ -20,10 +20,11 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.data
+package moe.lymia.princess.editor.nodes
 
 import java.awt.image.BufferedImage
 
+import moe.lymia.princess.editor.core.{DataField, DataFieldType}
 import org.eclipse.swt.widgets._
 import moe.lymia.princess.lua._
 import moe.lymia.princess.renderer.SVGData

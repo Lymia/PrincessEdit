@@ -30,7 +30,7 @@ import org.eclipse.nebula.widgets.pgroup._
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.editor.core._
-import moe.lymia.princess.editor.data._
+import moe.lymia.princess.editor.nodes._
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
 

@@ -23,8 +23,7 @@
 package moe.lymia.princess.editor.lua
 
 import moe.lymia.princess.core._
-import moe.lymia.princess.editor.controls._
-import moe.lymia.princess.editor.data._
+import moe.lymia.princess.editor.nodes._
 import moe.lymia.princess.lua._
 
 case class ControlTypeApWrapper(default: ControlType, call: LuaClosure)

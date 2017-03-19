@@ -20,16 +20,13 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.controls
+package moe.lymia.princess.editor.nodes
 
 import moe.lymia.princess.core.EditorException
-import moe.lymia.princess.editor.data._
 import moe.lymia.princess.lua.Lua
-
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
-
 import rx._
 
 import scala.collection.mutable

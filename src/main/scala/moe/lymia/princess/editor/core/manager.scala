@@ -26,7 +26,7 @@ import java.awt.image.BufferedImage
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
 import moe.lymia.princess.core._
-import moe.lymia.princess.editor.data._
+import moe.lymia.princess.editor.nodes._
 import moe.lymia.princess.editor.lua._
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._

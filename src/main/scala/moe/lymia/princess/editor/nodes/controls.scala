@@ -20,15 +20,13 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.controls
+package moe.lymia.princess.editor.nodes
 
+import moe.lymia.princess.editor.core.{DataField, DataFieldType}
+import moe.lymia.princess.lua.Lua
 import org.eclipse.swt._
 import org.eclipse.swt.events._
 import org.eclipse.swt.widgets._
-
-import moe.lymia.princess.editor.data._
-import moe.lymia.princess.lua.Lua
-
 import rx._
 
 trait BasicControlType[T <: Control] extends ControlType {

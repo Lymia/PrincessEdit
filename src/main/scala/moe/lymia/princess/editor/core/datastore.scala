@@ -20,9 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.data
-
-import java.util.UUID
+package moe.lymia.princess.editor.core
 
 import moe.lymia.princess.lua._
 import play.api.libs.json._
