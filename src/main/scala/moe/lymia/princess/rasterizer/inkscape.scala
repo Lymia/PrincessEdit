@@ -72,10 +72,9 @@ class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRasterize
 
   private def handleUntilCommandEnd(): Unit = {
     while(true) {
-      stdout_r.mark(1)
-      if(stdout_r.read() == '>') return
-      stdout_r.reset()
-      println(s"[Inkscape] ${stdout_r.readLine()}")
+      val char = stdout_r.read()
+      if(char == '>') return
+      println(s"[Inkscape] $char${stdout_r.readLine()}")
     }
   }
 
