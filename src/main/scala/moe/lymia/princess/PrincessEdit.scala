@@ -132,7 +132,7 @@ class CLI {
       val image = time("Rasterized image") { data.rasterizeAwt(rasterizer, xSize, ySize) }
       time("Writing .png") { ImageIO.write(image, "png", new FileOutputStream(out)) }
     } finally {
-      rasterizer.destroy()
+      rasterizer.dispose()
     }
   }
   private def cmd_render(): Unit = {

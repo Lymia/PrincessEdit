@@ -68,7 +68,7 @@ class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRasterize
   private val stdin_w = new PrintWriter(new OutputStreamWriter(stdin, StandardCharsets.UTF_8))
 
   private val lock = new Object
-  private var destroyed = false
+  private var disposed = false
 
   private def handleUntilCommandEnd(): Unit = {
     while(true) {
@@ -88,7 +88,7 @@ class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRasterize
   }
 
   def rasterizeSVGToPNG(x: Int, y: Int, svg: Elem, out: Path): Unit = lock.synchronized {
-    if(destroyed) sys.error("instance already destroyed")
+    if(disposed) sys.error("instance already disposed")
     IOUtils.withTemporaryFile(extension = "svg") { svgFile =>
       IOUtils.writeFile(svgFile.toPath, svg.toString().getBytes("UTF-8"))
       command(svgFile.getAbsolutePath, "-w", x.toString, "-h", y.toString, "--export-png", out.toAbsolutePath.toString)
@@ -96,23 +96,23 @@ class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRasterize
   }
 
   def rasterizeAwt(x: Int, y: Int, svg: Elem) = lock.synchronized {
-    if(destroyed) sys.error("instance already destroyed")
+    if(disposed) sys.error("instance already disposed")
     IOUtils.withTemporaryFile(extension = "png") { pngFile =>
       rasterizeSVGToPNG(x, y, svg, pngFile.toPath)
       ImageIO.read(pngFile)
     }
   }
   def rasterizeSwt(x: Int, y: Int, svg: Elem) = lock.synchronized {
-    if(destroyed) sys.error("instance already destroyed")
+    if(disposed) sys.error("instance already disposed")
     IOUtils.withTemporaryFile(extension = "png") { pngFile =>
       rasterizeSVGToPNG(x, y, svg, pngFile.toPath)
       new ImageData(pngFile.getAbsolutePath)
     }
   }
 
-  def destroy() = lock.synchronized {
-    if(!destroyed) {
-      destroyed = true
+  def dispose() = lock.synchronized {
+    if(!disposed) {
+      disposed = true
       stdin_w.println("quit")
       stdin_w.flush()
       inkscapeProcess.waitFor(1, TimeUnit.SECONDS)
@@ -120,5 +120,5 @@ class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRasterize
     }
   }
 
-  override def finalize(): Unit = destroy()
+  override def finalize(): Unit = dispose()
 }

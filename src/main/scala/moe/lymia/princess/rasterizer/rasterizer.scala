@@ -39,5 +39,5 @@ trait SVGRasterizer {
   def rasterizeAwt(x: Int, y: Int, svg: Elem): BufferedImage
   def rasterizeSwt(x: Int, y: Int, svg: Elem): ImageData
 
-  def destroy(): Unit
+  def dispose(): Unit
 }
