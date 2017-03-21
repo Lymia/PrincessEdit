@@ -65,6 +65,13 @@ lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   name := "princess-edit-lua"
 ))
 
+lazy val batik = project in file("modules/batik") settings (commonSettings ++ Seq(
+  name := "princess-edit-batik-patch",
+  libraryDependencies += "org.apache.xmlgraphics" % "xmlgraphics-commons" % "2.1",
+  libraryDependencies += "org.apache.xmlgraphics" % "batik-swing" % "1.8",
+  libraryDependencies += "org.apache.xmlgraphics" % "batik-transcoder" % "1.8"
+))
+
 lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
   name := "princess-edit",
 
@@ -103,4 +110,4 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.compositetable" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"
-) ++ VersionBuild.settings) dependsOn lua
+) ++ VersionBuild.settings) dependsOn lua dependsOn batik
