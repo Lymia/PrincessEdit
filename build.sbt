@@ -94,8 +94,13 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Proguar
       exclude("package", "org.mozilla.xpcom")
       exclude("package", "org.eclipse.swt.accessibility2"))
   },
+  libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.11.2.v20161107-1947",
+  libraryDependencies += "bundle" % "org.eclipse.equinox.common" % "3.8.0.v20160509-1230",
+  libraryDependencies += "bundle" % "org.eclipse.jface" % "3.12.1.v20160923-1528"
+    exclude("bundle", "org.eclipse.equinox.bidi"),
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.compositetable" % "1.0.0.201703081533",
+  libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533",
   ignoreDuplicate += "^\\.api_description$"
 ) ++ VersionBuild.settings ++ CodeGeneration.settings)
 

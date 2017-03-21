@@ -112,6 +112,7 @@ abstract class NativeHeader[Extra](parent: Composite, style: Int)
 }
 abstract class SortableHeader[Extra](parent: Composite, style: Int)
   extends AbstractSortableHeader(parent, style) with CompositeTableElement[Extra] with HeaderBase
+
 abstract class SelectableRow[Extra](parent: Composite, style: Int)
   extends AbstractSelectableRow(parent, style) with CompositeTableElement[Extra]
 

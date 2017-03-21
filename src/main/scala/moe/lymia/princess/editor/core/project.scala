@@ -51,7 +51,11 @@ final class SlotData(project: Project) {
   }
 }
 
-final class CardPool(project: Project) {
+trait CardSource {
+
+}
+
+final class CardPool(project: Project) extends CardSource {
   val displayName = Var[String]("")
   val slots = Var(Seq.empty[SlotData])
   val fields = new DataStore
@@ -81,6 +85,6 @@ final class CardPool(project: Project) {
   }
 }
 
-final class Project(val idData: GameIDData) {
+final class Project(val idData: GameIDData) extends CardSource {
 
 }
