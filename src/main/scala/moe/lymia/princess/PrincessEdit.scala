@@ -32,7 +32,7 @@ import moe.lymia.princess.core._
 import moe.lymia.princess.editor._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.rasterizer._
-import moe.lymia.princess.lua._
+import moe.lymia.lua._
 import moe.lymia.princess.util._
 
 private case class CLIException(message: String) extends Exception

@@ -23,7 +23,7 @@
 package moe.lymia.princess.editor.nodes
 
 import moe.lymia.princess.editor.core.{DataField, DataFieldType}
-import moe.lymia.princess.lua.Lua
+import moe.lymia.lua.Lua
 import org.eclipse.swt._
 import org.eclipse.swt.events._
 import org.eclipse.swt.widgets._

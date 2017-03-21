@@ -27,7 +27,7 @@ import java.nio.file.Files
 import moe.lymia.princess.core._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.renderer.lua._
-import moe.lymia.princess.lua._
+import moe.lymia.lua._
 
 import scala.collection.mutable
 import scala.xml.{XML => _, _}

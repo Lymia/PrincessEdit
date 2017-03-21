@@ -43,7 +43,7 @@ sourceGenerators in Compile += Def.task {
 
   val maxFunction = 10
   val generatedFile =
-    s"""package moe.lymia.princess.lua
+    s"""package moe.lymia.lua
        |
        |import scala.language.implicitConversions
        |
@@ -60,7 +60,7 @@ sourceGenerators in Compile += Def.task {
        |}
      """.stripMargin
 
-  val out = (sourceManaged in Compile).value / "moe" / "lymia" / "princess" / "lua" / "LuaGeneratedImplicits.scala"
+  val out = (sourceManaged in Compile).value / "moe" / "lymia" / "lua" / "LuaGeneratedImplicits.scala"
   IO.write(out, generatedFile)
   Seq(out)
 }.taskValue

@@ -25,7 +25,7 @@ package moe.lymia.princess.renderer
 import java.io.Writer
 
 import moe.lymia.princess.core._
-import moe.lymia.princess.lua._
+import moe.lymia.lua._
 import moe.lymia.princess.renderer.components._
 import moe.lymia.princess.renderer.lua._
 import moe.lymia.princess.rasterizer.SVGRasterizer

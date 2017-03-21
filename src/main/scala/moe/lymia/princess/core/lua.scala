@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.core
 
-import moe.lymia.princess.lua._
+import moe.lymia.lua._
 import moe.lymia.princess.util._
 
 import scala.collection.JavaConverters._

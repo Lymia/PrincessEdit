@@ -24,7 +24,7 @@ package moe.lymia.princess.editor.core
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.editor.nodes._
-import moe.lymia.princess.lua._
+import moe.lymia.lua._
 
 import org.eclipse.swt.widgets.Composite
 

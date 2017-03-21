@@ -24,7 +24,7 @@ package moe.lymia.princess.renderer
 
 import java.io.Writer
 
-import moe.lymia.princess.lua.LuaTable
+import moe.lymia.lua.LuaTable
 import moe.lymia.princess.rasterizer.SVGRasterizer
 import org.jfree.graphics2d.svg.{SVGGraphics2D, SVGHints}
 

@@ -24,7 +24,7 @@ package moe.lymia.princess.core
 
 import java.nio.file.{Path, Paths}
 
-import moe.lymia.princess.lua.LuaObject
+import moe.lymia.lua.LuaObject
 
 final class GameManager(packages: PackageList, val logger: Logger = DefaultLogger, modules: Seq[LuaModule] = Seq()) {
   val gameId = packages.gameId

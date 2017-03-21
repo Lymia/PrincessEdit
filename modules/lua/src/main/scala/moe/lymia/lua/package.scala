@@ -20,21 +20,6 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.lua
+package moe.lymia
 
-import moe.lymia.princess.core._
-import moe.lymia.princess.editor.nodes._
-import moe.lymia.lua._
-
-trait LuaControlNodeImplicits {
-  implicit object LuaControlNode extends LuaUserdataType[ControlNode]
-}
-
-object ControlNodeLib extends LuaLibrary {
-  override def open(L: LuaState, table: LuaTable): Unit = {
-    val node = L.newLib(table, "Node")
-    L.register(node, "Label", (text: String) => LabelNode(text) : ControlNode)
-    L.register(node, "Visibility",
-      (node: FieldNode, contents: ControlNode) => VisibilityNode(node, contents) : ControlNode)
-  }
-}
+package object lua extends LuaImplicits with LuaUserdataImplicits
