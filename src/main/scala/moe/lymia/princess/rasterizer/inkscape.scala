@@ -74,7 +74,7 @@ class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRasterize
     while(true) {
       val char = stdout_r.read()
       if(char == '>') return
-      println(s"[Inkscape] $char${stdout_r.readLine()}")
+      println(s"[Inkscape] ${char.toChar}${stdout_r.readLine()}")
     }
   }
 

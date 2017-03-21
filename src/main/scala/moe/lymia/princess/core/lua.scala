@@ -105,7 +105,7 @@ final class LuaContext(val packages: PackageList, val logger: Logger, modules: S
   private def loadPredefs(exportType: String) =
     for(e <- packages.getSystemExports(exportType).sortBy(_.metadata.get("priority").map(_.head.toInt).getOrElse(0)))
       loadLuaPredef(e.path)
-  def loadModule(mod: LuaModule) = {
+  def loadModule(mods: LuaModule*) = for(mod <- mods) {
     logger.trace(s"Loading module '${mod.moduleName}'")
 
     if(!isClean) throw EditorException("cannot load additional Lua modules after exports are loaded")

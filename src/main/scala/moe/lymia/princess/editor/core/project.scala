@@ -31,16 +31,18 @@ import rx._
 
 final class CardData(idData: GameIDData) {
   val fields = new DataStore
+
   val root = idData.card.createRoot(fields, Seq())
 
   def serialize = Json.obj("fields" -> fields.serialize)
   def deserialize(js: JsValue) = fields.deserialize((js \ "fields").as[JsValue])
 }
 
-final class SlotData(idData: GameIDData) {
+final class SlotData(project: Project) {
   val cardRef = Var[Option[UUID]](None)
   val fields = new DataStore
-  val root = idData.card.createRoot(fields, Seq())
+
+  val root = project.idData.card.createRoot(fields, Seq())
 
   def serialize = Json.obj("cardRef" -> cardRef.now, "fields" -> fields.serialize)
   def deserialize(js: JsValue): Unit = {
@@ -49,14 +51,14 @@ final class SlotData(idData: GameIDData) {
   }
 }
 
-final class SetData(file: CardFile) {
+final class CardPool(project: Project) {
   val displayName = Var[String]("")
   val slots = Var(Seq.empty[SlotData])
   val fields = new DataStore
 
   def addSlot(slot: SlotData): Unit = slots.update(slots.now :+ slot)
   def addSlot(card: UUID): Unit = addSlot({
-    val slot = new SlotData(file.idData)
+    val slot = new SlotData(project)
     slot.cardRef.update(Some(card))
     slot
   })
@@ -71,7 +73,7 @@ final class SetData(file: CardFile) {
   def deserialize(js: JsValue) = {
     displayName.update((js \ "displayName").as[String])
     slots.update((js \ "slots").as[Seq[JsValue]].map(v => {
-      val slot = new SlotData(file.idData)
+      val slot = new SlotData(project)
       slot.deserialize(v)
       slot
     }))
@@ -79,6 +81,6 @@ final class SetData(file: CardFile) {
   }
 }
 
-final class CardFile(val idData: GameIDData) {
+final class Project(val idData: GameIDData) {
 
 }

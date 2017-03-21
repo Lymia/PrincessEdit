@@ -22,70 +22,20 @@
 
 package moe.lymia.princess.editor
 
-import org.eclipse.swt._
-import org.eclipse.swt.graphics._
-import org.eclipse.swt.layout._
-import org.eclipse.swt.widgets._
-import org.eclipse.nebula.widgets.pgroup._
-
-import moe.lymia.princess.core._
 import moe.lymia.princess.editor.core._
-import moe.lymia.princess.editor.nodes._
+import moe.lymia.princess.editor.ui.{FrontEndFrame, MainFrame}
 import moe.lymia.princess.rasterizer._
-import moe.lymia.princess.renderer._
 
-
-import play.api.libs.json.Json
-
-// TODO: This is only a temporary test UI
 class UIMain {
-  private var gameId: String = _
   trait ScoptArgs { this: scopt.OptionParser[Unit] =>
     def uiOptions() = {
-      arg[String]("<gameId>").foreach(gameId = _).hidden()
+      // TODO
     }
   }
   def main() = {
-    val game = PackageManager.default.loadGameId(gameId)
-    val manager = new UIManager(game, new InkscapeConnectionFactory("inkscape"))
-    manager.mainLoop { (display, ctx) =>
-      val idData = new GameIDData(game, ctx)
-      val cardData = new CardData(idData)
-      val shell = ctx.newShell()
-
-      shell.setText("PrincessEdit SWT Test")
-      shell.setSize(800, 600)
-
-      val layout = new GridLayout
-      shell.setLayout(layout)
-      layout.numColumns = 2
-
-      val label = new Label(shell, SWT.NONE)
-      label.setLayoutData(new GridData(SWT.CENTER, SWT.BEGINNING, false, false))
-
-      val titled = new PGroup(shell, SWT.SMOOTH)
-      titled.setToggleRenderer(new TreeNodeToggleRenderer)
-      titled.setStrategy(new SimpleGroupStrategy)
-      titled.setLayout(new FillLayout)
-      cardData.root.createUI(titled)
-      titled.setText("Card data")
-      titled.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true))
-      titled.layout(true)
-
-      import rx.Ctx.Owner.Unsafe._
-      val obs = cardData.root.luaData.foreach { d =>
-        println(Json.prettyPrint(cardData.serialize))
-        ctx.asyncRenderSwt(manager.render.render(d, RasterizeResourceLoader), 250, 350) { imageData =>
-          ctx.asyncUiExec {
-            val image = new Image(display, imageData)
-            if(label.getImage != null) label.getImage.dispose()
-            label.setImage(image)
-            shell.layout(true)
-          }
-        }
-      }
-
-      shell.setVisible(true)
+    val manager = new UIManager(new InkscapeConnectionFactory("inkscape"))
+    manager.mainLoop { ctx =>
+      new FrontEndFrame(manager, ctx)
     }
   }
 }

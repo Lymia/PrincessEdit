@@ -25,12 +25,9 @@ package moe.lymia.princess.editor.core
 import java.awt.image.BufferedImage
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
-import moe.lymia.princess.core._
 import moe.lymia.princess.editor.nodes._
-import moe.lymia.princess.editor.lua._
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
-import moe.lymia.princess.renderer.lua._
 import moe.lymia.princess.util._
 
 import org.eclipse.swt.SWT
@@ -38,8 +35,6 @@ import org.eclipse.swt.graphics._
 import org.eclipse.swt.widgets._
 
 import rx._
-
-import scala.collection.mutable
 
 private class Condition(val lock: Object = new Object) extends AnyVal {
   def done() = lock synchronized { lock.notify() }
@@ -123,7 +118,7 @@ private class LuaThread(state: VolatileState) extends Thread {
     }
 }
 
-private class UIControlContext(display: Display, state: VolatileState) extends ControlContext {
+private class UIControlContext(val display: Display, state: VolatileState) extends ControlContext {
   override def newShell(style: Int = SWT.SHELL_TRIM) = new Shell(display, style)
 
   private class Syncer[T] {
@@ -179,14 +174,10 @@ private class UIControlContext(display: Display, state: VolatileState) extends C
   }
 }
 
-class UIManager(game: GameManager, factory: SVGRasterizerFactory) {
-  game.lua.loadModule(RenderModule)
-  game.lua.loadModule(EditorModule)
-
+class UIManager(factory: SVGRasterizerFactory) {
   private val state = new VolatileState
 
-  private val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
-  val render = new RenderManager(game, cache)
+  val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
 
   private val luaThread = new LuaThread(state)
   private val rasterizeThread = new RasterizeThread(state, factory.createRasterizer())
@@ -196,13 +187,10 @@ class UIManager(game: GameManager, factory: SVGRasterizerFactory) {
 
   def shutdown() = state.shutdown()
 
-  def mainLoop(init: (Display, ControlContext) => Unit) = {
+  def mainLoop(init: ControlContext => Unit) = {
     val display = new Display()
     try {
-      val ctx = new UIControlContext(display, state)
-      init(display, ctx)
-
-      // run the event loop as long as the window is open
+      init(new UIControlContext(display, state))
       while(!display.isDisposed && state.isRunning) if(!display.readAndDispatch()) display.sleep()
     } finally {
       if(!display.isDisposed) display.dispose()

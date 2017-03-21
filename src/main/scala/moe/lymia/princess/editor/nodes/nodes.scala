@@ -37,6 +37,8 @@ import rx._
 sealed trait TreeNode
 
 trait ControlContext {
+  val display: Display
+
   def newShell(style: Int = SWT.SHELL_TRIM): Shell
 
   def needsSaving()
