@@ -99,7 +99,7 @@ class CLI {
     luaFile match {
       case Some(file) =>
         val L = LuaState.makeSafeContext()
-        L.loadFile(file) match {
+        L.loadString(IOUtils.readFileAsString(Paths.get(file)), s"@$file") match {
           case Left (x) => L.call(x, 0)
           case Right(x) => println(x)
         }

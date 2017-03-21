@@ -23,7 +23,6 @@
 import sbt._
 import sbt.Keys._
 import Config._
-import ProguardBuild.Keys._
 
 val commonSettings = versionWithGit ++ Seq(
   // Organization configuration
@@ -33,6 +32,16 @@ val commonSettings = versionWithGit ++ Seq(
 
   // Repositories
   resolvers += Resolver.mavenLocal,
+  resolvers ++= {
+    def updateSiteResolver(name: String, url: String) = {
+      val resolver = new org.apache.ivy.osgi.updatesite.UpdateSiteResolver
+      resolver.setName(name)
+      resolver.setUrl(url)
+      new RawRepository(resolver)
+    }
+    Seq(updateSiteResolver("Eclipse updates site", "http://download.eclipse.org/eclipse/updates/4.6"),
+        updateSiteResolver("Nebula update site", "http://download.eclipse.org/nebula/releases/1.2.0/"))
+  },
 
   // Git versioning
   git.baseVersion := version_baseVersion,
@@ -52,9 +61,12 @@ val commonSettings = versionWithGit ++ Seq(
   crossPaths := false
 )
 
-lazy val princessEdit = project in file(".") settings (commonSettings ++ ProguardBuild.settings ++ Seq(
+lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
+  name := "princess-edit-lua"
+))
+
+lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
   name := "princess-edit",
-  proguardConfig := "config.pro",
 
   fork in run := true,
   envVars in run += ("SWT_GTK3", "0"),
@@ -69,16 +81,6 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Proguar
 
   // SWT Resolver
   // Some code from http://stackoverflow.com/a/12509004/1733590
-  resolvers ++= {
-    def updateSiteResolver(name: String, url: String) = {
-      val resolver = new org.apache.ivy.osgi.updatesite.UpdateSiteResolver
-      resolver.setName(name)
-      resolver.setUrl(url)
-      new RawRepository(resolver)
-    }
-    Seq(updateSiteResolver("Eclipse updates site", "http://download.eclipse.org/eclipse/updates/4.6"),
-        updateSiteResolver("Nebula update site", "http://download.eclipse.org/nebula/releases/1.2.0/"))
-  },
   libraryDependencies += {
     val os = (sys.props("os.name"), sys.props("os.arch")) match {
       case ("Linux", "amd64" | "x86_64") => "gtk.linux.x86_64"
@@ -100,49 +102,5 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Proguar
     exclude("bundle", "org.eclipse.equinox.bidi"),
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.compositetable" % "1.0.0.201703081533",
-  libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533",
-  ignoreDuplicate += "^\\.api_description$"
-) ++ VersionBuild.settings ++ CodeGeneration.settings)
-
-Launch4JBuild.settings
-Launch4JBuild.Keys.launch4jSourceJar := (ProguardKeys.proguard in Proguard in princessEdit).value.head
-
-// Build distribution file
-InputKey[Unit]("dist") := {
-  val path = crossTarget.value / "dist"
-  IO.createDirectory(path)
-
-  val zipOut = IO.withTemporaryDirectory { dir =>
-    val dirName = s"princess-edit-${(version in princessEdit).value}"
-    val zipOut = path / s"$dirName.zip"
-    val outDir = dir / dirName
-
-    IO.createDirectory(outDir)
-    IO.createDirectory(outDir / "packages")
-
-    IO.copyFile(file("project/dist_README.md"), outDir / "README.txt")
-    IO.copyFile(file("project/LICENSE.md"), outDir / "LICENSE.txt")
-    IO.copyFile(file("project/NOTICE.md"), outDir / "NOTICE.txt")
-
-    IO.copyFile(Launch4JBuild.Keys.launch4jOutput.value, outDir / "PrincessEdit.exe")
-    IO.write(outDir / "PrincessEdit.sh",
-      """#!/bin/sh
-        |cd "$(dirname "$0")"
-        |java -jar PrincessEdit.exe "$@"
-      """.stripMargin)
-    (outDir / "PrincessEdit.sh").setExecutable(true)
-
-    for(file <- IO.listFiles(file("packages")) if file.isDirectory)
-      IO.copy(Path.allSubpaths(file).filter(!_._2.startsWith(".git/"))
-                                    .map   (x => x.copy(_2 = outDir / "packages" / file.getName / x._2)))
-    IO.zip(Path.allSubpaths(file("PrincessEdit.pedit-pkg")), outDir / "PrincessEdit.pedit-pkg")
-
-    // we call out to zip to save the executable flag for *nix
-    if(zipOut.exists) IO.delete(zipOut)
-    Utils.runProcess(Seq("zip", "-r", zipOut, dirName), dir)
-
-    zipOut
-  }
-
-  streams.value.log.info(s"Output written to: $zipOut")
-}
+  libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"
+) ++ VersionBuild.settings) dependsOn lua

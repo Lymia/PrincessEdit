@@ -21,10 +21,9 @@
  */
 
 package moe.lymia.princess.lua
+
 import java.io.{InputStream, Reader}
 import java.nio.file.{Path, Paths}
-
-import moe.lymia.princess.util.IOUtils
 
 import scala.collection.JavaConverters._
 
@@ -121,7 +120,6 @@ final case class LuaState(L: Lua) extends AnyVal {
   }
   def load(in: InputStream, chunkname: String) = popLoad(L.load(in, chunkname))
   def load(in: Reader, chunkname: String) = popLoad(L.load(in, chunkname))
-  def loadFile(filename: String) = popLoad(L.loadString(IOUtils.readFileAsString(Paths.get(filename)), s"@$filename"))
   def loadResource(filename: String) = popLoad(L.loadFile(filename))
   def loadString(s: String, chunkname: String) = popLoad(L.loadString(s, chunkname))
   def doString(s: String) = {

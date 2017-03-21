@@ -5,6 +5,8 @@
 /target
 /project/project
 /project/target
+/modules/*/project
+/modules/*/target
 
 # Generated files
 /*.png
