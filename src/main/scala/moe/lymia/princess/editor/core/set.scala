@@ -29,16 +29,18 @@ import moe.lymia.princess.editor.nodes._
 import play.api.libs.json._
 import rx._
 
-final class CardData {
+final class CardData(idData: GameIDData) {
   val fields = new DataStore
+  val root = idData.card.createRoot(fields, Seq())
 
   def serialize = Json.obj("fields" -> fields.serialize)
   def deserialize(js: JsValue) = fields.deserialize((js \ "fields").as[JsValue])
 }
 
-final class SlotData {
+final class SlotData(idData: GameIDData) {
   val cardRef = Var[Option[UUID]](None)
   val fields = new DataStore
+  val root = idData.card.createRoot(fields, Seq())
 
   def serialize = Json.obj("cardRef" -> cardRef.now, "fields" -> fields.serialize)
   def deserialize(js: JsValue): Unit = {
@@ -47,14 +49,14 @@ final class SlotData {
   }
 }
 
-final class SetData {
+final class SetData(file: CardFile) {
   val displayName = Var[String]("")
   val slots = Var(Seq.empty[SlotData])
   val fields = new DataStore
 
   def addSlot(slot: SlotData): Unit = slots.update(slots.now :+ slot)
   def addSlot(card: UUID): Unit = addSlot({
-    val slot = new SlotData
+    val slot = new SlotData(file.idData)
     slot.cardRef.update(Some(card))
     slot
   })
@@ -69,7 +71,7 @@ final class SetData {
   def deserialize(js: JsValue) = {
     displayName.update((js \ "displayName").as[String])
     slots.update((js \ "slots").as[Seq[JsValue]].map(v => {
-      val slot = new SlotData
+      val slot = new SlotData(file.idData)
       slot.deserialize(v)
       slot
     }))
@@ -77,6 +79,6 @@ final class SetData {
   }
 }
 
-final class CardFile {
+final class CardFile(val idData: GameIDData) {
 
 }

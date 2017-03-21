@@ -42,7 +42,7 @@ trait LuaFieldNodeImplicits {
     }
     method("map") { wrapper => (fn: LuaClosure) => DerivedFieldNode(wrapper.elements, fn) }
     method("newRoot") { wrapper => (L: LuaState, name: String, fn: LuaClosure) =>
-      RootNode(FieldLib.checkName(L, name), wrapper.elements, fn) }
+      RootNode(Some(FieldLib.checkName(L, name)), wrapper.elements, fn) }
   }
   trait LuaFieldNodeBase[T <: FieldNode] extends PropertiesUserdataType[T] {
     metatable { (L, mt) =>
@@ -50,7 +50,7 @@ trait LuaFieldNodeImplicits {
     }
     method("map") { node => (fn: LuaClosure) => DerivedFieldNode(Seq(node), fn) }
     method("newRoot") { node => (L: LuaState, name: String, fn: LuaClosure) =>
-      RootNode(FieldLib.checkName(L, name), Seq(node), fn) }
+      RootNode(Some(FieldLib.checkName(L, name)), Seq(node), fn) }
   }
 }
 

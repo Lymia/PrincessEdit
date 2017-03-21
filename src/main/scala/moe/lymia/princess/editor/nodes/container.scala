@@ -32,7 +32,7 @@ import rx._
 import scala.collection.mutable
 
 case class LabelNode(text: String) extends ControlNode {
-  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner) = {
+  override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {
     val label = new Label(parent, SWT.NONE)
     label.setText(text)
     label
@@ -40,16 +40,16 @@ case class LabelNode(text: String) extends ControlNode {
 }
 
 case object SpacerNode extends ControlNode {
-  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner): Control =
+  override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) =
     new Label(parent, SWT.NONE)
 }
 
 case class VisibilityNode(isVisible: FieldNode, contents: ControlNode) extends ControlNode {
-  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner) = {
+  override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {
     val container = new Composite(parent, SWT.NONE)
     container.setLayout(new GridLayout)
 
-    val widget = contents.createComponent(container)
+    val widget = contents.createControl(container)
     val data = new GridData(SWT.FILL, SWT.FILL, true, true)
     widget.setLayoutData(data)
 
@@ -67,10 +67,10 @@ case class VisibilityNode(isVisible: FieldNode, contents: ControlNode) extends C
 case class GridComponent(component: ControlNode, x: Int, y: Int, newConstraints: () => GridData)
 private case class ComputedGridComponent(component: ControlNode, newConstraints: () => GridData)
 class GridNode private (data: Seq[ComputedGridComponent], newLayout: () => GridLayout) extends ControlNode {
-  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner) = {
+  override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {
     val pane = new Composite(parent, SWT.NONE)
     pane.setLayout(newLayout())
-    for(component <- data) component.component.createComponent(pane).setLayoutData(component.newConstraints())
+    for(component <- data) component.component.createControl(pane).setLayoutData(component.newConstraints())
     pane
   }
 }

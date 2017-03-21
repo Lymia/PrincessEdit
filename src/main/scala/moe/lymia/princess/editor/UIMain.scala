@@ -48,10 +48,11 @@ class UIMain {
   def main() = {
     val game = PackageManager.default.loadGameId(gameId)
     val manager = new UIManager(game, new InkscapeConnectionFactory("inkscape"))
-    val ep = new LuaNodeSource(game, "card-form", "cardForm")
-    val data = new DataStore
+    manager.mainLoop { (display, ctx) =>
+      val idData = new GameIDData(game, ctx)
+      val cardData = new CardData(idData)
+      val shell = ctx.newShell()
 
-    manager.mainLoop { (display, shell, ctx) =>
       shell.setText("PrincessEdit SWT Test")
       shell.setSize(800, 600)
 
@@ -66,14 +67,14 @@ class UIMain {
       titled.setToggleRenderer(new TreeNodeToggleRenderer)
       titled.setStrategy(new SimpleGroupStrategy)
       titled.setLayout(new FillLayout)
-      val root = ep.createRoot(game.lua.L, titled, data, "card", ctx, Seq())
+      cardData.root.createUI(titled)
       titled.setText("Card data")
       titled.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true))
       titled.layout(true)
 
       import rx.Ctx.Owner.Unsafe._
-      val obs = root.luaData.foreach { d =>
-        println(Json.prettyPrint(data.serialize))
+      val obs = cardData.root.luaData.foreach { d =>
+        println(Json.prettyPrint(cardData.serialize))
         ctx.asyncRenderSwt(manager.render.render(d, RasterizeResourceLoader), 250, 350) { imageData =>
           ctx.asyncUiExec {
             val image = new Image(display, imageData)
@@ -83,6 +84,8 @@ class UIMain {
           }
         }
       }
+
+      shell.setVisible(true)
     }
   }
 }

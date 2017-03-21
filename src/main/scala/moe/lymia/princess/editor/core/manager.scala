@@ -33,10 +33,13 @@ import moe.lymia.princess.renderer._
 import moe.lymia.princess.renderer.lua._
 import moe.lymia.princess.util._
 
+import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics._
 import org.eclipse.swt.widgets._
 
 import rx._
+
+import scala.collection.mutable
 
 private class Condition(val lock: Object = new Object) extends AnyVal {
   def done() = lock synchronized { lock.notify() }
@@ -121,6 +124,8 @@ private class LuaThread(state: VolatileState) extends Thread {
 }
 
 private class UIControlContext(display: Display, state: VolatileState) extends ControlContext {
+  override def newShell(style: Int = SWT.SHELL_TRIM) = new Shell(display, style)
+
   private class Syncer[T] {
     private val lock = new Condition()
     @volatile private var isDone = false
@@ -191,20 +196,17 @@ class UIManager(game: GameManager, factory: SVGRasterizerFactory) {
 
   def shutdown() = state.shutdown()
 
-  def mainLoop(init: (Display, Shell, ControlContext) => Unit) = {
+  def mainLoop(init: (Display, ControlContext) => Unit) = {
     val display = new Display()
     try {
-      val shell = new Shell(display)
       val ctx = new UIControlContext(display, state)
-      init(display, shell, ctx)
-      shell.layout(true)
-      shell.open()
+      init(display, ctx)
 
       // run the event loop as long as the window is open
-      while(!shell.isDisposed) if(!display.readAndDispatch()) display.sleep()
+      while(!display.isDisposed && state.isRunning) if(!display.readAndDispatch()) display.sleep()
     } finally {
-      display.dispose()
+      if(!display.isDisposed) display.dispose()
+      if(state.isRunning) state.shutdown()
     }
-    state.shutdown()
   }
 }

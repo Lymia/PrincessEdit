@@ -58,20 +58,24 @@ final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: Co
   val activatedRoots = new util.IdentityHashMap[RootNode, Rx[ActiveRootNode]].asScala
 
   private val activatedCardFields = new mutable.HashMap[String, TreeNode]
-  // TODO: Make this only exist for the duration of a single rendering of a UI tree
   private val uiActivatedCardField = new mutable.HashSet[String]
-  def activateCardField(name: String, node: TreeNode, isUi: Boolean) = {
+  def activateCardField(name: String, node: TreeNode) =
     activatedCardFields.get(name) match {
       case Some(f) =>
         if(f ne node)
           throw EditorException(s"Cannot control card data field '${prefix+name}' with two different nodes.")
       case None => activatedCardFields.put(name, node)
     }
-    if(isUi) {
-      //if(uiActivatedCardField.contains(name))
-      //  throw EditorException(s"Cannot reuse UI element controlling card data field '${prefix+name}'!")
+
+  def newUIContext() = new UIContext(prefix)
+}
+
+final class UIContext(prefix: String) {
+  private val uiActivatedCardField = new mutable.HashSet[String]
+  def activateCardField(name: String) = {
+      if(uiActivatedCardField.contains(name))
+        throw EditorException(s"Cannot reuse UI element controlling card data field '${prefix+name}'!")
       uiActivatedCardField.add(name)
-    }
   }
 }
 
@@ -94,7 +98,7 @@ final class RxPane(uiRoot: Composite, context: NodeContext, rootRx: Rx[ActiveRoo
 final class ActiveRootNode private (context: NodeContext, root: Option[ControlNode],
                                     fields: Option[Map[String, Rx[Any]]])(implicit owner: Ctx.Owner) {
   def renderUI(uiRoot: Composite) =
-    root.map(_.createComponent(uiRoot)(context, owner))
+    root.map(_.createControl(uiRoot)(context, context.newUIContext(), owner))
   lazy val luaOutput = fields.map { fields => Rx { fields.map(x => x.copy(_2 = x._2())) } }
 }
 object ActiveRootNode {
@@ -105,7 +109,7 @@ object ActiveRootNode {
   }
 }
 
-final case class RootNode(subtableName: String, params: Seq[FieldNode], fn: LuaClosure)
+final case class RootNode(subtableName: Option[String], params: Seq[FieldNode], fn: LuaClosure)
   extends FieldNode with ControlNode {
 
   private def makeActiveNode(ctx: NodeContext)(implicit owner: Ctx.Owner) =
@@ -114,21 +118,24 @@ final case class RootNode(subtableName: String, params: Seq[FieldNode], fn: LuaC
       Rx {
         // unapply not used because apparently scala.rx's macros break on those
         val ret = ctx.L.newThread().call(fn, 2, fields.map(_() : LuaObject) : _*)
-        val node = ActiveRootNode(ctx.L, ctx.data, ctx.controlCtx, ctx.prefixSeq :+ subtableName,
+        val node = ActiveRootNode(ctx.L, ctx.data, ctx.controlCtx, ctx.prefixSeq ++ subtableName,
                                   ret.last.as[Option[ControlNode]], ret.head.as[Option[Map[String, FieldNode]]])
         node
       }
     })
 
   override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = {
-    ctx.activateCardField(subtableName, this, isUi = false)
+    subtableName.foreach(n => ctx.activateCardField(n, this))
 
     val active = makeActiveNode(ctx)
     Rx { active().luaOutput.fold[Any](Lua.NIL)(_().toLua(ctx.internal_L)) }
   }
 
-  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner) = {
-    ctx.activateCardField(subtableName, this, isUi = true)
+  override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {
+    subtableName.foreach{ n =>
+      ctx.activateCardField(n, this)
+      uiCtx.activateCardField(n)
+    }
     new RxPane(parent, ctx, makeActiveNode(ctx)).pane
   }
 }

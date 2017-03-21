@@ -30,25 +30,38 @@ import org.eclipse.swt.widgets.Composite
 
 import rx._
 
-final class LuaUIRoot(L: LuaState, parent: Composite, data: DataStore, controlCtx: ControlContext, node: RootNode) {
+final class UIRootWrapper(parent: Composite, node: RootNode)(implicit ctx: NodeContext, owner: Ctx.Owner) {
+  private val dummyRx = Rx { () }
+  val control = node.createControl(parent)(ctx, ctx.newUIContext(), new Ctx.Owner(dummyRx))
+
+  def kill() = dummyRx.kill()
+}
+
+final class EditorDataRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, node: RootNode) {
   private implicit val ctx = new NodeContext(L, data, controlCtx)
 
   private val dummyRx = Rx.unsafe { () }
   private implicit val owner = new Ctx.Owner(dummyRx)
 
   val luaData = node.createRx
-  val component = node.createComponent(parent)
+
+  def createUI(parent: Composite) = new UIRootWrapper(parent, node)
 
   def kill() = dummyRx.kill()
 }
 
-final class LuaNodeSource(game: GameManager, entryExport: String, entryMethod: String) {
+final class LuaNodeSource(L: LuaState, controlCtx: ControlContext,
+                          game: GameManager, entryExport: String, entryMethod: String) {
   private val export = StaticExportIDs.EntryPoint(game.gameId, entryExport)
   private val fn = game.lua.L.newThread().getTable(game.getEntryPoint(export), entryMethod).as[LuaClosure]
 
-  def createRootNode(L: LuaState, subtableName: String, data: DataStore, args: Seq[Rx[LuaObject]]) =
-    RootNode(subtableName, args.map(RxFieldNode), fn)
-  def createRoot(L: LuaState, parent: Composite, data: DataStore, subtableName: String,
-                 controlCtx: ControlContext, args: Seq[Rx[LuaObject]]) =
-    new LuaUIRoot(L, parent, data, controlCtx, createRootNode(L, subtableName, data, args))
+  def createRootNode(data: DataStore, args: Seq[Rx[LuaObject]]) =
+    RootNode(None, args.map(RxFieldNode), fn)
+  def createRoot(data: DataStore, args: Seq[Rx[LuaObject]]) =
+    new EditorDataRoot(L.newThread(), data, controlCtx, createRootNode(data, args))
+}
+
+final class GameIDData(game: GameManager, controlCtx: ControlContext) {
+  lazy val card = new LuaNodeSource(game.lua.L, controlCtx, game, "card-form", "cardForm")
+  lazy val set  = new LuaNodeSource(game.lua.L, controlCtx, game, "set-form", "setForm")
 }

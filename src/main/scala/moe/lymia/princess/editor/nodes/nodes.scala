@@ -25,15 +25,20 @@ package moe.lymia.princess.editor.nodes
 import java.awt.image.BufferedImage
 
 import moe.lymia.princess.editor.core.{DataField, DataFieldType}
-import org.eclipse.swt.widgets._
 import moe.lymia.princess.lua._
 import moe.lymia.princess.renderer.SVGData
+
+import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.ImageData
+import org.eclipse.swt.widgets._
+
 import rx._
 
 sealed trait TreeNode
 
 trait ControlContext {
+  def newShell(style: Int = SWT.SHELL_TRIM): Shell
+
   def needsSaving()
   def queueUpdate[T](rxVar: Var[T], newValue: T)
 
@@ -60,7 +65,7 @@ trait ControlType {
 }
 
 trait ControlNode extends TreeNode {
-  def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner): Control
+  def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner): Control
 }
 
 trait FieldNode extends TreeNode {
@@ -97,14 +102,15 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
   }
 
   override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = {
-    ctx.activateCardField(fieldName, this, isUi = false)
+    ctx.activateCardField(fieldName, this)
 
     val field = checkDefault(ctx)
     Rx { field().toLua(ctx.internal_L) }
   }
 
-  override def createComponent(parent: Composite)(implicit ctx: NodeContext, owner: Ctx.Owner) = {
-    ctx.activateCardField(fieldName, this, isUi = true)
+  override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {
+    ctx.activateCardField(fieldName, this)
+    uiCtx.activateCardField(fieldName)
 
     val data = ControlData(ctx.L, ctx.internal_L, ctx.controlCtx, checkDefault(ctx),
                            default.map(v => ControlDataDefault(
