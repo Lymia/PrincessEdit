@@ -20,47 +20,51 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.ui
+package moe.lymia.princess.editor.dialogs
 
 import moe.lymia.princess.core.PackageManager
 import moe.lymia.princess.editor.core._
-import moe.lymia.princess.editor.nodes._
-
+import moe.lymia.princess.editor.utils.WindowBase
 import org.eclipse.swt.SWT
+import org.eclipse.swt.graphics.Point
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 
-class FrontEndFrame(manager: UIManager, controlCtx: ControlContext) {
-  val shell = controlCtx.newShell()
+class FrontEndFrame(ctx: ControlContext) extends WindowBase(ctx) {
+  override def configureShell(shell: Shell): Unit = {
+    super.configureShell(shell)
+    shell.setText("PrincessEdit Game Selection")
+  }
 
-  shell.setText("PrincessEdit Game Selection")
+  override def getInitialSize: Point = {
+    val size = super.getInitialSize
+    new Point(math.max(size.x, 500), size.y)
+  }
 
-  val layout = new GridLayout
-  shell.setLayout(layout)
-  layout.numColumns = 2
+  override def frameContents(frame: Composite) = {
+    val layout = new GridLayout
+    frame.setLayout(layout)
+    layout.numColumns = 2
 
-  val label = new Label(shell, SWT.NONE)
-  label.setText("Game")
-  label.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false))
+    val label = new Label(frame, SWT.NONE)
+    label.setText("Game")
+    label.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false))
 
-  val combo = new Combo(shell, SWT.BORDER | SWT.READ_ONLY)
-  combo.setItems(PackageManager.default.gameIDs.keys.toSeq : _*)
-  combo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false))
+    val combo = new Combo(frame, SWT.BORDER | SWT.READ_ONLY)
+    combo.setItems(PackageManager.default.gameIDs.keys.toSeq : _*)
+    combo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false))
 
-  val button = new Button(shell, SWT.PUSH)
-  button.setText("Start Editor Test")
-  val data = new GridData(SWT.END, SWT.CENTER, false, false)
-  data.horizontalSpan = 2
-  button.setLayoutData(data)
+    val button = new Button(frame, SWT.PUSH)
+    button.setText("Start Editor Test")
+    val data = new GridData(SWT.END, SWT.CENTER, false, false)
+    data.horizontalSpan = 2
+    button.setLayoutData(data)
 
-  button.addListener(SWT.Selection, event => {
-    new MainFrame(manager, controlCtx, combo.getItem(combo.getSelectionIndex))
-    shell.dispose()
-  })
-
-  shell.pack()
-  shell.setSize(math.max(shell.getSize.x, 500), shell.getSize.y)
-  shell.setVisible(true)
+    button.addListener(SWT.Selection, event => {
+      new MainFrame(ctx, combo.getItem(combo.getSelectionIndex)).open()
+      close()
+    })
+  }
 }
 
 object FrontEnd {

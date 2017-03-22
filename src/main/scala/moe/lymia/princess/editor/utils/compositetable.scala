@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.ui
+package moe.lymia.princess.editor.utils
 
 import org.eclipse.nebula.widgets.compositetable
 import org.eclipse.nebula.widgets.compositetable.{CompositeTable => _, _}
@@ -84,9 +84,9 @@ trait HeaderBase extends Composite {
 }
 
 trait CompositeTableElement[Extra] {
-  private[ui] var isInit: Boolean = false
-  protected[ui] var table: CompositeTable[Extra, _, _] = _
-  protected[ui] var extra: Extra = _
+  private[utils] var isInit: Boolean = false
+  protected[utils] var table: CompositeTable[Extra, _, _] = _
+  protected[utils] var extra: Extra = _
 
   def update(i: Int) { }
 

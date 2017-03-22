@@ -22,11 +22,13 @@
 
 package moe.lymia.princess.editor.nodes
 
-import moe.lymia.princess.editor.core.{DataField, DataFieldType}
-import moe.lymia.lua.Lua
+import moe.lymia.princess.editor.core._
+import moe.lymia.lua._
+
 import org.eclipse.swt._
 import org.eclipse.swt.events._
 import org.eclipse.swt.widgets._
+
 import rx._
 
 trait BasicControlType[T <: Control] extends ControlType {

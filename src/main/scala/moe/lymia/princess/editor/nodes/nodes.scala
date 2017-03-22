@@ -24,7 +24,7 @@ package moe.lymia.princess.editor.nodes
 
 import java.awt.image.BufferedImage
 
-import moe.lymia.princess.editor.core.{DataField, DataFieldType}
+import moe.lymia.princess.editor.core._
 import moe.lymia.lua._
 import moe.lymia.princess.renderer.SVGData
 
@@ -35,27 +35,6 @@ import org.eclipse.swt.widgets._
 import rx._
 
 sealed trait TreeNode
-
-trait ControlContext {
-  val display: Display
-
-  def newShell(style: Int = SWT.SHELL_TRIM): Shell
-
-  def needsSaving()
-  def queueUpdate[T](rxVar: Var[T], newValue: T)
-
-  def asyncRenderAwt(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit)
-  def syncRenderAwt(svg: SVGData, x: Int, y: Int): BufferedImage
-
-  def asyncRenderSwt(svg: SVGData, x: Int, y: Int)(callback: ImageData => Unit)
-  def syncRenderSwt(svg: SVGData, x: Int, y: Int): ImageData
-
-  def asyncLuaExec(f: => Unit)
-  def syncLuaExec[T](f: => T): T
-
-  def asyncUiExec(f: => Unit)
-  def syncUiExec[T](f: => T): T
-}
 
 final case class ControlDataDefault(isDefault: Rx[Boolean], field: Rx[DataField])
 final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlContext,

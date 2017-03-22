@@ -25,12 +25,14 @@ package moe.lymia.princess.editor.nodes
 import java.util
 
 import moe.lymia.princess.core._
-import moe.lymia.princess.editor.core.DataStore
+import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.lua._
 import moe.lymia.lua._
+
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
+
 import rx._
 
 import scala.collection.mutable

@@ -24,9 +24,11 @@ package moe.lymia.princess.editor.nodes
 
 import moe.lymia.princess.core.EditorException
 import moe.lymia.lua.Lua
+
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
+
 import rx._
 
 import scala.collection.mutable

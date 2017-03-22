@@ -24,8 +24,6 @@ package moe.lymia.princess.editor.core
 
 import java.util.UUID
 
-import moe.lymia.princess.editor.nodes._
-
 import play.api.libs.json._
 import rx._
 

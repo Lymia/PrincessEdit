@@ -20,22 +20,25 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor
+package moe.lymia.princess.editor.utils
 
-import moe.lymia.princess.editor.core._
-import moe.lymia.princess.editor.dialogs.FrontEndFrame
-import moe.lymia.princess.rasterizer._
+import moe.lymia.princess.editor.core.ControlContext
+import org.eclipse.jface.window.ApplicationWindow
+import org.eclipse.swt.SWT
+import org.eclipse.swt.widgets.{Composite, Control}
 
-class UIMain {
-  trait ScoptArgs { this: scopt.OptionParser[Unit] =>
-    def uiOptions() = {
-      // TODO
-    }
-  }
-  def main() = {
-    val manager = new UIManager(new InkscapeConnectionFactory("inkscape"))
-    manager.mainLoop { ctx =>
-      new FrontEndFrame(ctx).open()
-    }
+abstract class WindowBase(ctx: ControlContext, style: Int = SWT.SHELL_TRIM)
+  extends ApplicationWindow(null) {
+
+  ctx.wm.add(this)
+
+  override def showTopSeperator(): Boolean = false
+
+  protected def frameContents(frame: Composite)
+
+  override protected final def createContents(parent: Composite): Control = {
+    val contents = new Composite(parent, SWT.NONE)
+    frameContents(contents)
+    contents
   }
 }

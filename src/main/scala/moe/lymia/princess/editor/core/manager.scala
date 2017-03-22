@@ -25,7 +25,6 @@ package moe.lymia.princess.editor.core
 import java.awt.image.BufferedImage
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
-import moe.lymia.princess.editor.nodes._
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.util._
@@ -33,6 +32,7 @@ import moe.lymia.princess.util._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics._
 import org.eclipse.swt.widgets._
+import org.eclipse.jface.window._
 
 import rx._
 
@@ -118,8 +118,11 @@ private class LuaThread(state: VolatileState) extends Thread {
     }
 }
 
-private class UIControlContext(val display: Display, state: VolatileState) extends ControlContext {
-  override def newShell(style: Int = SWT.SHELL_TRIM) = new Shell(display, style)
+class ControlContext(val display: Display, state: VolatileState) {
+  val wm = new WindowManager()
+  val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
+
+  def newShell(style: Int = SWT.SHELL_TRIM) = new Shell(display, style)
 
   private class Syncer[T] {
     private val lock = new Condition()
@@ -136,27 +139,27 @@ private class UIControlContext(val display: Display, state: VolatileState) exten
     }
   }
 
-  override def needsSaving() = { }
-  override def queueUpdate[T](rxVar: Var[T], newValue: T): Unit = state.queueUpdate(rxVar, newValue)
+  def needsSaving() = { } // TODO
+  def queueUpdate[T](rxVar: Var[T], newValue: T): Unit = state.queueUpdate(rxVar, newValue)
 
-  override def asyncRenderAwt(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) =
+  def asyncRenderAwt(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) =
     state.requestRenderAwt(svg, x, y)(callback)
-  override def asyncRenderSwt(svg: SVGData, x: Int, y: Int)(callback: ImageData => Unit) =
+  def asyncRenderSwt(svg: SVGData, x: Int, y: Int)(callback: ImageData => Unit) =
     state.requestRenderSwt(svg, x, y)(callback)
 
-  override def syncRenderAwt(svg: SVGData, x: Int, y: Int): BufferedImage = {
+  def syncRenderAwt(svg: SVGData, x: Int, y: Int): BufferedImage = {
     val sync = new Syncer[BufferedImage]
     asyncRenderAwt(svg, x, y)(sync.done)
     sync.sync()
   }
-  override def syncRenderSwt(svg: SVGData, x: Int, y: Int): ImageData = {
+  def syncRenderSwt(svg: SVGData, x: Int, y: Int): ImageData = {
     val sync = new Syncer[ImageData]
     asyncRenderSwt(svg, x, y)(sync.done)
     sync.sync()
   }
 
-  override def asyncLuaExec(f: => Unit) = state.queueLuaAction(f)
-  override def syncLuaExec[T](f: => T): T = {
+  def asyncLuaExec(f: => Unit) = state.queueLuaAction(f)
+  def syncLuaExec[T](f: => T): T = {
     val sync = new Syncer[T]
     state.queueLuaAction {
       sync.done(f)
@@ -164,8 +167,8 @@ private class UIControlContext(val display: Display, state: VolatileState) exten
     sync.sync()
   }
 
-  override def asyncUiExec(f: => Unit): Unit = display.asyncExec(() => f)
-  override def syncUiExec[T](f: => T): T = {
+  def asyncUiExec(f: => Unit): Unit = display.asyncExec(() => f)
+  def syncUiExec[T](f: => T): T = {
     @volatile var ret: T = null.asInstanceOf[T]
     display.syncExec(() =>
       ret = f
@@ -177,21 +180,19 @@ private class UIControlContext(val display: Display, state: VolatileState) exten
 class UIManager(factory: SVGRasterizerFactory) {
   private val state = new VolatileState
 
-  val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
-
   private val luaThread = new LuaThread(state)
   private val rasterizeThread = new RasterizeThread(state, factory.createRasterizer())
 
   luaThread.start()
   rasterizeThread.start()
 
-  def shutdown() = state.shutdown()
-
   def mainLoop(init: ControlContext => Unit) = {
     val display = new Display()
     try {
-      init(new UIControlContext(display, state))
-      while(!display.isDisposed && state.isRunning) if(!display.readAndDispatch()) display.sleep()
+      val ctx = new ControlContext(display, state)
+      init(ctx)
+      while(!display.isDisposed && ctx.wm.getWindowCount > 0 && state.isRunning)
+        if(!display.readAndDispatch()) display.sleep()
     } finally {
       if(!display.isDisposed) display.dispose()
       if(state.isRunning) state.shutdown()
