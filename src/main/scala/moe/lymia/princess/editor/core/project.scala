@@ -29,11 +29,15 @@ import rx._
 
 final class CardData(idData: GameIDData) {
   val fields = new DataStore
+  var createTime = System.currentTimeMillis()
 
   val root = idData.card.createRoot(fields, Seq())
 
-  def serialize = Json.obj("fields" -> fields.serialize)
-  def deserialize(js: JsValue) = fields.deserialize((js \ "fields").as[JsValue])
+  def serialize = Json.obj("fields" -> fields.serialize, "createTime" -> createTime)
+  def deserialize(js: JsValue) = {
+    fields.deserialize((js \ "fields").as[JsValue])
+    createTime = (js \ "createTime").as[Long]
+  }
 }
 
 final class SlotData(project: Project) {
@@ -49,14 +53,33 @@ final class SlotData(project: Project) {
   }
 }
 
-trait CardSource {
+final class SetInfo(idData: GameIDData) {
+  val fields = new DataStore
+  val root = idData.set.createRoot(fields, Seq())
 
+  def serialize = Json.obj("fields" -> fields.serialize)
+  def deserialize(js: JsValue) = fields.deserialize((js \ "fields").as[JsValue])
+}
+
+trait CardSource {
+  val info: SetInfo
+  val allCards: Rx[Seq[UUID]]
+  val allSlots: Option[Rx[Seq[SlotData]]]
+
+  def newCard(): UUID
 }
 
 final class CardPool(project: Project) extends CardSource {
   val displayName = Var[String]("")
   val slots = Var(Seq.empty[SlotData])
   val fields = new DataStore
+
+  var createTime = System.currentTimeMillis()
+
+  override val info: SetInfo = new SetInfo(project.idData)
+
+  override val allCards = Rx.unsafe { slots().flatMap(_.cardRef()) }
+  override val allSlots = Some(slots)
 
   def addSlot(slot: SlotData): Unit = slots.update(slots.now :+ slot)
   def addSlot(card: UUID): Unit = addSlot({
@@ -65,12 +88,19 @@ final class CardPool(project: Project) extends CardSource {
     slot
   })
 
+  override def newCard(): UUID = {
+    val uuid = project.newCard()
+    addSlot(uuid)
+    uuid
+  }
+
   def removeSlot(slot: SlotData): Unit = slots.update(slots.now.filter(_ != slot))
 
   def serialize = Json.obj(
     "displayName" -> displayName.now,
     "slots" -> slots.now.map(_.serialize),
-    "fields" -> fields.serialize
+    "fields" -> fields.serialize,
+    "createTime" -> createTime
   )
   def deserialize(js: JsValue) = {
     displayName.update((js \ "displayName").as[String])
@@ -80,9 +110,29 @@ final class CardPool(project: Project) extends CardSource {
       slot
     }))
     fields.deserialize((js \ "fields").as[JsValue])
+    createTime = (js \ "createTime").as[Long]
   }
 }
 
 final class Project(val idData: GameIDData) extends CardSource {
+  val cards = Var(Map.empty[UUID, CardData])
+  def newCard() = {
+    val uuid = UUID.randomUUID()
+    cards.update(cards.now + ((uuid, new CardData(idData))))
+    uuid
+  }
 
+  val pools = Var(Map.empty[UUID, CardPool])
+  def newCardPool() = {
+    val uuid = UUID.randomUUID()
+    pools.update(pools.now + ((uuid, new CardPool(this))))
+    uuid
+  }
+
+  override val info: SetInfo = new SetInfo(idData)
+
+  override val allCards: Rx[Seq[UUID]] = Rx.unsafe { cards().toSeq.sortBy(_._2.createTime).map(_._1) }
+  override val allSlots: Option[Rx[Seq[SlotData]]] = None
+
+  val sources = Rx.unsafe { this +: pools().values.toSeq.sortBy(_.createTime) }
 }

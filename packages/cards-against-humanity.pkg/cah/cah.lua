@@ -26,6 +26,10 @@ local white = {255, 255, 255}
 
 local font  = "FreeSans-Bold"
 
+function setForm()
+    error("???")
+end
+
 function cardForm()
     local textNode = ui.node.Input("text", ui.control.TextField)
     local overrideBlankCount = ui.node.Input("overrideBlankCount", ui.control.CheckBox("Override blank count"))

@@ -30,38 +30,59 @@ import org.eclipse.swt.widgets.Composite
 
 import rx._
 
-final class UIRootWrapper(parent: Composite, node: RootNode)(implicit ctx: NodeContext, owner: Ctx.Owner) {
+final class UIData(parent: Composite, node: RootNode)(implicit ctx: NodeContext, owner: Ctx.Owner) {
   private val dummyRx = Rx { () }
   val control = node.createControl(parent)(ctx, ctx.newUIContext(), new Ctx.Owner(dummyRx))
 
   def kill() = dummyRx.kill()
 }
 
-final class EditorDataRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, node: RootNode) {
-  private implicit val ctx = new NodeContext(L, data, controlCtx)
+final class DataRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, node: RootNode) {
+  private implicit val ctx = new NodeContext(L.newThread(), data, controlCtx)
 
   private val dummyRx = Rx.unsafe { () }
   private implicit val owner = new Ctx.Owner(dummyRx)
 
   val luaData = node.createRx
-
-  def createUI(parent: Composite) = new UIRootWrapper(parent, node)
-
+  def createUI(parent: Composite) = new UIData(parent, node)
   def kill() = dummyRx.kill()
 }
 
-final class LuaNodeSource(L: LuaState, controlCtx: ControlContext,
-                          game: GameManager, entryExport: String, entryMethod: String) {
-  private val export = StaticExportIDs.EntryPoint(game.gameId, entryExport)
-  private val fn = game.lua.L.newThread().getTable(game.getEntryPoint(export), entryMethod).as[LuaClosure]
+sealed abstract class RootSource(L: LuaState, controlCtx: ControlContext) {
+  def createRootNode(data: DataStore, args: Seq[Rx[LuaObject]]): RootNode
+  def createRoot(data: DataStore, args: Seq[Rx[LuaObject]]) =
+    new DataRoot(L.newThread(), data, controlCtx, createRootNode(data, args))
+}
+
+final class NullRootSource(L: LuaState, controlCtx: ControlContext) extends RootSource(L, controlCtx) {
+  private val node = RootNode(None, Seq(), LuaClosure { () => })
+  override def createRootNode(data: DataStore, args: Seq[Rx[LuaObject]]): RootNode = node
+}
+final class LuaRootSource(L: LuaState, controlCtx: ControlContext, fn: LuaClosure) extends RootSource(L, controlCtx) {
+  private lazy val emptyRoot = RootNode(None, Seq(), fn)
 
   def createRootNode(data: DataStore, args: Seq[Rx[LuaObject]]) =
-    RootNode(None, args.map(RxFieldNode), fn)
-  def createRoot(data: DataStore, args: Seq[Rx[LuaObject]]) =
-    new EditorDataRoot(L.newThread(), data, controlCtx, createRootNode(data, args))
+    if(args.isEmpty) emptyRoot else RootNode(None, args.map(RxFieldNode), fn)
+}
+object RootSource {
+  private def create(L: LuaState, controlCtx: ControlContext, game: GameManager, export: LuaObject, method: String) = {
+    val fn = game.lua.L.newThread().getTable(export, method).as[LuaClosure]
+    new LuaRootSource(L, controlCtx, fn)
+  }
+  def optional(L: LuaState, controlCtx: ControlContext, game: GameManager, export: String, method: String) = {
+    val export = StaticExportIDs.EntryPoint(game.gameId, export)
+    game.getEntryPoint(export) match {
+      case Some(exportObj) => create(L, controlCtx, game, exportObj, method)
+      case None => new NullRootSource(L, controlCtx)
+    }
+  }
+  def apply(L: LuaState, controlCtx: ControlContext, game: GameManager, export: String, method: String) = {
+    val export = StaticExportIDs.EntryPoint(game.gameId, export)
+    create(L, controlCtx, game, game.getRequiredEntryPoint(export), method)
+  }
 }
 
 final class GameIDData(game: GameManager, controlCtx: ControlContext) {
-  lazy val card = new LuaNodeSource(game.lua.L, controlCtx, game, "card-form", "cardForm")
-  lazy val set  = new LuaNodeSource(game.lua.L, controlCtx, game, "set-form", "setForm")
+  lazy val card = RootSource         (game.lua.L, controlCtx, game, "card-form", "cardForm")
+  lazy val set  = RootSource.optional(game.lua.L, controlCtx, game, "set-form" , "setForm" )
 }

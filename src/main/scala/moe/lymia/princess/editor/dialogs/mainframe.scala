@@ -25,15 +25,19 @@ package moe.lymia.princess.editor.dialogs
 import moe.lymia.princess.core.PackageManager
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.lua.EditorModule
-import moe.lymia.princess.editor.utils.WindowBase
+import moe.lymia.princess.editor.utils._
 import moe.lymia.princess.renderer.lua.RenderModule
 import moe.lymia.princess.renderer.{RasterizeResourceLoader, RenderManager}
+
 import org.eclipse.nebula.widgets.pgroup._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.{Image, Point}
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
+
 import play.api.libs.json._
+
+
 
 // TODO: This is only a temporary test UI
 class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
@@ -41,7 +45,9 @@ class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
   game.lua.loadModule(EditorModule, RenderModule)
 
   private val idData = new GameIDData(game, ctx)
-  private val cardData = new CardData(idData)
+  private val project = new Project(idData)
+  private val cardId = project.newCard()
+  private val cardData = project.cards.now(cardId)
   private val renderer = new RenderManager(game, ctx.cache)
 
   override def configureShell(shell: Shell): Unit = {

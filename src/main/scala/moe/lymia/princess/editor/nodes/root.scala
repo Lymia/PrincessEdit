@@ -84,15 +84,16 @@ final class UIContext(prefix: String) {
 final class RxPane(uiRoot: Composite, context: NodeContext, rootRx: Rx[ActiveRootNode])(implicit owner: Ctx.Owner) {
   val pane = new Composite(uiRoot, SWT.NONE)
   pane.setLayout(new FillLayout())
+  pane.setData(this)
 
   private var lastComponent: Option[Control] = None
-  private val componentObs = rootRx.foreach { currentRoot =>
+  private val componentObs: Obs = rootRx.foreach { currentRoot =>
     context.controlCtx.asyncUiExec {
       if(!pane.isDisposed) {
         println("Creating UI")
         lastComponent.foreach(_.dispose())
         lastComponent = currentRoot.renderUI(pane)
-      }
+      } else componentObs.kill()
     }
   }
 }
@@ -130,7 +131,8 @@ final case class RootNode(subtableName: Option[String], params: Seq[FieldNode], 
     subtableName.foreach(n => ctx.activateCardField(n, this))
 
     val active = makeActiveNode(ctx)
-    Rx { active().luaOutput.fold[Any](Lua.NIL)(_().toLua(ctx.internal_L)) }
+    // TODO: Consider optimizing this to not copy the entire table to a Lua one
+    Rx { active().luaOutput.fold[Any](ctx.internal_L.newTable().toLua(ctx.internal_L))(_().toLua(ctx.internal_L)) }
   }
 
   override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {

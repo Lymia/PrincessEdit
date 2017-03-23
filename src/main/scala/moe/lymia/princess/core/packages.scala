@@ -138,7 +138,7 @@ case class PackageList(gameId: String, packages: Seq[Package]) {
     key -> packages.flatMap(pkg => {
       val exports = pkg.exports.getOrElse(key, Seq())
       exports.foreach(ex => {
-        if(existingExports.contains(ex.path)) throw EditorException(s"Duplicate export '${ex.path}'")
+        if(existingExports.contains(ex.path)) throw EditorException(s"Duplicate export '${ex.path}' for type '$key'")
         existingExports.add(ex.path)
       })
       exports.map(pkg -> _)
