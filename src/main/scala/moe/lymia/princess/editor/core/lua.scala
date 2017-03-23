@@ -70,15 +70,15 @@ object RootSource {
     new LuaRootSource(L, controlCtx, fn)
   }
   def optional(L: LuaState, controlCtx: ControlContext, game: GameManager, export: String, method: String) = {
-    val export = StaticExportIDs.EntryPoint(game.gameId, export)
-    game.getEntryPoint(export) match {
+    val fullExport = StaticExportIDs.EntryPoint(game.gameId, export)
+    game.getEntryPoint(fullExport) match {
       case Some(exportObj) => create(L, controlCtx, game, exportObj, method)
       case None => new NullRootSource(L, controlCtx)
     }
   }
   def apply(L: LuaState, controlCtx: ControlContext, game: GameManager, export: String, method: String) = {
-    val export = StaticExportIDs.EntryPoint(game.gameId, export)
-    create(L, controlCtx, game, game.getRequiredEntryPoint(export), method)
+    val fullExport = StaticExportIDs.EntryPoint(game.gameId, export)
+    create(L, controlCtx, game, game.getRequiredEntryPoint(fullExport), method)
   }
 }
 

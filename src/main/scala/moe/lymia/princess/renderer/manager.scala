@@ -45,7 +45,7 @@ case class SVGData(private val builder: SVGBuilder, private val definition: SVGD
 final class RenderManager(game: GameManager, cache: SizedCache) {
   if(!game.lua.isModuleLoaded(lua.RenderModule)) game.lua.loadModule(lua.RenderModule)
 
-  private lazy val export = game.getEntryPoint(StaticExportIDs.EntryPoint(game.gameId, "render"))
+  private lazy val export = game.getRequiredEntryPoint(StaticExportIDs.EntryPoint(game.gameId, "render"))
   def render(cardData: LuaObject, res: ResourceLoader) =
     EditorException.context(s"rendering card") {
       val L = game.lua.L.newThread()
