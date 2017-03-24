@@ -65,7 +65,7 @@ class RendererPane(parent: Composite, ctx: ControlContext, game: GameManager,
   label.setLayoutData(new GridData(SWT.CENTER, SWT.BEGINNING, false, false))
 
   private val obs = currentCardData.foreach { d =>
-    ctx.asyncRenderSwt {
+    ctx.asyncRenderSwt (this, {
       val (componentSize, rendered) = ctx.syncLuaUiExec(this.getSize, renderer.render(d, RasterizeResourceLoader))
 
       val (rcx, rcy) =
@@ -81,7 +81,7 @@ class RendererPane(parent: Composite, ctx: ControlContext, game: GameManager,
       }
 
       (rendered, x, y)
-    } { imageData =>
+    }) { imageData =>
       ctx.asyncUiExec {
         val image = new Image(ctx.display, imageData)
         if(label.getImage != null) label.getImage.dispose()

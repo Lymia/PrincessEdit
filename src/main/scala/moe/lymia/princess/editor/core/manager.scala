@@ -38,53 +38,74 @@ import rx._
 
 private class Condition(val lock: Object = new Object) extends AnyVal {
   def done() = lock synchronized { lock.notify() }
-  def waitFor(length: Int = 10) = lock synchronized { lock.wait(length) }
+  def wait(length: Int = 10) = lock synchronized { lock.wait(length) }
+}
+
+private class AtomicMap[K, V](condition: Condition = new Condition()) {
+  private val underlying = new AtomicReference(Map.empty[K, V])
+
+  def put(key: K, v: V) = {
+    while(!{
+      val current = underlying.get()
+      underlying.compareAndSet(current, current + ((key, v)))
+    }) { }
+    condition.done()
+  }
+
+  def pullAll() = underlying.getAndSet(Map.empty)
+  def pullOne() = {
+    var taken: Option[(K, V)] = null
+    while(!{
+      val current = underlying.get()
+      taken = current.headOption
+      taken match {
+        case Some((k, _)) => underlying.compareAndSet(current, current - k)
+        case None => true
+      }
+    }) { }
+    taken
+  }
+}
+private class RequestBuffer[K, V](condition: Condition = new Condition()) {
+  private val supersedableRequests = new AtomicMap[K, V]
+  private val requests             = new AtomicReference(Seq.empty[V])
+
+  def add(request: K, v: V) = supersedableRequests.put(request, v)
+  def add(v: V) = {
+    while(!{
+      val current = requests.get()
+      requests.compareAndSet(current, current :+ v)
+    }) { }
+    condition.done()
+  }
+
+  @volatile private var lastPull = false
+  def pullOne(): Option[V] = {
+    var head: Option[V] = null
+    while(!{
+      val current = requests.get()
+      head = current.headOption
+      requests.compareAndSet(current, current.drop(1))
+    }) { }
+    head.orElse(supersedableRequests.pullOne().map(_._2))
+  }
 }
 
 private case class RasterizerRequest(getData: () => (SVGData, Int, Int),
                                      callback: Either[BufferedImage => Unit, ImageData => Unit])
 private class VolatileState {
-  private val rasterizerRenderRequest = new AtomicReference[Option[RasterizerRequest]](None)
-  private val rasterizerRequestSync = new Condition
-  def waitRequest() = rasterizerRequestSync.waitFor()
-  def pullRequest() = rasterizerRenderRequest.getAndSet(None)
+  val rasterizerCondition = new Condition()
+  val rasterizerRequests = new RequestBuffer[Any, RasterizerRequest](rasterizerCondition)
 
-  def requestRenderAwt(getData: () => (SVGData, Int, Int), callback: BufferedImage => Unit) = {
-    rasterizerRenderRequest.set(Some(RasterizerRequest(getData, Left(callback))))
-    rasterizerRequestSync.done()
-  }
-  def requestRenderSwt(getData: () => (SVGData, Int, Int), callback: ImageData => Unit) = {
-    rasterizerRenderRequest.set(Some(RasterizerRequest(getData, Right(callback))))
-    rasterizerRequestSync.done()
-  }
-
-  private val luaActionQueue = new AtomicReference(Seq.empty[() => Unit])
-  private val luaUpdateSync = new Condition
-  private val varUpdateQueue = new AtomicReference(Map.empty[Var[_], Any])
-  def waitLua() = luaUpdateSync.waitFor()
-  def pullLuaActionQueue() = luaActionQueue.getAndSet(Seq.empty)
-  def pullUpdateQueue() =
-    varUpdateQueue.getAndSet(Map.empty).map(x => VarTuple(x._1.asInstanceOf[Var[Any]], x._2)).toSeq
-  def queueLuaAction(a: => Unit) = {
-    while(!{
-      val current = luaActionQueue.get()
-      luaActionQueue.compareAndSet(current, current :+ (() => a))
-    }) { }
-    luaUpdateSync.done()
-  }
-  def queueUpdate[T](rxVar: Var[T], newValue: T) = {
-    while(!{
-      val current = varUpdateQueue.get()
-      varUpdateQueue.compareAndSet(current, current + ((rxVar, newValue)))
-    }) { }
-    luaUpdateSync.done()
-  }
+  val luaCondition = new Condition()
+  val varUpdates = new AtomicMap[Var[_], Any]
+  val luaRequests = new RequestBuffer[Any, () => Unit]
 
   @volatile var isRunning = true
   def shutdown() = {
     isRunning = false
-    rasterizerRequestSync.done()
-    luaUpdateSync.done()
+    rasterizerCondition.done()
+    luaCondition.done()
   }
 }
 
@@ -96,14 +117,14 @@ private object ThreadId {
 private class RasterizeThread(state: VolatileState, rasterizer: SVGRasterizer) extends Thread {
   setName(s"PrincessEdit rasterizer thread #${ThreadId.make()}")
   override def run(): Unit =
-    while(state.isRunning) state.pullRequest() match {
+    while(state.isRunning) state.rasterizerRequests.pullOne() match {
       case Some(req) =>
         val (svg, x, y) = req.getData()
         req.callback match {
           case Left (fn) => fn(svg.rasterizeAwt(rasterizer, x, y))
           case Right(fn) => fn(svg.rasterizeSwt(rasterizer, x, y))
         }
-      case None => state.waitRequest()
+      case None => state.rasterizerCondition.wait()
     }
 }
 
@@ -111,12 +132,12 @@ private class LuaThread(state: VolatileState) extends Thread {
   setName(s"PrincessEdit Lua thread #${ThreadId.make()}")
   override def run(): Unit =
     while(state.isRunning) {
-      val varUpdates = state.pullUpdateQueue()
-      val actions = state.pullLuaActionQueue()
+      val varUpdates = state.varUpdates.pullAll()
+      val actions = state.luaRequests.pullOne()
       if(varUpdates.nonEmpty || actions.nonEmpty) {
-        Var.set(varUpdates : _*)
+        Var.set(varUpdates.map(x => VarTuple(x._1.asInstanceOf[Var[Any]], x._2)).toSeq : _*)
         for(action <- actions) action()
-      } else state.waitLua()
+      } else state.luaCondition.wait()
     }
 }
 
@@ -136,38 +157,40 @@ class ControlContext(val display: Display, state: VolatileState) {
       lock.done()
     }
     def sync() = {
-      while(state.isRunning && !isDone) lock.waitFor(1)
+      while(state.isRunning && !isDone) lock.wait(1)
       ret
     }
   }
 
   def needsSaving() = { } // TODO
-  def queueUpdate[T](rxVar: Var[T], newValue: T): Unit = state.queueUpdate(rxVar, newValue)
+  def queueUpdate[T](rxVar: Var[T], newValue: T): Unit = state.varUpdates.put(rxVar, newValue)
 
-  def asyncRenderAwt(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) =
-    state.requestRenderAwt(() => (svg, x, y), callback)
-  def asyncRenderSwt(svg: SVGData, x: Int, y: Int)(callback: ImageData => Unit) =
-    state.requestRenderSwt(() => (svg, x, y), callback)
-  def asyncRenderAwt(getData: => (SVGData, Int, Int))(callback: BufferedImage => Unit) =
-    state.requestRenderAwt(() => getData, callback)
-  def asyncRenderSwt(getData: => (SVGData, Int, Int))(callback: ImageData => Unit) =
-    state.requestRenderSwt(() => getData, callback)
+  def asyncRenderAwt(key: Any, svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) =
+    state.rasterizerRequests.add(key, RasterizerRequest(() => (svg, x, y), Left (callback)))
+  def asyncRenderSwt(key: Any, svg: SVGData, x: Int, y: Int)(callback: ImageData => Unit) =
+    state.rasterizerRequests.add(key, RasterizerRequest(() => (svg, x, y), Right(callback)))
+
+  def asyncRenderAwt(key: Any, getData: => (SVGData, Int, Int))(callback: BufferedImage => Unit) =
+    state.rasterizerRequests.add(key, RasterizerRequest(() => getData, Left (callback)))
+  def asyncRenderSwt(key: Any, getData: => (SVGData, Int, Int))(callback: ImageData => Unit) =
+    state.rasterizerRequests.add(key, RasterizerRequest(() => getData, Right(callback)))
 
   def syncRenderAwt(svg: SVGData, x: Int, y: Int): BufferedImage = {
     val sync = new Syncer[BufferedImage]
-    asyncRenderAwt(svg, x, y)(sync.done)
+    asyncRenderAwt(new Object, svg, x, y)(sync.done)
     sync.sync()
   }
   def syncRenderSwt(svg: SVGData, x: Int, y: Int): ImageData = {
     val sync = new Syncer[ImageData]
-    asyncRenderSwt(svg, x, y)(sync.done)
+    asyncRenderSwt(new Object, svg, x, y)(sync.done)
     sync.sync()
   }
 
-  def asyncLuaExec(f: => Unit) = state.queueLuaAction(f)
+  def asyncLuaExec(f: => Unit) = state.luaRequests.add(() => f)
+  def asyncLuaExec(key: Any, f: => Unit) = state.luaRequests.add(key, () => f)
   def syncLuaExec[T](f: => T): T = {
     val sync = new Syncer[T]
-    state.queueLuaAction {
+    state.luaRequests.add { () =>
       sync.done(f)
     }
     sync.sync()
