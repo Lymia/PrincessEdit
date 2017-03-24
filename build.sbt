@@ -26,7 +26,6 @@ import Config._
 
 val commonSettings = versionWithGit ++ Seq(
   // Organization configuration
-  organization := "moe.lymia",
   homepage := Some(url("https://github.com/Lymia/PrincessEdit")),
   licenses := Seq("MIT License" -> url("http://www.opensource.org/licenses/mit-license.php")),
 
@@ -61,7 +60,8 @@ val commonSettings = versionWithGit ++ Seq(
 )
 
 lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
-  name := "princess-edit-swt",
+  organization := "moe.lymia",
+  name := "swt",
 
   libraryDependencies += {
     val os = (sys.props("os.name"), sys.props("os.arch")) match {
@@ -85,21 +85,17 @@ lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
 ))
 
 lazy val compositeTable = project in file("modules/compositetable") settings(commonSettings ++ Seq(
-  name := "princess-edit-composite-table"
+  organization := "moe.lymia",
+  name := "nebula-compositetable"
 )) dependsOn swt
 
 lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
-  name := "princess-edit-lua"
-))
-
-lazy val batik = project in file("modules/batik") settings (commonSettings ++ Seq(
-  name := "princess-edit-batik-patch",
-  libraryDependencies += "org.apache.xmlgraphics" % "xmlgraphics-commons" % "2.1",
-  libraryDependencies += "org.apache.xmlgraphics" % "batik-swing" % "1.8",
-  libraryDependencies += "org.apache.xmlgraphics" % "batik-transcoder" % "1.8"
+  organization := "moe.lymia",
+  name := "lua"
 ))
 
 lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
+  organization := "moe.lymia",
   name := "princess-edit",
 
   fork in run := true,
@@ -110,11 +106,11 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
   libraryDependencies += "org.jfree" % "jfreesvg" % "3.2",
   libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0",
   libraryDependencies += "com.lihaoyi" %% "scalarx" % "0.3.2",
-  libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.0-M3",
+  libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.0-M5",
   libraryDependencies +=  "org.ini4j" % "ini4j" % "0.5.2",
 
   // SWT Resolver
   // Some code from http://stackoverflow.com/a/12509004/1733590
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"
-) ++ VersionBuild.settings) dependsOn lua dependsOn batik dependsOn swt dependsOn compositeTable
+) ++ VersionBuild.settings) dependsOn lua dependsOn swt dependsOn compositeTable

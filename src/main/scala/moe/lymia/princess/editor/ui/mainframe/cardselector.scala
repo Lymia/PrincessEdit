@@ -26,7 +26,6 @@ import java.util.UUID
 
 import moe.lymia.nebula.compositetable._
 import moe.lymia.princess.editor.core._
-import moe.lymia.princess.editor.utils._
 
 import org.eclipse.swt._
 import org.eclipse.swt.layout.FillLayout

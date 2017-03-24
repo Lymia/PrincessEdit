@@ -20,9 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.utils
-
-import moe.lymia.nebula.compositetable._
+package moe.lymia.nebula.compositetable
 
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Point
@@ -90,15 +88,15 @@ trait ElementBase {
 trait ExtraBase
 
 trait CompositeTableElement[Element <: ElementBase, Extra <: ExtraBase] {
-  private[utils] var isInit: Boolean = false
-  protected[utils] var table: ScalaCompositeTable[Element, Extra, _, _] = _
-  protected[utils] var extra: Extra = _
+  private[compositetable] var isInit: Boolean = false
+  protected[compositetable] var table: ScalaCompositeTable[Element, Extra, _, _] = _
+  protected[compositetable] var extra: Extra = _
 
-  protected[utils] var hasElem: Boolean = false
-  protected[utils] var elem: Element = _
+  protected[compositetable] var hasElem: Boolean = false
+  protected[compositetable] var elem: Element = _
   protected def getCurrentID = elem.id
 
-  private[utils] def updateInternal(i: Int, elem: Element): Unit = {
+  private[compositetable] def updateInternal(i: Int, elem: Element): Unit = {
     hasElem = true
     this.elem = elem
   }
