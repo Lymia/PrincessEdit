@@ -22,14 +22,9 @@
 
 package moe.lymia.princess.editor.nodes
 
-import java.awt.image.BufferedImage
-
 import moe.lymia.princess.editor.core._
 import moe.lymia.lua._
-import moe.lymia.princess.renderer.SVGData
 
-import org.eclipse.swt.SWT
-import org.eclipse.swt.graphics.ImageData
 import org.eclipse.swt.widgets._
 
 import rx._
