@@ -27,7 +27,7 @@ import java.util.Map.Entry
 
 import scala.collection.JavaConverters._
 
-final case class CountedCache[K, V](var maxSize: Int) {
+final class CountedCache[K, V](var maxSize: Int) {
   private val underlying = new java.util.LinkedHashMap[K, V] {
     override def removeEldestEntry(eldest: Entry[K, V]): Boolean = size() > maxSize
   }.asScala
