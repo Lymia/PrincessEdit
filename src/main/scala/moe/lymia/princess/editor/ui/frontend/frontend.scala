@@ -20,10 +20,11 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.ui
+package moe.lymia.princess.editor.ui.frontend
 
 import moe.lymia.princess.core.PackageManager
 import moe.lymia.princess.editor.core._
+import moe.lymia.princess.editor.ui.mainframe.MainFrame
 import moe.lymia.princess.editor.utils.WindowBase
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Point

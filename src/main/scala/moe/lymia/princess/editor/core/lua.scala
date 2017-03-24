@@ -69,24 +69,38 @@ final class LuaRootSource(L: LuaState, controlCtx: ControlContext, fn: LuaClosur
     if(args.isEmpty) emptyRoot else RootNode(None, args.map(RxFieldNode), fn)
 }
 object RootSource {
-  private def create(L: LuaState, controlCtx: ControlContext, game: GameManager, export: LuaObject, method: String) = {
+  private def create(game: GameManager, controlCtx: ControlContext, export: LuaObject, method: String) = {
     val fn = game.lua.L.newThread().getTable(export, method).as[LuaClosure]
-    new LuaRootSource(L, controlCtx, fn)
+    new LuaRootSource(game.lua.L, controlCtx, fn)
   }
-  def optional(L: LuaState, controlCtx: ControlContext, game: GameManager, export: String, method: String) = {
+  def optional(game: GameManager, controlCtx: ControlContext, export: String, method: String) = {
     val fullExport = StaticExportIDs.EntryPoint(game.gameId, export)
     game.getEntryPoint(fullExport) match {
-      case Some(exportObj) => create(L, controlCtx, game, exportObj, method)
-      case None => new NullRootSource(L, controlCtx)
+      case Some(exportObj) => create(game, controlCtx, exportObj, method)
+      case None => new NullRootSource(game.lua.L, controlCtx)
     }
   }
-  def apply(L: LuaState, controlCtx: ControlContext, game: GameManager, export: String, method: String) = {
+  def apply(game: GameManager, controlCtx: ControlContext, export: String, method: String) = {
     val fullExport = StaticExportIDs.EntryPoint(game.gameId, export)
-    create(L, controlCtx, game, game.getRequiredEntryPoint(fullExport), method)
+    create(game, controlCtx, game.getRequiredEntryPoint(fullExport), method)
+  }
+}
+
+final case class TableColumn(L: LuaState, fn: LuaClosure)
+final case class LuaColumnData(columns: Map[String, TableColumn], defaultColumnOrder: Seq[String])
+object LuaColumnData {
+  def apply(game: GameManager): LuaColumnData = {
+    val export = StaticExportIDs.EntryPoint(game.gameId, "card-columns")
+    val L = game.lua.L.newThread()
+    val fn = L.getTable(game.getRequiredEntryPoint(export), "cardColumns").as[LuaClosure]
+    val Seq(columns, defaultColumnOrder) = L.call(fn, 2)
+    LuaColumnData(columns.as[Map[String, LuaClosure]].map { t => t._1 -> TableColumn(game.lua.L, t._2) },
+                  defaultColumnOrder.as[Seq[String]])
   }
 }
 
 final class GameIDData(game: GameManager, controlCtx: ControlContext) {
-  lazy val card = RootSource         (game.lua.L, controlCtx, game, "card-form", "cardForm")
-  lazy val set  = RootSource.optional(game.lua.L, controlCtx, game, "set-form" , "setForm" )
+  val card    = RootSource         (game, controlCtx, "card-form", "cardForm")
+  val set     = RootSource.optional(game, controlCtx, "set-form" , "setForm" )
+  val columns = LuaColumnData(game)
 }

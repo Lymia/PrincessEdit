@@ -24,14 +24,26 @@ package moe.lymia.princess.editor.core
 
 import java.util.UUID
 
+import moe.lymia.lua._
+
 import play.api.libs.json._
+
 import rx._
 
-final class CardData(idData: GameIDData) {
+final class CardData(project: Project) {
   val fields = new DataStore
   var createTime = System.currentTimeMillis()
 
-  val root = idData.card.createRoot(fields, Seq())
+  val root = project.ctx.syncLuaExec { project.idData.card.createRoot(fields, Seq()) }
+
+  val columnData = project.ctx.syncLuaExec {
+    Rx.unsafe {
+      val fields = root.luaData()
+      project.idData.columns.columns.map { f =>
+        f._1 -> f._2.L.newThread().call(f._2.fn, 1, fields).head.as[String]
+      }
+    }
+  }
 
   def serialize = Json.obj("fields" -> fields.serialize, "createTime" -> createTime)
   def deserialize(js: JsValue) = {
@@ -51,9 +63,9 @@ final class SlotData(project: Project) {
   }
 }
 
-final class CardSourceInfo(idData: GameIDData) {
+final class CardSourceInfo(project: Project) {
   val fields = new DataStore
-  val root = idData.set.createRoot(fields, Seq())
+  val root = project.ctx.syncLuaExec { project.idData.set.createRoot(fields, Seq()) }
 
   def serialize = Json.obj("fields" -> fields.serialize)
   def deserialize(js: JsValue) = fields.deserialize((js \ "fields").as[JsValue])
@@ -72,7 +84,7 @@ final class CardPool(project: Project) extends CardSource {
   val slots = Var(Seq.empty[SlotData])
   var createTime = System.currentTimeMillis()
 
-  override val info: CardSourceInfo = new CardSourceInfo(project.idData)
+  override val info: CardSourceInfo = new CardSourceInfo(project)
 
   override val allCards = Rx.unsafe { slots().flatMap(_.cardRef()) }
   override val allSlots = Some(slots)
@@ -110,11 +122,11 @@ final class CardPool(project: Project) extends CardSource {
   }
 }
 
-final class Project(val idData: GameIDData) extends CardSource {
+final class Project(val ctx: ControlContext, val idData: GameIDData) extends CardSource {
   val cards = Var(Map.empty[UUID, CardData])
   def newCard() = {
     val uuid = UUID.randomUUID()
-    cards.update(cards.now + ((uuid, new CardData(idData))))
+    cards.update(cards.now + ((uuid, new CardData(this))))
     uuid
   }
 
@@ -125,7 +137,7 @@ final class Project(val idData: GameIDData) extends CardSource {
     uuid
   }
 
-  override val info: CardSourceInfo = new CardSourceInfo(idData)
+  override val info: CardSourceInfo = new CardSourceInfo(this)
 
   override val allCards: Rx[Seq[UUID]] = Rx.unsafe { cards().toSeq.sortBy(_._2.createTime).map(_._1) }
   override val allSlots: Option[Rx[Seq[SlotData]]] = None

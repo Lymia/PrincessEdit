@@ -26,6 +26,13 @@ local white = {255, 255, 255}
 
 local font  = "FreeSans-Bold"
 
+function cardColumns()
+    return {
+        ["Text"] = function(card) return card.text end,
+        ["Card Type"] = function(card) return (card.blankCount > 0) and "Black" or "White" end,
+    }, { "Text", "Card Type" }
+end
+
 function cardForm()
     local textNode = ui.node.Input("text", ui.control.TextField)
     local overrideBlankCount = ui.node.Input("overrideBlankCount", ui.control.CheckBox("Override blank count"))

@@ -158,7 +158,7 @@ case class PackageList(gameId: String, packages: Seq[Package]) {
   private val ignoredPaths = getPaths(StaticExportIDs.IgnoredPath)
 
   private val (systemPackages, userPackages) = packages.partition(_.isSystem)
-  private val resolveCache = CountedCache[String, Option[(Package, Path)]](4096)
+  private val resolveCache = new CountedCache[String, Option[(Package, Path)]](4096)
   private def resolveInPath(packages: Seq[Package], path: String) =
     packages.view.map(x => IOUtils.paranoidResolve(x.rootPath, path).map(y => (x, y))).find(_.isDefined).flatten
   private def internalResolve(path: String) =

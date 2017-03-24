@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.ui
+package moe.lymia.princess.editor.ui.mainframe
 
 import java.util.UUID
 
@@ -32,14 +32,12 @@ import moe.lymia.princess.editor.utils._
 import moe.lymia.princess.renderer.lua.RenderModule
 import moe.lymia.princess.renderer.{RasterizeResourceLoader, RenderManager}
 import moe.lymia.princess.util.VersionInfo
-
-import rx._
-
 import org.eclipse.swt.SWT
 import org.eclipse.swt.custom.SashForm
 import org.eclipse.swt.graphics.{Image, Point}
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
+import rx._
 
 class MainFrameState(project: Project) {
   val currentPool = Var[CardSource](project)
@@ -65,8 +63,8 @@ class RendererPane(parent: Composite, ctx: ControlContext, game: GameManager,
   label.setLayoutData(new GridData(SWT.CENTER, SWT.BEGINNING, false, false))
 
   private val obs = currentCardData.foreach { d =>
-    ctx.asyncRenderSwt (this, {
-      val (componentSize, rendered) = ctx.syncLuaUiExec(this.getSize, renderer.render(d, RasterizeResourceLoader))
+    if(!this.isDisposed) ctx.asyncRenderSwt (this, {
+      val (componentSize, rendered) = ctx.syncUiLuaExec(this.getSize, renderer.render(d, RasterizeResourceLoader))
 
       val (rcx, rcy) =
         (componentSize.x - grid.marginLeft - grid.marginRight - grid.marginWidth * 2,
@@ -102,7 +100,7 @@ class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
   game.lua.loadModule(EditorModule, RenderModule)
 
   private val idData = new GameIDData(game, ctx)
-  private val project = new Project(idData)
+  private val project = new Project(ctx, idData)
   private val cardId = project.newCard()
 
   private val state = new MainFrameState(project)
@@ -130,8 +128,17 @@ class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
     val renderer = new RendererPane(sash1, ctx, game, state, project)
 
     val sash2 = new Composite(sash, SWT.BORDER)
-    sash2.setLayout(new FillLayout)
-    val ui = cardData.root.createUI(sash2)
+    sash2.setLayout(new GridLayout)
+
+    val selector = new CardSelector(sash2, project, idData, ctx, state)
+    selector.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true))
+
+    val button = new Button(sash2, SWT.PUSH)
+    button.setText("New Card")
+    button.addListener(SWT.Selection, event => ctx.asyncLuaExec {
+      project.newCard()
+    })
+    button.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false))
 
     sash.setWeights(Array(1000, 1618))
   }

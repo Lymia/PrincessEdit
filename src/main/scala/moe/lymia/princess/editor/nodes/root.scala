@@ -119,12 +119,14 @@ final case class RootNode(subtableName: Option[String], params: Seq[FieldNode], 
   private def makeActiveNode(ctx: NodeContext)(implicit owner: Ctx.Owner) =
     ctx.activatedRoots.getOrElseUpdate(this, {
       val fields = params.map(x => ctx.activateNode(x))
-      Rx {
-        // unapply not used because apparently scala.rx's macros break on those
-        val ret = ctx.L.newThread().call(fn, 2, fields.map(_() : LuaObject) : _*)
-        val node = ActiveRootNode(ctx.L, ctx.data, ctx.controlCtx, ctx.prefixSeq ++ subtableName,
-                                  ret.last.as[Option[ControlNode]], ret.head.as[Option[Map[String, FieldNode]]])
-        node
+      ctx.controlCtx.syncLuaExec {
+        Rx {
+          // unapply not used because apparently scala.rx's macros break on those
+          val ret = ctx.L.newThread().call(fn, 2, fields.map(_() : LuaObject) : _*)
+          val node = ActiveRootNode(ctx.L, ctx.data, ctx.controlCtx, ctx.prefixSeq ++ subtableName,
+                                    ret.last.as[Option[ControlNode]], ret.head.as[Option[Map[String, FieldNode]]])
+          node
+        }
       }
     })
 

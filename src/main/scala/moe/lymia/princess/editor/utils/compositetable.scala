@@ -22,11 +22,11 @@
 
 package moe.lymia.princess.editor.utils
 
-import org.eclipse.nebula.widgets.compositetable
-import org.eclipse.nebula.widgets.compositetable.{CompositeTable => _, _}
+import moe.lymia.nebula.compositetable._
+
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Point
-import org.eclipse.swt.widgets.{Composite, Control, Table}
+import org.eclipse.swt.widgets._
 
 import scala.reflect.ClassTag
 
@@ -45,11 +45,9 @@ private object TablePlatform {
 
 private trait HeaderHeightHack extends TablePlatform {
   private def checkStack(stack: Array[StackTraceElement]): Boolean = {
-    for(elem <- stack.tail)
-      if(!elem.getClassName.startsWith("moe.lymia.princess.editor.ui.") ||
-         !elem.getMethodName.startsWith("getSize"))
-        return elem.getClassName  == "org.eclipse.nebula.widgets.compositetable.InternalCompositeTable" &&
-               elem.getMethodName == "updateVisibleRows"
+    for(elem <- stack.tail) if(!elem.getMethodName.startsWith("getSize"))
+      return elem.getClassName  == "org.eclipse.nebula.widgets.compositetable.InternalCompositeTable" &&
+             elem.getMethodName == "updateVisibleRows"
     false
   }
 
@@ -68,6 +66,9 @@ private object GTKTablePlatform extends TablePlatform with HeaderHeightHack {
 
   override def initNativeHeader(header: Composite) = {
     // For some reason, resizing table header fields causes scrollbars to appear. This stops that from happening.
+
+    println("Setting SWT.NO_SCROLL on table")
+
     val old = headerField.get(header).asInstanceOf[Table]
     old.dispose()
     val newTable = new Table(header, SWT.NO_SCROLL)
@@ -83,20 +84,35 @@ trait HeaderBase extends Composite {
   override def getSize: Point = if(removeHeaderPadding()) plaf.getSize(super.getSize) else super.getSize
 }
 
-trait CompositeTableElement[Extra] {
+trait ElementBase {
+  val id: Any
+}
+trait ExtraBase
+
+trait CompositeTableElement[Element <: ElementBase, Extra <: ExtraBase] {
   private[utils] var isInit: Boolean = false
-  protected[utils] var table: CompositeTable[Extra, _, _] = _
+  protected[utils] var table: ScalaCompositeTable[Element, Extra, _, _] = _
   protected[utils] var extra: Extra = _
 
-  def update(i: Int) { }
+  protected[utils] var hasElem: Boolean = false
+  protected[utils] var elem: Element = _
+  protected def getCurrentID = elem.id
+
+  private[utils] def updateInternal(i: Int, elem: Element): Unit = {
+    hasElem = true
+    this.elem = elem
+  }
+
+  def init() { }
+  def update(i: Int, elem: Element) { }
 
   def canLeaveRow(i: Int) = true
   def onLeaveRow(i: Int) = { }
   def onEnterRow(i: Int) = { }
 }
 
-abstract class NativeHeader[Extra](parent: Composite, style: Int)
-  extends AbstractNativeHeader(parent, style) with CompositeTableElement[Extra] with HeaderBase {
+abstract class NativeHeader[Element <: ElementBase, Extra <: ExtraBase](parent: Composite, style: Int)
+  extends AbstractNativeHeader(parent, style) with CompositeTableElement[Element, Extra] with HeaderBase {
 
   initNativeHeader()
 
@@ -110,49 +126,81 @@ abstract class NativeHeader[Extra](parent: Composite, style: Int)
     sortDirection
   }
 }
-abstract class SortableHeader[Extra](parent: Composite, style: Int)
-  extends AbstractSortableHeader(parent, style) with CompositeTableElement[Extra] with HeaderBase
-abstract class SelectableRow[Extra](parent: Composite, style: Int)
-  extends AbstractSelectableRow(parent, style) with CompositeTableElement[Extra]
-abstract class EditorSelectableRow[Extra](parent: Composite, style: Int)
-  extends AbstractEditorSelectableRow(parent, style) with CompositeTableElement[Extra]
+abstract class SortableHeader[Element <: ElementBase, Extra <: ExtraBase](parent: Composite, style: Int)
+  extends AbstractSortableHeader(parent, style) with CompositeTableElement[Element, Extra] with HeaderBase
+abstract class SelectableRow[Element <: ElementBase, Extra <: ExtraBase](parent: Composite, style: Int)
+  extends AbstractSelectableRow(parent, style) with CompositeTableElement[Element, Extra]
+abstract class EditorSelectableRow[Element <: ElementBase, Extra <: ExtraBase](parent: Composite, style: Int)
+  extends AbstractEditorSelectableRow(parent, style) with CompositeTableElement[Element, Extra] {
 
-abstract class CompositeTable[Extra,
-                              Header <: Control with CompositeTableElement[Extra] : ClassTag,
-                              Row    <: Control with CompositeTableElement[Extra] : ClassTag]
-  (parent: Composite, style: Int) extends compositetable.CompositeTable(parent, style) {
+  override def init(): Unit = setEditorMode(isEditorModeActive)
+  override def update(i: Int, elem: Element): Unit = setEditorMode(isEditorModeActive)
 
-  protected def getExtra: Extra
+  override protected def canEnableEditorMode: Boolean = hasElem
+}
 
-  protected def initComponent(element: CompositeTableElement[Extra]) =
+private final case class SortInfo[Element, SortBy : math.Ordering](sortFn: Element => SortBy) {
+  def sort(list: IndexedSeq[Element]) = list.zipWithIndex.sortBy(x => sortFn(x._1))
+}
+abstract class ScalaCompositeTable[Element <: ElementBase, Extra <: ExtraBase,
+                                   Header  <: Control with CompositeTableElement[Element, Extra] : ClassTag,
+                                   Row     <: Control with CompositeTableElement[Element, Extra] : ClassTag]
+  (parent: Composite, style: Int) extends CompositeTable(parent, style) {
+
+  type TableElement = CompositeTableElement[Element, Extra]
+
+  private val extra = newState()
+  protected def newState(): Extra
+
+  protected def getElements: IndexedSeq[Element]
+
+  private var sorter: Option[SortInfo[Element, _]] = None
+  private var sorted: IndexedSeq[(Element, Int)] = _
+
+  protected def initComponent(element: TableElement) = {
     if(!element.isInit) {
       element.table = this
-      element.extra = getExtra
+      element.extra = extra
       element.isInit = true
+      element.init()
     }
+  }
+  def refreshElements() = {
+    val elements = getElements
+    sorted = sorter.fold(elements.zipWithIndex)(_.sort(getElements))
+    setNumRowsInCollection(sorted.length)
+  }
+  def setSortOrder[T : math.Ordering](fn: Element => T): Unit = {
+    sorter = Some(SortInfo(fn))
+    refreshElements()
+  }
 
-  private def initClass[T <: CompositeTableElement[Extra] : ClassTag]() = {
-    val clazz = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[CompositeTableElement[Extra]]]
+  addRowConstructionListener(new RowConstructionListener {
+    override def rowConstructed(control: Control) = initComponent(control.asInstanceOf[TableElement])
+    override def headerConstructed(control: Control) = initComponent(control.asInstanceOf[TableElement])
+  })
+  addRowContentProvider { (compositeTable: CompositeTable, i: Int, control: Control) =>
+    val row = control.asInstanceOf[TableElement]
+    val elem = sorted(i)._1
+    row.updateInternal(i, elem)
+    row.update(i, elem)
+  }
+  addRowFocusListener(new IRowFocusListener {
+    override def requestRowChange(compositeTable: CompositeTable, i: Int, control: Control) =
+      control.asInstanceOf[TableElement].canLeaveRow(i)
+    override def arrive(compositeTable: CompositeTable, i: Int, control: Control) =
+      control.asInstanceOf[TableElement].onEnterRow(i)
+    override def depart(compositeTable: CompositeTable, i: Int, control: Control) =
+      control.asInstanceOf[TableElement].onLeaveRow(i)
+  })
+
+  private def initClass[T <: TableElement : ClassTag]() = {
+    val clazz = implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[TableElement]]
     val constructor = clazz.getConstructor(classOf[Composite], classOf[Int])
     val obj = constructor.newInstance(this, SWT.NONE : Integer)
     initComponent(obj)
   }
   initClass[Header]()
   initClass[Row   ]()
-
-  addRowConstructionListener(new RowConstructionListener {
-    override def rowConstructed(control: Control) =
-      initComponent(control.asInstanceOf[CompositeTableElement[Extra]])
-    override def headerConstructed(control: Control) = rowConstructed(control)
-  })
-  addRowContentProvider((compositeTable: compositetable.CompositeTable, i: Int, control: Control) =>
-    control.asInstanceOf[CompositeTableElement[Extra]].update(i))
-  addRowFocusListener(new IRowFocusListener {
-    override def requestRowChange(compositeTable: compositetable.CompositeTable, i: Int, control: Control) =
-      control.asInstanceOf[CompositeTableElement[Extra]].canLeaveRow(i)
-    override def arrive(compositeTable: compositetable.CompositeTable, i: Int, control: Control) =
-      control.asInstanceOf[CompositeTableElement[Extra]].onEnterRow(i)
-    override def depart(compositeTable: compositetable.CompositeTable, i: Int, control: Control) =
-      control.asInstanceOf[CompositeTableElement[Extra]].onLeaveRow(i)
-  })
+  this.setRunTime(true)
 }

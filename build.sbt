@@ -60,6 +60,34 @@ val commonSettings = versionWithGit ++ Seq(
   scalacOptions ++= "-Xlint -target:jvm-1.8 -opt:l:classpath -deprecation -unchecked".split(" ").toSeq
 )
 
+lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
+  name := "princess-edit-swt",
+
+  libraryDependencies += {
+    val os = (sys.props("os.name"), sys.props("os.arch")) match {
+      case ("Linux", "amd64" | "x86_64") => "gtk.linux.x86_64"
+      case ("Linux", _) => "gtk.linux.x86"
+      case ("Mac OS X", "amd64" | "x86_64") => "cocoa.macosx.x86_64"
+      case ("Mac OS X", _) => "cocoa.macosx.x86"
+      case (os, "amd64") if os.startsWith("Windows") => "win32.win32.x86_64"
+      case (os, _) if os.startsWith("Windows") => "win32.win32.x86"
+      case (os, arch) => sys.error("Cannot obtain lib for OS '" + os + "' and architecture '" + arch + "'")
+    }
+    val artifact = "org.eclipse.swt." + os
+    ("bundle" % artifact % "3.105.2.v20161122-0613"
+      exclude("package", "org.mozilla.xpcom")
+      exclude("package", "org.eclipse.swt.accessibility2"))
+  },
+  libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.11.3.v20170209-1843",
+  libraryDependencies += "bundle" % "org.eclipse.equinox.common" % "3.8.0.v20160509-1230",
+  libraryDependencies += "bundle" % "org.eclipse.jface" % "3.12.2.v20170113-2113"
+    exclude("bundle", "org.eclipse.equinox.bidi")
+))
+
+lazy val compositeTable = project in file("modules/compositetable") settings(commonSettings ++ Seq(
+  name := "princess-edit-composite-table"
+)) dependsOn swt
+
 lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   name := "princess-edit-lua"
 ))
@@ -87,26 +115,6 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
 
   // SWT Resolver
   // Some code from http://stackoverflow.com/a/12509004/1733590
-  libraryDependencies += {
-    val os = (sys.props("os.name"), sys.props("os.arch")) match {
-      case ("Linux", "amd64" | "x86_64") => "gtk.linux.x86_64"
-      case ("Linux", _) => "gtk.linux.x86"
-      case ("Mac OS X", "amd64" | "x86_64") => "cocoa.macosx.x86_64"
-      case ("Mac OS X", _) => "cocoa.macosx.x86"
-      case (os, "amd64") if os.startsWith("Windows") => "win32.win32.x86_64"
-      case (os, _) if os.startsWith("Windows") => "win32.win32.x86"
-      case (os, arch) => sys.error("Cannot obtain lib for OS '" + os + "' and architecture '" + arch + "'")
-    }
-    val artifact = "org.eclipse.swt." + os
-    ("bundle" % artifact % "3.105.2.v20161122-0613"
-      exclude("package", "org.mozilla.xpcom")
-      exclude("package", "org.eclipse.swt.accessibility2"))
-  },
-  libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.11.3.v20170209-1843",
-  libraryDependencies += "bundle" % "org.eclipse.equinox.common" % "3.8.0.v20160509-1230",
-  libraryDependencies += "bundle" % "org.eclipse.jface" % "3.12.2.v20170113-2113"
-    exclude("bundle", "org.eclipse.equinox.bidi"),
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
-  libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.compositetable" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"
-) ++ VersionBuild.settings) dependsOn lua dependsOn batik
+) ++ VersionBuild.settings) dependsOn lua dependsOn batik dependsOn swt dependsOn compositeTable

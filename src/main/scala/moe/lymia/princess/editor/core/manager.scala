@@ -141,7 +141,7 @@ private class LuaThread(state: VolatileState) extends Thread {
     }
 }
 
-class ControlContext(val display: Display, state: VolatileState) {
+class ControlContext(val display: Display, state: VolatileState, luaThread: LuaThread, uiThread: Thread) {
   val wm = new WindowManager()
   val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
 
@@ -163,7 +163,7 @@ class ControlContext(val display: Display, state: VolatileState) {
   }
 
   def needsSaving() = { } // TODO
-  def queueUpdate[T](rxVar: Var[T], newValue: T): Unit = state.varUpdates.put(rxVar, newValue)
+  def queueUpdate[A, B <: A](rxVar: Var[A], newValue: B): Unit = state.varUpdates.put(rxVar, newValue)
 
   def asyncRenderAwt(key: Any, svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) =
     state.rasterizerRequests.add(key, RasterizerRequest(() => (svg, x, y), Left (callback)))
@@ -188,7 +188,7 @@ class ControlContext(val display: Display, state: VolatileState) {
 
   def asyncLuaExec(f: => Unit) = state.luaRequests.add(() => f)
   def asyncLuaExec(key: Any, f: => Unit) = state.luaRequests.add(key, () => f)
-  def syncLuaExec[T](f: => T): T = {
+  def syncLuaExec[T](f: => T): T = if(Thread.currentThread() == luaThread) f else {
     val sync = new Syncer[T]
     state.luaRequests.add { () =>
       sync.done(f)
@@ -205,12 +205,12 @@ class ControlContext(val display: Display, state: VolatileState) {
     ret
   }
 
-  def syncLuaUiExec[A, B](ui: => A, lua: => B): (A, B) = {
+  def syncUiLuaExec[A, B](ui: => A, lua: => B): (A, B) = {
     val sync = new Syncer[B]
     asyncLuaExec {
       sync.done(lua)
     }
-    (syncUiExec(ui), sync.sync())
+    (if(Thread.currentThread() == uiThread) ui else syncUiExec(ui), sync.sync())
   }
 }
 
@@ -226,10 +226,12 @@ class UIManager(factory: SVGRasterizerFactory) {
   def mainLoop(init: ControlContext => Unit) = {
     val display = new Display()
     try {
-      val ctx = new ControlContext(display, state)
+      val ctx = new ControlContext(display, state, luaThread, Thread.currentThread())
       init(ctx)
       while(!display.isDisposed && ctx.wm.getWindowCount > 0 && state.isRunning)
         if(!display.readAndDispatch()) display.sleep()
+    } catch {
+      case e: Exception => e.printStackTrace()
     } finally {
       if(!display.isDisposed) display.dispose()
       if(state.isRunning) state.shutdown()

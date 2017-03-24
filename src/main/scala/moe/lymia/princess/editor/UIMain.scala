@@ -23,7 +23,7 @@
 package moe.lymia.princess.editor
 
 import moe.lymia.princess.editor.core._
-import moe.lymia.princess.editor.ui.FrontEndFrame
+import moe.lymia.princess.editor.ui.frontend.FrontEndFrame
 import moe.lymia.princess.rasterizer._
 
 class UIMain {

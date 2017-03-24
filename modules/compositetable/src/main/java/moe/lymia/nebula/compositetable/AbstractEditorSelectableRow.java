@@ -11,11 +11,8 @@
  *     Elias Volanakis - 267316
  */
 
-package moe.lymia.princess.editor.utils;
+package moe.lymia.nebula.compositetable;
 
-import org.eclipse.nebula.widgets.compositetable.CompositeTable;
-import org.eclipse.nebula.widgets.compositetable.IRowContentProvider;
-import org.eclipse.nebula.widgets.compositetable.IRowFocusListener;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Color;
@@ -32,15 +29,15 @@ import java.util.List;
  * @author djo
  * @author Lymia
  */
-abstract class AbstractEditorSelectableRow extends Composite implements
-        TraverseListener, FocusListener, MouseListener, IRowFocusListener, IRowContentProvider {
+public abstract class AbstractEditorSelectableRow
+        extends Composite
+        implements TraverseListener, FocusListener, MouseListener, IRowFocusListener, IRowContentProvider {
 
     public AbstractEditorSelectableRow(Composite parent, int style) {
         super(parent, style);
         addTraverseListener(this);
         addFocusListener(this);
         addMouseListener(this);
-        makeTableMode();
     }
 
     private Object model = null;
@@ -105,7 +102,7 @@ abstract class AbstractEditorSelectableRow extends Composite implements
 
     // Labels list -------------------------------------------------------------
 
-    private List<Control> controlList;
+    private List<Control> controlList = new ArrayList<>();
     private int columnCount = -1;
 
     protected List<Control> getControlList() {
@@ -123,7 +120,6 @@ abstract class AbstractEditorSelectableRow extends Composite implements
     }
 
     private void initialize() {
-        this.controlList = new ArrayList<>();
         for (int i = 0; i < getColumnCount(); i++) makeColumnControl(i);
     }
 
@@ -149,23 +145,29 @@ abstract class AbstractEditorSelectableRow extends Composite implements
         return editorModeActive;
     }
 
+    protected boolean canEnableEditorMode() { return true; }
+
     protected void makeTableMode() { }
     protected void makeEditorMode() { }
 
     protected void setEditorMode(boolean active) {
-        boolean wasEditorActive = editorModeActive;
-        editorModeActive = active;
-        if(!wasEditorActive && active) {
-            for(Control control : getChildren()) control.dispose();
-            columnCount = -1;
-            controlList.clear();
+        active &= canEnableEditorMode();
 
+        editorModeActive = active;
+
+        for(Control control : getChildren()) control.dispose();
+        columnCount = -1;
+        controlList.clear();
+
+        if(active) {
             makeEditorMode();
             setColorByState();
-        } else if(wasEditorActive && !active) {
+        } else {
             makeTableMode();
             setColorByState();
         }
+
+        this.layout(true);
     }
 
     // Event handlers ----------------------------------------------------------
@@ -212,6 +214,7 @@ abstract class AbstractEditorSelectableRow extends Composite implements
     }
 
     public void refresh(CompositeTable sender, int currentObjectOffset, Control row) {
+        if (row == this && editorModeActive) setEditorMode(false);
         if (row == this && inactiveSelected) deselectRow();
     }
 
@@ -234,5 +237,4 @@ abstract class AbstractEditorSelectableRow extends Composite implements
     private int getColumnCount() {
         return columnCount;
     }
-
 }

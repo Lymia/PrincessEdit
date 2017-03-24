@@ -151,7 +151,7 @@ final case class LuaState(L: Lua) extends AnyVal {
     L.call(args.length, 1)
     popTop().as[LuaTable]
   }
-  def call(fn: LuaClosure, nresults: Int, args: LuaObject*) = {
+  def call(fn: LuaClosure, nresults: Int, args: LuaObject*): Seq[LuaReturnWrapper] = {
     L.push(fn.toLua(this))
     for(arg <- args) L.push(arg.toLua(this))
     L.call(args.length, nresults)
