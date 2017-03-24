@@ -32,37 +32,15 @@ import java.util.List;
  * @author djo
  * @author Lymia
  */
-abstract class AbstractSelectableRow extends Composite implements
+abstract class AbstractEditorSelectableRow extends Composite implements
         TraverseListener, FocusListener, MouseListener, IRowFocusListener, IRowContentProvider {
 
-    private Display display = Display.getCurrent();
-
-    private Color WIDGET_BACKGROUND = display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
-    private Color WIDGET_FOREGROUND = display.getSystemColor(SWT.COLOR_WIDGET_FOREGROUND);
-    private Color LIST_BACKGROUND = display.getSystemColor(SWT.COLOR_LIST_BACKGROUND);
-    private Color LIST_FOREGROUND = display.getSystemColor(SWT.COLOR_LIST_FOREGROUND);
-    private Color LIST_SELECTION = display.getSystemColor(SWT.COLOR_LIST_SELECTION);
-    private Color LIST_SELECTION_TEXT = display.getSystemColor(SWT.COLOR_LIST_SELECTION_TEXT);
-    private Color LIST_SELECTION_NOFOCUS = display.getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW);
-    private Color LIST_SELECTION_TEXT_NOFOCUS = display.getSystemColor(SWT.COLOR_LIST_FOREGROUND);
-
-    public AbstractSelectableRow(Composite parent, int style) {
+    public AbstractEditorSelectableRow(Composite parent, int style) {
         super(parent, style);
         addTraverseListener(this);
         addFocusListener(this);
         addMouseListener(this);
-    }
-
-    /**
-     * This method initializes this
-     */
-    private void initialize() {
-        this.labels = new ArrayList<>();
-        for (int i = 0; i < getColumnCount(); i++) {
-            Label label = new Label(this, SWT.NONE);
-            this.labels.add(label);
-            label.addMouseListener(this);
-        }
+        makeTableMode();
     }
 
     private Object model = null;
@@ -77,15 +55,26 @@ abstract class AbstractSelectableRow extends Composite implements
 
     public void setMenu(Menu menu) {
         super.setMenu(menu);
-        for (Label label : labels) label.setMenu(menu);
+        for (Control label : controlList) label.setMenu(menu);
     }
 
     // Row color ---------------------------------------------------------------
 
+    private Display display = Display.getCurrent();
+
+    private Color WIDGET_BACKGROUND = display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
+    private Color WIDGET_FOREGROUND = display.getSystemColor(SWT.COLOR_WIDGET_FOREGROUND);
+    private Color LIST_BACKGROUND = display.getSystemColor(SWT.COLOR_LIST_BACKGROUND);
+    private Color LIST_FOREGROUND = display.getSystemColor(SWT.COLOR_LIST_FOREGROUND);
+    private Color LIST_SELECTION = display.getSystemColor(SWT.COLOR_LIST_SELECTION);
+    private Color LIST_SELECTION_TEXT = display.getSystemColor(SWT.COLOR_LIST_SELECTION_TEXT);
+    private Color LIST_SELECTION_NOFOCUS = display.getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW);
+    private Color LIST_SELECTION_TEXT_NOFOCUS = display.getSystemColor(SWT.COLOR_LIST_FOREGROUND);
+
     protected void setRowColor(Color foreground, Color background) {
         setBackground(background);
         setForeground(foreground);
-        for (Control aChildren : getChildren()) {
+        if(!editorModeActive) for (Control aChildren : getControlList()) {
             aChildren.setBackground(background);
             aChildren.setForeground(foreground);
         }
@@ -107,29 +96,76 @@ abstract class AbstractSelectableRow extends Composite implements
         setRowColor(LIST_FOREGROUND, LIST_BACKGROUND);
     }
 
+    protected void setColorByState() {
+        if(editorModeActive) setWidgetColor();
+        else if(selected && inactiveSelected) setInactiveSelectedColor();
+        else if(selected) setSelectedColor();
+        else setRowColor();
+    }
 
     // Labels list -------------------------------------------------------------
 
-    protected List<Label> labels;
+    private List<Control> controlList;
     private int columnCount = -1;
 
-    public List<Label> getLabelsList() {
-        return this.labels;
+    protected List<Control> getControlList() {
+        return this.controlList;
+    }
+
+    protected void registerControl(Control control) {
+        this.controlList.add(control);
+        control.addMouseListener(this);
+    }
+
+    protected void makeColumnControl(int i) {
+        Label l = new Label(this, SWT.NONE);
+        registerControl(l);
+    }
+
+    private void initialize() {
+        this.controlList = new ArrayList<>();
+        for (int i = 0; i < getColumnCount(); i++) makeColumnControl(i);
     }
 
     /**
-     * Method setColumnCount.  Sets the number of columns in the row.  This
-     * method must be called <b>exactly</b> once in the overridden constructor.
+     * Sets the number of columns in the row.  This method must be called <b>exactly</b> once in the makeTableMode().
      *
      * @param columnCount The number of columns in the row.
      */
-    public void setColumnCount(int columnCount) {
+    protected void setColumnCount(int columnCount) {
         if (this.columnCount > -1) {
             throw new IllegalArgumentException("Cannot setColumnCount more than once");
         }
         this.columnCount = columnCount;
         initialize();
-        setRowColor();
+        setColorByState();
+    }
+
+    // Editor mode -------------------------------------------------------------
+
+    private boolean editorModeActive = false;
+
+    public boolean isEditorModeActive() {
+        return editorModeActive;
+    }
+
+    protected void makeTableMode() { }
+    protected void makeEditorMode() { }
+
+    protected void setEditorMode(boolean active) {
+        boolean wasEditorActive = editorModeActive;
+        editorModeActive = active;
+        if(!wasEditorActive && active) {
+            for(Control control : getChildren()) control.dispose();
+            columnCount = -1;
+            controlList.clear();
+
+            makeEditorMode();
+            setColorByState();
+        } else if(wasEditorActive && !active) {
+            makeTableMode();
+            setColorByState();
+        }
     }
 
     // Event handlers ----------------------------------------------------------
@@ -141,31 +177,34 @@ abstract class AbstractSelectableRow extends Composite implements
     protected void setSelection(Object model) { }
 
     public void focusGained(FocusEvent e) {
-        setSelectedColor();
-        selected = true;
-        setSelection(model);
+        if(!editorModeActive) {
+            selected = true;
+            setColorByState();
+
+            setSelection(model);
+        }
     }
 
     private boolean selected = false;
     private boolean inactiveSelected = false;
 
     public void focusLost(FocusEvent e) {
-        if (selected) {
-            setInactiveSelectedColor();
+        if(!editorModeActive && selected) {
             inactiveSelected = true;
+            setColorByState();
         }
     }
 
     private void deselectRow() {
-        setRowColor();
+        if(editorModeActive) setEditorMode(false);
+
         selected = false;
         inactiveSelected = false;
+        setColorByState();
     }
 
     public void depart(CompositeTable sender, int currentObjectOffset, Control row) {
-        if (row == this && selected) {
-            deselectRow();
-        }
+        if (row == this && selected) deselectRow();
     }
 
     public void arrive(CompositeTable sender, int currentObjectOffset, Control newRow) {
@@ -173,9 +212,7 @@ abstract class AbstractSelectableRow extends Composite implements
     }
 
     public void refresh(CompositeTable sender, int currentObjectOffset, Control row) {
-        if (row == this && inactiveSelected) {
-            deselectRow();
-        }
+        if (row == this && inactiveSelected) deselectRow();
     }
 
     public boolean requestRowChange(CompositeTable sender,
@@ -188,7 +225,9 @@ abstract class AbstractSelectableRow extends Composite implements
         setFocus();
     }
 
-    public void mouseDoubleClick(MouseEvent e) { }
+    public void mouseDoubleClick(MouseEvent e) {
+        if(!editorModeActive) setEditorMode(true);
+    }
 
     public void mouseUp(MouseEvent e) { }
 
