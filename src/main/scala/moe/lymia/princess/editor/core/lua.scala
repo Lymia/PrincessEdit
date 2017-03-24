@@ -49,6 +49,7 @@ final class DataRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, n
 }
 
 sealed abstract class RootSource(L: LuaState, controlCtx: ControlContext) {
+  val exists: Boolean = false
   def createRootNode(data: DataStore, args: Seq[Rx[LuaObject]]): RootNode
   def createRoot(data: DataStore, args: Seq[Rx[LuaObject]]) =
     new DataRoot(L.newThread(), data, controlCtx, createRootNode(data, args))
@@ -58,7 +59,10 @@ final class NullRootSource(L: LuaState, controlCtx: ControlContext) extends Root
   private val node = RootNode(None, Seq(), LuaClosure { () => })
   override def createRootNode(data: DataStore, args: Seq[Rx[LuaObject]]): RootNode = node
 }
-final class LuaRootSource(L: LuaState, controlCtx: ControlContext, fn: LuaClosure) extends RootSource(L, controlCtx) {
+final class LuaRootSource(L: LuaState, controlCtx: ControlContext, fn: LuaClosure)
+  extends RootSource(L, controlCtx) {
+
+  override val exists = true
   private lazy val emptyRoot = RootNode(None, Seq(), fn)
 
   def createRootNode(data: DataStore, args: Seq[Rx[LuaObject]]) =

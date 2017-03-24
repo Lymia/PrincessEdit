@@ -44,8 +44,6 @@ final class SlotData(project: Project) {
   val cardRef = Var[Option[UUID]](None)
   val fields = new DataStore
 
-  val root = project.idData.card.createRoot(fields, Seq())
-
   def serialize = Json.obj("cardRef" -> cardRef.now, "fields" -> fields.serialize)
   def deserialize(js: JsValue): Unit = {
     cardRef.update((js \ "fields").asOpt[UUID])
@@ -53,7 +51,7 @@ final class SlotData(project: Project) {
   }
 }
 
-final class SetInfo(idData: GameIDData) {
+final class CardSourceInfo(idData: GameIDData) {
   val fields = new DataStore
   val root = idData.set.createRoot(fields, Seq())
 
@@ -62,7 +60,7 @@ final class SetInfo(idData: GameIDData) {
 }
 
 trait CardSource {
-  val info: SetInfo
+  val info: CardSourceInfo
   val allCards: Rx[Seq[UUID]]
   val allSlots: Option[Rx[Seq[SlotData]]]
 
@@ -72,11 +70,9 @@ trait CardSource {
 final class CardPool(project: Project) extends CardSource {
   val displayName = Var[String]("")
   val slots = Var(Seq.empty[SlotData])
-  val fields = new DataStore
-
   var createTime = System.currentTimeMillis()
 
-  override val info: SetInfo = new SetInfo(project.idData)
+  override val info: CardSourceInfo = new CardSourceInfo(project.idData)
 
   override val allCards = Rx.unsafe { slots().flatMap(_.cardRef()) }
   override val allSlots = Some(slots)
@@ -99,7 +95,7 @@ final class CardPool(project: Project) extends CardSource {
   def serialize = Json.obj(
     "displayName" -> displayName.now,
     "slots" -> slots.now.map(_.serialize),
-    "fields" -> fields.serialize,
+    "info" -> info.serialize,
     "createTime" -> createTime
   )
   def deserialize(js: JsValue) = {
@@ -109,7 +105,7 @@ final class CardPool(project: Project) extends CardSource {
       slot.deserialize(v)
       slot
     }))
-    fields.deserialize((js \ "fields").as[JsValue])
+    info.deserialize((js \ "info").as[JsValue])
     createTime = (js \ "createTime").as[Long]
   }
 }
@@ -129,7 +125,7 @@ final class Project(val idData: GameIDData) extends CardSource {
     uuid
   }
 
-  override val info: SetInfo = new SetInfo(idData)
+  override val info: CardSourceInfo = new CardSourceInfo(idData)
 
   override val allCards: Rx[Seq[UUID]] = Rx.unsafe { cards().toSeq.sortBy(_._2.createTime).map(_._1) }
   override val allSlots: Option[Rx[Seq[SlotData]]] = None

@@ -128,7 +128,7 @@ class CLI {
       new InkscapeConnectionFactory("inkscape").createRasterizer()
     }
     try {
-      val data = time("Executing components") { mainObj.render(cardData, RasterizeResourceLoader) }
+      val data = time("Executing components") { mainObj.render(Seq(cardData), RasterizeResourceLoader) }
       val image = time("Rasterized image") { data.rasterizeAwt(rasterizer, xSize, ySize) }
       time("Writing .png") { ImageIO.write(image, "png", new FileOutputStream(out)) }
     } finally {
@@ -138,7 +138,7 @@ class CLI {
   private def cmd_render(): Unit = {
     val (mainObj, cardData) = renderCommon()
     val data = time("Executing components") {
-      mainObj.render(cardData, if(dirty) RasterizeResourceLoader else ExportResourceLoader)
+      mainObj.render(Seq(cardData), if(dirty) RasterizeResourceLoader else ExportResourceLoader)
     }
     time("Renderered SVG") { data.write(new FileWriter(out), pretty = !dirty) }
   }

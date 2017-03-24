@@ -32,6 +32,9 @@ import moe.lymia.princess.rasterizer.SVGRasterizer
 import moe.lymia.princess.util.SizedCache
 
 case class SVGData(private val builder: SVGBuilder, private val definition: SVGDefinitionReference) {
+  val bounds = definition.bounds
+  val size = bounds.size
+
   def renderSVGTag() =
     builder.renderSVGTag(definition)
   def write(w: Writer, encoding: String = "utf-8", pretty: Boolean = true) =
@@ -45,13 +48,14 @@ case class SVGData(private val builder: SVGBuilder, private val definition: SVGD
 final class RenderManager(game: GameManager, cache: SizedCache) {
   if(!game.lua.isModuleLoaded(lua.RenderModule)) game.lua.loadModule(lua.RenderModule)
 
-  private lazy val export = game.getRequiredEntryPoint(StaticExportIDs.EntryPoint(game.gameId, "render"))
-  def render(cardData: LuaObject, res: ResourceLoader) =
+  private lazy val layoutFn =
+    game.lua.L.newThread().getTable(
+      game.getRequiredEntryPoint(StaticExportIDs.EntryPoint(game.gameId, "render")), "render").as[LuaClosure]
+  def render(cardData: Seq[LuaObject], res: ResourceLoader) =
     EditorException.context(s"rendering card") {
       val L = game.lua.L.newThread()
-      val layoutFn    = L.getTable(export, "render").as[LuaClosure]
 
-      val table = L.pcall(layoutFn, 1, cardData) match {
+      val table = L.pcall(layoutFn, 1, cardData : _*) match {
         case Left(Seq(x)) => x.as[LuaTable]
         case Right(e) => throw EditorException(e)
       }

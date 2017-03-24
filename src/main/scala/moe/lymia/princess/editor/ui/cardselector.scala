@@ -20,22 +20,22 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor
+package moe.lymia.princess.editor.ui
 
+import java.util.UUID
+
+import moe.lymia.lua._
+import moe.lymia.princess.core.{GameManager, PackageManager}
 import moe.lymia.princess.editor.core._
-import moe.lymia.princess.editor.ui.FrontEndFrame
-import moe.lymia.princess.rasterizer._
+import moe.lymia.princess.editor.lua.EditorModule
+import moe.lymia.princess.editor.utils._
+import moe.lymia.princess.renderer.lua.RenderModule
+import moe.lymia.princess.renderer.{RasterizeResourceLoader, RenderManager}
 
-class UIMain {
-  trait ScoptArgs { this: scopt.OptionParser[Unit] =>
-    def uiOptions() = {
-      // TODO
-    }
-  }
-  def main() = {
-    val manager = new UIManager(new InkscapeConnectionFactory("inkscape"))
-    manager.mainLoop { ctx =>
-      new FrontEndFrame(ctx).open()
-    }
-  }
-}
+import rx._
+
+import org.eclipse.nebula.widgets.pgroup._
+import org.eclipse.swt.SWT
+import org.eclipse.swt.graphics.{Image, Point}
+import org.eclipse.swt.layout._
+import org.eclipse.swt.widgets._

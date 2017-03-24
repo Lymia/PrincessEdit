@@ -93,6 +93,7 @@ final class RxPane(uiRoot: Composite, context: NodeContext, rootRx: Rx[ActiveRoo
         println("Creating UI")
         lastComponent.foreach(_.dispose())
         lastComponent = currentRoot.renderUI(pane)
+        pane.layout(true)
       } else componentObs.kill()
     }
   }

@@ -50,8 +50,10 @@ trait BasicControlType[T <: Control] extends ControlType {
       val rx = Rx { (default.isDefault(), default.field()) }
       rx.foreach { case (isDefault : Boolean, field : DataField) =>
         data.ctx.asyncUiExec {
-          component.setEnabled(!isDefault)
-          if(isDefault) setValue(component, data, field)
+          if(!component.isDisposed) {
+            component.setEnabled(!isDefault)
+            if(isDefault) setValue(component, data, field)
+          }
         }
         if(isDefault) {
           data.ctx.needsSaving()

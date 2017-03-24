@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.dialogs
+package moe.lymia.princess.editor.ui
 
 import moe.lymia.princess.core.PackageManager
 import moe.lymia.princess.editor.core._
@@ -55,7 +55,7 @@ class FrontEndFrame(ctx: ControlContext) extends WindowBase(ctx) {
     combo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false))
 
     val button = new Button(frame, SWT.PUSH)
-    button.setText("Start Editor Test")
+    button.setText("Start Editor")
     val data = new GridData(SWT.END, SWT.CENTER, false, false)
     data.horizontalSpan = 2
     button.setLayoutData(data)

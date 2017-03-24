@@ -58,8 +58,8 @@ case class VisibilityNode(isVisible: FieldNode, contents: ControlNode) extends C
     val isVisibleRx = ctx.activateNode(isVisible)
     isVisibleRx.map(Lua.toBoolean).foreach { b => ctx.controlCtx.asyncUiExec {
       data.exclude = !b
-      widget.setVisible(b)
-      container.layout(true)
+      if(!widget.isDisposed) widget.setVisible(b)
+      if(!container.isDisposed) container.layout(true)
     }}
 
     container
@@ -73,6 +73,7 @@ class GridNode private (data: Seq[ComputedGridComponent], newLayout: () => GridL
     val pane = new Composite(parent, SWT.NONE)
     pane.setLayout(newLayout())
     for(component <- data) component.component.createControl(pane).setLayoutData(component.newConstraints())
+    pane.layout()
     pane
   }
 }

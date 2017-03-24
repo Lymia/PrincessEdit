@@ -41,7 +41,7 @@ private class Condition(val lock: Object = new Object) extends AnyVal {
   def waitFor(length: Int = 10) = lock synchronized { lock.wait(length) }
 }
 
-private case class RasterizerRequest(svg: SVGData, x: Int, y: Int,
+private case class RasterizerRequest(getData: () => (SVGData, Int, Int),
                                      callback: Either[BufferedImage => Unit, ImageData => Unit])
 private class VolatileState {
   private val rasterizerRenderRequest = new AtomicReference[Option[RasterizerRequest]](None)
@@ -49,12 +49,12 @@ private class VolatileState {
   def waitRequest() = rasterizerRequestSync.waitFor()
   def pullRequest() = rasterizerRenderRequest.getAndSet(None)
 
-  def requestRenderAwt(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) = {
-    rasterizerRenderRequest.set(Some(RasterizerRequest(svg, x, y, Left(callback))))
+  def requestRenderAwt(getData: () => (SVGData, Int, Int), callback: BufferedImage => Unit) = {
+    rasterizerRenderRequest.set(Some(RasterizerRequest(getData, Left(callback))))
     rasterizerRequestSync.done()
   }
-  def requestRenderSwt(svg: SVGData, x: Int, y: Int)(callback: ImageData => Unit) = {
-    rasterizerRenderRequest.set(Some(RasterizerRequest(svg, x, y, Right(callback))))
+  def requestRenderSwt(getData: () => (SVGData, Int, Int), callback: ImageData => Unit) = {
+    rasterizerRenderRequest.set(Some(RasterizerRequest(getData, Right(callback))))
     rasterizerRequestSync.done()
   }
 
@@ -97,10 +97,12 @@ private class RasterizeThread(state: VolatileState, rasterizer: SVGRasterizer) e
   setName(s"PrincessEdit rasterizer thread #${ThreadId.make()}")
   override def run(): Unit =
     while(state.isRunning) state.pullRequest() match {
-      case Some(req) => req.callback match {
-        case Left (fn) => fn(req.svg.rasterizeAwt(rasterizer, req.x, req.y))
-        case Right(fn) => fn(req.svg.rasterizeSwt(rasterizer, req.x, req.y))
-      }
+      case Some(req) =>
+        val (svg, x, y) = req.getData()
+        req.callback match {
+          case Left (fn) => fn(svg.rasterizeAwt(rasterizer, x, y))
+          case Right(fn) => fn(svg.rasterizeSwt(rasterizer, x, y))
+        }
       case None => state.waitRequest()
     }
 }
@@ -143,9 +145,13 @@ class ControlContext(val display: Display, state: VolatileState) {
   def queueUpdate[T](rxVar: Var[T], newValue: T): Unit = state.queueUpdate(rxVar, newValue)
 
   def asyncRenderAwt(svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) =
-    state.requestRenderAwt(svg, x, y)(callback)
+    state.requestRenderAwt(() => (svg, x, y), callback)
   def asyncRenderSwt(svg: SVGData, x: Int, y: Int)(callback: ImageData => Unit) =
-    state.requestRenderSwt(svg, x, y)(callback)
+    state.requestRenderSwt(() => (svg, x, y), callback)
+  def asyncRenderAwt(getData: => (SVGData, Int, Int))(callback: BufferedImage => Unit) =
+    state.requestRenderAwt(() => getData, callback)
+  def asyncRenderSwt(getData: => (SVGData, Int, Int))(callback: ImageData => Unit) =
+    state.requestRenderSwt(() => getData, callback)
 
   def syncRenderAwt(svg: SVGData, x: Int, y: Int): BufferedImage = {
     val sync = new Syncer[BufferedImage]
@@ -174,6 +180,14 @@ class ControlContext(val display: Display, state: VolatileState) {
       ret = f
     )
     ret
+  }
+
+  def syncLuaUiExec[A, B](ui: => A, lua: => B): (A, B) = {
+    val sync = new Syncer[B]
+    asyncLuaExec {
+      sync.done(lua)
+    }
+    (syncUiExec(ui), sync.sync())
   }
 }
 
