@@ -51,7 +51,7 @@ public abstract class AbstractSelectableRow extends Composite implements
     private Color LIST_SELECTION_TEXT_NOFOCUS = display
             .getSystemColor(SWT.COLOR_LIST_FOREGROUND);
 
-    protected List labels;
+    protected List<Label> labels;
 
     public AbstractSelectableRow(Composite parent, int style) {
         super(parent, style);
@@ -65,7 +65,7 @@ public abstract class AbstractSelectableRow extends Composite implements
      * This method initializes this
      */
     private void initialize() {
-        this.labels = new ArrayList();
+        this.labels = new ArrayList<>();
         for (int i = 0; i < getColumnCount(); i++) {
             Label label = new Label(this, SWT.NONE);
             this.labels.add(label);
@@ -73,7 +73,7 @@ public abstract class AbstractSelectableRow extends Composite implements
         }
     }
 
-    public List getLabelsList() {
+    public List<Label> getLabelsList() {
         return this.labels;
     }
 
@@ -176,8 +176,8 @@ public abstract class AbstractSelectableRow extends Composite implements
 
     public void setMenu(Menu menu) {
         super.setMenu(menu);
-        for (Iterator labelIter = labels.iterator(); labelIter.hasNext(); ) {
-            Label label = (Label) labelIter.next();
+        for (Iterator<Label> labelIter = labels.iterator(); labelIter.hasNext(); ) {
+            Label label = labelIter.next();
             label.setMenu(menu);
         }
     }

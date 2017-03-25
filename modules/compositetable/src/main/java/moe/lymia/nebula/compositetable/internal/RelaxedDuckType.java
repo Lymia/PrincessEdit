@@ -43,7 +43,7 @@ public class RelaxedDuckType extends DuckType implements InvocationHandler {
         return true;
     }
 
-    private static final HashMap NULL_VALUES = new HashMap();
+    private static final HashMap<Class, java.io.Serializable> NULL_VALUES = new HashMap<>();
 
     {
         NULL_VALUES.put(Boolean.TYPE, Boolean.FALSE);

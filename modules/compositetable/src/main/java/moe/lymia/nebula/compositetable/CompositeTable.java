@@ -130,11 +130,11 @@ public class CompositeTable extends Canvas {
     private int maxRowsVisible = Integer.MAX_VALUE;
 
     // Private fields here
-    private Constructor headerConstructor = null;
+    private Constructor<Control> headerConstructor = null;
 
     private Control headerControl = null;
 
-    private Constructor rowConstructor = null;
+    private Constructor<Control> rowConstructor = null;
 
     private Control rowControl = null;
 
@@ -309,7 +309,7 @@ public class CompositeTable extends Canvas {
     private Control[] findPrototypeHeaderAndRowObjects(Control[] children) {
         Control[] finalChildren;
         // Find first two prototypes
-        ArrayList realChildren = new ArrayList();
+        ArrayList<Control> realChildren = new ArrayList<>();
         for (int i = 0; i < children.length; i++) {
             if (children[i] instanceof InternalCompositeTable) {
                 continue;
@@ -847,7 +847,7 @@ public class CompositeTable extends Canvas {
      *
      * @return the header's constructor.
      */
-    public Constructor getHeaderConstructor() {
+    public Constructor<Control> getHeaderConstructor() {
         return headerConstructor;
     }
 
@@ -857,7 +857,7 @@ public class CompositeTable extends Canvas {
      *
      * @return the rows' constructor
      */
-    public Constructor getRowConstructor() {
+    public Constructor<Control> getRowConstructor() {
         return rowConstructor;
     }
 
@@ -879,7 +879,7 @@ public class CompositeTable extends Canvas {
         return rowControl;
     }
 
-    LinkedList contentProviders = new LinkedList();
+    LinkedList<IRowContentProvider> contentProviders = new LinkedList<IRowContentProvider>();
 
     /**
      * Method addRowContentProvider. Adds the specified content provider to the
@@ -904,7 +904,7 @@ public class CompositeTable extends Canvas {
         contentProviders.remove(contentProvider);
     }
 
-    LinkedList rowFocusListeners = new LinkedList();
+    LinkedList<IRowFocusListener> rowFocusListeners = new LinkedList<>();
 
     /**
      * Method addRowListener. Adds the specified listener to the set of
@@ -930,7 +930,7 @@ public class CompositeTable extends Canvas {
         rowFocusListeners.remove(listener);
     }
 
-    LinkedList insertHandlers = new LinkedList();
+    LinkedList<IInsertHandler> insertHandlers = new LinkedList<>();
 
     /**
      * Method addInsertHandler. Adds the specified insertHandler to the set of
@@ -952,7 +952,7 @@ public class CompositeTable extends Canvas {
         insertHandlers.remove(insertHandler);
     }
 
-    LinkedList deleteHandlers = new LinkedList();
+    LinkedList<IDeleteHandler> deleteHandlers = new LinkedList<>();
 
     /**
      * Method addDeleteHandler. Adds the specified deleteHandler to the set of
@@ -974,7 +974,7 @@ public class CompositeTable extends Canvas {
         deleteHandlers.remove(deleteHandler);
     }
 
-    LinkedList rowConstructionListeners = new LinkedList();
+    LinkedList<RowConstructionListener> rowConstructionListeners = new LinkedList<RowConstructionListener>();
 
     /**
      * Method addRowConstructionListener. Adds the specified
@@ -1030,7 +1030,7 @@ public class CompositeTable extends Canvas {
         this.deleteEnabled = deleteEnabled;
     }
 
-    LinkedList scrollListeners = new LinkedList();
+    LinkedList<ScrollListener> scrollListeners = new LinkedList<ScrollListener>();
 
     /**
      * Method addScrollListener. Adds the specified scroll listener to the list
@@ -1085,7 +1085,7 @@ public class CompositeTable extends Canvas {
         this.traverseOnTabsEnabled = enabled;
     }
 
-    private List keyEventListeners = new ArrayList();
+    private List<KeyListener> keyEventListeners = new ArrayList<>();
 
     /**
      * {@inheritDoc}
@@ -1102,20 +1102,20 @@ public class CompositeTable extends Canvas {
     }
 
     void fireKeyPressed(KeyEvent e) {
-        for (Iterator i = keyEventListeners.iterator(); i.hasNext(); ) {
-            KeyListener l = (KeyListener) i.next();
+        for (Iterator<KeyListener> i = keyEventListeners.iterator(); i.hasNext(); ) {
+            KeyListener l = i.next();
             l.keyPressed(e);
         }
     }
 
     void fireKeyReleased(KeyEvent e) {
-        for (Iterator i = keyEventListeners.iterator(); i.hasNext(); ) {
-            KeyListener l = (KeyListener) i.next();
+        for (Iterator<KeyListener> i = keyEventListeners.iterator(); i.hasNext(); ) {
+            KeyListener l = i.next();
             l.keyReleased(e);
         }
     }
 
-    private List mouseListeners = new ArrayList();
+    private List<MouseListener> mouseListeners = new ArrayList<MouseListener>();
 
     /**
      * {@inheritDoc}
@@ -1132,27 +1132,27 @@ public class CompositeTable extends Canvas {
     }
 
     void fireMouseDown(MouseEvent e) {
-        for (Iterator i = mouseListeners.iterator(); i.hasNext(); ) {
-            MouseListener l = (MouseListener) i.next();
+        for (Iterator<MouseListener> i = mouseListeners.iterator(); i.hasNext(); ) {
+            MouseListener l = i.next();
             l.mouseDown(e);
         }
     }
 
     void fireMouseUp(MouseEvent e) {
-        for (Iterator i = mouseListeners.iterator(); i.hasNext(); ) {
-            MouseListener l = (MouseListener) i.next();
+        for (Iterator<MouseListener> i = mouseListeners.iterator(); i.hasNext(); ) {
+            MouseListener l = i.next();
             l.mouseUp(e);
         }
     }
 
     void fireMouseDouble(MouseEvent e) {
-        for (Iterator i = mouseListeners.iterator(); i.hasNext(); ) {
-            MouseListener l = (MouseListener) i.next();
+        for (Iterator<MouseListener> i = mouseListeners.iterator(); i.hasNext(); ) {
+            MouseListener l = i.next();
             l.mouseDoubleClick(e);
         }
     }
 
-    private List mouseMoveListeners = new ArrayList();
+    private List<MouseMoveListener> mouseMoveListeners = new ArrayList<MouseMoveListener>();
 
     public void addMouseMoveListener(MouseMoveListener listener) {
         mouseMoveListeners.add(listener);
@@ -1163,8 +1163,8 @@ public class CompositeTable extends Canvas {
     }
 
     void fireMouseMove(MouseEvent e) {
-        for (Iterator i = mouseMoveListeners.iterator(); i.hasNext(); ) {
-            MouseMoveListener l = (MouseMoveListener) i.next();
+        for (Iterator<MouseMoveListener> i = mouseMoveListeners.iterator(); i.hasNext(); ) {
+            MouseMoveListener l = i.next();
             l.mouseMove(e);
         }
     }

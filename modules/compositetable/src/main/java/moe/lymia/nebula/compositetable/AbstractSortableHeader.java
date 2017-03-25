@@ -38,7 +38,7 @@ import java.util.List;
  */
 public abstract class AbstractSortableHeader extends Composite {
 
-    protected List labels;
+    protected List<CLabel> labels;
     private String[] labelStrings;
 
     private MouseAdapter sortMouseAdapter;
@@ -134,7 +134,7 @@ public abstract class AbstractSortableHeader extends Composite {
                 sortOnColumn(c, toggleSortDirection());
 
                 for (int i = 0; i < labels.size(); i++) {
-                    CLabel labelToSet = (CLabel) labels.get(i);
+                    CLabel labelToSet = labels.get(i);
                     if (i != c) {
                         labelToSet.setImage(null);
                     } else {
@@ -166,7 +166,7 @@ public abstract class AbstractSortableHeader extends Composite {
     }
 
     private void initialize() {
-        this.labels = new ArrayList();
+        this.labels = new ArrayList<CLabel>();
         String[] fields = labelStrings;
         for (int i = 0; i < fields.length; i++) {
             CLabel label = new CLabel(this, SWT.NONE);

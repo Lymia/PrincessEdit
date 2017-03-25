@@ -38,7 +38,7 @@ public abstract class AbstractNativeHeader extends Composite {
     private int[] columnAlignments;
 
     Table headerTable;
-    List tableColumns;
+    List<TableColumn> tableColumns;
     private HeaderLayout headerLayout;
 
     private int sortDirection = SWT.NONE; // SWT.NONE, SWT.UP, SWT.DOWN
@@ -85,8 +85,8 @@ public abstract class AbstractNativeHeader extends Composite {
      */
     public void setMovable(boolean movable) {
         this.movable = movable;
-        for (Iterator columnsIter = tableColumns.iterator(); columnsIter.hasNext(); ) {
-            TableColumn column = (TableColumn) columnsIter.next();
+        for (Iterator<TableColumn> columnsIter = tableColumns.iterator(); columnsIter.hasNext(); ) {
+            TableColumn column = columnsIter.next();
             column.setMoveable(movable);
         }
     }
@@ -109,8 +109,8 @@ public abstract class AbstractNativeHeader extends Composite {
      */
     public void setResizable(boolean resizable) {
         this.resizable = resizable;
-        for (Iterator columnsIter = tableColumns.iterator(); columnsIter.hasNext(); ) {
-            TableColumn column = (TableColumn) columnsIter.next();
+        for (Iterator<TableColumn> columnsIter = tableColumns.iterator(); columnsIter.hasNext(); ) {
+            TableColumn column = columnsIter.next();
             column.setResizable(resizable);
         }
     }
@@ -208,7 +208,7 @@ public abstract class AbstractNativeHeader extends Composite {
         return headerTable.getSortDirection();
     }
 
-    private List columnControlListeners = new ArrayList();
+    private List<ControlListener> columnControlListeners = new ArrayList<ControlListener>();
 
     public void addColumnControlListener(ControlListener c) {
         columnControlListeners.add(c);
@@ -219,7 +219,7 @@ public abstract class AbstractNativeHeader extends Composite {
     }
 
     private void initializeColumns() {
-        this.tableColumns = new ArrayList();
+        this.tableColumns = new ArrayList<TableColumn>();
         for (int i = 0; i < columnLabelStrings.length; i++) {
             TableColumn column = new TableColumn(headerTable, columnAlignments[i]);
             column.setMoveable(movable);
@@ -330,15 +330,15 @@ public abstract class AbstractNativeHeader extends Composite {
 
     private ControlListener columnControlListener = new ControlAdapter() {
         public void controlResized(ControlEvent e) {
-            for (Iterator i = columnControlListeners.iterator(); i.hasNext(); ) {
-                ControlListener listener = (ControlListener) i.next();
+            for (Iterator<ControlListener> i = columnControlListeners.iterator(); i.hasNext(); ) {
+                ControlListener listener = i.next();
                 listener.controlResized(e);
             }
         }
 
         public void controlMoved(ControlEvent e) {
-            for (Iterator i = columnControlListeners.iterator(); i.hasNext(); ) {
-                ControlListener listener = (ControlListener) i.next();
+            for (Iterator<ControlListener> i = columnControlListeners.iterator(); i.hasNext(); ) {
+                ControlListener listener = i.next();
                 listener.controlMoved(e);
             }
         }

@@ -315,7 +315,7 @@ class HeaderLayout extends AbstractGridRowLayout {
         }
     }
 
-    private List columnControlListeners = new ArrayList();
+    private List<ColumnControlListener> columnControlListeners = new ArrayList<>();
 
     void addColumnControlListener(ColumnControlListener l) {
         columnControlListeners.add(l);
@@ -326,8 +326,8 @@ class HeaderLayout extends AbstractGridRowLayout {
     }
 
     private void fireColumnResizedEvent(int resizedColumnNumber, int resizedColumnWidth, int columnToTheRightOfResizedColumnWidth) {
-        for (Iterator i = columnControlListeners.iterator(); i.hasNext(); ) {
-            ColumnControlListener l = (ColumnControlListener) i.next();
+        for (Iterator<ColumnControlListener> i = columnControlListeners.iterator(); i.hasNext(); ) {
+            ColumnControlListener l = i.next();
             l.columnResized(resizedColumnNumber,
                     resizedColumnWidth,
                     columnToTheRightOfResizedColumnWidth);
@@ -335,8 +335,8 @@ class HeaderLayout extends AbstractGridRowLayout {
     }
 
     private void fireColumnMovedEvent(int[] newColumnOrder) {
-        for (Iterator i = columnControlListeners.iterator(); i.hasNext(); ) {
-            ColumnControlListener l = (ColumnControlListener) i.next();
+        for (Iterator<ColumnControlListener> i = columnControlListeners.iterator(); i.hasNext(); ) {
+            ColumnControlListener l = i.next();
             l.columnMoved(newColumnOrder);
         }
     }

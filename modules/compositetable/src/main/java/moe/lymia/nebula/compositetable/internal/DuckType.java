@@ -55,7 +55,7 @@ public class DuckType implements InvocationHandler {
      * @param object               The object to force to implement interfaceToImplement
      * @return object, but now implementing interfaceToImplement
      */
-    public static Object implement(Class interfaceToImplement, Object object) {
+    public static Object implement(Class<ISelectableRegionControl> interfaceToImplement, Object object) {
         return Proxy.newProxyInstance(interfaceToImplement.getClassLoader(),
                 new Class[]{interfaceToImplement, Wrapper.class}, new DuckType(object));
     }
@@ -68,7 +68,7 @@ public class DuckType implements InvocationHandler {
      * @param object   The object to test
      * @return true if every method in intrface is present on object.  false otherwise
      */
-    public static boolean instanceOf(Class intrface, Object object) {
+    public static boolean instanceOf(Class<ISelectableRegionControl> intrface, Object object) {
         final Method[] methods = intrface.getMethods();
         Class candclass = object.getClass();
         for (int methodidx = 0; methodidx < methods.length; methodidx++) {
