@@ -29,6 +29,7 @@ import javax.swing.UIManager
 
 import moe.lymia.lua._
 import moe.lymia.princess.core._
+import moe.lymia.princess.editor.UIMain
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.util._
