@@ -25,6 +25,7 @@ package moe.lymia.princess.core
 import java.nio.file.{Path, Paths}
 
 import moe.lymia.lua.LuaObject
+import moe.lymia.princess.core.pkg.CorePkg
 
 final class GameManager(packages: PackageList, val logger: Logger = DefaultLogger, modules: Seq[LuaModule] = Seq()) {
   val gameId = packages.gameId
@@ -61,5 +62,5 @@ final class PackageManager(packages: Path, systemPackages: Seq[Path] = Seq(), lo
     new GameManager(resolver.loadGameId(gameId), logger, modules)
 }
 object PackageManager {
-  lazy val default = new PackageManager(Paths.get("packages"), Seq(Paths.get("PrincessEdit.pedit-pkg")))
+  lazy val default = new PackageManager(Paths.get("packages"), Seq(CorePkg.packagePath))
 }

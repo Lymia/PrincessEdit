@@ -59,9 +59,19 @@ val commonSettings = versionWithGit ++ Seq(
   scalacOptions ++= "-Xlint -target:jvm-1.8 -opt:l:classpath -deprecation -unchecked".split(" ").toSeq
 )
 
-lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
+lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   organization := "moe.lymia",
-  name := "swt",
+  name := "lua"
+))
+
+lazy val corePkg = project in file("modules/corepkg") settings (commonSettings ++ Seq(
+  organization := "moe.lymia.princessedit",
+  name := "prinecss-edit-corepkg"
+))
+
+lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
+  organization := "moe.lymia.princessedit",
+  name := "princess-edit-swt",
 
   libraryDependencies += {
     val os = (sys.props("os.name"), sys.props("os.arch")) match {
@@ -84,13 +94,8 @@ lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
     exclude("bundle", "org.eclipse.equinox.bidi")
 ))
 
-lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
-  organization := "moe.lymia",
-  name := "lua"
-))
-
 lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
-  organization := "moe.lymia",
+  organization := "moe.lymia.princessedit",
   name := "princess-edit",
 
   fork in run := true,
@@ -108,4 +113,4 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
   // Some code from http://stackoverflow.com/a/12509004/1733590
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"
-) ++ VersionBuild.settings) dependsOn lua dependsOn swt
+) ++ VersionBuild.settings) dependsOn lua dependsOn swt dependsOn corePkg

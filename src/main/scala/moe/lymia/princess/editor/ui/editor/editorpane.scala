@@ -50,9 +50,6 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
     control.addKeyListener(keyListener)
   }
 
-  // Allows the pane itself to receive focus. TODO: Improve hack
-  addTraverseListener(_ => { })
-
   val ui = cardData.root.createUI(this, registerControlCallbacks)
   addDisposeListener(_ => ui.kill())
   registerControlCallbacks(this)
@@ -83,7 +80,7 @@ final class EditorListContainer(parent: Composite, state: EditorState) extends C
     currentEditor = Some(editor)
     stack.topControl = editor
     layout()
-    editor.setFocus()
+    editor.forceFocus()
   }
   def deactivateEditor() = {
     clearCurrentEditor()
