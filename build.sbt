@@ -59,6 +59,8 @@ val commonSettings = versionWithGit ++ Seq(
   scalacOptions ++= "-Xlint -target:jvm-1.8 -opt:l:classpath -deprecation -unchecked".split(" ").toSeq
 )
 
+lazy val pesudoloc = project in file("modules/pseudolocalization-tool")
+
 lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   organization := "moe.lymia",
   name := "lua"
@@ -113,4 +115,4 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
   // Some code from http://stackoverflow.com/a/12509004/1733590
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"
-) ++ VersionBuild.settings) dependsOn lua dependsOn swt dependsOn corePkg
+) ++ VersionBuild.settings) dependsOn lua dependsOn swt dependsOn corePkg dependsOn pesudoloc
