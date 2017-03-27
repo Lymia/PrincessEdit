@@ -22,6 +22,7 @@
 
 package moe.lymia.princess.core
 
+import java.net.URI
 import java.nio.file.{Path, Paths}
 
 import moe.lymia.lua.LuaObject
@@ -65,6 +66,10 @@ final class PackageManager(packages: Path, systemPackages: Seq[Path] = Seq(), lo
     new GameManager(resolver.loadGameId(gameId), logger, modules)
 }
 object PackageManager {
-  lazy val default = new PackageManager(Paths.get("packages"), Seq(CorePkg.packagePath))
+  private lazy val defaultPath = System.getProperty("moe.lymia.princess.currentDirectory") match {
+    case null => Paths.get("packages")
+    case url => Paths.get(new URI(url)).resolve("packages")
+  }
+  lazy val default = new PackageManager(defaultPath, Seq(CorePkg.packagePath))
   lazy val system = default.loadGameId("_princess")
 }

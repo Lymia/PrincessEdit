@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor
+package moe.lymia.princess
 
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.ui.frontend.FrontEndFrame
