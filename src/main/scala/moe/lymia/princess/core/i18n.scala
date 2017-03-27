@@ -94,8 +94,8 @@ final class I18NLoader(game: GameManager) {
 
   // DEBUG: Temporary loader
   val i18n = {
-    val user   = PseudolocalizeI18NSource(loadExportData(game.gameId, "en", "generic"))
-    val system = PseudolocalizeI18NSource(loadExportData("_princess", "en", "generic", system = true))
+    val user   = loadExportData(game.gameId, "en", "generic")
+    val system = loadExportData("_princess", "en", "generic", system = true)
     I18N(user, system)
   }
 }
