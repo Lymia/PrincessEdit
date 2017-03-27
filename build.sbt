@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+import java.util.Properties
+
 import sbt._
 import sbt.Keys._
 import Config._
@@ -73,7 +75,7 @@ lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
 
 lazy val corePkg = project in file("modules/corepkg") settings (commonSettings ++ Seq(
   organization := "moe.lymia.princessedit",
-  name := "prinecss-edit-corepkg"
+  name := "princess-edit-corepkg"
 ))
 
 val swtArtifact =
@@ -85,30 +87,23 @@ val swtArtifact =
     case (os, _) if os.startsWith("Windows") => "win32.win32.x86"
     case (os, arch) => sys.error("Cannot obtain lib for OS '" + os + "' and architecture '" + arch + "'")
   })
+def swtDep(artifact: String) =
+  ("bundle" % artifact % config_swt_version
+    exclude("package", "org.mozilla.xpcom")
+    exclude("package", "org.eclipse.swt.accessibility2"))
 
 lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
   organization := "moe.lymia.princessedit",
   name := "princess-edit-swt",
 
-  libraryDependencies += "bundle" % swtArtifact % "3.105.2.v20161122-0613"
-    exclude("package", "org.mozilla.xpcom")
-    exclude("package", "org.eclipse.swt.accessibility2"),
+  libraryDependencies += swtDep(swtArtifact),
   libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.11.3.v20170209-1843",
   libraryDependencies += "bundle" % "org.eclipse.equinox.common" % "3.8.0.v20160509-1230",
   libraryDependencies += "bundle" % "org.eclipse.jface" % "3.12.2.v20170113-2113"
     exclude("bundle", "org.eclipse.equinox.bidi")
 ))
 
-lazy val loader = project in file("modules/loader") settings (commonSettings ++ Seq(
-  organization := "moe.lymia.princessedit",
-  name := "princess-edit-loader",
-  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-
-  autoScalaLibrary := false,
-  crossPaths := false
-))
-
-lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
+lazy val princessEdit = project in file(".") settings (commonSettings ++ VersionBuild.settings ++ Seq(
   organization := "moe.lymia.princessedit",
   name := "princess-edit",
 
@@ -125,3 +120,89 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"
 )) dependsOn corePkg dependsOn swt dependsOn lua dependsOn pesudoloc
+
+lazy val loader = project in file("modules/loader") settings (commonSettings ++ Seq(
+  organization := "moe.lymia.princessedit",
+  name := "princess-edit-loader",
+  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
+
+  autoScalaLibrary := false,
+  crossPaths := false
+))
+
+lazy val dist = project in file("modules/dist") settings (commonSettings ++ Seq(
+  libraryDependencies += swtDep("org.eclipse.swt.gtk.linux.x86_64"),
+  libraryDependencies += swtDep("org.eclipse.swt.gtk.linux.x86"),
+  libraryDependencies += swtDep("org.eclipse.swt.cocoa.macosx.x86_64"),
+  libraryDependencies += swtDep("org.eclipse.swt.win32.win32.x86_64"),
+  libraryDependencies += swtDep("org.eclipse.swt.win32.win32.x86"),
+  autoScalaLibrary := false
+))
+
+Launch4JBuild.settings
+Launch4JBuild.Keys.launch4jSourceJar := (packageBin in Compile in loader).value
+
+InputKey[Unit]("dist") := {
+  val distClasspath = (fullClasspath in Compile).value.filter(_.get(moduleID.key).get.name != swtArtifact)
+  def getSWTJar(artifact: String) =
+    (fullClasspath in Compile in dist).value.find(_.get(moduleID.key).get.name == artifact).get
+
+  val classPaths = Map(
+    "win32-x86"    -> (distClasspath :+ getSWTJar("org.eclipse.swt.win32.win32.x86")),
+    "win32-x86_64" -> (distClasspath :+ getSWTJar("org.eclipse.swt.win32.win32.x86_64")),
+    "mac-x86_64"   -> (distClasspath :+ getSWTJar("org.eclipse.swt.cocoa.macosx.x86_64")),
+    "linux-x86"    -> (distClasspath :+ getSWTJar("org.eclipse.swt.gtk.linux.x86")),
+    "linux-x86_64" -> (distClasspath :+ getSWTJar("org.eclipse.swt.gtk.linux.x86_64"))
+  )
+  val allJars: Set[Attributed[File]] = classPaths.flatMap(_._2).toSet
+
+  def jarName(jar: Attributed[File]) = {
+    val mod = jar.get(moduleID.key).get
+    val org = if(mod.organization == "bundle") "" else s"${mod.organization}."
+    s"$org${mod.name}-${mod.revision}.jar"
+  }
+  def classPathString(path: Seq[Attributed[File]]) = path.map(jarName).mkString(":")
+
+  val path = crossTarget.value / "dist"
+  IO.createDirectory(path)
+
+  val zipOut = IO.withTemporaryDirectory { dir =>
+    val dirName = s"princess-edit-${(version in princessEdit).value}"
+    val zipOut = path / s"$dirName.zip"
+    val outDir = dir / dirName
+
+    IO.createDirectory(outDir)
+
+    def fixEndings(s: String) = s.replace("\r\n", "\n").replace("\n", "\r\n")
+    IO.write(outDir / "README.txt", fixEndings(IO.read(file("project/dist_README.md"))))
+    IO.write(outDir / "LICENSE.txt", fixEndings(IO.read(file("project/LICENSE.md"))))
+
+    IO.copyFile(Launch4JBuild.Keys.launch4jOutput.value, outDir / "PrincessEdit.exe")
+    IO.write(outDir / "PrincessEdit.sh",
+      """#!/bin/sh
+        |SWT_GTK3=0 java -jar "$(dirname "$0")"/PrincessEdit.exe "$@"
+      """.stripMargin)
+    (outDir / "PrincessEdit.sh").setExecutable(true)
+
+    IO.createDirectory(outDir / "lib")
+    for(jar <- allJars) IO.copyFile(jar.data, outDir / "lib" / jarName(jar))
+
+    val props = new Properties()
+    for((name, path) <- classPaths) props.put(name, classPathString(path))
+    props.put("main", (mainClass in (Compile, run)).value.get)
+    IO.write(props, "Classpath configuration data for PrincessEdit", outDir / "lib" / "manifest.properties")
+
+    IO.createDirectory(outDir / "packages")
+    for(file <- IO.listFiles(file("packages")) if file.getName.endsWith(".pedit-pkg"))
+      IO.copy(Path.allSubpaths(file).filter(!_._2.startsWith(".git/"))
+                                    .map   (x => x.copy(_2 = outDir / "packages" / file.getName / x._2)))
+
+    // we call out to zip to save the executable flag for *nix
+    if(zipOut.exists) IO.delete(zipOut)
+    Utils.runProcess(Seq("zip", "-r", zipOut, dirName), dir)
+
+    zipOut
+  }
+
+  streams.value.log.info(s"Output written to: $zipOut")
+}

@@ -33,6 +33,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
+class LoaderException extends RuntimeException {
+    public LoaderException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
 class LoaderData {
     final String mainClass;
     final String[] classPath;
@@ -48,16 +54,18 @@ public final class Loader {
         JOptionPane.showMessageDialog(null, "Could not start MPPatch installer:\n"+error, "MPPatch Installer",
                                       JOptionPane.ERROR_MESSAGE);
         if(e != null) e.printStackTrace();
-        return new RuntimeException(error, e);
+        return new LoaderException(error, e);
     }
 
     private Path getExecutableDirectory() {
         try {
-            String resourcePath = getClass().getPackage().toString().replace('.', '/')+"/marker.txt";
+            String resourcePath = getClass().getPackage().getName().replace('.', '/')+"/marker.txt";
             URL resourceURL = getClass().getClassLoader().getResource(resourcePath);
             if(resourceURL == null) throw error("Marker resource not found.", null);
             JarURLConnection connection = (JarURLConnection) resourceURL.openConnection();
-            return Paths.get(connection.getJarFileURL().toURI());
+            return Paths.get(connection.getJarFileURL().toURI()).getParent();
+        } catch (LoaderException e) {
+            throw e;
         } catch (Exception e) {
             throw error("Could not find executable directory.", e);
         }
@@ -74,11 +82,11 @@ public final class Loader {
         else throw error("Your operating system ("+nameProp+") is not supported.", null);
 
         String arch;
-        if(archProp.equals("amd64") || archProp.equals("x86_64")) arch = "amd64";
+        if(archProp.equals("amd64") || archProp.equals("x86_64")) arch = "x86_64";
         else if((archProp.equals("x86") || archProp.matches("^i?86$")) && !os.equals("mac")) arch = "x86";
         else throw error("Your system architecture ("+archProp+") is not supported.", null);
 
-        return nameProp+"_"+archProp;
+        return os+"-"+arch;
     }
 
     private LoaderData getLoaderData(Path rootPath) {
@@ -127,7 +135,7 @@ public final class Loader {
         }
 
         try {
-            m.invoke(null, (Object[]) args);
+            m.invoke(null, new Object[] { args });
         } catch (IllegalAccessException e) {
             throw error("Main class is not accessible.", e);
         } catch (InvocationTargetException e) {
