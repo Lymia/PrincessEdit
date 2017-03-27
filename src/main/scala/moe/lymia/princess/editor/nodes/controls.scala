@@ -37,7 +37,7 @@ trait BasicControlType[T <: Control] extends ControlType {
   def setValue(t: T, data: ControlData, field: DataField)
   def getValue(t: T, data: ControlData): DataField
 
-  override def createComponent(parent: Composite, data: ControlData)(implicit owner: Ctx.Owner) = {
+  override def createComponent(parent: Composite, data: ControlData)(implicit owner: Ctx.Owner, uiCtx: UIContext) = {
     val component = create(parent, data)
 
     setValue(component, data, data.backing.now)
@@ -62,6 +62,7 @@ trait BasicControlType[T <: Control] extends ControlType {
       }
     }
 
+    uiCtx.registerControlCallbacks(component)
     component
   }
 }

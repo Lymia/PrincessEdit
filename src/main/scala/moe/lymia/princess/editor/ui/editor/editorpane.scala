@@ -26,11 +26,13 @@ import java.util.UUID
 
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.ui.mainframe.{EditorTab, MainFrameState}
+
 import org.eclipse.swt._
 import org.eclipse.swt.custom._
 import org.eclipse.swt.events.{KeyEvent, KeyListener}
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
+
 import rx._
 
 final class CardEditorPane(parent: Composite, state: EditorState, cardData: CardData)
@@ -39,20 +41,17 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
   setLayout(new FillLayout())
 
   private var deactivated = false
-  private val keyListener = new KeyListener {
-    override def keyPressed(keyEvent: KeyEvent): Unit = if(keyEvent.keyCode == SWT.ESC) {
+  addTraverseListener(event =>
+    if(event.detail == SWT.TRAVERSE_ESCAPE) {
+      event.doit = false
       if(!deactivated) state.deactivateEditor()
       deactivated = true
     }
-    override def keyReleased(keyEvent: KeyEvent): Unit = { }
-  }
-  private def registerControlCallbacks(control: Control): Unit = {
-    control.addKeyListener(keyListener)
-  }
+  )
 
-  val ui = cardData.root.createUI(this, registerControlCallbacks)
+  val ui = cardData.root.createUI(this)
+  setTabList(Array(ui.control))
   addDisposeListener(_ => ui.kill())
-  registerControlCallbacks(this)
 }
 
 final class EditorListContainer(parent: Composite, state: EditorState) extends Composite(parent, SWT.BORDER) {

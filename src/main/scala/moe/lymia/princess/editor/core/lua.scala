@@ -32,10 +32,11 @@ import rx._
 
 final class UIData(parent: Composite, node: RootNode, registerControlCallbacks: Control => Unit)
                   (implicit ctx: NodeContext, owner: Ctx.Owner) {
-  private val dummyRx = Rx { () }
-  val control = node.createControl(parent)(ctx, ctx.newUIContext(registerControlCallbacks), new Ctx.Owner(dummyRx))
+  private val rootRxValue = Rx { () }
+  implicit val rootRx = new Ctx.Owner(rootRxValue)
+  val control = node.createControl(parent)(ctx, ctx.newUIContext(registerControlCallbacks), rootRx)
 
-  def kill() = dummyRx.kill()
+  def kill() = rootRxValue.kill()
 }
 
 final class DataRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, node: RootNode) {

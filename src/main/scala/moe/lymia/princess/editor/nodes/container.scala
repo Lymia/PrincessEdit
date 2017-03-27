@@ -55,24 +55,31 @@ case class VisibilityNode(isVisible: FieldNode, contents: ControlNode) extends C
     val data = new GridData(SWT.FILL, SWT.FILL, true, true)
     widget.setLayoutData(data)
 
-    val isVisibleRx = ctx.activateNode(isVisible)
-    isVisibleRx.map(Lua.toBoolean).foreach { b => ctx.controlCtx.asyncUiExec {
+    val isVisibleRx = ctx.activateNode(isVisible).map(Lua.toBoolean)
+    isVisibleRx.foreach { b => ctx.controlCtx.asyncUiExec {
       data.exclude = !b
       if(!widget.isDisposed) widget.setVisible(b)
       if(!container.isDisposed) container.layout(true)
+
+      container.setTabList(if(b) Array(widget) else Array())
     }}
 
     container
   }
 }
 
-case class GridComponent(component: ControlNode, x: Int, y: Int, newConstraints: () => GridData)
-private case class ComputedGridComponent(component: ControlNode, newConstraints: () => GridData)
+case class GridComponent(component: ControlNode, x: Int, y: Int, tabOrder: Int, newConstraints: () => GridData)
+private case class ComputedGridComponent(component: ControlNode, tabOrder: Int, newConstraints: () => GridData)
 class GridNode private (data: Seq[ComputedGridComponent], newLayout: () => GridLayout) extends ControlNode {
   override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {
     val pane = new Composite(parent, SWT.NONE)
     pane.setLayout(newLayout())
-    for(component <- data) component.component.createControl(pane).setLayoutData(component.newConstraints())
+    val tabData = (for(component <- data) yield {
+      val control = component.component.createControl(pane)
+      control.setLayoutData(component.newConstraints())
+      (component.tabOrder, control)
+    }).filter(_._1 != -1).sortBy(_._1)
+    pane.setTabList(tabData.map(x => x._2).toArray)
     pane.layout()
     pane
   }
@@ -88,6 +95,7 @@ object GridNode {
     def use(x: Int, y: Int) = used(x * numRows + y) = true
     def isUsed(x: Int, y: Int) = used(x * numRows + y)
 
+    val tabOrder = components.sortBy(_.tabOrder).zipWithIndex.toMap
     val componentMap = components.map(c => (c.x, c.y) -> c).toMap
     val componentList = new mutable.ArrayBuffer[ComputedGridComponent]
     for(y <- 0 until numRows; x <- 0 until numColumns) componentMap.get((x, y)) match {
@@ -97,10 +105,10 @@ object GridNode {
           if(isUsed(x, y)) throw EditorException("Overlapping components in Grid!")
           use(x, y)
         }
-        componentList += ComputedGridComponent(c.component, c.newConstraints)
+        componentList += ComputedGridComponent(c.component, tabOrder(c), c.newConstraints)
       case None =>
         if(!isUsed(x, y)) {
-          componentList += ComputedGridComponent(SpacerNode, () => new GridData())
+          componentList += ComputedGridComponent(SpacerNode, -1, () => new GridData())
           use(x, y)
         }
     }

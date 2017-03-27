@@ -37,9 +37,8 @@ final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlCont
 trait ControlType {
   def expectedFieldType: DataFieldType[_]
   def defaultValue: DataField
-  def createComponent(parent: Composite, data: ControlData)(implicit owner: Ctx.Owner): Control
+  def createComponent(parent: Composite, data: ControlData)(implicit owner: Ctx.Owner, uiCtx: UIContext): Control
 }
-
 trait ControlNode extends TreeNode {
   def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner): Control
 }
@@ -94,8 +93,6 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
                              ctx.activateNode(v.field).map(x =>
                                DataField(expected, expected.fromLua(ctx.internal_L, x)))
                            )))
-    val component = control.createComponent(parent, data)
-    uiCtx.registerControlCallbacks(component)
-    component
+    control.createComponent(parent, data)
   }
 }

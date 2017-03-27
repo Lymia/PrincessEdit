@@ -84,6 +84,8 @@ object ContainerLib extends LuaLibrary {
         val x = L.rawGet(row, "x").as[Int]
         val y = L.rawGet(row, "y").as[Int]
 
+        val tabOrder = L.rawGet(row, "tabOrder").as[Option[Int]].getOrElse(0)
+
         val setups = new SetupsBuilder(L, row, new GridData)
 
         setups.flag("xFill"  , _.horizontalAlignment       = SWT.FILL)
@@ -102,7 +104,7 @@ object ContainerLib extends LuaLibrary {
         setups.value[Int  ]("xHint"  , (d, v) => d.widthHint           = v)
         setups.value[Int  ]("yHint"  , (d, v) => d.heightHint          = v)
 
-        GridComponent(component, x, y, setups.getFn)
+        GridComponent(component, x, y, tabOrder, setups.getFn)
       }
 
       val setups = new SetupsBuilder(L, table, new GridLayout())
