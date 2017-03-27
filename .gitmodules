@@ -1,0 +1,3 @@
+[submodule "modules/cub"]
+	path = modules/cub
+	url = https://github.com/jsilland/cub.git
