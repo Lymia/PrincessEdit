@@ -29,7 +29,6 @@ import moe.lymia.princess.editor.ui.mainframe.{EditorTab, MainFrameState}
 
 import org.eclipse.swt._
 import org.eclipse.swt.custom._
-import org.eclipse.swt.events.{KeyEvent, KeyListener}
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 
@@ -80,6 +79,7 @@ final class EditorListContainer(parent: Composite, state: EditorState) extends C
     stack.topControl = editor
     layout()
     editor.forceFocus()
+    state.ctx.asyncUiExec { editor.traverse(SWT.TRAVERSE_TAB_NEXT) }
   }
   def deactivateEditor() = {
     clearCurrentEditor()
