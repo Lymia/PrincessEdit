@@ -22,90 +22,37 @@
 
 package moe.lymia.princess.editor.ui.mainframe
 
-import java.util.UUID
-
-import moe.lymia.lua._
-import moe.lymia.princess.core.{GameManager, PackageManager}
+import moe.lymia.princess.core.PackageManager
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.lua.EditorModule
+import moe.lymia.princess.editor.ui.editor.EditorPane
 import moe.lymia.princess.editor.utils._
 import moe.lymia.princess.renderer.lua.RenderModule
-import moe.lymia.princess.renderer.{RasterizeResourceLoader, RenderManager}
 import moe.lymia.princess.util.VersionInfo
-import org.eclipse.swt.SWT
-import org.eclipse.swt.custom.SashForm
-import org.eclipse.swt.graphics.{Image, Point}
+
+import org.eclipse.swt.graphics.Point
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
+
 import rx._
 
-class MainFrameState(project: Project) {
+class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, val gameId: String) {
+  val game = PackageManager.default.loadGameId(gameId)
+  game.lua.loadModule(EditorModule, RenderModule)
+
+  val idData = new GameIDData(game, ctx)
+  val project = new Project(ctx, idData)
+
   val currentPool = Var[CardSource](project)
-  val currentCard = Var[Option[UUID]](None)
 }
 
-class RendererPane(parent: Composite, ctx: ControlContext, game: GameManager,
-                   state: MainFrameState, project: Project) extends Composite(parent, SWT.NONE) {
-  import rx.Ctx.Owner.Unsafe._
+trait EditorTab {
 
-  private val renderer = new RenderManager(game, ctx.cache)
-
-  private val currentCardData: Rx[Seq[LuaObject]] = Rx {
-    val card = state.currentCard().flatMap(project.cards.now.get).map(_.root.luaData())
-    val root = state.currentPool().info.root.luaData()
-    Seq(card, root)
-  }
-
-  val grid = new GridLayout()
-  this.setLayout(grid)
-
-  private val label = new Label(this, SWT.NONE)
-  label.setLayoutData(new GridData(SWT.CENTER, SWT.BEGINNING, false, false))
-
-  private val obs = currentCardData.foreach { d =>
-    if(!this.isDisposed) ctx.asyncRenderSwt (this, {
-      val (componentSize, rendered) = ctx.syncUiLuaExec(this.getSize, renderer.render(d, RasterizeResourceLoader))
-
-      val (rcx, rcy) =
-        (componentSize.x - grid.marginLeft - grid.marginRight - grid.marginWidth * 2,
-         componentSize.y - grid.marginTop - grid.marginBottom - grid.marginHeight * 2)
-      val (cx, cy) = (if(rcx == 0) 1 else rcx, if(rcy == 0) 1 else rcy)
-      val (x, y) = {
-        val size =
-          (cx, math.round((cx.toDouble / rendered.size.width) * rendered.size.height).toInt)
-        if(size._2 > cy)
-          (math.round((cy.toDouble / rendered.size.height) * rendered.size.width).toInt, cy)
-        else size
-      }
-
-      (rendered, x, y)
-    }) { imageData =>
-      ctx.asyncUiExec {
-        val image = new Image(ctx.display, imageData)
-        if(label.getImage != null) label.getImage.dispose()
-        label.setImage(image)
-        this.layout(Array(label : Control))
-      }
-    }
-  }
-
-  this.addListener(SWT.Resize, { event =>
-    obs.thunk()
-  })
 }
 
 // TODO: This is only a temporary test UI
 class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
-  private val game = PackageManager.default.loadGameId(gameId)
-  game.lua.loadModule(EditorModule, RenderModule)
-
-  private val idData = new GameIDData(game, ctx)
-  private val project = new Project(ctx, idData)
-  private val cardId = project.newCard()
-
-  private val state = new MainFrameState(project)
-  state.currentCard.update(Some(cardId))
-  private val cardData = project.cards.now(cardId)
+  private val state = new MainFrameState(this, ctx, gameId)
 
   override def configureShell(shell: Shell): Unit = {
     super.configureShell(shell)
@@ -120,26 +67,6 @@ class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
     fill.marginWidth = 5
     frame.setLayout(fill)
 
-    val sash = new SashForm(frame, SWT.HORIZONTAL | SWT.SMOOTH)
-    sash.setLayout(new FillLayout)
-
-    val sash1 = new Composite(sash, SWT.BORDER)
-    sash1.setLayout(new FillLayout)
-    val renderer = new RendererPane(sash1, ctx, game, state, project)
-
-    val sash2 = new Composite(sash, SWT.BORDER)
-    sash2.setLayout(new GridLayout)
-
-    val selector = new CardSelector(sash2, project, idData, ctx, state)
-    selector.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true))
-
-    val button = new Button(sash2, SWT.PUSH)
-    button.setText("New Card")
-    button.addListener(SWT.Selection, event => ctx.asyncLuaExec {
-      project.newCard()
-    })
-    button.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false))
-
-    sash.setWeights(Array(1000, 1618))
+    new EditorPane(frame, state)
   }
 }

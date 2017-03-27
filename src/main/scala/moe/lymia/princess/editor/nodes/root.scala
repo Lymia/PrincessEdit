@@ -38,6 +38,17 @@ import rx._
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 
+final class UIContext(prefix: String, val registerControlCallbacks: Control => Unit) {
+  private val uiActivatedCardField = new mutable.HashSet[String]
+  def activateCardField(name: String) = {
+      if(uiActivatedCardField.contains(name))
+        throw EditorException(s"Cannot reuse UI element controlling card data field '${prefix+name}'!")
+      uiActivatedCardField.add(name)
+  }
+
+  def newUIContext(ctx: NodeContext) = new UIContext(ctx.prefix, registerControlCallbacks)
+}
+
 final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext,
                         val prefixSeq: Seq[String] = Seq()) {
   val internal_L = L.newThread()
@@ -69,19 +80,12 @@ final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: Co
       case None => activatedCardFields.put(name, node)
     }
 
-  def newUIContext() = new UIContext(prefix)
+  def newUIContext(registerControlCallbacks: Control => Unit) =
+    new UIContext(prefix, registerControlCallbacks)
 }
 
-final class UIContext(prefix: String) {
-  private val uiActivatedCardField = new mutable.HashSet[String]
-  def activateCardField(name: String) = {
-      if(uiActivatedCardField.contains(name))
-        throw EditorException(s"Cannot reuse UI element controlling card data field '${prefix+name}'!")
-      uiActivatedCardField.add(name)
-  }
-}
-
-final class RxPane(uiRoot: Composite, context: NodeContext, rootRx: Rx[ActiveRootNode])(implicit owner: Ctx.Owner) {
+final class RxPane(uiRoot: Composite, context: NodeContext, uiCtx: UIContext, rootRx: Rx[ActiveRootNode])
+                  (implicit owner: Ctx.Owner) {
   val pane = new Composite(uiRoot, SWT.NONE)
   pane.setLayout(new FillLayout())
   pane.setData(this)
@@ -92,7 +96,7 @@ final class RxPane(uiRoot: Composite, context: NodeContext, rootRx: Rx[ActiveRoo
       if(!pane.isDisposed) {
         println("Creating UI")
         lastComponent.foreach(_.dispose())
-        lastComponent = currentRoot.renderUI(pane)
+        lastComponent = currentRoot.renderUI(pane, uiCtx)
         pane.layout(true)
       } else componentObs.kill()
     }
@@ -101,8 +105,8 @@ final class RxPane(uiRoot: Composite, context: NodeContext, rootRx: Rx[ActiveRoo
 
 final class ActiveRootNode private (context: NodeContext, root: Option[ControlNode],
                                     fields: Option[Map[String, Rx[Any]]])(implicit owner: Ctx.Owner) {
-  def renderUI(uiRoot: Composite) =
-    root.map(_.createControl(uiRoot)(context, context.newUIContext(), owner))
+  def renderUI(uiRoot: Composite, uiCtx: UIContext) =
+    root.map(_.createControl(uiRoot)(context, uiCtx.newUIContext(context), owner))
   lazy val luaOutput = fields.map { fields => Rx { fields.map(x => x.copy(_2 = x._2())) } }
 }
 object ActiveRootNode {
@@ -143,6 +147,6 @@ final case class RootNode(subtableName: Option[String], params: Seq[FieldNode], 
       ctx.activateCardField(n, this)
       uiCtx.activateCardField(n)
     }
-    new RxPane(parent, ctx, makeActiveNode(ctx)).pane
+    new RxPane(parent, ctx, uiCtx, makeActiveNode(ctx)).pane
   }
 }

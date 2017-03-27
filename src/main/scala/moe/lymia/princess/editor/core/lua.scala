@@ -26,13 +26,14 @@ import moe.lymia.princess.core._
 import moe.lymia.princess.editor.nodes._
 import moe.lymia.lua._
 
-import org.eclipse.swt.widgets.Composite
+import org.eclipse.swt.widgets._
 
 import rx._
 
-final class UIData(parent: Composite, node: RootNode)(implicit ctx: NodeContext, owner: Ctx.Owner) {
+final class UIData(parent: Composite, node: RootNode, registerControlCallbacks: Control => Unit)
+                  (implicit ctx: NodeContext, owner: Ctx.Owner) {
   private val dummyRx = Rx { () }
-  val control = node.createControl(parent)(ctx, ctx.newUIContext(), new Ctx.Owner(dummyRx))
+  val control = node.createControl(parent)(ctx, ctx.newUIContext(registerControlCallbacks), new Ctx.Owner(dummyRx))
 
   def kill() = dummyRx.kill()
 }
@@ -44,7 +45,8 @@ final class DataRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, n
   private implicit val owner = new Ctx.Owner(dummyRx)
 
   val luaData = node.createRx
-  def createUI(parent: Composite) = new UIData(parent, node)
+  def createUI(parent: Composite, registerControlCallbacks: Control => Unit = _ => ()) =
+    new UIData(parent, node, registerControlCallbacks)
   def kill() = dummyRx.kill()
 }
 
@@ -86,15 +88,15 @@ object RootSource {
   }
 }
 
-final case class TableColumn(L: LuaState, fn: LuaClosure)
-final case class LuaColumnData(columns: Map[String, TableColumn], defaultColumnOrder: Seq[String])
+final case class TableColumnData(L: LuaState, fn: LuaClosure)
+final case class LuaColumnData(columns: Map[String, TableColumnData], defaultColumnOrder: Seq[String])
 object LuaColumnData {
   def apply(game: GameManager): LuaColumnData = {
     val export = StaticExportIDs.EntryPoint(game.gameId, "card-columns")
     val L = game.lua.L.newThread()
     val fn = L.getTable(game.getRequiredEntryPoint(export), "cardColumns").as[LuaClosure]
     val Seq(columns, defaultColumnOrder) = L.call(fn, 2)
-    LuaColumnData(columns.as[Map[String, LuaClosure]].map { t => t._1 -> TableColumn(game.lua.L, t._2) },
+    LuaColumnData(columns.as[Map[String, LuaClosure]].map { t => t._1 -> TableColumnData(game.lua.L, t._2) },
                   defaultColumnOrder.as[Seq[String]])
   }
 }

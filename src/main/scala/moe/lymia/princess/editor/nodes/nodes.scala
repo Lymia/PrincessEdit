@@ -94,6 +94,8 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
                              ctx.activateNode(v.field).map(x =>
                                DataField(expected, expected.fromLua(ctx.internal_L, x)))
                            )))
-    control.createComponent(parent, data)
+    val component = control.createComponent(parent, data)
+    uiCtx.registerControlCallbacks(component)
+    component
   }
 }

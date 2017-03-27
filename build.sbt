@@ -84,11 +84,6 @@ lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
     exclude("bundle", "org.eclipse.equinox.bidi")
 ))
 
-lazy val compositeTable = project in file("modules/compositetable") settings(commonSettings ++ Seq(
-  organization := "moe.lymia",
-  name := "nebula-compositetable"
-)) dependsOn swt
-
 lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   organization := "moe.lymia",
   name := "lua"
@@ -113,4 +108,4 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
   // Some code from http://stackoverflow.com/a/12509004/1733590
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"
-) ++ VersionBuild.settings) dependsOn lua dependsOn swt dependsOn compositeTable
+) ++ VersionBuild.settings) dependsOn lua dependsOn swt
