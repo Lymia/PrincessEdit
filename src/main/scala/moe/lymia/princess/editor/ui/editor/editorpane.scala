@@ -28,7 +28,7 @@ import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.ui.mainframe.{EditorTab, MainFrameState}
 import org.eclipse.swt._
 import org.eclipse.swt.custom._
-import org.eclipse.swt.events.{KeyEvent, KeyListener, TraverseEvent, TraverseListener}
+import org.eclipse.swt.events.{KeyEvent, KeyListener}
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._
@@ -60,7 +60,7 @@ final class EditorListContainer(parent: Composite, state: EditorState) extends C
   this.setLayout(stack)
 
   private val viewer = new CardSelectorTableViewer(this, state)
-  stack.topControl = viewer.getControl
+  stack.topControl = viewer
 
   private var currentEditor: Option[CardEditorPane] = None
   private def clearCurrentEditor() = {
@@ -69,7 +69,7 @@ final class EditorListContainer(parent: Composite, state: EditorState) extends C
       case None =>
     }
     currentEditor = None
-    stack.topControl = viewer.getControl
+    stack.topControl = viewer
   }
 
   // TODO: Fix the editor mode tab order

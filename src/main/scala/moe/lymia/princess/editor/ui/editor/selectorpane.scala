@@ -25,18 +25,17 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import moe.lymia.princess.editor.core._
-
+import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
-
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
+import org.eclipse.swt.layout.FillLayout
 import org.eclipse.swt.widgets._
-
 import rx._
 
 case class RowData(id: UUID, data: CardData, fields: Seq[String])
-final class CardSelectorTableViewer(parent: Composite, state: EditorState) {
-  private val viewer = new TableViewer(parent, SWT.FULL_SELECTION | SWT.V_SCROLL | SWT.H_SCROLL)
+final class CardSelectorTableViewer(parent: Composite, state: EditorState) extends Composite(parent, SWT.NONE) {
+  private val viewer = new TableViewer(this, SWT.FULL_SELECTION | SWT.V_SCROLL | SWT.H_SCROLL)
   def getControl = viewer.getControl
   def getTable = viewer.getTable
 
@@ -56,14 +55,14 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) {
     })
   }
 
-  private val tableLayout = new TableLayout()
+  private val tableLayout = new TableColumnLayout()
   for(column <- state.idData.columns.defaultColumnOrder.toArray) {
     val col = new TableColumn(viewer.getTable, SWT.NONE)
     col.setText(column)
     col.setMoveable(false)
-    tableLayout.addColumnData(new ColumnWeightData(100, true))
+    tableLayout.setColumnData(col, new ColumnWeightData(100, true))
   }
-  viewer.getTable.setLayout(tableLayout)
+  setLayout(tableLayout)
 
   viewer.setContentProvider(new IStructuredContentProvider {
     override def getElements(o: scala.Any): Array[AnyRef] = cardsRx.now.toArray
