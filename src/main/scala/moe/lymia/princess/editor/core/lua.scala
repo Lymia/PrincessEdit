@@ -77,16 +77,13 @@ object RootSource {
     new LuaRootSource(game.lua.L, controlCtx, fn)
   }
   def optional(game: GameManager, controlCtx: ControlContext, export: String, method: String) = {
-    val fullExport = StaticExportIDs.EntryPoint(game.gameId, export)
-    game.getEntryPoint(fullExport) match {
+    game.getEntryPoint(export) match {
       case Some(exportObj) => create(game, controlCtx, exportObj, method)
       case None => new NullRootSource(game.lua.L, controlCtx)
     }
   }
-  def apply(game: GameManager, controlCtx: ControlContext, export: String, method: String) = {
-    val fullExport = StaticExportIDs.EntryPoint(game.gameId, export)
-    create(game, controlCtx, game.getRequiredEntryPoint(fullExport), method)
-  }
+  def apply(game: GameManager, controlCtx: ControlContext, export: String, method: String) =
+    create(game, controlCtx, game.getRequiredEntryPoint(export), method)
 }
 
 final case class TableColumnData(L: LuaState, fn: LuaClosure)

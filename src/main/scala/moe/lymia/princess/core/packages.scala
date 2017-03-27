@@ -106,8 +106,12 @@ object Package {
 
     if(dependenciesSection.exists(_._2.length != 1)) throw EditorException("Dependency declared twice")
 
+    val gameIds = packageSection.getMultiOptional("gameId").toSet
+    for(gameId <- gameIds)
+      if(gameId.startsWith("_")) throw EditorException(s"Game ID cannot start with '_' in '$gameId'")
+
     Package(packageSection.getSingle("name"), Version.parse(packageSection.getSingle("version")),
-            packageSection.getMultiOptional("gameId").toSet,
+            gameIds,
             path,
             dependenciesSection.map(x => Dependency(x._1, DepVersion.parse(x._2.head))).toSeq,
             exportMap.mapValues(_.toSeq).toMap)

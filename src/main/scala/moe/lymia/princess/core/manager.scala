@@ -40,10 +40,11 @@ final class GameManager(packages: PackageList, val logger: Logger = DefaultLogge
 
   def getLuaExport(path: String): LuaObject = lua.getLuaExport(path)
 
-  def getEntryPoint(export: String): Option[LuaObject] = {
+  def getEntryPoint(entryPoint: String): Option[LuaObject] = {
+    val export = StaticExportIDs.EntryPoint(gameId, entryPoint)
     val ep = getExports(export)
     if(ep.isEmpty) {
-      val system = getSystemExports(export)
+      val system = getSystemExports(StaticExportIDs.EntryPoint("_princess", entryPoint))
       if(system.nonEmpty) Some(getLuaExport(system.head.path))
       else None
     } else if(ep.length > 1) throw EditorException(s"GameID '$gameId' has more than one entry point of type '$export'")

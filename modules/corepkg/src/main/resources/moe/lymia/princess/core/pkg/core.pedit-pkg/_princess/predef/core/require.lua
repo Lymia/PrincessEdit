@@ -61,7 +61,7 @@ do
             end
         end
     end
-    loadRequire("princess/package-path", true)
+    loadRequire("_princess/package-path", true)
     loadRequire(gameId.."/package-path")
     loadRequire("package-path")
 end

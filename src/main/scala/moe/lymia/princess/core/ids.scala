@@ -27,16 +27,17 @@ import java.nio.file.Path
 import scala.collection.mutable
 
 object StaticGameIDs {
-  val System    = "princess/system-package"
+  val System    = "_princess/system-package"
   val HasGameID = "has-gameid"
 }
 
 object StaticExportIDs {
   val GameID = "gameid"
-  val ProtectedPath = "princess/protected-path"
-  val IgnoredPath = "princess/ignored-path"
-  def Predef(t: String) = s"princess/predef/$t"
+  val ProtectedPath = "_princess/protected-path"
+  val IgnoredPath = "_princess/ignored-path"
+  def Predef(t: String) = s"_princess/predef/$t"
   def EntryPoint(t: String, ep: String) = s"$t/entry-point/$ep"
+  def I18N(t: String, ep: String) = s"$t/i18n/$ep"
 }
 
 case class GameID(name: String, displayName: String, iconPath: Option[String])

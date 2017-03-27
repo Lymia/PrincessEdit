@@ -27,11 +27,26 @@ import java.nio.charset.StandardCharsets
 import java.text.MessageFormat
 import java.util.{Locale, Properties}
 
+import com.google.i18n.pseudolocalization.PseudolocalizationPipeline
 import moe.lymia.princess.util.IOUtils
 
 import scala.collection.JavaConverters._
 
-final case class I18N(locale: Locale, map: Map[String, String]) {
+trait I18N {
+  def hasKey(key: String): Boolean
+  def apply(key: String, args: Any*): String
+}
+
+final class PseudolocalizeI18N(parent: I18N) extends I18N {
+  override def hasKey(key: String): Boolean = parent.hasKey(key)
+  override def apply(key: String, args: Any*): String =
+    PseudolocalizeI18N.pseudo.localize(parent.apply(key, args: _*))
+}
+private object PseudolocalizeI18N {
+  val pseudo = PseudolocalizationPipeline.buildPipeline(false, "accenter", "expander", "brackets")
+}
+
+final case class StaticI18N(locale: Locale, map: Map[String, String]) extends I18N {
   private val messageFormatCache = new collection.mutable.HashMap[String, Option[MessageFormat]]
   def getFormat(key: String) =
     messageFormatCache.getOrElseUpdate(key, map.get(key).map(s => new MessageFormat(s, locale)))
@@ -39,6 +54,12 @@ final case class I18N(locale: Locale, map: Map[String, String]) {
   def apply(key: String, args: Any*) = getFormat(key).map(format =>
     format.format(args.toArray)
   ).getOrElse("<"+key+">")
+}
+
+final class I18NLoader(game: GameManager) {
+  def loadExport(language: String, country: String) = {
+
+  }
 }
 
 object I18N {
@@ -67,5 +88,5 @@ object I18N {
     getSingleLocaleStrings(defaultLocale, true) ++ getSingleLocaleStrings(defaultLocale, false) ++
     getSingleLocaleStrings(locale       , true) ++ getSingleLocaleStrings(locale       , false)
 
-  def apply(locale: Locale) = new I18N(locale, getLocaleStrings(locale))
+  def apply(locale: Locale) = new StaticI18N(locale, getLocaleStrings(locale))
 }
