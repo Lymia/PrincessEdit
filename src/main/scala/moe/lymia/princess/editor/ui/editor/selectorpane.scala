@@ -25,12 +25,13 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import moe.lymia.princess.editor.core._
+
 import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Image
-import org.eclipse.swt.layout.FillLayout
 import org.eclipse.swt.widgets._
+
 import rx._
 
 case class RowData(id: UUID, data: CardData, fields: Seq[String])
@@ -58,7 +59,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
   private val tableLayout = new TableColumnLayout()
   for(column <- state.idData.columns.defaultColumnOrder.toArray) {
     val col = new TableColumn(viewer.getTable, SWT.NONE)
-    col.setText(column)
+    col.setText(state.i18n.user(column))
     col.setMoveable(false)
     tableLayout.setColumnData(col, new ColumnWeightData(100, true))
   }

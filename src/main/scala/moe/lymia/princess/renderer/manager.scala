@@ -49,8 +49,7 @@ final class RenderManager(game: GameManager, cache: SizedCache) {
   if(!game.lua.isModuleLoaded(lua.RenderModule)) game.lua.loadModule(lua.RenderModule)
 
   private lazy val layoutFn =
-    game.lua.L.newThread().getTable(
-      game.getRequiredEntryPoint(StaticExportIDs.EntryPoint(game.gameId, "render")), "render").as[LuaClosure]
+    game.lua.L.newThread().getTable(game.getRequiredEntryPoint("render"), "render").as[LuaClosure]
   def render(cardData: Seq[LuaObject], res: ResourceLoader) =
     EditorException.context(s"rendering card") {
       val L = game.lua.L.newThread()

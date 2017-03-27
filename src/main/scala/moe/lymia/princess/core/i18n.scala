@@ -24,69 +24,78 @@ package moe.lymia.princess.core
 
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.text.MessageFormat
 import java.util.{Locale, Properties}
 
 import com.google.i18n.pseudolocalization.PseudolocalizationPipeline
-import moe.lymia.princess.util.IOUtils
+import moe.lymia.princess.util.{CountedCache, IOUtils}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
-trait I18N {
-  def hasKey(key: String): Boolean
+trait I18NSource {
+  val locale: Locale
   def apply(key: String, args: Any*): String
 }
 
-final class PseudolocalizeI18N(parent: I18N) extends I18N {
-  override def hasKey(key: String): Boolean = parent.hasKey(key)
+final case class PseudolocalizeI18NSource(parent: I18NSource) extends I18NSource {
+  override val locale = parent.locale
   override def apply(key: String, args: Any*): String =
-    PseudolocalizeI18N.pseudo.localize(parent.apply(key, args: _*))
+    PseudolocalizeI18NSource.pseudo.localize(parent.apply(key, args : _*))
 }
-private object PseudolocalizeI18N {
-  val pseudo = PseudolocalizationPipeline.buildPipeline(false, "accenter", "expander", "brackets")
+private object PseudolocalizeI18NSource {
+  val pseudo = PseudolocalizationPipeline.buildPipeline(false, "accents", "expand", "brackets")
 }
 
-final case class StaticI18N(locale: Locale, map: Map[String, String]) extends I18N {
+final case class MarkedI18NSource(parent: I18NSource) extends I18NSource {
+  private val messageFormatCache = new CountedCache[String, MessageFormat](1024)
+
+  override val locale = parent.locale
+  private def applyLiteral(key: String, args: Seq[Any]) =
+    messageFormatCache.cached(key, new MessageFormat(key, locale)).format(args.toArray)
+  override def apply(key: String, args: Any*): String =
+    if(key.startsWith("$$")) applyLiteral(key.substring(1), args)
+    else if(key.startsWith("$")) parent.apply(key.substring(1), args : _*)
+    else applyLiteral(key, args)
+}
+
+final case class StaticI18NSource(locale: Locale, map: Map[String, String]) extends I18NSource {
   private val messageFormatCache = new collection.mutable.HashMap[String, Option[MessageFormat]]
   def getFormat(key: String) =
     messageFormatCache.getOrElseUpdate(key, map.get(key).map(s => new MessageFormat(s, locale)))
-  def hasKey(key: String) = map.contains(key)
   def apply(key: String, args: Any*) = getFormat(key).map(format =>
     format.format(args.toArray)
   ).getOrElse("<"+key+">")
 }
 
-final class I18NLoader(game: GameManager) {
-  def loadExport(language: String, country: String) = {
-
-  }
+final case class I18N(userLua: I18NSource, system: I18NSource) {
+  val user = MarkedI18NSource(userLua)
 }
 
-object I18N {
-  def loadI18NData(sourceFile: String): Map[String, String] = {
-    val prop = new Properties()
-    val reader = new InputStreamReader(IOUtils.getResource(sourceFile), StandardCharsets.UTF_8)
-    prop.load(reader)
-    reader.close()
+final class I18NLoader(game: GameManager) {
+  private def loadExportData(id: String, language: String, country: String, system: Boolean = false) = {
+    val exports = game.getExports(StaticExportIDs.I18N(id, language, country), system)
+    val sorted = exports.sortBy(_.metadata.get("priority").flatMap(_.headOption).map(_.toInt).getOrElse(0))
 
-    val includes = prop.getProperty("includes")
-    val includeData = if(includes != null && includes.trim.nonEmpty) {
-      includes.trim.split(",").map(x => loadI18NData(x.trim)).reduce(_ ++ _)
-    } else Map()
+    val map = new mutable.HashMap[String, String]
 
-    includeData ++ prop.asScala.filter(_._1 != "includes").map(x => x.copy(_1 = x._1.trim, _2 = x._2))
+    for(file <- sorted) {
+      val prop = new Properties()
+      val reader = new InputStreamReader(Files.newInputStream(game.forceResolve(file.path)), StandardCharsets.UTF_8)
+      prop.load(reader)
+      reader.close()
+
+      for((k, v) <- prop.asScala) map.put(k, v)
+    }
+
+    StaticI18NSource(Locale.ENGLISH, map.toMap)
   }
 
-  private def defaultLocale = Locale.US
-  private def sourceFile(locale: Locale, generic: Boolean) =
-    s"i18n/${locale.getLanguage}_${if(generic) "generic" else locale.getCountry}.properties"
-  private def getSingleLocaleStrings(locale: Locale, generic: Boolean): Map[String, String] = {
-    val file = sourceFile(locale, generic)
-    if(IOUtils.resourceExists(file)) loadI18NData(file) else Map()
+  // DEBUG: Temporary loader
+  val i18n = {
+    val user   = PseudolocalizeI18NSource(loadExportData(game.gameId, "en", "generic"))
+    val system = PseudolocalizeI18NSource(loadExportData("_princess", "en", "generic", system = true))
+    I18N(user, system)
   }
-  private def getLocaleStrings(locale: Locale): Map[String, String] =
-    getSingleLocaleStrings(defaultLocale, true) ++ getSingleLocaleStrings(defaultLocale, false) ++
-    getSingleLocaleStrings(locale       , true) ++ getSingleLocaleStrings(locale       , false)
-
-  def apply(locale: Locale) = new StaticI18N(locale, getLocaleStrings(locale))
 }

@@ -34,6 +34,8 @@ final class GameManager(packages: PackageList, val logger: Logger = DefaultLogge
   def getExportKeys: Set[String] = packages.getExportKeys
   def getExports(key: String): Seq[Export] = packages.getExports(key)
   def getSystemExports(key: String): Seq[Export] = packages.getSystemExports(key)
+  def getExports(key: String, system: Boolean): Seq[Export] =
+    if(system) packages.getSystemExports(key) else packages.getExports(key)
 
   def resolve(path: String): Option[Path] = packages.resolve(path)
   def forceResolve(path: String): Path = packages.forceResolve(path)
@@ -64,4 +66,5 @@ final class PackageManager(packages: Path, systemPackages: Seq[Path] = Seq(), lo
 }
 object PackageManager {
   lazy val default = new PackageManager(Paths.get("packages"), Seq(CorePkg.packagePath))
+  lazy val system = default.loadGameId("_princess")
 }

@@ -74,9 +74,9 @@ case class Dependency(name: String, version: Option[DepVersion]) {
 case class Export(path: String, types: Seq[String], metadata: Map[String, Seq[String]])
 
 case class Package(name: String, version: Version, gameIds: Set[String], rootPath: Path,
-                   dependencies: Seq[Dependency], exports: Map[String, Seq[Export]], isSystem: Boolean = false)
+                   dependencies: Seq[Dependency], exports: Map[String, Seq[Export]], isSystem: Boolean)
 object Package {
-  private def loadPackageFromPath(path: Path) = {
+  private def loadPackageFromPath(path: Path, isSystem: Boolean) = {
     val manifestPath = path.resolve("package.ini")
     if(!Files.exists(manifestPath) || !Files.isRegularFile(manifestPath))
       throw EditorException(s"No manifest found in package")
@@ -107,31 +107,35 @@ object Package {
     if(dependenciesSection.exists(_._2.length != 1)) throw EditorException("Dependency declared twice")
 
     val gameIds = packageSection.getMultiOptional("gameId").toSet
-    for(gameId <- gameIds)
-      if(gameId.startsWith("_")) throw EditorException(s"Game ID cannot start with '_' in '$gameId'")
+    if(!isSystem)
+      for(gameId <- gameIds)
+        if(gameId.startsWith("_")) throw EditorException(s"Game ID cannot start with '_' in '$gameId'")
 
     Package(packageSection.getSingle("name"), Version.parse(packageSection.getSingle("version")),
             gameIds,
             path,
             dependenciesSection.map(x => Dependency(x._1, DepVersion.parse(x._2.head))).toSeq,
-            exportMap.mapValues(_.toSeq).toMap)
+            exportMap.mapValues(_.toSeq).toMap,
+            isSystem)
   }
 
   // TODO: Consider allowing loading multiple packages from one .zip file
-  private def loadPackageFromZip(path: Path) = EditorException.context(s"loading package from zip $path") {
-    val fs = FileSystems.newFileSystem(path, getClass.getClassLoader)
-    val root = fs.getPath("/")
-    val fileList = IOUtils.list(root)
-    loadPackageFromPath(if(!Files.exists(root.resolve("package.ini")) &&
-                           fileList.length == 1 && Files.isDirectory(fileList.head)) fileList.head
-                        else root)
-  }
-  private def loadPackageFromDirectory(path: Path) = EditorException.context(s"loading package from $path") {
-    loadPackageFromPath(path)
-  }
-  def loadPackage(path: Path) =
-    if(Files.isDirectory(path)) loadPackageFromDirectory(path)
-    else                        loadPackageFromZip      (path)
+  private def loadPackageFromZip(path: Path, isSystem: Boolean) =
+    EditorException.context(s"loading package from zip $path") {
+      val fs = FileSystems.newFileSystem(path, getClass.getClassLoader)
+      val root = fs.getPath("/")
+      val fileList = IOUtils.list(root)
+      loadPackageFromPath(if(!Files.exists(root.resolve("package.ini")) &&
+                             fileList.length == 1 && Files.isDirectory(fileList.head)) fileList.head
+                          else root, isSystem)
+    }
+  private def loadPackageFromDirectory(path: Path, isSystem: Boolean) =
+    EditorException.context(s"loading package from $path") {
+      loadPackageFromPath(path, isSystem)
+    }
+  def loadPackage(path: Path, isSystem: Boolean) =
+    if(Files.isDirectory(path)) loadPackageFromDirectory(path, isSystem)
+    else                        loadPackageFromZip      (path, isSystem)
 }
 
 case class PackageList(gameId: String, packages: Seq[Package]) {
@@ -250,6 +254,8 @@ object PackageResolver {
   }
   def loadPackageDirectory(packages: Path, systemPackages: Path*) =
     PackageResolver(
-      (for(x <- IOUtils.list(packages) if x.getFileName.toString != ".gitignore") yield Package.loadPackage(x)) ++
-      (for(x <- systemPackages) yield Package.loadPackage(x).copy(isSystem = true)))
+      (for(x <- IOUtils.list(packages) if x.getFileName.toString.endsWith(".pedit-pkg"))
+        yield Package.loadPackage(x, isSystem = false)) ++
+      (for(x <- systemPackages) yield
+        Package.loadPackage(x, isSystem = true)))
 }

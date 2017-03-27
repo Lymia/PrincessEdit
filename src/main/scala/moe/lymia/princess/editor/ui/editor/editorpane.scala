@@ -108,11 +108,7 @@ final class EditorLayout(parent: Composite, state: EditorState) {
 
   private val button = new Button(sash2, SWT.PUSH)
   button.setText("New Card")
-  button.addListener(SWT.Selection, event => state.ctx.asyncLuaExec {
-    val cardId = state.project.newCard()
-    // TODO: DEBUG
-    state.project.cards.now(cardId).fields.getDataField("text").update(DataField(DataFieldType.String, cardId.toString))
-  })
+  button.addListener(SWT.Selection, event => state.ctx.asyncLuaExec { state.project.newCard() })
   button.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false))
 
   sash.setWeights(Array(1000, 1618))

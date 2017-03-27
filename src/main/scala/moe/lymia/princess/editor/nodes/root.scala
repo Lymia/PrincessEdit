@@ -49,7 +49,7 @@ final class UIContext(prefix: String, val registerControlCallbacks: Control => U
   def newUIContext(ctx: NodeContext) = new UIContext(ctx.prefix, registerControlCallbacks)
 }
 
-final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext,
+final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext, val i18n: I18N,
                         val prefixSeq: Seq[String] = Seq()) {
   val internal_L = L.newThread()
 
@@ -110,9 +110,9 @@ final class ActiveRootNode private (context: NodeContext, root: Option[ControlNo
   lazy val luaOutput = fields.map { fields => Rx { fields.map(x => x.copy(_2 = x._2())) } }
 }
 object ActiveRootNode {
-  def apply(L: LuaState, data: DataStore, controlCtx: ControlContext, prefix: Seq[String],
+  def apply(L: LuaState, data: DataStore, controlCtx: ControlContext, i18n: I18N, prefix: Seq[String],
             uiRoot: Option[ControlNode], fields: Option[Map[String, FieldNode]])(implicit owner: Ctx.Owner) = {
-    val ctx = new NodeContext(L, data, controlCtx, prefix)
+    val ctx = new NodeContext(L, data, controlCtx, i18n, prefix)
     new ActiveRootNode(ctx, uiRoot, fields.map(_.mapValues(x => ctx.activateNode(x))))
   }
 }
@@ -127,7 +127,7 @@ final case class RootNode(subtableName: Option[String], params: Seq[FieldNode], 
         Rx {
           // unapply not used because apparently scala.rx's macros break on those
           val ret = ctx.L.newThread().call(fn, 2, fields.map(_() : LuaObject) : _*)
-          val node = ActiveRootNode(ctx.L, ctx.data, ctx.controlCtx, ctx.prefixSeq ++ subtableName,
+          val node = ActiveRootNode(ctx.L, ctx.data, ctx.controlCtx, ctx.i18n, ctx.prefixSeq ++ subtableName,
                                     ret.last.as[Option[ControlNode]], ret.head.as[Option[Map[String, FieldNode]]])
           node
         }

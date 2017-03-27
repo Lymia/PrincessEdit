@@ -24,3 +24,5 @@ local editor = _princess.editor
 ui = {}
 ui.node = editor.Node
 ui.control = editor.ControlType
+
+i18n = editor.i18n

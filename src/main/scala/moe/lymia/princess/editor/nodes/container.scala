@@ -36,7 +36,7 @@ import scala.collection.mutable
 case class LabelNode(text: String) extends ControlNode {
   override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {
     val label = new Label(parent, SWT.NONE)
-    label.setText(text)
+    label.setText(ctx.i18n.user(text))
     label
   }
 }

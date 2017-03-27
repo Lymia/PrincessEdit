@@ -71,8 +71,11 @@ case class CheckBoxControlType(title: Option[String]) extends BasicControlType[B
   override def expectedFieldType: DataFieldType[_] = DataFieldType.Boolean
   override def defaultValue: DataField = DataField.False
 
-  override def create(parent: Composite, data: ControlData): Button =
-    new Button(parent, SWT.CHECK)
+  override def create(parent: Composite, data: ControlData): Button = {
+    val button = new Button(parent, SWT.CHECK)
+    title.foreach(text => button.setText(data.i18n.user(text)))
+    button
+  }
   override def registerListener(button: Button, data: ControlData, fn: () => Unit): Unit =
     button.addSelectionListener(new SelectionListener {
       override def widgetSelected(selectionEvent: SelectionEvent) = fn()

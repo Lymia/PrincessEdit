@@ -80,7 +80,7 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
       case None =>
         state.ctx.asyncUiExec {
           if(label.getImage != null) label.getImage.dispose()
-          label.setText("No card selected!")
+          label.setText(state.i18n.system("_princess.editor.noSelection"))
           label.setImage(null)
           this.layout(true)
         }

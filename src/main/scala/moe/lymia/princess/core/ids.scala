@@ -37,7 +37,7 @@ object StaticExportIDs {
   val IgnoredPath = "_princess/ignored-path"
   def Predef(t: String) = s"_princess/predef/$t"
   def EntryPoint(t: String, ep: String) = s"$t/entry-point/$ep"
-  def I18N(t: String, ep: String) = s"$t/i18n/$ep"
+  def I18N(t: String, language: String, country: String) = s"$t/i18n/${language}_$country"
 }
 
 case class GameID(name: String, displayName: String, iconPath: Option[String])

@@ -28,14 +28,14 @@ local font  = "FreeSans-Bold"
 
 function cardColumns()
     return {
-        ["Text"] = function(card) return card.text end,
-        ["Card Type"] = function(card) return (card.blankCount > 0) and "Black" or "White" end,
-    }, { "Text", "Card Type" }
+        ["$cah.text"] = function(card) return card.text end,
+        ["$cah.cardType"] = function(card) return i18n((card.blankCount > 0) and "cah.black" or "cah.white") end,
+    }, { "$cah.text", "$cah.cardType" }
 end
 
 function cardForm()
     local textNode = ui.node.Input("text", ui.control.TextField)
-    local overrideBlankCount = ui.node.Input("overrideBlankCount", ui.control.CheckBox("Override blank count"))
+    local overrideBlankCount = ui.node.Input("overrideBlankCount", ui.control.CheckBox("$cah.overrideBlankCount"))
     local isDefault = overrideBlankCount.map(function(b) return not b end)
 
     local blankCount = ui.node.Input("blankCount", ui.control.TextField, isDefault, textNode.map(
@@ -49,10 +49,10 @@ function cardForm()
         text = textNode,
         blankCount = blankCount.map(tonumber),
     }, ui.node.Grid {
-        {ui.node.Label("Text"), x = 0, y = 0, xAlign = ui.node.Grid.BEGINNING},
+        {ui.node.Label("$cah.text"), x = 0, y = 0, xAlign = ui.node.Grid.BEGINNING},
         {textNode, x = 1, y = 0, xFill = true, xExpand = true},
 
-        {ui.node.Label("Blank Count"), x = 0, y = 1, xAlign = ui.node.Grid.BEGINNING},
+        {ui.node.Label("$cah.blankCount"), x = 0, y = 1, xAlign = ui.node.Grid.BEGINNING},
         {overrideBlankCount, x = 1, y = 1, xAlign = ui.node.Grid.BEGINNING},
         {blankCount, x = 1, y = 2, xFill = true, xExpand = true},
     }

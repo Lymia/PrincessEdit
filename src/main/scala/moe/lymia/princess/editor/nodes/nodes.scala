@@ -24,6 +24,7 @@ package moe.lymia.princess.editor.nodes
 
 import moe.lymia.princess.editor.core._
 import moe.lymia.lua._
+import moe.lymia.princess.core.I18N
 
 import org.eclipse.swt.widgets._
 
@@ -32,7 +33,7 @@ import rx._
 sealed trait TreeNode
 
 final case class ControlDataDefault(isDefault: Rx[Boolean], field: Rx[DataField])
-final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlContext,
+final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlContext, i18n: I18N,
                              backing: Var[DataField], default: Option[ControlDataDefault])
 trait ControlType {
   def expectedFieldType: DataFieldType[_]
@@ -87,7 +88,7 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
     ctx.activateCardField(fieldName, this)
     uiCtx.activateCardField(fieldName)
 
-    val data = ControlData(ctx.L, ctx.internal_L, ctx.controlCtx, checkDefault(ctx),
+    val data = ControlData(ctx.L, ctx.internal_L, ctx.controlCtx, ctx.i18n, checkDefault(ctx),
                            default.map(v => ControlDataDefault(
                              ctx.activateNode(v.isDefault).map(_.fromLua[Boolean](ctx.internal_L)),
                              ctx.activateNode(v.field).map(x =>

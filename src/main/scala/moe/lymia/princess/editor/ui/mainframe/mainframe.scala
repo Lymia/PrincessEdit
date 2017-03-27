@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.editor.ui.mainframe
 
-import moe.lymia.princess.core.PackageManager
+import moe.lymia.princess.core.{I18NLoader, PackageManager}
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.lua.EditorModule
 import moe.lymia.princess.editor.ui.editor.EditorPane
@@ -38,9 +38,10 @@ import rx._
 
 class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, val gameId: String) {
   val game = PackageManager.default.loadGameId(gameId)
-  game.lua.loadModule(EditorModule, RenderModule)
+  val i18n = new I18NLoader(game).i18n
+  game.lua.loadModule(EditorModule(i18n), RenderModule)
 
-  val idData = new GameIDData(game, ctx)
+  val idData = new GameIDData(game, ctx, i18n)
   val project = new Project(ctx, idData)
 
   val currentPool = Var[CardSource](project)

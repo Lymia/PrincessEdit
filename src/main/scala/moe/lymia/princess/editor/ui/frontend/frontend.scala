@@ -22,19 +22,22 @@
 
 package moe.lymia.princess.editor.ui.frontend
 
-import moe.lymia.princess.core.PackageManager
+import moe.lymia.princess.core.{I18NLoader, PackageManager}
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.ui.mainframe.MainFrame
 import moe.lymia.princess.editor.utils.WindowBase
+
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Point
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 
 class FrontEndFrame(ctx: ControlContext) extends WindowBase(ctx) {
+  val i18n = new I18NLoader(PackageManager.system).i18n
+
   override def configureShell(shell: Shell): Unit = {
     super.configureShell(shell)
-    shell.setText("PrincessEdit Game Selection")
+    shell.setText(i18n.system("_princess.frontend.title"))
   }
 
   override def getInitialSize: Point = {
@@ -48,7 +51,7 @@ class FrontEndFrame(ctx: ControlContext) extends WindowBase(ctx) {
     layout.numColumns = 2
 
     val label = new Label(frame, SWT.NONE)
-    label.setText("Game")
+    label.setText(i18n.system("_princess.frontend.game"))
     label.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false))
 
     val combo = new Combo(frame, SWT.BORDER | SWT.READ_ONLY)
@@ -56,7 +59,7 @@ class FrontEndFrame(ctx: ControlContext) extends WindowBase(ctx) {
     combo.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false))
 
     val button = new Button(frame, SWT.PUSH)
-    button.setText("Start Editor")
+    button.setText(i18n.system("_princess.frontend.start"))
     val data = new GridData(SWT.END, SWT.CENTER, false, false)
     data.horizontalSpan = 2
     button.setLayoutData(data)
