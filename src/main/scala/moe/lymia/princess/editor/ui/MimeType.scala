@@ -23,5 +23,5 @@
 package moe.lymia.princess.editor.ui
 
 object MimeType {
-  val CardData = "application/vnd.princessedit-card+json"
+  val CardData = "application/vnd.princessedit-cards+json"
 }

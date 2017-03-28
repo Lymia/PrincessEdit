@@ -25,20 +25,23 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import moe.lymia.princess.editor.core._
+
 import org.eclipse.jface.action._
 import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
+
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{KeyEvent, KeyListener}
 import org.eclipse.swt.graphics.{Image, Point}
 import org.eclipse.swt.widgets._
+
 import rx._
 
 case class RowData(id: UUID, data: CardData, fields: Seq[String])
 final class CardSelectorTableViewer(parent: Composite, state: EditorState) extends Composite(parent, SWT.NONE) {
   import Ctx.Owner.Unsafe._
 
-  private val viewer = new TableViewer(this, SWT.FULL_SELECTION | SWT.V_SCROLL | SWT.H_SCROLL)
+  private val viewer = new TableViewer(this, SWT.MULTI | SWT.FULL_SELECTION | SWT.V_SCROLL | SWT.H_SCROLL)
   def getControl = viewer.getControl
   def getTable = viewer.getTable
 
@@ -89,6 +92,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
     viewer.setSelection(savedSelection)
     savedSelection = null
     lockSelection = false
+    this.setFocus()
   }
 
   // Menu
@@ -100,8 +104,9 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
 
   private val copy = new Action(state.i18n.system("_princess.editor.copyCard")) {
     setAccelerator(SWT.CTRL | 'C')
-    override def run() = state.currentCardData.foreach { data =>
-      state.ctx.clipboard.setContents(Array(CardTransferData(data.serialize)), Array(CardTransfer))
+    override def run() = {
+      val cards = viewer.getStructuredSelection.toArray.map(_.asInstanceOf[RowData].data.serialize)
+      state.ctx.clipboard.setContents(Array(CardTransferData(cards : _*)), Array(CardTransfer))
     }
   }
   private val paste = new Action(state.i18n.system("_princess.editor.copyCard")) {
@@ -167,10 +172,10 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
   }
   viewer.getTable.addKeyListener(new KeyListener {
     override def keyPressed(keyEvent: KeyEvent): Unit = {
-      val ctrl = (keyEvent.stateMask | SWT.CTRL) == SWT.CTRL
+      val ctrl = (keyEvent.stateMask & SWT.CTRL) == SWT.CTRL
       if(ctrl && keyEvent.keyCode == SWT.CR) addCard.run()
-      if(ctrl && keyEvent.keyCode == 'c') copy.run()
-      if(ctrl && keyEvent.keyCode == 'v') paste.run()
+      else if(ctrl && keyEvent.keyCode == 'c') copy.run()
+      else if(ctrl && keyEvent.keyCode == 'v') paste.run()
     }
     override def keyReleased(keyEvent: KeyEvent): Unit = { }
   })

@@ -33,7 +33,12 @@ import moe.lymia.princess.util.SizedCache
 
 case class SVGData(private val builder: SVGBuilder, private val definition: SVGDefinitionReference) {
   val bounds = definition.bounds
-  val size = bounds.size
+  val size = builder.settings.size
+
+  private def norm(d: Double) = math.max(1, math.round(d))
+  def bestSizeForDPI(dpi: Int) =
+    (norm(size.width  / size.unit.unPerInch * dpi),
+     norm(size.height / size.unit.unPerInch * dpi))
 
   def renderSVGTag() =
     builder.renderSVGTag(definition)

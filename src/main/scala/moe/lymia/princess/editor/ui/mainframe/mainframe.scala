@@ -29,11 +29,10 @@ import moe.lymia.princess.editor.ui.editor.EditorPane
 import moe.lymia.princess.editor.utils._
 import moe.lymia.princess.renderer.lua.RenderModule
 import moe.lymia.princess.util.VersionInfo
-
+import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt.graphics.Point
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
-
 import rx._
 
 class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, val gameId: String) {
@@ -45,6 +44,8 @@ class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, val gameId: 
   val project = new Project(ctx, idData)
 
   val currentPool = Var[CardSource](project)
+
+  def openDialog(fn: IShellProvider => Dialog) = fn(mainFrame)
 }
 
 trait EditorTab {

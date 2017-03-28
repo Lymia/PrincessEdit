@@ -20,31 +20,29 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.utils
+package moe.lymia.princess.editor.ui.common
 
-import moe.lymia.princess.editor.core.ControlContext
-import org.eclipse.jface.dialogs.Dialog
-import org.eclipse.jface.window.{ApplicationWindow, IShellProvider, Window}
-import org.eclipse.swt.SWT
-import org.eclipse.swt.widgets.{Composite, Control}
+import moe.lymia.princess.editor.core._
+import moe.lymia.princess.editor.ui.mainframe.MainFrameState
+import moe.lymia.princess.editor.utils.DialogBase
+import moe.lymia.princess.renderer.SVGData
 
-trait JFaceWindowBase extends Window {
-  protected val ctx: ControlContext
+import org.eclipse.jface.window.IShellProvider
+import org.eclipse.swt.layout._
+import org.eclipse.swt.widgets._
 
-  ctx.wm.add(this)
+import rx._
 
-  protected def frameContents(frame: Composite)
+final class ExportCardsDialog(parent: IShellProvider, state: MainFrameState,
+                              exportTargets: Seq[CardData]) extends DialogBase(parent, state.ctx) {
+  private val renderedImages = Var[Option[Seq[SVGData]]](None)
 
-  override protected final def createContents(parent: Composite): Control = {
-    val contents = new Composite(parent, SWT.NONE)
-    frameContents(contents)
-    contents
+  override protected def frameContents(frame: Composite): Unit = {
+
+  }
+
+  override def open(): Int = {
+
+    super.open()
   }
 }
-
-abstract class WindowBase(protected val ctx: ControlContext) extends ApplicationWindow(null) with JFaceWindowBase {
-  override def showTopSeperator(): Boolean = false
-}
-
-abstract class DialogBase(parent: IShellProvider, protected val ctx: ControlContext)
-  extends Dialog(parent) with JFaceWindowBase
