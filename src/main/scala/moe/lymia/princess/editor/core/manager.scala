@@ -28,12 +28,11 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.util._
-
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics._
 import org.eclipse.swt.widgets._
 import org.eclipse.jface.window._
-
+import org.eclipse.swt.dnd.Clipboard
 import rx._
 
 private class Condition(val lock: Object = new Object) extends AnyVal {
@@ -143,6 +142,7 @@ private class LuaThread(state: VolatileState) extends Thread {
 
 class ControlContext(val display: Display, state: VolatileState, luaThread: LuaThread, uiThread: Thread) {
   val wm = new WindowManager()
+  val clipboard = new Clipboard(display)
   val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
 
   def newShell(style: Int = SWT.SHELL_TRIM) = new Shell(display, style)

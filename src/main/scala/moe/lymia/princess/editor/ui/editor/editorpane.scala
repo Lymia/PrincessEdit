@@ -115,10 +115,10 @@ final class EditorLayout(parent: Composite, state: EditorState) {
 final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) {
   val currentCard = Var[Option[UUID]](None)
 
+  def currentCardData = currentCard.now.flatMap(mainFrameState.project.cards.now.get)
+
   def isEditorActive = parent.editorLayout.listContainer.isEditorActive
-  def activateEditor() =
-    currentCard.now.flatMap(mainFrameState.project.cards.now.get).foreach(card =>
-      parent.editorLayout.listContainer.activateEditor(card))
+  def activateEditor() = currentCardData.foreach(card => parent.editorLayout.listContainer.activateEditor(card))
   def deactivateEditor() = parent.editorLayout.listContainer.deactivateEditor()
 }
 

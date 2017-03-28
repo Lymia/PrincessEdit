@@ -92,14 +92,32 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
   }
 
   // Menu
+  def setSelection(uuid: UUID) = {
+    viewer.refresh()
+    cardsRx.now.find(_.id == uuid).foreach(x => viewer.setSelection(new StructuredSelection(x), true))
+    state.ctx.queueUpdate(state.currentCard, Some(uuid))
+  }
+
+  private val copy = new Action(state.i18n.system("_princess.editor.copyCard")) {
+    setAccelerator(SWT.CTRL | 'C')
+    override def run() = state.currentCardData.foreach { data =>
+      state.ctx.clipboard.setContents(Array(CardTransferData(data.serialize)), Array(CardTransfer))
+    }
+  }
+  private val paste = new Action(state.i18n.system("_princess.editor.copyCard")) {
+    setAccelerator(SWT.CTRL | 'V')
+    override def run() = state.ctx.clipboard.getContents(CardTransfer) match {
+      case transfer: CardTransferData => for(card <- transfer.json) {
+        val uuid = state.project.newCard()
+        val data = state.project.cards.now(uuid)
+        data.deserialize(card)
+      }
+      case _ =>
+    }
+  }
   private val addCard = new Action(state.i18n.system("_princess.editor.newCard")) {
     setAccelerator(SWT.CTRL | SWT.CR)
-    override def run() = {
-      val uuid = state.project.newCard()
-      viewer.refresh()
-      cardsRx.now.find(_.id == uuid).foreach(x => viewer.setSelection(new StructuredSelection(x), true))
-      state.ctx.queueUpdate(state.currentCard, Some(uuid))
-    }
+    override def run() = setSelection(state.project.newCard())
   }
   private val editCard = new Action(state.i18n.system("_princess.editor.editCard")) {
     setAccelerator(SWT.CR)
@@ -117,9 +135,13 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
     if(isHeaderClick) {
 
     } else {
-      menuManager.add(new Separator)
-      menuManager.add(addCard)
+      copy.setEnabled(isItemClick)
+      menuManager.add(copy)
+      menuManager.add(paste)
 
+      menuManager.add(new Separator)
+
+      menuManager.add(addCard)
       editCard.setEnabled(isItemClick)
       menuManager.add(editCard)
     }
@@ -147,6 +169,8 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
     override def keyPressed(keyEvent: KeyEvent): Unit = {
       val ctrl = (keyEvent.stateMask | SWT.CTRL) == SWT.CTRL
       if(ctrl && keyEvent.keyCode == SWT.CR) addCard.run()
+      if(ctrl && keyEvent.keyCode == 'c') copy.run()
+      if(ctrl && keyEvent.keyCode == 'v') paste.run()
     }
     override def keyReleased(keyEvent: KeyEvent): Unit = { }
   })
