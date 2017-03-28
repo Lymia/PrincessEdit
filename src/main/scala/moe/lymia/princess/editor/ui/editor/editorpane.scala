@@ -70,8 +70,10 @@ final class EditorListContainer(parent: Composite, state: EditorState) extends C
     stack.topControl = viewer
   }
 
-  // TODO: Fix the editor mode tab order
+  private var editorActive = false
+  def isEditorActive = editorActive
   def activateEditor(cardData: CardData) = {
+    editorActive = true
     clearCurrentEditor()
     viewer.editorOpened()
     val editor = new CardEditorPane(this, state, cardData)
@@ -82,6 +84,7 @@ final class EditorListContainer(parent: Composite, state: EditorState) extends C
     state.ctx.asyncUiExec { editor.traverse(SWT.TRAVERSE_TAB_NEXT) }
   }
   def deactivateEditor() = {
+    editorActive = false
     clearCurrentEditor()
     viewer.editorClosed()
     layout()
@@ -106,20 +109,16 @@ final class EditorLayout(parent: Composite, state: EditorState) {
   val listContainer = new EditorListContainer(sash2, state)
   listContainer.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true))
 
-  private val button = new Button(sash2, SWT.PUSH)
-  button.setText("New Card")
-  button.addListener(SWT.Selection, event => state.ctx.asyncLuaExec { state.project.newCard() })
-  button.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false))
-
   sash.setWeights(Array(1000, 1618))
 }
 
 final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) {
   val currentCard = Var[Option[UUID]](None)
 
+  def isEditorActive = parent.editorLayout.listContainer.isEditorActive
   def activateEditor() =
-    // TODO: Error check this
-    parent.editorLayout.listContainer.activateEditor(mainFrameState.project.cards.now(currentCard.now.get))
+    currentCard.now.flatMap(mainFrameState.project.cards.now.get).foreach(card =>
+      parent.editorLayout.listContainer.activateEditor(card))
   def deactivateEditor() = parent.editorLayout.listContainer.deactivateEditor()
 }
 

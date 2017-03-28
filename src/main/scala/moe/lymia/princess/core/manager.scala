@@ -30,7 +30,7 @@ import moe.lymia.princess.core.pkg.CorePkg
 
 final class GameManager(packages: PackageList, val logger: Logger = DefaultLogger, modules: Seq[LuaModule] = Seq()) {
   val gameId = packages.gameId
-  val lua = new LuaContext(packages, logger.bind("LuaContext"), modules)
+  lazy val lua = new LuaContext(packages, logger.bind("LuaContext"), modules)
 
   def getExportKeys: Set[String] = packages.getExportKeys
   def getExports(key: String): Seq[Export] = packages.getExports(key)

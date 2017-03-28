@@ -24,12 +24,11 @@ package moe.lymia.princess.editor.ui.editor
 
 import moe.lymia.lua._
 import moe.lymia.princess.renderer._
-
 import org.eclipse.swt.SWT
+import org.eclipse.swt.events.{MouseEvent, MouseListener}
 import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
-
 import rx._
 
 class RendererPane(parent: Composite, state: EditorState) extends Composite(parent, SWT.NONE) {
@@ -87,6 +86,12 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
     }
   }
 
+  label.addMouseListener(new MouseListener {
+    override def mouseDown(mouseEvent: MouseEvent): Unit =
+      if(!state.isEditorActive && mouseEvent.button == 1) state.activateEditor()
+    override def mouseDoubleClick(mouseEvent: MouseEvent): Unit = { }
+    override def mouseUp(mouseEvent: MouseEvent): Unit = { }
+  })
   this.addListener(SWT.Dispose, { event =>
     currentCardData.kill()
     obs.kill()
