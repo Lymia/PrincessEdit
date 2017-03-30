@@ -74,14 +74,13 @@ class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRasterize
     while(true) {
       val char = stdout_r.read()
       if(char == '>') return
-      println(s"[Inkscape] ${char.toChar}${stdout_r.readLine()}")
+      stdout_r.readLine()
     }
   }
 
   handleUntilCommandEnd()
   private def command(str: String*) = {
     val cmd = str.map(x => s"'${x.replace("'", "'\\''")}'").mkString(" ")
-    println(s"Running command: inkscape $cmd")
     stdin_w.println(cmd)
     stdin_w.flush()
     handleUntilCommandEnd()
@@ -90,23 +89,24 @@ class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRasterize
   def rasterizeSVGToPNG(x: Int, y: Int, svg: Elem, out: Path): Unit = lock.synchronized {
     if(disposed) sys.error("instance already disposed")
     IOUtils.withTemporaryFile(extension = "svg") { svgFile =>
-      IOUtils.writeFile(svgFile.toPath, svg.toString().getBytes("UTF-8"))
-      command(svgFile.getAbsolutePath, "-w", x.toString, "-h", y.toString, "--export-png", out.toAbsolutePath.toString)
+      IOUtils.writeFile(svgFile, svg.toString().getBytes("UTF-8"))
+      command(svgFile.toFile.getAbsolutePath, "-w", x.toString, "-h", y.toString,
+              "--export-png", out.toAbsolutePath.toString)
     }
   }
 
   def rasterizeAwt(x: Int, y: Int, svg: Elem) = lock.synchronized {
     if(disposed) sys.error("instance already disposed")
     IOUtils.withTemporaryFile(extension = "png") { pngFile =>
-      rasterizeSVGToPNG(x, y, svg, pngFile.toPath)
-      ImageIO.read(pngFile)
+      rasterizeSVGToPNG(x, y, svg, pngFile)
+      ImageIO.read(pngFile.toFile)
     }
   }
   def rasterizeSwt(x: Int, y: Int, svg: Elem) = lock.synchronized {
     if(disposed) sys.error("instance already disposed")
     IOUtils.withTemporaryFile(extension = "png") { pngFile =>
-      rasterizeSVGToPNG(x, y, svg, pngFile.toPath)
-      new ImageData(pngFile.getAbsolutePath)
+      rasterizeSVGToPNG(x, y, svg, pngFile)
+      new ImageData(pngFile.toFile.getAbsolutePath)
     }
   }
 

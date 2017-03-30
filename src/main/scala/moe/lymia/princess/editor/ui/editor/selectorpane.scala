@@ -25,16 +25,14 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import moe.lymia.princess.editor.core._
-
+import moe.lymia.princess.editor.ui.common.ExportCardsDialog
 import org.eclipse.jface.action._
 import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
-
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{KeyEvent, KeyListener}
 import org.eclipse.swt.graphics.{Image, Point}
 import org.eclipse.swt.widgets._
-
 import rx._
 
 case class RowData(id: UUID, data: CardData, fields: Seq[String])
@@ -96,6 +94,8 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
   }
 
   // Menu
+  def getSelectedCards =
+    viewer.getStructuredSelection.toArray.map(_.asInstanceOf[RowData])
   def setSelection(uuid: UUID) = {
     viewer.refresh()
     cardsRx.now.find(_.id == uuid).foreach(x => viewer.setSelection(new StructuredSelection(x), true))
@@ -105,7 +105,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
   private val copy = new Action(state.i18n.system("_princess.editor.copyCard")) {
     setAccelerator(SWT.CTRL | 'C')
     override def run() = {
-      val cards = viewer.getStructuredSelection.toArray.map(_.asInstanceOf[RowData].data.serialize)
+      val cards = getSelectedCards.map(_.data.serialize)
       state.ctx.clipboard.setContents(Array(CardTransferData(cards : _*)), Array(CardTransfer))
     }
   }
@@ -119,6 +119,11 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
       }
       case _ =>
     }
+  }
+  private val export = new Action(state.i18n.system("_princess.editor.exportCard")) {
+    override def run() =
+      new ExportCardsDialog(state.source, state, state.currentPool.now,
+                            getSelectedCards.map(x => x.id -> x.data)).open()
   }
   private val addCard = new Action(state.i18n.system("_princess.editor.newCard")) {
     setAccelerator(SWT.CTRL | SWT.CR)
@@ -143,6 +148,11 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
       copy.setEnabled(isItemClick)
       menuManager.add(copy)
       menuManager.add(paste)
+
+      menuManager.add(new Separator)
+
+      export.setEnabled(isItemClick)
+      menuManager.add(export)
 
       menuManager.add(new Separator)
 

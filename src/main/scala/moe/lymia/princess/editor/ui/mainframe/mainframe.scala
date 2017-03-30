@@ -69,6 +69,6 @@ class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
     fill.marginWidth = 5
     frame.setLayout(fill)
 
-    new EditorPane(frame, state)
+    new EditorPane(frame, this, state)
   }
 }

@@ -28,67 +28,14 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.util._
+
 import org.eclipse.swt.SWT
+import org.eclipse.swt.dnd.Clipboard
 import org.eclipse.swt.graphics._
 import org.eclipse.swt.widgets._
 import org.eclipse.jface.window._
-import org.eclipse.swt.dnd.Clipboard
+
 import rx._
-
-private class Condition(val lock: Object = new Object) extends AnyVal {
-  def done() = lock synchronized { lock.notify() }
-  def wait(length: Int = 10) = lock synchronized { lock.wait(length) }
-}
-
-private class AtomicMap[K, V](condition: Condition = new Condition()) {
-  private val underlying = new AtomicReference(Map.empty[K, V])
-
-  def put(key: K, v: V) = {
-    while(!{
-      val current = underlying.get()
-      underlying.compareAndSet(current, current + ((key, v)))
-    }) { }
-    condition.done()
-  }
-
-  def pullAll() = underlying.getAndSet(Map.empty)
-  def pullOne() = {
-    var taken: Option[(K, V)] = null
-    while(!{
-      val current = underlying.get()
-      taken = current.headOption
-      taken match {
-        case Some((k, _)) => underlying.compareAndSet(current, current - k)
-        case None => true
-      }
-    }) { }
-    taken
-  }
-}
-private class RequestBuffer[K, V](condition: Condition = new Condition()) {
-  private val supersedableRequests = new AtomicMap[K, V]
-  private val requests             = new AtomicReference(Seq.empty[V])
-
-  def add(request: K, v: V) = supersedableRequests.put(request, v)
-  def add(v: V) = {
-    while(!{
-      val current = requests.get()
-      requests.compareAndSet(current, current :+ v)
-    }) { }
-    condition.done()
-  }
-
-  @volatile private var lastPull = false
-  def pullOne(): Option[V] = {
-    var head: Option[V] = null
-    while(!{
-      val current = requests.get()
-      head = current.headOption
-      requests.compareAndSet(current, current.drop(1))
-    }) { }
-    head.orElse(supersedableRequests.pullOne().map(_._2))
-  }
-}
 
 private case class RasterizerRequest(getData: () => (SVGData, Int, Int),
                                      callback: Either[BufferedImage => Unit, ImageData => Unit])
@@ -108,11 +55,6 @@ private class VolatileState {
   }
 }
 
-private object ThreadId {
-  private var threadId = new AtomicInteger(0)
-  def make() = threadId.incrementAndGet()
-}
-
 private class RasterizeThread(state: VolatileState, rasterizer: SVGRasterizer) extends Thread {
   setName(s"PrincessEdit rasterizer thread #${ThreadId.make()}")
   override def run(): Unit =
@@ -123,7 +65,7 @@ private class RasterizeThread(state: VolatileState, rasterizer: SVGRasterizer) e
           case Left (fn) => fn(svg.rasterizeAwt(rasterizer, x, y))
           case Right(fn) => fn(svg.rasterizeSwt(rasterizer, x, y))
         }
-      case None => state.rasterizerCondition.wait()
+      case None => state.rasterizerCondition.waitFor()
     }
 }
 
@@ -136,14 +78,17 @@ private class LuaThread(state: VolatileState) extends Thread {
       if(varUpdates.nonEmpty || actions.nonEmpty) {
         Var.set(varUpdates.map(x => VarTuple(x._1.asInstanceOf[Var[Any]], x._2)).toSeq : _*)
         for(action <- actions) action()
-      } else state.luaCondition.wait()
+      } else state.luaCondition.waitFor()
     }
 }
 
-class ControlContext(val display: Display, state: VolatileState, luaThread: LuaThread, uiThread: Thread) {
+class ControlContext(val display: Display, state: VolatileState, factory: SVGRasterizerFactory,
+                     luaThread: LuaThread, uiThread: Thread) {
   val wm = new WindowManager()
   val clipboard = new Clipboard(display)
   val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
+
+  def createRasterizer() = factory.createRasterizer()
 
   def newShell(style: Int = SWT.SHELL_TRIM) = new Shell(display, style)
 
@@ -157,7 +102,7 @@ class ControlContext(val display: Display, state: VolatileState, luaThread: LuaT
       lock.done()
     }
     def sync() = {
-      while(state.isRunning && !isDone) lock.wait(1)
+      while(state.isRunning && !isDone) lock.waitFor(1)
       ret
     }
   }
@@ -226,7 +171,7 @@ class UIManager(factory: SVGRasterizerFactory) {
   def mainLoop(init: ControlContext => Unit) = {
     val display = new Display()
     try {
-      val ctx = new ControlContext(display, state, luaThread, Thread.currentThread())
+      val ctx = new ControlContext(display, state, factory, luaThread, Thread.currentThread())
       init(ctx)
       while(!display.isDisposed && ctx.wm.getWindowCount > 0 && state.isRunning)
         if(!display.readAndDispatch()) display.sleep()

@@ -25,9 +25,8 @@ package moe.lymia.princess.editor.core
 import moe.lymia.princess.core._
 import moe.lymia.princess.editor.nodes._
 import moe.lymia.lua._
-
+import moe.lymia.princess.renderer.RenderManager
 import org.eclipse.swt.widgets._
-
 import rx._
 
 final class UIData(parent: Composite, node: RootNode, registerControlCallbacks: Control => Unit)
@@ -101,7 +100,8 @@ object LuaColumnData {
 }
 
 final class GameIDData(game: GameManager, controlCtx: ControlContext, i18n: I18N) {
-  val card    = RootSource         (game, controlCtx, i18n, "card-form", "cardForm")
-  val set     = RootSource.optional(game, controlCtx, i18n, "set-form" , "setForm" )
-  val columns = LuaColumnData(game)
+  val card     = RootSource         (game, controlCtx, i18n, "card-form", "cardForm")
+  val set      = RootSource.optional(game, controlCtx, i18n, "set-form" , "setForm" )
+  val columns  = LuaColumnData(game)
+  val renderer = new RenderManager(game, controlCtx.cache)
 }

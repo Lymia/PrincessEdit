@@ -24,17 +24,17 @@ package moe.lymia.princess.editor.ui.editor
 
 import moe.lymia.lua._
 import moe.lymia.princess.renderer._
+
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{MouseEvent, MouseListener}
 import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
+
 import rx._
 
 class RendererPane(parent: Composite, state: EditorState) extends Composite(parent, SWT.NONE) {
   import Ctx.Owner.Unsafe._
-
-  private val renderer = new RenderManager(state.game, state.ctx.cache)
 
   val grid = new GridLayout()
   this.setLayout(grid)
@@ -44,15 +44,15 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
 
   private val currentCardData: Rx[Option[Seq[LuaObject]]] = Rx {
     val card = state.currentCard().flatMap(state.project.cards.now.get).map(_.root.luaData())
-    val root = state.currentPool().info.root.luaData()
-    card.map(cardData => Seq(cardData, root))
+    val pool = state.currentPool().info.root.luaData()
+    card.map(cardData => Seq(cardData, pool))
   }
   private val obs = currentCardData.foreach { d =>
     if(!this.isDisposed) d match {
       case Some(data) =>
         state.ctx.asyncRenderSwt (this, {
           val (componentSize, rendered) =
-            state.ctx.syncUiLuaExec(this.getSize, renderer.render(data, RasterizeResourceLoader))
+            state.ctx.syncUiLuaExec(this.getSize, state.idData.renderer.render(data, RasterizeResourceLoader))
 
           val (rcx, rcy) =
             (componentSize.x - grid.marginLeft - grid.marginRight - grid.marginWidth * 2,

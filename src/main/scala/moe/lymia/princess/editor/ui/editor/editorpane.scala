@@ -24,8 +24,11 @@ package moe.lymia.princess.editor.ui.editor
 
 import java.util.UUID
 
+import moe.lymia.lua.LuaObject
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.ui.mainframe.{EditorTab, MainFrameState}
+
+import org.eclipse.jface.window.IShellProvider
 
 import org.eclipse.swt._
 import org.eclipse.swt.custom._
@@ -114,6 +117,7 @@ final class EditorLayout(parent: Composite, state: EditorState) {
 
 final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) {
   val currentCard = Var[Option[UUID]](None)
+  val source = parent.source
 
   def currentCardData = currentCard.now.flatMap(mainFrameState.project.cards.now.get)
 
@@ -122,7 +126,7 @@ final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) 
   def deactivateEditor() = parent.editorLayout.listContainer.deactivateEditor()
 }
 
-final class EditorPane(parent: Composite, mainState: MainFrameState)
+final class EditorPane(parent: Composite, val source: IShellProvider, mainState: MainFrameState)
   extends Composite(parent, SWT.NONE) with EditorTab {
 
   private val editorState = new EditorState(this, mainState)

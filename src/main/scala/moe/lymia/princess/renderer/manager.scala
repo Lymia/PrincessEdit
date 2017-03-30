@@ -35,7 +35,7 @@ case class SVGData(private val builder: SVGBuilder, private val definition: SVGD
   val bounds = definition.bounds
   val size = builder.settings.size
 
-  private def norm(d: Double) = math.max(1, math.round(d))
+  private def norm(d: Double) = math.max(1, math.round(d)).toInt
   def bestSizeForDPI(dpi: Int) =
     (norm(size.width  / size.unit.unPerInch * dpi),
      norm(size.height / size.unit.unPerInch * dpi))

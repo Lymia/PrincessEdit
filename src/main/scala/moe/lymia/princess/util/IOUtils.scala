@@ -116,12 +116,21 @@ object IOUtils {
         } else throw exc
       })
 
-  def withTemporaryFile[T](prefix: String = "princess-edit-tmp-", extension: String = "tmp")(f: File => T) = {
+  def withTemporaryFile[T](prefix: String = "princess-edit-tmp-", extension: String = "tmp")(f: Path => T) = {
     val tempFile = File.createTempFile(prefix, s".$extension")
     try {
-      f(tempFile)
+      f(tempFile.toPath)
     } finally {
       if(!tempFile.delete() && tempFile.exists()) tempFile.deleteOnExit()
+    }
+  }
+
+  def withTemporaryDirectory[T](prefix: String = "princess-edit-tmp-")(f: Path => T) = {
+    val tempDir = Files.createTempDirectory(prefix)
+    try {
+      f(tempDir)
+    } finally {
+      deleteDirectory(tempDir)
     }
   }
 
