@@ -33,9 +33,9 @@ import org.eclipse.swt.graphics.ImageData
 
 import scala.xml.Elem
 
-class InkscapeConnectionFactory(inkscapePath: (String, String)) extends SVGRasterizerFactory {
+class InkscapeConnectionFactory(inkscapePath: (Seq[String], String)) extends SVGRasterizerFactory {
   private[rasterizer] def inkscape(args: String*) =
-    new ProcessBuilder(inkscapePath._1 +: args : _*).directory(new File(inkscapePath._2))
+    new ProcessBuilder(inkscapePath._1 ++ args : _*).directory(new File(inkscapePath._2))
                                                     .redirectError(ProcessBuilder.Redirect.INHERIT)
 
   private var pathChecked = false

@@ -33,7 +33,7 @@ trait InkscapePlatform {
     case url => Paths.get(new URI(url))
   }
 
-  def locateBinary(): Seq[(String, String)]
+  def locateBinary(): Seq[(Seq[String], String)]
 }
 
 // TODO: Store these in some configuration file
@@ -61,9 +61,9 @@ object InkscapeWindowsPlatform extends InkscapePlatform {
   override lazy val locateBinary =
     for(dir <- searchDirs if Files.isDirectory(dir);
         search <- IOUtils.list(dir) if checkDirectory(search))
-      yield (".\\Inkscape.exe", search.toAbsolutePath.toString)
+      yield (Seq("cmd", "/c", ".\\Inkscape.exe"), search.toAbsolutePath.toString)
 }
 
 object InkscapeLinuxPlatform extends InkscapePlatform {
-  override val locateBinary = Seq(("inkscape", "."))
+  override val locateBinary = Seq((Seq("inkscape"), "."))
 }
