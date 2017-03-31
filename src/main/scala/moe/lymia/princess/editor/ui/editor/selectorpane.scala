@@ -26,13 +26,16 @@ import java.util.UUID
 
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.ui.export.ExportCardsDialog
+
 import org.eclipse.jface.action._
 import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
+
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{KeyEvent, KeyListener}
 import org.eclipse.swt.graphics.{Image, Point}
 import org.eclipse.swt.widgets._
+
 import rx._
 
 case class RowData(id: UUID, data: CardData, fields: Seq[String])

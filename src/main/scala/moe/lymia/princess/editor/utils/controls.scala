@@ -31,14 +31,14 @@ import org.eclipse.swt.widgets._
 final class HelpButton(parent: Composite, style: Int) extends Composite(parent, style) {
   setLayout(new FillLayout())
 
-  private val button = new Button(parent, SWT.PUSH)
+  private val button = new Button(this, SWT.PUSH)
   button.setText("?")
 
   private val balloon = new ToolTip(this.getShell, SWT.BALLOON | SWT.ICON_INFORMATION)
   balloon.setVisible(false)
   button.addSelectionListener(new SelectionListener {
     override def widgetSelected(selectionEvent: SelectionEvent): Unit = {
-      balloon.setLocation(selectionEvent.x, selectionEvent.y)
+      balloon.setLocation(Display.getCurrent.getCursorLocation)
       balloon.setVisible(true)
     }
     override def widgetDefaultSelected(selectionEvent: SelectionEvent): Unit = { }

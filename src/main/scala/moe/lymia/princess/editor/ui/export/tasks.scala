@@ -62,9 +62,9 @@ final class ExportMultiTask[Options, Init](state: MainFrameState, pool: CardSour
     try {
       IOUtils.withTemporaryDirectory("princess-edit-export-") { temp =>
         for((id, target) <- exportTargets) {
-          val name = state.ctx.syncLuaExec(
+          val name = exportFormat.addExtension(state.ctx.syncLuaExec(
             this.name.makeName(id.toString, target.root.luaData.now, pool.info.root.luaData.now)
-          ).left.get
+          ).left.get)
           progress.subTask(state.i18n.system("_princess.export.exportingTo", name))
 
           val rendered = state.ctx.syncLuaExec(state.idData.renderer.render(

@@ -22,6 +22,8 @@
 
 package moe.lymia.princess.editor.ui.editor
 
+import com.coconut_palm_software.xscalawt.XScalaWT._
+
 import moe.lymia.lua._
 import moe.lymia.princess.renderer._
 
@@ -39,8 +41,9 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
   val grid = new GridLayout()
   this.setLayout(grid)
 
-  private val label = new Label(this, SWT.NONE)
-  label.setLayoutData(new GridData(SWT.CENTER, SWT.BEGINNING, false, false))
+  private val render = label(
+    _.layoutData = new GridData(SWT.CENTER, SWT.BEGINNING, false, false)
+  )(this)
 
   private val currentCardData: Rx[Option[Seq[LuaObject]]] = Rx {
     val card = state.currentCard().flatMap(state.project.cards.now.get).map(_.root.luaData())
@@ -70,23 +73,23 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
         }) { imageData =>
           state.ctx.asyncUiExec {
             val image = new Image(state.ctx.display, imageData)
-            if(label.getImage != null) label.getImage.dispose()
-            label.setText("")
-            label.setImage(image)
+            if(render.getImage != null) render.getImage.dispose()
+            render.setText("")
+            render.setImage(image)
             this.layout(true)
           }
         }
       case None =>
         state.ctx.asyncUiExec {
-          if(label.getImage != null) label.getImage.dispose()
-          label.setText(state.i18n.system("_princess.editor.noSelection"))
-          label.setImage(null)
+          if(render.getImage != null) render.getImage.dispose()
+          render.setText(state.i18n.system("_princess.editor.noSelection"))
+          render.setImage(null)
           this.layout(true)
         }
     }
   }
 
-  label.addMouseListener(new MouseListener {
+  render.addMouseListener(new MouseListener {
     override def mouseDown(mouseEvent: MouseEvent): Unit =
       if(!state.isEditorActive && mouseEvent.button == 1) state.activateEditor()
     override def mouseDoubleClick(mouseEvent: MouseEvent): Unit = { }

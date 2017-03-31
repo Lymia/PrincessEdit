@@ -1,3 +1,6 @@
 [submodule "modules/pseudolocalization-tool"]
 	path = modules/pseudolocalization-tool
 	url = https://github.com/Lymia/pseudolocalization-tool.git
+[submodule "modules/xscalawt"]
+	path = modules/xscalawt
+	url = https://github.com/Lymia/XScalaWT.git

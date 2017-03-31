@@ -103,6 +103,20 @@ lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
     exclude("bundle", "org.eclipse.equinox.bidi")
 ))
 
+lazy val xscalawt = project in file("modules/xscalawt") settings (commonSettings ++ Seq(
+  organization := "moe.lymia",
+  name := "xscalawt",
+
+  scalaSource in Compile := baseDirectory.value / "com.coconut_palm_software.xscalawt" / "src",
+
+  excludeFilter in unmanagedSources := HiddenFileFilter || new FileFilter() {
+    override def accept(pathname: File): Boolean = {
+      val src = pathname.getCanonicalPath
+      src.contains("XScalaWTBinding.scala") || src.contains("/examples/")
+    }
+  }
+)) dependsOn swt
+
 lazy val princessEdit = project in file(".") settings (commonSettings ++ VersionBuild.settings ++ Seq(
   organization := "moe.lymia.princessedit",
   name := "princess-edit",
@@ -119,7 +133,7 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Version
 
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"
-)) dependsOn corePkg dependsOn swt dependsOn lua dependsOn pesudoloc
+)) dependsOn corePkg dependsOn swt dependsOn xscalawt dependsOn lua dependsOn pesudoloc
 
 lazy val loader = project in file("modules/loader") settings (commonSettings ++ Seq(
   organization := "moe.lymia.princessedit",

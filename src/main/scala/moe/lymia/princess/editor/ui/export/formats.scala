@@ -57,6 +57,12 @@ sealed trait ExportFormat[Options, InitData] {
   def makeControl(parentShell: IShellProvider, parent: Composite, style: Int,
                   main: MainFrameState): ExportControl[Options]
   def export(svg: SVGData, options: Options, init: InitData, out: Path)
+
+  def addExtension(str: String) = {
+    val split = str.split("\\.")
+    if(split.length > 1 && extension.contains(split.last)) str
+    else s"$str.${extension.head}"
+  }
 }
 
 sealed case class SimpleRasterInit(rasterizer: SVGRasterizer, image: ImageLoader)

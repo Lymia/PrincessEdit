@@ -24,7 +24,8 @@ package moe.lymia.princess.editor.ui.editor
 
 import java.util.UUID
 
-import moe.lymia.lua.LuaObject
+import com.coconut_palm_software.xscalawt.XScalaWT._
+
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.ui.mainframe.{EditorTab, MainFrameState}
 
@@ -96,23 +97,21 @@ final class EditorListContainer(parent: Composite, state: EditorState) extends C
 }
 
 final class EditorLayout(parent: Composite, state: EditorState) {
-  private val sash = new SashForm(parent, SWT.HORIZONTAL | SWT.SMOOTH)
-  sash.setLayout(new FillLayout)
-
-  private val sash1 = new Composite(sash, SWT.BORDER)
-  sash1.setLayout(new FillLayout)
-  val renderer = new RendererPane(sash1, state)
-
-  private val sash2 = new Composite(sash, SWT.NONE)
-  private val grid = new GridLayout
-  grid.marginWidth = 0
-  grid.marginHeight = 0
-  sash2.setLayout(grid)
-
-  val listContainer = new EditorListContainer(sash2, state)
-  listContainer.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true))
-
-  sash.setWeights(Array(1000, 1618))
+  var listContainer: EditorListContainer = _
+  parent.contains(
+    sashForm(
+      _.setLayout(new FillLayout()),
+      *[Composite](SWT.BORDER) (
+        _.setLayout(new FillLayout()),
+        x => new RendererPane(x, state)
+      ),
+      composite (
+        _.setLayout(new FillLayout()),
+        x => listContainer = new EditorListContainer(x, state)
+      ),
+      _.setWeights(Array(1000, 1618))
+    )
+  )
 }
 
 final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) {
