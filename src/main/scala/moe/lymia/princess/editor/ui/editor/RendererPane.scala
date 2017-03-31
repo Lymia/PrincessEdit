@@ -23,16 +23,15 @@
 package moe.lymia.princess.editor.ui.editor
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-
 import moe.lymia.lua._
+import moe.lymia.princess.editor.ui.export.ExportCardsDialog
 import moe.lymia.princess.renderer._
-
+import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{MouseEvent, MouseListener}
 import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
-
 import rx._
 
 class RendererPane(parent: Composite, state: EditorState) extends Composite(parent, SWT.NONE) {
@@ -88,6 +87,20 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
         }
     }
   }
+
+  private val menuManager = new MenuManager()
+  private val export = new Action(state.i18n.system("_princess.editor.exportCard")) {
+    override def run() = {
+      val id   = state.currentCard.now.get
+      val data = state.project.cards.now(id)
+      ExportCardsDialog.open(state.source, state, state.currentPool.now, id -> data)
+    }
+  }
+  menuManager.add(export)
+  menuManager.addMenuListener(_ => {
+    export.setEnabled(state.currentCard.now.isDefined)
+  })
+  render.setMenu(menuManager.createContextMenu(render))
 
   render.addMouseListener(new MouseListener {
     override def mouseDown(mouseEvent: MouseEvent): Unit =
