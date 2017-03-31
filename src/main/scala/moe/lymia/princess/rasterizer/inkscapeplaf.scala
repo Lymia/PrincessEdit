@@ -61,7 +61,7 @@ object InkscapeWindowsPlatform extends InkscapePlatform {
   override lazy val locateBinary =
     for(dir <- searchDirs if Files.isDirectory(dir);
         search <- IOUtils.list(dir) if checkDirectory(search))
-      yield search.resolve("inkscape.com").toFile.getAbsolutePath
+      yield search.resolve("inkscape.exe").toFile.getAbsolutePath
 }
 
 object InkscapeLinuxPlatform extends InkscapePlatform {
