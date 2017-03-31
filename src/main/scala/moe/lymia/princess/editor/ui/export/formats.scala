@@ -148,7 +148,7 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
     dim.appendChild(yDpi)
 
     val textEntry = new IIOMetadataNode("TextEntry")
-    textEntry.setAttribute("keyword", s"comment")
+    textEntry.setAttribute("keyword", s"Software")
     textEntry.setAttribute("value", s"Rendered by PrincessEdit v${VersionInfo.versionString}")
 
     val text = new IIOMetadataNode("Text")
