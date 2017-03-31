@@ -188,8 +188,14 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
     val metadata = imageWriter.getDefaultImageMetadata(ImageTypeSpecifier.createFromRenderedImage(image), param)
     makeMetadata(metadata, options, imageWriter.getClass.getName)
 
-    imageWriter.setOutput(ImageIO.createImageOutputStream(Files.newOutputStream(out)))
-    imageWriter.write(metadata, new IIOImage(image, null, metadata), param)
+    val outStream = ImageIO.createImageOutputStream(Files.newOutputStream(out))
+    try {
+      imageWriter.setOutput(outStream)
+      imageWriter.write(metadata, new IIOImage(image, null, metadata), param)
+    } finally {
+      imageWriter.dispose()
+      outStream.close()
+    }
   }
 }
 
@@ -247,8 +253,14 @@ object ExportFormat {
         override def getResult: Option[Unit] = Some(())
       }
 
-    override def export(svg: SVGData, options: Unit, init: Unit, out: Path): Unit =
-      svg.write(Files.newBufferedWriter(out))
+    override def export(svg: SVGData, options: Unit, init: Unit, out: Path): Unit = {
+      val writer = Files.newBufferedWriter(out)
+      try {
+        svg.write(writer)
+      } finally {
+        writer.close()
+      }
+    }
   }
 
   val formats: Seq[ExportFormat[_, _]] = Seq(PNG, JPEG, SVG)
