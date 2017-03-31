@@ -149,19 +149,21 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
     if(isHeaderClick) {
 
     } else {
-      copy.setEnabled(isItemClick)
+      val areItemsSelected = !viewer.getSelection.isEmpty
+
+      copy.setEnabled(areItemsSelected)
       menuManager.add(copy)
       menuManager.add(paste)
 
       menuManager.add(new Separator)
 
-      export.setEnabled(isItemClick)
+      export.setEnabled(areItemsSelected)
       menuManager.add(export)
 
       menuManager.add(new Separator)
 
       menuManager.add(addCard)
-      editCard.setEnabled(isItemClick)
+      editCard.setEnabled(viewer.getStructuredSelection.size == 1)
       menuManager.add(editCard)
     }
   }
