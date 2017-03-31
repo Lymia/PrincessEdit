@@ -100,10 +100,11 @@ sealed abstract class ExportCardsDialogBase[Data](parent: IShellProvider, state:
       group(
         _.text = state.i18n.system("_princess.export.exportSettings"),
         gridLayout(columns = 3)(),
+        modifiedFillGridData(_.span(3, 1)),
         group => dataSettings = makeDataSettings(group),
         group => {
           val mark = group.getChildren.length
-          def regenerate() = state.ctx.asyncUiExec {
+          def regenerate() = {
             for(child <- group.getChildren.drop(mark)) child.dispose()
 
             format = viewer.getStructuredSelection.getFirstElement.asInstanceOf[ExportFormat[_, _]]
@@ -114,12 +115,11 @@ sealed abstract class ExportCardsDialogBase[Data](parent: IShellProvider, state:
             group.getLayoutData.asInstanceOf[GridData].exclude = exclude
 
             group.layout(true)
-            getShell.pack(true)
+            if(getShell.isVisible) getShell.pack(true)
           }
           regenerate()
           viewer.addSelectionChangedListener(_ => regenerate())
-        },
-        modifiedFillGridData(_.span(3, 1))
+        }
       ),
       label(
         _.text = if(cardCount > 1) state.i18n.system("_princess.export.cardCount", cardCount) else "",
