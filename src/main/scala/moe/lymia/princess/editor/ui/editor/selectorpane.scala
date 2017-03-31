@@ -25,7 +25,7 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import moe.lymia.princess.editor.core._
-import moe.lymia.princess.editor.ui.common.ExportCardsDialog
+import moe.lymia.princess.editor.ui.export.ExportCardsDialog
 import org.eclipse.jface.action._
 import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
@@ -116,14 +116,15 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
         val uuid = state.project.newCard()
         val data = state.project.cards.now(uuid)
         data.deserialize(card)
+        data.copied()
       }
       case _ =>
     }
   }
   private val export = new Action(state.i18n.system("_princess.editor.exportCard")) {
     override def run() =
-      new ExportCardsDialog(state.source, state, state.currentPool.now,
-                            getSelectedCards.map(x => x.id -> x.data)).open()
+      ExportCardsDialog.open(state.source, state, state.currentPool.now,
+                             getSelectedCards.map(x => x.id -> x.data) : _*)
   }
   private val addCard = new Action(state.i18n.system("_princess.editor.newCard")) {
     setAccelerator(SWT.CTRL | SWT.CR)

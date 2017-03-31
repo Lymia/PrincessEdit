@@ -94,7 +94,6 @@ final class RxPane(uiRoot: Composite, context: NodeContext, uiCtx: UIContext, ro
   private val componentObs: Obs = rootRx.foreach { currentRoot =>
     context.controlCtx.asyncUiExec {
       if(!pane.isDisposed) {
-        println("Creating UI")
         lastComponent.foreach(_.dispose())
         lastComponent = currentRoot.renderUI(pane, uiCtx)
         pane.layout(true)

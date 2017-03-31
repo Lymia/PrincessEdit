@@ -27,10 +27,10 @@ import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt.widgets.MessageBox
 
 object Message {
-  def open(shell: IShellProvider, style: Int, i18n: I18N, root: String) = {
+  def open(shell: IShellProvider, style: Int, i18n: I18N, root: String, args: Any*) = {
     val messageBox = new MessageBox(shell.getShell, style)
-    messageBox.setText(i18n.system(s"$root.title"))
-    messageBox.setMessage(i18n.system(s"$root.message"))
+    messageBox.setText(i18n.system(s"$root.title", args : _*))
+    messageBox.setMessage(i18n.system(s"$root.message", args : _*))
     messageBox.open()
     messageBox
   }

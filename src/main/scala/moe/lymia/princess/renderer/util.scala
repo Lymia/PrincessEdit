@@ -68,7 +68,7 @@ object Bounds {
 
 private[renderer] object GenID {
   private var globalId = new AtomicInteger(0)
-  private def makeGlobalId() = globalId.incrementAndGet()
+  private def makeGlobalId() = globalId.incrementAndGet() & 0x7FFFFFFF
 
   private val chars = "abcdefghijklmnopqrstuvwxyz0123456789"
   private lazy val rng = new SecureRandom()

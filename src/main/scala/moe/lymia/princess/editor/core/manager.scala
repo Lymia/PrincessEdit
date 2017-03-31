@@ -28,14 +28,14 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.util._
-
 import org.eclipse.swt.SWT
 import org.eclipse.swt.dnd.Clipboard
 import org.eclipse.swt.graphics._
 import org.eclipse.swt.widgets._
 import org.eclipse.jface.window._
-
 import rx._
+
+import scala.util.Try
 
 private case class RasterizerRequest(getData: () => (SVGData, Int, Int),
                                      callback: Either[BufferedImage => Unit, ImageData => Unit])
@@ -82,8 +82,9 @@ private class LuaThread(state: VolatileState) extends Thread {
     }
 }
 
+// TODO: Catch errors during asynchronous execution
 class ControlContext(val display: Display, state: VolatileState, factory: SVGRasterizerFactory,
-                     luaThread: LuaThread, uiThread: Thread) {
+                     luaThread: LuaThread, uiThread: Thread) extends SVGRasterizerFactory {
   val wm = new WindowManager()
   val clipboard = new Clipboard(display)
   val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
@@ -95,15 +96,15 @@ class ControlContext(val display: Display, state: VolatileState, factory: SVGRas
   private class Syncer[T] {
     private val lock = new Condition()
     @volatile private var isDone = false
-    @volatile private var ret = null.asInstanceOf[T]
-    def done(t: T) = {
+    @volatile private var ret = null.asInstanceOf[Try[T]]
+    def doTry(t: => T) = {
+      ret = Try(t)
       isDone = true
-      ret = t
       lock.done()
     }
     def sync() = {
       while(state.isRunning && !isDone) lock.waitFor(1)
-      ret
+      ret.get
     }
   }
 
@@ -122,12 +123,12 @@ class ControlContext(val display: Display, state: VolatileState, factory: SVGRas
 
   def syncRenderAwt(svg: SVGData, x: Int, y: Int): BufferedImage = {
     val sync = new Syncer[BufferedImage]
-    asyncRenderAwt(new Object, svg, x, y)(sync.done)
+    asyncRenderAwt(new Object, svg, x, y)(x => sync.doTry(x))
     sync.sync()
   }
   def syncRenderSwt(svg: SVGData, x: Int, y: Int): ImageData = {
     val sync = new Syncer[ImageData]
-    asyncRenderSwt(new Object, svg, x, y)(sync.done)
+    asyncRenderSwt(new Object, svg, x, y)(x => sync.doTry(x))
     sync.sync()
   }
 
@@ -136,7 +137,7 @@ class ControlContext(val display: Display, state: VolatileState, factory: SVGRas
   def syncLuaExec[T](f: => T): T = if(Thread.currentThread() == luaThread) f else {
     val sync = new Syncer[T]
     state.luaRequests.add { () =>
-      sync.done(f)
+      sync.doTry(f)
     }
     sync.sync()
   }
@@ -153,7 +154,7 @@ class ControlContext(val display: Display, state: VolatileState, factory: SVGRas
   def syncUiLuaExec[A, B](ui: => A, lua: => B): (A, B) = {
     val sync = new Syncer[B]
     asyncLuaExec {
-      sync.done(lua)
+      sync.doTry(lua)
     }
     (if(Thread.currentThread() == uiThread) ui else syncUiExec(ui), sync.sync())
   }

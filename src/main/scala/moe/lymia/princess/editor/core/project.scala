@@ -45,6 +45,8 @@ final class CardData(project: Project) {
     }
   }
 
+  def copied() = createTime = System.currentTimeMillis()
+
   def serialize = Json.obj("fields" -> fields.serialize, "createTime" -> createTime)
   def deserialize(js: JsValue) = {
     fields.deserialize((js \ "fields").as[JsValue])
@@ -104,6 +106,8 @@ final class CardPool(project: Project) extends CardSource {
 
   def removeSlot(slot: SlotData): Unit = slots.update(slots.now.filter(_ != slot))
 
+  def copied() = createTime = System.currentTimeMillis()
+
   def serialize = Json.obj(
     "displayName" -> displayName.now,
     "slots" -> slots.now.map(_.serialize),
@@ -139,7 +143,9 @@ final class Project(val ctx: ControlContext, val idData: GameIDData) extends Car
 
   override val info: CardSourceInfo = new CardSourceInfo(this)
 
-  override val allCards: Rx[Seq[UUID]] = Rx.unsafe { cards().toSeq.sortBy(_._2.createTime).map(_._1) }
+  override val allCards: Rx[Seq[UUID]] = Rx.unsafe {
+    cards().toSeq.sortBy(x => (x._2.createTime, x._1.toString)).map(_._1)
+  }
   override val allSlots: Option[Rx[Seq[SlotData]]] = None
 
   val sources = Rx.unsafe { this +: pools().values.toSeq.sortBy(_.createTime) }
