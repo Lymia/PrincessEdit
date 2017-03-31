@@ -33,9 +33,10 @@ import org.eclipse.swt.graphics.ImageData
 
 import scala.xml.Elem
 
-class InkscapeConnectionFactory(inkscapePath: String) extends SVGRasterizerFactory {
+class InkscapeConnectionFactory(inkscapePath: (String, String)) extends SVGRasterizerFactory {
   private[rasterizer] def inkscape(args: String*) =
-    new ProcessBuilder().command(inkscapePath +: args : _*).redirectError(ProcessBuilder.Redirect.INHERIT)
+    new ProcessBuilder(inkscapePath._1 +: args : _*).directory(new File(inkscapePath._2))
+                                                    .redirectError(ProcessBuilder.Redirect.INHERIT)
 
   private var pathChecked = false
   def checkPath() = try {
@@ -73,7 +74,7 @@ class InkscapeConnection(parent: InkscapeConnectionFactory) extends SVGRasterize
   private def handleUntilCommandEnd(): Unit = {
     while(true) {
       val char = stdout_r.read()
-      if(char == '>') return
+      if(char == '>' || char == -1) return
       stdout_r.readLine()
     }
   }
