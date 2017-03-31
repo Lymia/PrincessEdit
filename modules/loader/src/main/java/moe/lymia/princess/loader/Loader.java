@@ -123,7 +123,8 @@ public final class Loader {
 
     private void start(String[] args) {
         Path dir = getExecutableDirectory();
-        System.setProperty("moe.lymia.princess.currentDirectory", dir.toUri().toString());
+        System.setProperty("moe.lymia.princess.rootDirectory", dir.toUri().toString());
+        System.setProperty("moe.lymia.princess.libDirectory", dir.resolve("lib").toUri().toString());
         Class<?> main = loadMainClass(dir.resolve("lib"));
 
         Method m;

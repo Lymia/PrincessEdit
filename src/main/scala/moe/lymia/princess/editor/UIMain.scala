@@ -33,7 +33,8 @@ class UIMain {
     }
   }
   def main() = {
-    val manager = new UIManager(new InkscapeConnectionFactory("inkscape"))
+    val plaf = InkscapePlatform.instance
+    val manager = new UIManager(new InkscapeConnectionFactory(plaf.locateBinary().head))
     manager.mainLoop { ctx =>
       new FrontEndFrame(ctx).open()
     }

@@ -66,7 +66,7 @@ final class PackageManager(packages: Path, systemPackages: Seq[Path] = Seq(), lo
     new GameManager(resolver.loadGameId(gameId), logger, modules)
 }
 object PackageManager {
-  private lazy val defaultPath = System.getProperty("moe.lymia.princess.currentDirectory") match {
+  private lazy val defaultPath = System.getProperty("moe.lymia.princess.rootDirectory") match {
     case null => Paths.get("packages")
     case url => Paths.get(new URI(url)).resolve("packages")
   }
