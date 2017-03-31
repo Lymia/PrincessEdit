@@ -111,7 +111,7 @@ lazy val xscalawt = project in file("modules/xscalawt") settings (commonSettings
 
   excludeFilter in unmanagedSources := HiddenFileFilter || new FileFilter() {
     override def accept(pathname: File): Boolean = {
-      val src = pathname.getCanonicalPath
+      val src = pathname.toString
       src.contains("XScalaWTBinding.scala") || src.replace('\\', '/').contains("/examples/")
     }
   }
