@@ -51,10 +51,7 @@ final class HelpButton(parent: Composite, style: Int) extends Composite(parent, 
   def setBalloonText(s: String) = balloon.setText(s)
   def setBalloonMessage(s: String) = balloon.setMessage(s)
 
-  private def makeSquare(p: Point) = {
-    val xy = math.max(p.x, p.y)
-    new Point(xy, xy)
-  }
+  private def makeSquare(p: Point) = new Point(p.y, p.y)
   override def computeSize(wHint: Int, hHint: Int): Point =
     makeSquare(super.computeSize(wHint, hHint))
   override def computeSize(wHint: Int, hHint: Int, changed: Boolean): Point =
