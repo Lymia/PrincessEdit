@@ -33,7 +33,7 @@ trait InkscapePlatform {
     case url => Paths.get(new URI(url))
   }
 
-  def locateBinary(): Seq[String]
+  def locateBinary(): Seq[(String, String)]
 }
 
 // TODO: Store these in some configuration file
