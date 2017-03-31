@@ -179,7 +179,7 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
   }
 
   protected def prepareImage(image: BufferedImage) = image
-  override def export(svg: SVGData, options: SimpleRasterOptions, state: SimpleRasterInit, out: Path): Unit = {
+  override def export(svg: SVGData, options: SimpleRasterOptions, state: SimpleRasterInit, outPath: Path): Unit = {
     val (x, y) = svg.bestSizeForDPI(options.dpi)
     val image = prepareImage(svg.rasterizeAwt(state.rasterizer, x, y))
 
@@ -188,13 +188,15 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
     val metadata = imageWriter.getDefaultImageMetadata(ImageTypeSpecifier.createFromRenderedImage(image), param)
     makeMetadata(metadata, options, imageWriter.getClass.getName)
 
-    val outStream = ImageIO.createImageOutputStream(Files.newOutputStream(out))
+    val out = Files.newOutputStream(outPath)
+    val imageOut = ImageIO.createImageOutputStream(out)
     try {
-      imageWriter.setOutput(outStream)
+      imageWriter.setOutput(imageOut)
       imageWriter.write(metadata, new IIOImage(image, null, metadata), param)
     } finally {
       imageWriter.dispose()
-      outStream.close()
+      imageOut.close()
+      out.close()
     }
   }
 }
