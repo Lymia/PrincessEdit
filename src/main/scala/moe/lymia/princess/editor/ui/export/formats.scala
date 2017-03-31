@@ -29,15 +29,20 @@ import javax.imageio._
 import javax.imageio.metadata.IIOMetadata
 import javax.imageio.plugins.jpeg.JPEGImageWriteParam
 
+import com.coconut_palm_software.xscalawt.XScalaWT._
+
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
 import moe.lymia.princess.editor.utils.Message
 import moe.lymia.princess.rasterizer.SVGRasterizer
 import moe.lymia.princess.renderer.SVGData
 import moe.lymia.princess.util.VersionInfo
+
+import org.eclipse.jface.layout.GridDataFactory
 import org.eclipse.jface.window.IShellProvider
+
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.ImageLoader
-import org.eclipse.swt.layout.{GridData, GridLayout}
+import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets._
 
 import scala.collection.JavaConverters._
@@ -79,30 +84,34 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
   protected val defaultQuality = 3
 
   override def makeControl(parentShell: IShellProvider, parent: Composite, style: Int, state: MainFrameState) = {
-    val dpiLabel = new Label(parent, SWT.NONE)
-    dpiLabel.setText(state.i18n.system("_princess.export.dpi"))
-    dpiLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false))
+    var dpiField: Text = null
 
-    val dpiField = new Text(parent, SWT.SINGLE | SWT.BORDER)
-    dpiField.setText("150")
-    val dpiData = new GridData(SWT.FILL, SWT.CENTER, true, false)
-    dpiData.horizontalSpan = 2
-    dpiField.setLayoutData(dpiData)
+    parent.contains(
+      label(
+        _.text = state.i18n.system("_princess.export.dpi"),
+        _.layoutData = new GridData(SWT.BEGINNING, SWT.CENTER, false, false)
+      ),
+      *[Text](SWT.SINGLE | SWT.BORDER)(
+        dpiField = _,
+        _.text = "150",
+        _.layoutData =
+          GridDataFactory.createFrom(new GridData(SWT.FILL, SWT.CENTER, true, false)).span(2, 1).create()
+      )
+    )
 
     var qualityField: Option[Text] = None
-    if(useQualityControl) {
-      val qualityLabel = new Label(parent, SWT.NONE)
-      qualityLabel.setText(state.i18n.system("_princess.export.quality"))
-      qualityLabel.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false))
-
-      val qualityField0 = new Text(parent, SWT.SINGLE | SWT.BORDER)
-      qualityField0.setText(defaultQuality.toString)
-      val qualityData = new GridData(SWT.FILL, SWT.CENTER, true, false)
-      qualityData.horizontalSpan = 2
-      qualityField0.setLayoutData(qualityData)
-
-      qualityField = Some(qualityField0)
-    }
+    if(useQualityControl) parent.contains(
+      label(
+        _.text = state.i18n.system("_princess.export.quality"),
+        _.layoutData = new GridData(SWT.BEGINNING, SWT.CENTER, false, false)
+      ),
+      *[Text](SWT.SINGLE | SWT.BORDER)(
+        x => qualityField = Some(x),
+        _.text = defaultQuality.toString,
+        _.layoutData =
+          GridDataFactory.createFrom(new GridData(SWT.FILL, SWT.CENTER, true, false)).span(2, 1).create()
+      )
+    )
 
     new ExportControl[SimpleRasterOptions] {
       override def getResult: Option[SimpleRasterOptions] = {

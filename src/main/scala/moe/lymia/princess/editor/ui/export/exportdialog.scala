@@ -26,16 +26,17 @@ import java.nio.file.Paths
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import com.coconut_palm_software.xscalawt.XJFace._
+
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
 import moe.lymia.princess.editor.utils.{DialogBase, HelpButton, Message}
+
 import org.eclipse.jface.dialogs.ProgressMonitorDialog
 import org.eclipse.jface.layout.GridDataFactory
 import org.eclipse.jface.viewers._
 import org.eclipse.jface.window.IShellProvider
+
 import org.eclipse.swt.SWT
-import org.eclipse.swt.graphics.Point
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 
