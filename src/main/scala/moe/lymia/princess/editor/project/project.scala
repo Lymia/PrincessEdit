@@ -20,17 +20,17 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.core
+package moe.lymia.princess.editor.project
 
+import java.nio.file.Path
 import java.util.UUID
 
-import moe.lymia.lua._
-
+import moe.lymia.princess.editor.core._
+import moe.lymia.princess.util.VersionInfo
 import play.api.libs.json._
-
 import rx._
 
-final class CardData(project: Project) {
+final class CardData(project: Project) extends JsonSerializable {
   val fields = new DataStore
   var createTime = System.currentTimeMillis()
 
@@ -54,7 +54,7 @@ final class CardData(project: Project) {
   }
 }
 
-final class SlotData(project: Project) {
+final class SlotData(project: Project) extends JsonSerializable {
   val cardRef = Var[Option[UUID]](None)
   val fields = new DataStore
 
@@ -65,7 +65,7 @@ final class SlotData(project: Project) {
   }
 }
 
-final class CardSourceInfo(project: Project) {
+final class CardSourceInfo(project: Project) extends JsonSerializable {
   val fields = new DataStore
   val root = project.ctx.syncLuaExec { project.idData.set.createRoot(fields, Seq()) }
 
@@ -81,7 +81,7 @@ trait CardSource {
   def newCard(): UUID
 }
 
-final class CardPool(project: Project) extends CardSource {
+final class CardPool(project: Project) extends CardSource with DirSerializable {
   val displayName = Var[String]("")
   val slots = Var(Seq.empty[SlotData])
   var createTime = System.currentTimeMillis()
@@ -108,25 +108,25 @@ final class CardPool(project: Project) extends CardSource {
 
   def copied() = createTime = System.currentTimeMillis()
 
-  def serialize = Json.obj(
-    "displayName" -> displayName.now,
-    "slots" -> slots.now.map(_.serialize),
-    "info" -> info.serialize,
-    "createTime" -> createTime
-  )
-  def deserialize(js: JsValue) = {
+  override def writeTo(path: Path): Unit = {
+    writeJsonMap(path.resolve("slots"), slots.now.zipWithIndex.map(x => (x._2 + 1) -> x._1).toMap)(_.toString)
+    writeJson(path.resolve("info.json"), Json.obj(
+      "displayName" -> displayName.now,
+      "info" -> info.serialize,
+      "createTime" -> createTime
+    ))
+  }
+  override def readFrom(path: Path): Unit = {
+    slots.update(readJsonMap(path.resolve("slots"),
+                             () => new SlotData(project))((x: Int) => x.toString).toSeq.sortBy(_._1).map(_._2))
+    val js = readJson(path.resolve("info.json"))
     displayName.update((js \ "displayName").as[String])
-    slots.update((js \ "slots").as[Seq[JsValue]].map(v => {
-      val slot = new SlotData(project)
-      slot.deserialize(v)
-      slot
-    }))
     info.deserialize((js \ "info").as[JsValue])
     createTime = (js \ "createTime").as[Long]
   }
 }
 
-final class Project(val ctx: ControlContext, val idData: GameIDData) extends CardSource {
+final class Project(val ctx: ControlContext, val idData: GameIDData) extends CardSource with DirSerializable {
   val cards = Var(Map.empty[UUID, CardData])
   def newCard() = {
     val uuid = UUID.randomUUID()
@@ -149,4 +149,25 @@ final class Project(val ctx: ControlContext, val idData: GameIDData) extends Car
   override val allSlots: Option[Rx[Seq[SlotData]]] = None
 
   val sources = Rx.unsafe { this +: pools().values.toSeq.sortBy(_.createTime) }
+
+  // Main serialization entry point
+  def writeTo(path: Path) = {
+    writeJsonMap(path.resolve("cards"), cards.now)(_.toString)
+    writeDirMap (path.resolve("pools"), pools.now)(_.toString)
+    writeJson(path.resolve("info.json"), Json.obj(
+      "info" -> info.serialize
+    ))
+    writeJson(path.resolve("version.json"), Json.obj(
+      "version"   -> 1,
+      "program"   -> Json.arr("PrincessEdit", VersionInfo.versionString),
+      "writeTime" -> System.currentTimeMillis()
+    ))
+  }
+  def readFrom(path: Path) = {
+    val version = (readJson(path.resolve("version.json")) \ "version").as[Int]
+    if(version != 1) sys.error(s"unknown file format version $version")
+    cards.update(readJsonMap(path.resolve("cards"), () => new CardData(this))(_.toString))
+    pools.update(readDirMap (path.resolve("pools"), () => new CardPool(this))(_.toString))
+    info.deserialize((readJson(path.resolve("info.json")) \ "info").as[JsValue])
+  }
 }

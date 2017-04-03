@@ -88,7 +88,7 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
 
     parent.contains(
       label(
-        _.text = state.i18n.system("_princess.export.dpi"),
+        state.i18n.system("_princess.export.dpi"),
         _.layoutData = new GridData(SWT.BEGINNING, SWT.CENTER, false, false)
       ),
       *[Text](SWT.SINGLE | SWT.BORDER)(
@@ -102,7 +102,7 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
     var qualityField: Option[Text] = None
     if(useQualityControl) parent.contains(
       label(
-        _.text = state.i18n.system("_princess.export.quality"),
+        state.i18n.system("_princess.export.quality"),
         _.layoutData = new GridData(SWT.BEGINNING, SWT.CENTER, false, false)
       ),
       *[Text](SWT.SINGLE | SWT.BORDER)(

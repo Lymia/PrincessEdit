@@ -25,17 +25,15 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import moe.lymia.princess.editor.core._
+import moe.lymia.princess.editor.project.CardData
 import moe.lymia.princess.editor.ui.export.ExportCardsDialog
-
 import org.eclipse.jface.action._
 import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
-
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{KeyEvent, KeyListener}
 import org.eclipse.swt.graphics.{Image, Point}
 import org.eclipse.swt.widgets._
-
 import rx._
 
 case class RowData(id: UUID, data: CardData, fields: Seq[String])
@@ -45,8 +43,6 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
   private val viewer = new TableViewer(this, SWT.MULTI | SWT.FULL_SELECTION | SWT.V_SCROLL | SWT.H_SCROLL)
   def getControl = viewer.getControl
   def getTable = viewer.getTable
-
-  val currentCard = Var[Option[UUID]](None)
 
   viewer.getTable.setHeaderVisible(true)
   viewer.getTable.setLinesVisible(true)
@@ -90,10 +86,10 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
     lockSelection = true
   }
   def editorClosed() = {
-    viewer.setSelection(savedSelection)
+    viewer.setSelection(savedSelection, true)
     savedSelection = null
     lockSelection = false
-    this.setFocus()
+    viewer.getTable.setFocus()
   }
 
   // Menu
@@ -102,7 +98,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
   def setSelection(uuid: UUID) = {
     viewer.refresh()
     cardsRx.now.find(_.id == uuid).foreach(x => viewer.setSelection(new StructuredSelection(x), true))
-    state.ctx.queueUpdate(state.currentCard, Some(uuid))
+    state.ctx.queueUpdate(state.currentCardSelection, Seq(uuid))
   }
 
   private val copy = new Action(state.i18n.system("_princess.editor.copyCard")) {
@@ -179,19 +175,24 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
 
   // Events
   private def setSelectionFromViewer() = {
-    val selection = viewer.getStructuredSelection
-    if(selection.isEmpty) state.currentCard.update(None)
-    else {
-      val data = selection.getFirstElement.asInstanceOf[RowData]
-      state.currentCard.update(Some(data.id))
-    }
+    val selection = viewer.getStructuredSelection.toArray.map(_.asInstanceOf[RowData].id)
+    val currentSelection = state.currentCardSelection.now
+    val (alreadySelected, newSelections) = selection.partition(currentSelection.contains)
+    state.ctx.queueUpdate(state.currentCardSelection, (alreadySelected ++ newSelections).toSeq)
   }
   viewer.getTable.addKeyListener(new KeyListener {
     override def keyPressed(keyEvent: KeyEvent): Unit = {
       val ctrl = (keyEvent.stateMask & SWT.CTRL) == SWT.CTRL
+
+      val doit = keyEvent.doit
+      keyEvent.doit = false
+
       if(ctrl && keyEvent.keyCode == SWT.CR) addCard.run()
       else if(ctrl && keyEvent.keyCode == 'c') copy.run()
       else if(ctrl && keyEvent.keyCode == 'v') paste.run()
+      else if(ctrl && keyEvent.keyCode == 'a') viewer.getTable.selectAll()
+
+      else keyEvent.doit = doit
     }
     override def keyReleased(keyEvent: KeyEvent): Unit = { }
   })

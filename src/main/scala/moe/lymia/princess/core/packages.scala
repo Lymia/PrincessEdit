@@ -122,7 +122,7 @@ object Package {
   // TODO: Consider allowing loading multiple packages from one .zip file
   private def loadPackageFromZip(path: Path, isSystem: Boolean) =
     EditorException.context(s"loading package from zip $path") {
-      val fs = FileSystems.newFileSystem(path, getClass.getClassLoader)
+      val fs = IOUtils.openZip(path)
       val root = fs.getPath("/")
       val fileList = IOUtils.list(root)
       loadPackageFromPath(if(!Files.exists(root.resolve("package.ini")) &&

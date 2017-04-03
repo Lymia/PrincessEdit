@@ -22,15 +22,21 @@
 
 package moe.lymia.princess.editor.ui.mainframe
 
+import java.nio.file.{FileSystems, Paths}
+import java.util.UUID
+
+import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.{I18NLoader, PackageManager}
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.lua.EditorModule
+import moe.lymia.princess.editor.project.{CardSource, Project}
 import moe.lymia.princess.editor.ui.editor.EditorPane
 import moe.lymia.princess.editor.utils._
 import moe.lymia.princess.renderer.lua.RenderModule
-import moe.lymia.princess.util.VersionInfo
+import moe.lymia.princess.util.{IOUtils, VersionInfo}
+import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.jface.window.IShellProvider
-import org.eclipse.swt.graphics.Point
+import org.eclipse.swt.graphics.{Image, Point}
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._
@@ -48,11 +54,13 @@ class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, val gameId: 
   def openDialog(fn: IShellProvider => Dialog) = fn(mainFrame)
 }
 
-trait EditorTab {
+trait PrincessEditTab { this: Control =>
+  def addMenuItems(m: MenuManager)
 
+  def tabText (): String = ""
+  def tabImage(): Image  = null
 }
 
-// TODO: This is only a temporary test UI
 class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
   private val state = new MainFrameState(this, ctx, gameId)
 
@@ -61,12 +69,32 @@ class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
     shell.setText(s"PrincessEdit v${VersionInfo.versionString}")
   }
 
+  override def createMenuManager: MenuManager = {
+    val manager = super.createMenuManager()
+
+    val file = new MenuManager()
+    file.setMenuText("File") // TODO I18N
+    manager.add(file)
+
+    val action = new Action() {
+      setText("Save")
+      override def run(): Unit = {
+        val fs = IOUtils.openZip(Paths.get(s"test-save-${UUID.randomUUID()}.pedit-project"), create = true)
+        try state.project.writeTo(fs.getPath("/")) finally fs.close()
+      }
+    }
+    file.add(action)
+
+    manager
+  }
+  this.addMenuBar()
+
   override def getInitialSize: Point = new Point(800, 600)
 
   override def frameContents(frame: Composite) = {
     val fill = new FillLayout
-    fill.marginHeight = 5
-    fill.marginWidth = 5
+    fill.marginHeight = 1
+    fill.marginWidth = 1
     frame.setLayout(fill)
 
     new EditorPane(frame, this, state)

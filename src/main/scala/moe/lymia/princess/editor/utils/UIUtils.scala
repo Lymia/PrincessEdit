@@ -22,16 +22,6 @@
 
 package moe.lymia.princess.editor.utils
 
-import moe.lymia.princess.core.I18N
-import org.eclipse.jface.window.IShellProvider
-import org.eclipse.swt.widgets.MessageBox
+object UIUtils {
 
-object Message {
-  def open(shell: IShellProvider, style: Int, i18n: I18N, root: String, args: Any*) = {
-    val messageBox = new MessageBox(if(shell ne null) shell.getShell else null, style)
-    messageBox.setText(i18n.system(s"$root.title", args : _*))
-    messageBox.setMessage(i18n.system(s"$root.message", args : _*))
-    messageBox.open()
-    messageBox
-  }
 }

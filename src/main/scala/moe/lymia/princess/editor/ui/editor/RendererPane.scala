@@ -45,7 +45,7 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
   )(this)
 
   private val currentCardData: Rx[Option[Seq[LuaObject]]] = Rx {
-    val card = state.currentCard().flatMap(state.project.cards.now.get).map(_.root.luaData())
+    val card = state.currentCardData().map(_.root.luaData())
     val pool = state.currentPool().info.root.luaData()
     card.map(cardData => Seq(cardData, pool))
   }

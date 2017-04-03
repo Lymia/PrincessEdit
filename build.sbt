@@ -114,7 +114,9 @@ lazy val xscalawt = project in file("modules/xscalawt") settings (commonSettings
       val src = pathname.toString
       src.contains("XScalaWTBinding.scala") || src.replace('\\', '/').contains("/examples/")
     }
-  }
+  },
+
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 )) dependsOn swt
 
 lazy val princessEdit = project in file(".") settings (commonSettings ++ VersionBuild.settings ++ Seq(

@@ -26,17 +26,16 @@ import java.nio.file.Paths
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-
 import moe.lymia.princess.editor.core._
+import moe.lymia.princess.editor.project.{CardData, CardSource}
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
 import moe.lymia.princess.editor.utils.{DialogBase, HelpButton, Message}
-
 import org.eclipse.jface.dialogs.ProgressMonitorDialog
 import org.eclipse.jface.layout.GridDataFactory
 import org.eclipse.jface.viewers._
 import org.eclipse.jface.window.IShellProvider
-
 import org.eclipse.swt.SWT
+import org.eclipse.swt.events.SelectionEvent
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 
@@ -66,7 +65,6 @@ sealed abstract class ExportCardsDialogBase[Data](parent: IShellProvider, state:
     else options.getResult.foreach { options =>
       dataSettings().foreach { data =>
         export(format.asInstanceOf[ExportFormat[Any, _]], options.asInstanceOf[Any], data)
-        this.close()
       }
     }
 
@@ -81,7 +79,7 @@ sealed abstract class ExportCardsDialogBase[Data](parent: IShellProvider, state:
       composite(
         gridLayout(columns = 2)(_.marginWidth = 0, _.marginHeight = 0),
         label(
-          _.text = state.i18n.system("_princess.export.exportFormat", this.cardCount),
+          state.i18n.system("_princess.export.exportFormat", this.cardCount),
           _.layoutData = new GridData(SWT.BEGINNING, SWT.CENTER, false, false)
         ),
         *[ComboViewer](SWT.BORDER | SWT.READ_ONLY) (
@@ -98,7 +96,7 @@ sealed abstract class ExportCardsDialogBase[Data](parent: IShellProvider, state:
           GridDataFactory.createFrom(new GridData(SWT.FILL, SWT.CENTER, true, false)).span(3, 1).create()
       ),
       group(
-        _.text = state.i18n.system("_princess.export.exportSettings"),
+        state.i18n.system("_princess.export.exportSettings"),
         gridLayout(columns = 3)(),
         modifiedFillGridData(_.span(3, 1)),
         group => dataSettings = makeDataSettings(group),
@@ -122,18 +120,18 @@ sealed abstract class ExportCardsDialogBase[Data](parent: IShellProvider, state:
         }
       ),
       label(
-        _.text = if(cardCount > 1) state.i18n.system("_princess.export.cardCount", cardCount) else "",
+        if(cardCount > 1) state.i18n.system("_princess.export.cardCount", cardCount) else "",
         _.layoutData = new GridData(SWT.BEGINNING, SWT.CENTER, false, false)
       ),
       button(
-        _.text = state.i18n.system("_princess.export.cancel"),
-        _.addListener(SWT.Selection, _ => this.close()),
+        state.i18n.system("_princess.export.cancel"),
+        (x : SelectionEvent) => this.close(),
         _.layoutData =
           GridDataFactory.createFrom(new GridData(SWT.END, SWT.CENTER, true, false)).indent(140, 0).create()
       ),
       button(
-        _.text = state.i18n.system("_princess.export.export"),
-        _.addListener(SWT.Selection, _ => doExport()),
+        state.i18n.system("_princess.export.export"),
+        (x : SelectionEvent) => doExport(),
         _.layoutData = new GridData(SWT.END, SWT.CENTER, false, false)
       )
     )
@@ -176,6 +174,7 @@ final class ExportCardsDialogSingle(parent: IShellProvider, state: MainFrameStat
         // canceled
       case name =>
         new ExportSingleTask(state, pool, Paths.get(name), format, options, exportTarget).run()
+        this.close()
     }
   }
 }
@@ -192,12 +191,12 @@ final class ExportCardsDialogMulti(parent: IShellProvider, state: MainFrameState
   override protected def makeDataSettings(parent: Composite) = {
     parent.contains(
       label(
-        _.text = state.i18n.system("_princess.export.nameFormat"),
+        state.i18n.system("_princess.export.nameFormat"),
         _.layoutData = new GridData(SWT.BEGINNING, SWT.CENTER, false, false)
       ),
       *[Text](SWT.SINGLE | SWT.BORDER) (
         this.nameSpec = _,
-        _.text = state.idData.export.defaultNameFormat,
+        state.idData.export.defaultNameFormat,
         _.layoutData = new GridData(SWT.FILL, SWT.CENTER, true, false)
       ),
       *[HelpButton](SWT.NONE) (

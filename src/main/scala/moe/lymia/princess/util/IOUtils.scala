@@ -23,6 +23,7 @@
 package moe.lymia.princess.util
 
 import java.io.{File, IOException, InputStream, InputStreamReader}
+import java.net.URI
 import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
 import java.nio.file._
@@ -76,6 +77,10 @@ object IOUtils {
       stream.close()
     }
   }
+
+  def openZip(path: Path, create: Boolean = false): FileSystem =
+    FileSystems.newFileSystem(URI.create(s"jar:${path.toUri}"),
+      if(create) Map("create" -> "true").asJava else Map().asJava, getClass.getClassLoader)
 
   private val validFilenameRegex = Pattern.compile("^[- 0-9a-zA-Z_./]+$")
   def paranoidResolve(basePath: Path, path: String, dir: Boolean = false): Option[Path] =
