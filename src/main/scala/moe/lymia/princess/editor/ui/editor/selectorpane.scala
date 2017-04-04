@@ -27,6 +27,7 @@ import java.util.UUID
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.project.CardData
 import moe.lymia.princess.editor.ui.export.ExportCardsDialog
+import moe.lymia.princess.editor.utils.RxWidget
 import org.eclipse.jface.action._
 import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
@@ -37,8 +38,8 @@ import org.eclipse.swt.widgets._
 import rx._
 
 case class RowData(id: UUID, data: CardData, fields: Seq[String])
-final class CardSelectorTableViewer(parent: Composite, state: EditorState) extends Composite(parent, SWT.NONE) {
-  import Ctx.Owner.Unsafe._
+final class CardSelectorTableViewer(parent: Composite, state: EditorState)
+  extends Composite(parent, SWT.NONE) with RxWidget {
 
   private val viewer = new TableViewer(this, SWT.MULTI | SWT.FULL_SELECTION | SWT.V_SCROLL | SWT.H_SCROLL)
   def getControl = viewer.getControl
@@ -206,8 +207,4 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState) exten
   private val obs = cardsRx.foreach { _ =>
     state.ctx.asyncUiExec { viewer.refresh() }
   }
-  addListener(SWT.Dispose, _ => {
-    cardsRx.kill()
-    obs.kill()
-  })
 }

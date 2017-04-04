@@ -25,6 +25,7 @@ package moe.lymia.princess.editor.ui.editor
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.lua._
 import moe.lymia.princess.editor.ui.export.ExportCardsDialog
+import moe.lymia.princess.editor.utils.RxWidget
 import moe.lymia.princess.renderer._
 import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.swt.SWT
@@ -34,9 +35,7 @@ import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._
 
-final class CardSelectorCanvas(parent: Composite, state: EditorState) extends Canvas(parent, SWT.NONE) {
-  import Ctx.Owner.Unsafe._
-
+final class CardSelectorCanvas(parent: Composite, state: EditorState) extends Canvas(parent, SWT.NONE) with RxWidget {
   private def computeSizeFromRatio(canvasSize: Point, width: Double, height: Double) = {
     val (cx, cy) = (if(canvasSize.x == 0) 1 else canvasSize.x, if(canvasSize.y == 0) 1 else canvasSize.y)
     val size = (cx, math.round((cx.toDouble / width) * height).toInt)
@@ -83,10 +82,6 @@ final class CardSelectorCanvas(parent: Composite, state: EditorState) extends Ca
     }
   }
 
-  this.addListener(SWT.Dispose, { event =>
-    currentCardData.kill()
-    obs.kill()
-  })
   this.addListener(SWT.Resize, { event =>
     obs.thunk()
   })

@@ -25,9 +25,9 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.project.CardData
-import moe.lymia.princess.editor.ui.mainframe.{MainFrameState, PrincessEditTab}
+import moe.lymia.princess.editor.ui.mainframe.MainFrameState
+import moe.lymia.princess.editor.utils.RxOwner
 import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt._
 import org.eclipse.swt.custom._
@@ -54,22 +54,21 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
   addDisposeListener(_ => ui.kill())
 }
 
-final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) {
+final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) extends RxOwner {
   val currentCardSelection = Var(Seq.empty[UUID])
   val source = parent.source
 
-  val currentCard = Rx.unsafe { currentCardSelection().lastOption }
-  val currentCardData = Rx.unsafe { currentCard().flatMap(mainFrameState.project.cards.now.get) }
+  val currentCard = Rx { currentCardSelection().lastOption }
+  val currentCardData = Rx { currentCard().flatMap(mainFrameState.project.cards.now.get) }
 
   def isEditorActive = parent.isEditorActive
 
   def activateEditor() = currentCardData.now.foreach(card => parent.activateEditor(card))
   def deactivateEditor() = parent.deactivateEditor()
 
-  def kill() = {
+  override def kill(): Unit = {
+    super.kill()
     currentCardSelection.kill()
-    currentCard.kill()
-    currentCardData.kill()
   }
 }
 
@@ -132,7 +131,5 @@ final class EditorPane(parent: Composite, val source: IShellProvider, mainState:
     selector.getTable.setFocus()
   }
 
-  this.addListener(SWT.Dispose, event => {
-    editorState.kill()
-  })
+  addDisposeListener(_ => editorState.kill())
 }

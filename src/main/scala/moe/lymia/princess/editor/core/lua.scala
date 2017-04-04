@@ -25,6 +25,7 @@ package moe.lymia.princess.editor.core
 import moe.lymia.princess.core._
 import moe.lymia.princess.editor.nodes._
 import moe.lymia.lua._
+import moe.lymia.princess.editor.utils.RxOwner
 import moe.lymia.princess.renderer.RenderManager
 import org.eclipse.swt.widgets._
 import rx._
@@ -38,16 +39,14 @@ final class UIData(parent: Composite, node: RootNode, registerControlCallbacks: 
   def kill() = rootRxValue.kill()
 }
 
-final class DataRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, i18n: I18N, node: RootNode) {
-  private implicit val ctx = new NodeContext(L.newThread(), data, controlCtx, i18n)
+final class DataRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, i18n: I18N, node: RootNode)
+  extends RxOwner {
 
-  private val dummyRx = Rx.unsafe { () }
-  private implicit val owner = new Ctx.Owner(dummyRx)
+  private implicit val ctx = new NodeContext(L.newThread(), data, controlCtx, i18n)
 
   val luaData = node.createRx
   def createUI(parent: Composite, registerControlCallbacks: Control => Unit = _ => ()) =
     new UIData(parent, node, registerControlCallbacks)
-  def kill() = dummyRx.kill()
 }
 
 sealed abstract class RootSource(L: LuaState, controlCtx: ControlContext, i18n: I18N) {
