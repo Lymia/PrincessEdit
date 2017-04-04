@@ -29,21 +29,22 @@ import moe.lymia.princess.renderer._
 import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{MouseEvent, MouseListener}
-import org.eclipse.swt.graphics.Image
+import org.eclipse.swt.graphics.{GC, Image, Point}
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._
 
-class RendererPane(parent: Composite, state: EditorState) extends Composite(parent, SWT.NONE) {
+final class CardSelectorCanvas(parent: Composite, state: EditorState) extends Canvas(parent, SWT.NONE) {
   import Ctx.Owner.Unsafe._
 
-  val grid = new GridLayout()
-  this.setLayout(grid)
+  private def computeSizeFromRatio(canvasSize: Point, width: Double, height: Double) = {
+    val (cx, cy) = (if(canvasSize.x == 0) 1 else canvasSize.x, if(canvasSize.y == 0) 1 else canvasSize.y)
+    val size = (cx, math.round((cx.toDouble / width) * height).toInt)
+    if(size._2 > cy) (math.round((cy.toDouble / height) * width).toInt, cy)
+    else size
+  }
 
-  private val render = label(
-    _.layoutData = new GridData(SWT.CENTER, SWT.BEGINNING, false, false)
-  )(this)
-
+  private var currentImage: Image = _
   private val currentCardData: Rx[Option[Seq[LuaObject]]] = Rx {
     val card = state.currentCardData().map(_.root.luaData())
     val pool = state.currentPool().info.root.luaData()
@@ -55,38 +56,49 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
         state.ctx.asyncRenderSwt (this, {
           val (componentSize, rendered) =
             state.ctx.syncUiLuaExec(this.getSize, state.idData.renderer.render(data, RasterizeResourceLoader))
-
-          val (rcx, rcy) =
-            (componentSize.x - grid.marginLeft - grid.marginRight - grid.marginWidth * 2,
-             componentSize.y - grid.marginTop - grid.marginBottom - grid.marginHeight * 2)
-          val (cx, cy) = (if(rcx == 0) 1 else rcx, if(rcy == 0) 1 else rcy)
-          val (x, y) = {
-            val size =
-              (cx, math.round((cx.toDouble / rendered.size.width) * rendered.size.height).toInt)
-            if(size._2 > cy)
-              (math.round((cy.toDouble / rendered.size.height) * rendered.size.width).toInt, cy)
-            else size
-          }
-
+          val (x, y) = computeSizeFromRatio(componentSize, rendered.size.width, rendered.size.height)
           (rendered, x, y)
         }) { imageData =>
           state.ctx.asyncUiExec {
             val image = new Image(state.ctx.display, imageData)
-            if(render.getImage != null) render.getImage.dispose()
-            render.setText("")
-            render.setImage(image)
-            this.layout(true)
+            if(currentImage ne null) currentImage.dispose()
+            currentImage = image
+          this.redraw()
           }
         }
       case None =>
         state.ctx.asyncUiExec {
-          if(render.getImage != null) render.getImage.dispose()
-          render.setText(state.i18n.system("_princess.editor.noSelection"))
-          render.setImage(null)
-          this.layout(true)
+          if(currentImage ne null) currentImage.dispose()
+          currentImage = null
+          this.redraw()
         }
     }
   }
+
+  addPaintListener { event =>
+    if(currentImage != null) {
+      val bounds = currentImage.getBounds
+      val (rx, ry) = computeSizeFromRatio(getSize, bounds.width, bounds.height)
+      event.gc.drawImage(currentImage, 0, 0, bounds.width, bounds.height, 0, 0, rx, ry)
+    }
+  }
+
+  this.addListener(SWT.Dispose, { event =>
+    currentCardData.kill()
+    obs.kill()
+  })
+  this.addListener(SWT.Resize, { event =>
+    obs.thunk()
+  })
+}
+
+class RendererPane(parent: Composite, state: EditorState) extends Composite(parent, SWT.NONE) {
+  private val fill = new FillLayout()
+  fill.marginWidth = 5
+  fill.marginHeight = 5
+  this.setLayout(fill)
+
+  private val canvas = new CardSelectorCanvas(this, state)
 
   private val menuManager = new MenuManager()
   private val export = new Action(state.i18n.system("_princess.editor.exportCard")) {
@@ -100,19 +112,12 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
   menuManager.addMenuListener(_ => {
     export.setEnabled(state.currentCard.now.isDefined)
   })
-  render.setMenu(menuManager.createContextMenu(render))
+  canvas.setMenu(menuManager.createContextMenu(canvas))
 
-  render.addMouseListener(new MouseListener {
+  canvas.addMouseListener(new MouseListener {
     override def mouseDown(mouseEvent: MouseEvent): Unit =
       if(!state.isEditorActive && mouseEvent.button == 1) state.activateEditor()
     override def mouseDoubleClick(mouseEvent: MouseEvent): Unit = { }
     override def mouseUp(mouseEvent: MouseEvent): Unit = { }
-  })
-  this.addListener(SWT.Dispose, { event =>
-    currentCardData.kill()
-    obs.kill()
-  })
-  this.addListener(SWT.Resize, { event =>
-    obs.thunk()
   })
 }
