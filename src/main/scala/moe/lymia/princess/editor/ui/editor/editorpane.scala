@@ -57,7 +57,6 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
 
 final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) extends RxOwner {
   val currentCardSelection = Var(Seq.empty[UUID])
-  val source = parent.source
 
   val currentCard = Rx { currentCardSelection().lastOption }
   val currentCardData = Rx { currentCard().flatMap(mainFrameState.project.cards.now.get) }
@@ -73,7 +72,7 @@ final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) 
   }
 }
 
-final class EditorPane(parent: Composite, val source: IShellProvider, mainState: MainFrameState)
+final class EditorPane(parent: Composite, mainState: MainFrameState)
   extends Composite(parent, SWT.NONE) with PrincessEditTab {
 
   private val editorState = new EditorState(this, mainState)

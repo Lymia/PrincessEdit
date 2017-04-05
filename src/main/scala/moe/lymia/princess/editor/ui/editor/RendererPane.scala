@@ -92,7 +92,7 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
     override def run() = {
       val id   = state.currentCard.now.get
       val data = state.project.cards.now(id)
-      ExportCardsDialog.open(state.source, state, state.currentPool.now, id -> data)
+      ExportCardsDialog.open(state, state.currentPool.now, id -> data)
     }
   }
   menuManager.add(export)

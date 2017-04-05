@@ -123,8 +123,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   }
   private val export = new Action(state.i18n.system("_princess.editor.exportCard")) {
     override def run() =
-      ExportCardsDialog.open(state.source, state, state.currentPool.now,
-                             getSelectedCards.map(x => x.id -> x.data) : _*)
+      ExportCardsDialog.open(state, state.currentPool.now, getSelectedCards.map(x => x.id -> x.data) : _*)
   }
   private val addCard = new Action(state.i18n.system("_princess.editor.newCard")) {
     setAccelerator(SWT.CTRL | SWT.CR)

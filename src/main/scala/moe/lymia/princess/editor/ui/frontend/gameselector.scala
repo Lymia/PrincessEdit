@@ -25,7 +25,7 @@ package moe.lymia.princess.editor.ui.frontend
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.{GameID, PackageManager}
 import moe.lymia.princess.editor.core.ControlContext
-import moe.lymia.princess.editor.ui.mainframe.MainFrame
+import moe.lymia.princess.editor.ui.mainframe.{MainFrame, ProjectSource}
 import moe.lymia.princess.editor.utils.{DialogBase, UIUtils}
 import org.eclipse.jface.viewers.{ITreeContentProvider, LabelProvider}
 import org.eclipse.jface.window.Window
@@ -104,7 +104,7 @@ final class GameSelectorDialog(parent: Window, ctx: ControlContext, closeParent:
   override def getInitialSize: Point = new Point(800, 600)
 
   def newProject() = {
-    new MainFrame(ctx, selector.getGameID.get.name).open()
+    new MainFrame(ctx, ProjectSource.NewProject(selector.getGameID.get)).open()
     close()
     if(closeParent) parent.close()
   }

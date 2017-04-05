@@ -26,22 +26,18 @@ import java.nio.file.Paths
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.project.{CardData, CardSource}
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
 import moe.lymia.princess.editor.utils.{DialogBase, HelpButton, UIUtils}
 import org.eclipse.jface.dialogs.ProgressMonitorDialog
 import org.eclipse.jface.layout.GridDataFactory
 import org.eclipse.jface.viewers._
-import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.SelectionEvent
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 
-sealed abstract class ExportCardsDialogBase[Data](parent: IShellProvider, state: MainFrameState)
-  extends DialogBase(parent, state.ctx) {
-
+sealed abstract class ExportCardsDialogBase[Data](state: MainFrameState) extends DialogBase(state.shell, state.ctx) {
   protected val cardCount: Int
 
   override def configureShell(newShell: Shell): Unit = {
@@ -145,9 +141,8 @@ sealed abstract class ExportCardsDialogBase[Data](parent: IShellProvider, state:
   }
 }
 
-final class ExportCardsDialogSingle(parent: IShellProvider, state: MainFrameState, pool: CardSource,
-                                    exportTarget: (UUID, CardData))
-  extends ExportCardsDialogBase[Unit](parent, state) {
+final class ExportCardsDialogSingle(state: MainFrameState, pool: CardSource, exportTarget: (UUID, CardData))
+  extends ExportCardsDialogBase[Unit](state) {
 
   override protected val cardCount: Int = 1
 
@@ -179,9 +174,8 @@ final class ExportCardsDialogSingle(parent: IShellProvider, state: MainFrameStat
   }
 }
 
-final class ExportCardsDialogMulti(parent: IShellProvider, state: MainFrameState, pool: CardSource,
-                                   exportTargets: Seq[(UUID, CardData)])
-  extends ExportCardsDialogBase[LuaNameSpec](parent, state) {
+final class ExportCardsDialogMulti(state: MainFrameState, pool: CardSource, exportTargets: Seq[(UUID, CardData)])
+  extends ExportCardsDialogBase[LuaNameSpec](state) {
 
   override protected val cardCount: Int = exportTargets.length
 
@@ -215,7 +209,7 @@ final class ExportCardsDialogMulti(parent: IShellProvider, state: MainFrameState
       LuaNameSpec(state.game.lua.L, nameSpec.getText, ExportMultiTask.NameSpecFieldNames : _*) match {
         case Left(x) => Some(x)
         case Right(x) =>
-          UIUtils.openMessage(this.parent, SWT.ICON_ERROR | SWT.OK, state.i18n,
+          UIUtils.openMessage(state.shell, SWT.ICON_ERROR | SWT.OK, state.i18n,
                               "_princess.export.invalidNameFormat", x)
           None
       }
@@ -229,14 +223,14 @@ final class ExportCardsDialogMulti(parent: IShellProvider, state: MainFrameState
       case name =>
         this.close()
         val runnable = new ExportMultiTask(state, pool, Paths.get(name), nameSpec, format, options, exportTargets)
-        new ProgressMonitorDialog(parent.getShell).run(true, true, runnable)
+        new ProgressMonitorDialog(state.shell.getShell).run(true, true, runnable)
     }
   }
 }
 
 object ExportCardsDialog {
-  def open(parent: IShellProvider, state: MainFrameState, pool: CardSource, exportTargets: (UUID, CardData)*) =
+  def open(state: MainFrameState, pool: CardSource, exportTargets: (UUID, CardData)*) =
     if(exportTargets.isEmpty) sys.error("No export targets!")
-    else if(exportTargets.length == 1) new ExportCardsDialogSingle(parent, state, pool, exportTargets.head).open()
-    else new ExportCardsDialogMulti(parent, state, pool, exportTargets).open()
+    else if(exportTargets.length == 1) new ExportCardsDialogSingle(state, pool, exportTargets.head).open()
+    else new ExportCardsDialogMulti(state, pool, exportTargets).open()
 }

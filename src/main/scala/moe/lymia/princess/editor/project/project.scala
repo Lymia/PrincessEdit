@@ -22,13 +22,15 @@
 
 package moe.lymia.princess.editor.project
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import java.util.UUID
 
 import moe.lymia.princess.editor.core._
-import moe.lymia.princess.util.VersionInfo
+import moe.lymia.princess.util.{IOUtils, VersionInfo}
 import play.api.libs.json._
 import rx._
+
+import SerializeUtils._
 
 final class CardData(project: Project) extends JsonSerializable {
   val fields = new DataStore
@@ -126,7 +128,9 @@ final class CardPool(project: Project) extends CardSource with DirSerializable {
   }
 }
 
-final class Project(val ctx: ControlContext, val idData: GameIDData) extends CardSource with DirSerializable {
+final class Project(val ctx: ControlContext, val gameId: String, val idData: GameIDData)
+  extends CardSource with DirSerializable {
+
   val cards = Var(Map.empty[UUID, CardData])
   def newCard() = {
     val uuid = UUID.randomUUID()
@@ -157,6 +161,9 @@ final class Project(val ctx: ControlContext, val idData: GameIDData) extends Car
     writeJson(path.resolve("info.json"), Json.obj(
       "info" -> info.serialize
     ))
+    writeJson(path.resolve("metadata.json"), Json.obj(
+      "gameId" -> gameId
+    ))
     writeJson(path.resolve("version.json"), Json.obj(
       "version"   -> 1,
       "program"   -> Json.arr("PrincessEdit", VersionInfo.versionString),
@@ -164,10 +171,32 @@ final class Project(val ctx: ControlContext, val idData: GameIDData) extends Car
     ))
   }
   def readFrom(path: Path) = {
+    val fileGameId = (readJson(path.resolve("metadata.json")) \ "gameId").as[String]
+    if(fileGameId != gameId)
+      sys.error(s"tried to load file for GameID '$fileGameId' in project for GameID '$gameId'")
+
     val version = (readJson(path.resolve("version.json")) \ "version").as[Int]
     if(version != 1) sys.error(s"unknown file format version $version")
     cards.update(readJsonMap(path.resolve("cards"), () => new CardData(this))(_.toString))
     pools.update(readDirMap (path.resolve("pools"), () => new CardPool(this))(_.toString))
     info.deserialize((readJson(path.resolve("info.json")) \ "info").as[JsValue])
   }
+}
+object Project {
+  private def openPath[T](path: Path)(callback: Path => T): T =
+    if(Files.isDirectory(path)) callback(path)
+    else {
+      val filesystem = IOUtils.openZip(path)
+      try callback(filesystem.getPath("/"))
+      finally filesystem.close()
+    }
+
+  def getProjectGameID(path: Path) =
+    openPath(path)(x => (readJson(x.resolve("metadata.json")) \ "gameId").as[String])
+  def loadProject(ctx: ControlContext, gameID: String, idData: GameIDData, path: Path) =
+    openPath(path) { x =>
+      val project = new Project(ctx, gameID, idData)
+      project.readFrom(x)
+      project
+    }
 }

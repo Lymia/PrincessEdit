@@ -24,4 +24,5 @@ package moe.lymia.princess.editor.utils
 
 object MimeType {
   val CardData = "application/vnd.princessedit-cards+json"
+  val Project = "application/vnd.princessedit-project+zip"
 }

@@ -22,11 +22,11 @@
 
 package moe.lymia.princess.editor.ui.mainframe
 
-import java.nio.file.{FileSystems, Paths}
+import java.nio.file.{FileSystems, Path, Paths}
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.core.{I18NLoader, PackageManager}
+import moe.lymia.princess.core.{GameID, I18NLoader, PackageManager}
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.lua.EditorModule
 import moe.lymia.princess.editor.project.{CardSource, Project}
@@ -41,17 +41,29 @@ import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._
 
-class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, val gameId: String) {
+final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projectSource: ProjectSource) {
+  val gameId = projectSource.getGameID
   val game = PackageManager.default.loadGameId(gameId)
   val i18n = new I18NLoader(game).i18n
   game.lua.loadModule(EditorModule(i18n), RenderModule)
 
   val idData = new GameIDData(game, ctx, i18n)
-  val project = new Project(ctx, idData)
+  val project = projectSource.openProject(ctx, gameId, idData)
 
   val currentPool = Var[CardSource](project)
 
-  def openDialog(fn: IShellProvider => Dialog) = fn(mainFrame)
+  private var currentSaveLocation: Option[Path] = None
+  def setSaveLocation(path: Option[Path]) = {
+    // TODO: Lock open files
+    currentSaveLocation = path
+  }
+  setSaveLocation(projectSource.getSaveLocation)
+
+  val shell: IShellProvider = mainFrame
+
+  def dispose() = {
+    currentPool.kill()
+  }
 }
 
 trait PrincessEditTab { this: Control =>
@@ -61,9 +73,30 @@ trait PrincessEditTab { this: Control =>
   def tabImage(): Image  = null
 }
 
+sealed trait ProjectSource {
+  def getGameID: String
+  def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project
+  def getSaveLocation: Option[Path]
+}
+object ProjectSource {
+  // TODO: Throw an error if the given GameID isn't installed
+  case class OpenProject(path: Path) extends ProjectSource {
+    override def getGameID: String = Project.getProjectGameID(path)
+    override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project =
+      Project.loadProject(ctx, gameID, idData, path)
+    override def getSaveLocation: Option[Path] = Some(path)
+  }
+  case class NewProject(id: GameID) extends ProjectSource {
+    override def getGameID: String = id.name
+    override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project =
+      new Project(ctx, gameID, idData)
+    override def getSaveLocation: Option[Path] = None
+  }
+}
+
 case class TabData(tab: PrincessEditTab)
-class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
-  private val state = new MainFrameState(this, ctx, gameId)
+final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends WindowBase(ctx) {
+  private val state = new MainFrameState(this, ctx, projectSource)
 
   override def configureShell(shell: Shell): Unit = {
     super.configureShell(shell)
@@ -102,6 +135,6 @@ class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
     fill.marginWidth = 1
     frame.setLayout(fill)
 
-    currentTab = new EditorPane(frame, this, state)
+    currentTab = new EditorPane(frame, state)
   }
 }

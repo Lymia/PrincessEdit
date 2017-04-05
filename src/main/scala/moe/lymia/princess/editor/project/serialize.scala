@@ -34,21 +34,26 @@ trait JsonSerializable {
 }
 
 trait DirSerializable {
-  protected def writeJson(path: Path, json: JsValue) =
+  def writeTo(path: Path): Unit
+  def readFrom(path: Path): Unit
+}
+
+object SerializeUtils {
+  def writeJson(path: Path, json: JsValue) =
     Files.write(path, Json.prettyPrint(json).getBytes(StandardCharsets.UTF_8))
-  protected def writeJsonMap[K : Writes, V <: JsonSerializable](path: Path, map: Map[K, V])(fileName: K => String) = {
+  def writeJsonMap[K : Writes, V <: JsonSerializable](path: Path, map: Map[K, V])(fileName: K => String) = {
     Files.createDirectories(path)
     writeJson(path.resolve("index.json"), Json.toJson(map.keys.map(fileName)))
     for((id, entry) <- map) writeJson(path.resolve(s"${fileName(id)}.json"), entry.serialize)
   }
-  protected def writeDirMap[K : Writes, V <: DirSerializable](path: Path, map: Map[K, V])(fileName: K => String) = {
+  def writeDirMap[K : Writes, V <: DirSerializable](path: Path, map: Map[K, V])(fileName: K => String) = {
     Files.createDirectories(path)
     writeJson(path.resolve("index.json"), Json.toJson(map.keys.map(fileName)))
     for((id, entry) <- map) entry.writeTo(path.resolve(fileName(id)))
   }
 
-  protected def readJson(path: Path) = Json.parse(IOUtils.readFileAsString(path))
-  protected def readJsonMap[K: Reads, V <: JsonSerializable](path: Path, newValue: () => V)(fileName: K => String) = {
+  def readJson(path: Path) = Json.parse(IOUtils.readFileAsString(path))
+  def readJsonMap[K: Reads, V <: JsonSerializable](path: Path, newValue: () => V)(fileName: K => String) = {
     val list = readJson(path.resolve("index.json")).as[Seq[K]]
     (for(k <- list) yield k -> {
       val v = newValue()
@@ -56,7 +61,7 @@ trait DirSerializable {
       v
     }).toMap
   }
-  protected def readDirMap[K : Reads, V <: DirSerializable](path: Path, newValue: () => V)(fileName: K => String) = {
+  def readDirMap[K : Reads, V <: DirSerializable](path: Path, newValue: () => V)(fileName: K => String) = {
     val list = readJson(path.resolve("index.json")).as[Seq[K]]
     (for(k <- list) yield k -> {
       val v = newValue()
@@ -64,7 +69,4 @@ trait DirSerializable {
       v
     }).toMap
   }
-
-  def writeTo(path: Path): Unit
-  def readFrom(path: Path): Unit
 }
