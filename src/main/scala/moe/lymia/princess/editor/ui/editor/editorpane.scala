@@ -26,8 +26,9 @@ import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.editor.project.CardData
-import moe.lymia.princess.editor.ui.mainframe.MainFrameState
+import moe.lymia.princess.editor.ui.mainframe.{MainFrameState, PrincessEditTab}
 import moe.lymia.princess.editor.utils.RxOwner
+import org.eclipse.jface.action.MenuManager
 import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt._
 import org.eclipse.swt.custom._
@@ -73,7 +74,7 @@ final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) 
 }
 
 final class EditorPane(parent: Composite, val source: IShellProvider, mainState: MainFrameState)
-  extends Composite(parent, SWT.NONE) {
+  extends Composite(parent, SWT.NONE) with PrincessEditTab {
 
   private val editorState = new EditorState(this, mainState)
 
@@ -132,4 +133,8 @@ final class EditorPane(parent: Composite, val source: IShellProvider, mainState:
   }
 
   addDisposeListener(_ => editorState.kill())
+
+  override def addMenuItems(m: MenuManager): Unit = {
+    // TODO
+  }
 }

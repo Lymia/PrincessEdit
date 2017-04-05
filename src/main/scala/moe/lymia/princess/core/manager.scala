@@ -59,8 +59,11 @@ final class GameManager(packages: PackageList, val logger: Logger = DefaultLogge
 
 final class PackageManager(packages: Path, systemPackages: Seq[Path] = Seq(), logger: Logger = DefaultLogger) {
   val resolver = PackageResolver.loadPackageDirectory(packages, systemPackages: _*)
-  lazy val gameIDs = GameID.loadGameIDs(resolver)
-  lazy val gameIDList = gameIDs.values.toSeq
+
+  val gameIdManager = GameID.loadGameIDManager(this)
+  val gameIds = GameID.loadGameIDs(gameIdManager)
+  val gameIdList = gameIds.values.toSeq
+  val gameIdI18N = new I18NLoader(gameIdManager).i18n.user
 
   def loadGameId(gameId: String, logger: Logger = logger, modules: Seq[LuaModule] = Seq()) =
     new GameManager(resolver.loadGameId(gameId), logger, modules)
@@ -71,5 +74,9 @@ object PackageManager {
     case url => Paths.get(new URI(url)).resolve("packages")
   }
   lazy val default = new PackageManager(defaultPath, Seq(CorePkg.packagePath))
-  lazy val system = default.loadGameId("_princess")
+
+  lazy val systemI18N = {
+    val id = default.loadGameId("_princess")
+    new I18NLoader(id).i18n
+  }
 }

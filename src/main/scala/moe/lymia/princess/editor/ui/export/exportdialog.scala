@@ -29,7 +29,7 @@ import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.project.{CardData, CardSource}
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
-import moe.lymia.princess.editor.utils.{DialogBase, HelpButton, Message}
+import moe.lymia.princess.editor.utils.{DialogBase, HelpButton, UIUtils}
 import org.eclipse.jface.dialogs.ProgressMonitorDialog
 import org.eclipse.jface.layout.GridDataFactory
 import org.eclipse.jface.viewers._
@@ -61,7 +61,7 @@ sealed abstract class ExportCardsDialogBase[Data](parent: IShellProvider, state:
 
   private def doExport() =
     if(format == null)
-      Message.open(this, SWT.ICON_ERROR | SWT.OK, state.i18n, "_princess.export.noSelectedFormat")
+      UIUtils.openMessage(this, SWT.ICON_ERROR | SWT.OK, state.i18n, "_princess.export.noSelectedFormat")
     else options.getResult.foreach { options =>
       dataSettings().foreach { data =>
         export(format.asInstanceOf[ExportFormat[Any, _]], options.asInstanceOf[Any], data)
@@ -215,7 +215,8 @@ final class ExportCardsDialogMulti(parent: IShellProvider, state: MainFrameState
       LuaNameSpec(state.game.lua.L, nameSpec.getText, ExportMultiTask.NameSpecFieldNames : _*) match {
         case Left(x) => Some(x)
         case Right(x) =>
-          Message.open(this.parent, SWT.ICON_ERROR | SWT.OK, state.i18n, "_princess.export.invalidNameFormat", x)
+          UIUtils.openMessage(this.parent, SWT.ICON_ERROR | SWT.OK, state.i18n,
+                              "_princess.export.invalidNameFormat", x)
           None
       }
     }

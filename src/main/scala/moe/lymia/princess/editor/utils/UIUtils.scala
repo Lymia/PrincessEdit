@@ -22,6 +22,33 @@
 
 package moe.lymia.princess.editor.utils
 
-object UIUtils {
+import java.nio.file.{Files, Path}
 
+import moe.lymia.princess.core.I18N
+import moe.lymia.princess.renderer.SVGFile
+import moe.lymia.princess.util.IOUtils
+import org.eclipse.jface.window.IShellProvider
+import org.eclipse.swt.graphics.Point
+import org.eclipse.swt.widgets.MessageBox
+
+import scala.xml.XML
+
+object UIUtils {
+  def openMessage(shell: IShellProvider, style: Int, i18n: I18N, root: String, args: Any*) = {
+    val messageBox = new MessageBox(if(shell ne null) shell.getShell else null, style)
+    messageBox.setText(i18n.system(s"$root.title", args : _*))
+    messageBox.setMessage(i18n.system(s"$root.message", args : _*))
+    messageBox.open()
+    messageBox
+  }
+
+  def computeSizeFromRatio(canvasSize: Point, width: Double, height: Double) = {
+    val (cx, cy) = (if(canvasSize.x == 0) 1 else canvasSize.x, if(canvasSize.y == 0) 1 else canvasSize.y)
+    val size = (cx, math.round((cx.toDouble / width) * height).toInt)
+    if(size._2 > cy) (math.round((cy.toDouble / height) * width).toInt, cy)
+    else size
+  }
+
+  def loadSVGFromResource(res: String) = SVGFile(XML.load(IOUtils.getResource(res)))
+  def loadSVGFromPath(path: Path) = SVGFile(XML.load(Files.newInputStream(path)))
 }

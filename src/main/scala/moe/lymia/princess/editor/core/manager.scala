@@ -25,9 +25,11 @@ package moe.lymia.princess.editor.core
 import java.awt.image.BufferedImage
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
+import moe.lymia.princess.editor.utils.ExtendedResourceManager
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.util._
+import org.eclipse.jface.resource.{JFaceResources, LocalResourceManager}
 import org.eclipse.swt.SWT
 import org.eclipse.swt.dnd.Clipboard
 import org.eclipse.swt.graphics._
@@ -37,7 +39,7 @@ import rx._
 
 import scala.util.Try
 
-private case class RasterizerRequest(getData: () => (SVGData, Int, Int),
+private case class RasterizerRequest(getData: () => (SVGRenderable, Int, Int),
                                      callback: Either[BufferedImage => Unit, ImageData => Unit])
 private class VolatileState {
   val rasterizerCondition = new Condition()
@@ -89,6 +91,10 @@ class ControlContext(val display: Display, state: VolatileState, factory: SVGRas
   val clipboard = new Clipboard(display)
   val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
 
+  private val jfaceResources = JFaceResources.getResources(display)
+  val resources = new ExtendedResourceManager(jfaceResources, this)
+  def newResourceManager() = new ExtendedResourceManager(new LocalResourceManager(jfaceResources), this)
+
   def createRasterizer() = factory.createRasterizer()
 
   def newShell(style: Int = SWT.SHELL_TRIM) = new Shell(display, style)
@@ -111,22 +117,22 @@ class ControlContext(val display: Display, state: VolatileState, factory: SVGRas
   def needsSaving() = { } // TODO
   def queueUpdate[A, B <: A](rxVar: Var[A], newValue: B): Unit = state.varUpdates.put(rxVar, newValue)
 
-  def asyncRenderAwt(key: Any, svg: SVGData, x: Int, y: Int)(callback: BufferedImage => Unit) =
+  def asyncRenderAwt(key: Any, svg: SVGRenderable, x: Int, y: Int)(callback: BufferedImage => Unit) =
     state.rasterizerRequests.add(key, RasterizerRequest(() => (svg, x, y), Left (callback)))
-  def asyncRenderSwt(key: Any, svg: SVGData, x: Int, y: Int)(callback: ImageData => Unit) =
+  def asyncRenderSwt(key: Any, svg: SVGRenderable, x: Int, y: Int)(callback: ImageData => Unit) =
     state.rasterizerRequests.add(key, RasterizerRequest(() => (svg, x, y), Right(callback)))
 
-  def asyncRenderAwt(key: Any, getData: => (SVGData, Int, Int))(callback: BufferedImage => Unit) =
+  def asyncRenderAwt(key: Any, getData: => (SVGRenderable, Int, Int))(callback: BufferedImage => Unit) =
     state.rasterizerRequests.add(key, RasterizerRequest(() => getData, Left (callback)))
-  def asyncRenderSwt(key: Any, getData: => (SVGData, Int, Int))(callback: ImageData => Unit) =
+  def asyncRenderSwt(key: Any, getData: => (SVGRenderable, Int, Int))(callback: ImageData => Unit) =
     state.rasterizerRequests.add(key, RasterizerRequest(() => getData, Right(callback)))
 
-  def syncRenderAwt(svg: SVGData, x: Int, y: Int): BufferedImage = {
+  def syncRenderAwt(svg: SVGRenderable, x: Int, y: Int): BufferedImage = {
     val sync = new Syncer[BufferedImage]
     asyncRenderAwt(new Object, svg, x, y)(x => sync.doTry(x))
     sync.sync()
   }
-  def syncRenderSwt(svg: SVGData, x: Int, y: Int): ImageData = {
+  def syncRenderSwt(svg: SVGRenderable, x: Int, y: Int): ImageData = {
     val sync = new Syncer[ImageData]
     asyncRenderSwt(new Object, svg, x, y)(x => sync.doTry(x))
     sync.sync()

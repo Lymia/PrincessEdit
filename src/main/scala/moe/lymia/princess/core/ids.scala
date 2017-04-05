@@ -47,9 +47,10 @@ object GameID {
     val section = ini.getSection("game")
     GameID(section.getSingle("name"), section.getSingle("display-name"), section.getSingleOption("icon"))
   }
-  def loadGameIDs(resolver: PackageResolver) = {
-    val packages = resolver.loadGameId(StaticGameIDs.HasGameID)
-    val gameIDExports = packages.getExports(StaticExportIDs.GameID).map(_.path).map(packages.forceResolve)
+
+  def loadGameIDManager(manager: PackageManager) = manager.loadGameId(StaticGameIDs.HasGameID)
+  def loadGameIDs(game: GameManager) = {
+    val gameIDExports = game.getExports(StaticExportIDs.GameID).map(_.path).map(game.forceResolve)
 
     val idMap = new mutable.HashMap[String, GameID]
     for(id <- gameIDExports.map(loadGameID)) {

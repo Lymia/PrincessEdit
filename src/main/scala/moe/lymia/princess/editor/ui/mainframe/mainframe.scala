@@ -61,6 +61,7 @@ trait PrincessEditTab { this: Control =>
   def tabImage(): Image  = null
 }
 
+case class TabData(tab: PrincessEditTab)
 class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
   private val state = new MainFrameState(this, ctx, gameId)
 
@@ -68,6 +69,8 @@ class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
     super.configureShell(shell)
     shell.setText(s"PrincessEdit v${VersionInfo.versionString}")
   }
+
+  var currentTab: PrincessEditTab = _
 
   override def createMenuManager: MenuManager = {
     val manager = super.createMenuManager()
@@ -85,6 +88,8 @@ class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
     }
     file.add(action)
 
+    if(currentTab != null) currentTab.addMenuItems(manager)
+
     manager
   }
   this.addMenuBar()
@@ -97,6 +102,6 @@ class MainFrame(ctx: ControlContext, gameId: String) extends WindowBase(ctx) {
     fill.marginWidth = 1
     frame.setLayout(fill)
 
-    new EditorPane(frame, this, state)
+    currentTab = new EditorPane(frame, this, state)
   }
 }

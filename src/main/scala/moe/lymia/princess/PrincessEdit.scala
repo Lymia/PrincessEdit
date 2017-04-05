@@ -108,7 +108,7 @@ class CLI {
   }
   private def cmd_listPackages(): Unit = {
     println("Known game IDs:")
-    for(id <- PackageManager.default.gameIDList) println(s" - ${id.displayName} (${id.name})")
+    for(id <- PackageManager.default.gameIdList) println(s" - ${id.displayName} (${id.name})")
   }
 
   private def renderCommon() = time("Loaded Lua context") {

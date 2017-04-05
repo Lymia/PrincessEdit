@@ -37,7 +37,12 @@ object PhysicalUnit {
   val in = PhysicalUnit("in", 1)
 }
 
-final case class PhysicalSize(width: Double, height: Double, unit: PhysicalUnit) {
+trait SizeBase {
+  val width: Double
+  val height: Double
+}
+
+final case class PhysicalSize(width: Double, height: Double, unit: PhysicalUnit) extends SizeBase {
   val widthString  = s"$width${unit.svgName}"
   val heightString = s"$height${unit.svgName}"
 }
@@ -49,12 +54,12 @@ final case class RenderSettings(viewport: Size, unPerViewport: Double, physicalU
     font.deriveFont((ptSize * (coordUnitsPerIn / 72.0)).toFloat)
 }
 
-final case class Size(width: Double, height: Double)
-final case class Bounds(minX: Double, minY: Double, maxX: Double, maxY: Double) {
-  def width  = maxX - minX
-  def height = maxY - minY
+final case class Size(width: Double, height: Double) extends SizeBase
+final case class Bounds(minX: Double, minY: Double, maxX: Double, maxY: Double) extends SizeBase {
+  val width  = maxX - minX
+  val height = maxY - minY
 
-  def size = Size(width, height)
+  lazy val size = Size(width, height)
   def translate(x: Double, y: Double) = Bounds(minX + x, minY + y, maxX + x, maxY + y)
 
   def toRectangle2D = new Rectangle2D.Double(minX, minY, width, height)

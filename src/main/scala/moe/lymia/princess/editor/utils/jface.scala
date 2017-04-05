@@ -26,6 +26,7 @@ import moe.lymia.princess.editor.core.ControlContext
 import org.eclipse.jface.dialogs.Dialog
 import org.eclipse.jface.window.{ApplicationWindow, IShellProvider, Window}
 import org.eclipse.swt.SWT
+import org.eclipse.swt.layout.FillLayout
 import org.eclipse.swt.widgets.{Composite, Control}
 
 trait JFaceWindowBase extends Window {
@@ -36,6 +37,8 @@ trait JFaceWindowBase extends Window {
   protected def frameContents(frame: Composite)
 
   override protected final def createContents(parent: Composite): Control = {
+    parent.setLayout(new FillLayout())
+
     val contents = new Composite(parent, SWT.NONE)
     frameContents(contents)
     contents

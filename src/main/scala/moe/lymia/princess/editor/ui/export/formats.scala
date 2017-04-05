@@ -30,16 +30,13 @@ import javax.imageio.metadata.IIOMetadata
 import javax.imageio.plugins.jpeg.JPEGImageWriteParam
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
-import moe.lymia.princess.editor.utils.Message
+import moe.lymia.princess.editor.utils.UIUtils
 import moe.lymia.princess.rasterizer.SVGRasterizer
 import moe.lymia.princess.renderer.SVGData
 import moe.lymia.princess.util.VersionInfo
-
 import org.eclipse.jface.layout.GridDataFactory
 import org.eclipse.jface.window.IShellProvider
-
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.ImageLoader
 import org.eclipse.swt.layout.GridData
@@ -121,7 +118,7 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
           dpi
         } catch {
           case e: NumberFormatException =>
-            Message.open(parentShell, SWT.ICON_ERROR | SWT.OK, state.i18n, "_princess.export.dpiNotNumber")
+            UIUtils.openMessage(parentShell, SWT.ICON_ERROR | SWT.OK, state.i18n, "_princess.export.dpiNotNumber")
             return None
         }
 
@@ -131,7 +128,7 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
           quality
         } catch {
           case e: NumberFormatException =>
-            Message.open(parentShell, SWT.ICON_ERROR | SWT.OK, state.i18n, "_princess.export.qualityNotNumber")
+            UIUtils.openMessage(parentShell, SWT.ICON_ERROR | SWT.OK, state.i18n, "_princess.export.qualityNotNumber")
             return None
         }
 

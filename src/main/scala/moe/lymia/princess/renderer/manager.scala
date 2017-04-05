@@ -22,16 +22,48 @@
 
 package moe.lymia.princess.renderer
 
+import java.awt.image.BufferedImage
 import java.io.Writer
 
-import moe.lymia.princess.core._
 import moe.lymia.lua._
+import moe.lymia.princess.core._
+import moe.lymia.princess.rasterizer.SVGRasterizer
 import moe.lymia.princess.renderer.components._
 import moe.lymia.princess.renderer.lua._
-import moe.lymia.princess.rasterizer.SVGRasterizer
 import moe.lymia.princess.util.SizedCache
+import org.eclipse.swt.graphics.ImageData
 
-case class SVGData(private val builder: SVGBuilder, private val definition: SVGDefinitionReference) {
+import scala.xml.Elem
+
+trait SVGRenderable {
+  val size: SizeBase
+  def rasterizeAwt(rasterize: SVGRasterizer, x: Int, y: Int): BufferedImage
+  def rasterizeSwt(rasterize: SVGRasterizer, x: Int, y: Int): ImageData
+}
+
+// TODO: Error check this cleaner
+final case class SVGFile(nodes: Elem) extends SVGRenderable {
+  val (width , widthUnit ) = SVGFile.parseLength((nodes \ "@width" ).text)
+  val (height, heightUnit) = SVGFile.parseLength((nodes \ "@height").text)
+
+  if(widthUnit != heightUnit) sys.error("width unit != height unit")
+
+  val size = Size(width, height)
+
+  def rasterizeAwt(rasterize: SVGRasterizer, x: Int, y: Int) = rasterize.rasterizeAwt(x, y, nodes)
+  def rasterizeSwt(rasterize: SVGRasterizer, x: Int, y: Int) = rasterize.rasterizeSwt(x, y, nodes)
+}
+object SVGFile {
+  private val LengthPattern = "([0-9]+(\\.[0-9])?)([a-z]*)".r
+  private def parseLength(str: String) = {
+    val LengthPattern(length, _, unit) = str
+    (length.toDouble, unit)
+  }
+}
+
+final case class SVGData(private val builder: SVGBuilder, private val definition: SVGDefinitionReference)
+  extends SVGRenderable {
+
   val bounds = definition.bounds
   val size = builder.settings.size
 
