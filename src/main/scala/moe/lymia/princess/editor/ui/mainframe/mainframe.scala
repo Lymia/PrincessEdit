@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.editor.ui.mainframe
 
-import java.nio.file.{FileSystems, Path, Paths}
+import java.nio.file.{FileSystems, Files, Path, Paths}
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
@@ -35,7 +35,8 @@ import moe.lymia.princess.editor.utils._
 import moe.lymia.princess.renderer.lua.RenderModule
 import moe.lymia.princess.util.{IOUtils, VersionInfo}
 import org.eclipse.jface.action.{Action, MenuManager}
-import org.eclipse.jface.window.IShellProvider
+import org.eclipse.jface.window.{IShellProvider, Window}
+import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.{Image, Point}
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
@@ -53,6 +54,7 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
   val currentPool = Var[CardSource](project)
 
   private var currentSaveLocation: Option[Path] = None
+  def getSaveLocation = currentSaveLocation
   def setSaveLocation(path: Option[Path]) = {
     // TODO: Lock open files
     currentSaveLocation = path
@@ -105,24 +107,11 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
 
   var currentTab: PrincessEditTab = _
 
+  var menu: MainFrameMenu = _
   override def createMenuManager: MenuManager = {
     val manager = super.createMenuManager()
-
-    val file = new MenuManager()
-    file.setMenuText("File") // TODO I18N
-    manager.add(file)
-
-    val action = new Action() {
-      setText("Save")
-      override def run(): Unit = {
-        val fs = IOUtils.openZip(Paths.get(s"test-save-${UUID.randomUUID()}.pedit-project"), create = true)
-        try state.project.writeTo(fs.getPath("/")) finally fs.close()
-      }
-    }
-    file.add(action)
-
-    if(currentTab != null) currentTab.addMenuItems(manager)
-
+    menu = new MainFrameMenu(manager, this, state)
+    menu.updateMenu()
     manager
   }
   this.addMenuBar()
@@ -136,5 +125,25 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
     frame.setLayout(fill)
 
     currentTab = new EditorPane(frame, state)
+  }
+}
+object MainFrame {
+  private[mainframe] def lockFile(path: Path) = {
+    val lockPath = IOUtils.lock(IOUtils.mapFileName(path, "." + _ + ".lock"))
+    if(!Files.exists(path)) sys.error("can't lock file that doesn't exist")
+    IOUtils.lock(path)
+  }
+
+  def showOpenDialog(parent: Window, ctx: ControlContext, closeOnAccept: Boolean = false) = {
+    val selector = new FileDialog(parent.getShell, SWT.OPEN)
+    selector.setFilterNames(Array(PackageManager.systemI18N.system("_princess.main.project")))
+    selector.setFilterExtensions(Array("*.pedit-project"))
+    selector.setFilterPath(Paths.get(".").toAbsolutePath.toString)
+    selector.open() match {
+      case null =>
+      case target =>
+        new MainFrame(ctx, ProjectSource.OpenProject(Paths.get(target))).open()
+        if(closeOnAccept) parent.close()
+    }
   }
 }

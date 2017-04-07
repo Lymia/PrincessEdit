@@ -23,7 +23,7 @@
 package moe.lymia.princess.editor
 
 import moe.lymia.princess.editor.core._
-import moe.lymia.princess.editor.ui.frontend.FrontEndFrame
+import moe.lymia.princess.editor.ui.frontend.SplashScreen
 import moe.lymia.princess.rasterizer._
 
 class UIMain {
@@ -36,7 +36,7 @@ class UIMain {
     val plaf = InkscapePlatform.instance
     val manager = new UIManager(new InkscapeConnectionFactory(plaf.locateBinary().head))
     manager.mainLoop { ctx =>
-      new FrontEndFrame(ctx).open()
+      new SplashScreen(ctx).open()
     }
   }
 }

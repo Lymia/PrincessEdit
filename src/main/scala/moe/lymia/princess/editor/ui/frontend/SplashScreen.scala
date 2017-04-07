@@ -25,11 +25,12 @@ package moe.lymia.princess.editor.ui.frontend
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.PackageManager
 import moe.lymia.princess.editor.core._
+import moe.lymia.princess.editor.ui.mainframe.MainFrame
 import moe.lymia.princess.editor.utils.WindowBase
 import org.eclipse.swt.events.SelectionEvent
 import org.eclipse.swt.widgets._
 
-class FrontEndFrame(ctx: ControlContext) extends WindowBase(ctx) {
+class SplashScreen(ctx: ControlContext) extends WindowBase(ctx) {
   override def configureShell(shell: Shell): Unit = {
     super.configureShell(shell)
     shell.setText(PackageManager.systemI18N.system("_princess.frontend.title"))
@@ -41,11 +42,11 @@ class FrontEndFrame(ctx: ControlContext) extends WindowBase(ctx) {
       button(
         "New Project", // TODO: I18N
         (event: SelectionEvent) => new GameSelectorDialog(this, ctx, true).open()
+      ),
+      button(
+        "Load Project",
+        (event: SelectionEvent) => MainFrame.showOpenDialog(this, ctx, true)
       )
     )
   }
-}
-
-object FrontEnd {
-
 }

@@ -68,6 +68,10 @@ lazy val pesudoloc = project in file("modules/pseudolocalization-tool") settings
   exportJars := true
 )
 
+lazy val java9ZipFS = project in file("modules/java9-zipfs") settings (
+  exportJars := true
+)
+
 lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   organization := "moe.lymia",
   name := "lua"
@@ -135,7 +139,7 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Version
 
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"
-)) dependsOn corePkg dependsOn swt dependsOn xscalawt dependsOn lua dependsOn pesudoloc
+)) dependsOn corePkg dependsOn swt dependsOn xscalawt dependsOn lua dependsOn pesudoloc dependsOn java9ZipFS
 
 lazy val loader = project in file("modules/loader") settings (commonSettings ++ Seq(
   organization := "moe.lymia.princessedit",

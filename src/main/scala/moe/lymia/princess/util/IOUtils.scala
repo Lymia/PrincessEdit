@@ -30,6 +30,8 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.regex.Pattern
 
+import moe.lymia.zipfs.ZipFileSystemProvider
+
 import scala.collection.JavaConverters._
 import scala.io.Codec
 
@@ -45,6 +47,8 @@ final class FileLock(lockFile: Path) {
     released = true
   }
   if(lock.isEmpty) release()
+
+  if(acquired) IOUtils.hideFile(lockFile)
 }
 
 object IOUtils {
@@ -57,6 +61,11 @@ object IOUtils {
   def loadBinaryFromStream(s: InputStream) = Stream.continually(s.read).takeWhile(_ != -1).map(_.toByte).toArray
   def loadResource(s: String) = loadFromStream(getResource(s))
   def loadBinaryResource(s: String) = loadBinaryFromStream(getResource(s))
+
+  def hideFile(path: Path) =
+    Files.setAttribute(path, "dos:hidden", true)
+  def mapFileName(path: Path, mapFn: String => String) =
+    path.getParent.resolve(mapFn(path.getFileName.toString))
 
   def writeFile(path: Path, data: Array[Byte]): Unit = {
     if(path.getParent != null) Files.createDirectories(path.getParent)
@@ -78,9 +87,10 @@ object IOUtils {
     }
   }
 
+  private val zipFilesystem = new ZipFileSystemProvider
   def openZip(path: Path, create: Boolean = false): FileSystem =
-    FileSystems.newFileSystem(URI.create(s"jar:${path.toUri}"),
-      if(create) Map("create" -> "true").asJava else Map().asJava, getClass.getClassLoader)
+    zipFilesystem.newFileSystem(URI.create(s"jar:${path.toUri}"),
+      if(create) Map("create" -> "true").asJava else Map[String, Any]().asJava)
 
   private val validFilenameRegex = Pattern.compile("^[- 0-9a-zA-Z_./]+$")
   def paranoidResolve(basePath: Path, path: String, dir: Boolean = false): Option[Path] =
