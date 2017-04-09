@@ -32,7 +32,7 @@ trait LuaUIImplicits {
 
 object UILib extends LuaLibrary {
   override def open(L: LuaState, table: LuaTable): Unit = {
-    L.register(table, "Column", (L: LuaState, name: String, width: Int, fn: LuaClosure) =>
-      new TableColumnData(name, width, L, fn))
+    L.register(table, "Column", (L: LuaState, name: String, width: Int, fn: LuaClosure, isDefault: Boolean) =>
+      new TableColumnData(name, width, isDefault, L, fn))
   }
 }

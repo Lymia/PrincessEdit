@@ -88,14 +88,14 @@ object RootSource {
     create(game, controlCtx, i18n, game.getRequiredEntryPoint(export), method)
 }
 
-final class TableColumnData(val title: String, val width: Int, val L: LuaState, val fn: LuaClosure)
-final case class LuaColumnData(columns: Seq[TableColumnData], defaultColumnOrder: Seq[TableColumnData])
+final class TableColumnData(val title: String, val width: Int, val isDefault: Boolean,
+                            val L: LuaState, val fn: LuaClosure)
+final case class LuaColumnData(columns: Seq[TableColumnData])
 object LuaColumnData {
   def apply(game: GameManager): LuaColumnData = {
     val L = game.lua.L.newThread()
     val fn = L.getTable(game.getRequiredEntryPoint("card-columns"), "cardColumns").as[LuaClosure]
-    val Seq(columns, defaultColumnOrder) = L.call(fn, 2)
-    LuaColumnData(columns.as[Seq[TableColumnData]], defaultColumnOrder.as[Seq[TableColumnData]])
+    LuaColumnData(L.call(fn, 1).head.as[Seq[TableColumnData]])
   }
 }
 

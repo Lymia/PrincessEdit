@@ -43,8 +43,8 @@ function cardForm()
 end
 
 function cardColumns()
-    local text = ui.Column("$cah.text", 400, function(card) return card.text end)
+    local text = ui.Column("$cah.text", 400, function(card) return card.text end, true)
     local cardType = ui.Column("$cah.cardType", 75,
-        function(card) return i18n((card.blankCount > 0) and "cah.black" or "cah.white") end)
-    return { text, cardType }, { text, cardType }
+        function(card) return i18n((card.blankCount > 0) and "cah.black" or "cah.white") end, true)
+    return { text, cardType }
 end
