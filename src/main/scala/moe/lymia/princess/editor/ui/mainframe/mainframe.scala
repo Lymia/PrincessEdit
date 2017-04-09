@@ -167,6 +167,11 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
     if(shell != null)
       shell.setText(s"${if(state.hasUnsavedChanges.isDefined) "*" else ""}${state.getSaveName} - PrincessEdit")
 
+  private val platformButtonOrder = SWT.getPlatform match {
+    case "win32" => Array(2, 0, 1)
+    case _ => Array(0, 1, 2)
+  }
+  private val platformReverseOrder = (0 to 2).map(platformButtonOrder.indexOf)
   override def handleShellCloseEvent(): Unit = {
     state.hasUnsavedChanges match {
       case Some(UnsavedChanges(since)) =>
@@ -175,13 +180,14 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
           state.i18n.system("_princess.main.confirmSave.hours", math.ceil(timeSpan.toDouble / (1000 * 60 * 60)).toLong)
         else
           state.i18n.system("_princess.main.confirmSave.minutes", math.ceil(timeSpan.toDouble / (1000 * 60)).toLong)
-        // TODO: Change button order depending on platform
+
         val result = UIUtils.openMessage(this, MessageDialog.WARNING, state.i18n,
-          Seq("_princess.main.confirmSave.closeWithoutSaving", "_princess.main.confirmSave.cancel",
+          platformButtonOrder.map(Seq(
+              "_princess.main.confirmSave.closeWithoutSaving", "_princess.main.confirmSave.cancel",
               if(state.getSaveLocation.isDefined) "_princess.main.confirmSave.save"
-              else "_princess.main.confirmSave.saveAs"), 2,
+              else "_princess.main.confirmSave.saveAs")), platformButtonOrder(2),
           "_princess.main.confirmSave", state.getSaveName, timeName)
-        result match {
+        platformReverseOrder(result) match {
           case SWT.DEFAULT | 1 => // cancel
           case 0 => super.handleShellCloseEvent() // close without saving
           case 2 => if(state.saveAs()) super.handleShellCloseEvent()
