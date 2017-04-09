@@ -42,8 +42,8 @@ final class CardData(project: Project) extends JsonSerializable {
     Rx.unsafe {
       val fields = root.luaData()
       project.idData.columns.columns.map { f =>
-        f._1 -> f._2.L.newThread().call(f._2.fn, 1, fields).head.as[String]
-      }
+        f -> f.L.newThread().call(f.fn, 1, fields).head.as[String]
+      }.toMap
     }
   }
 

@@ -22,6 +22,7 @@ local _princess = ...
 local editor = _princess.editor
 
 ui = {}
+ui.Column = editor.Column
 ui.node = editor.Node
 ui.control = editor.ControlType
 

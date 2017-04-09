@@ -60,9 +60,9 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   private val tableLayout = new TableColumnLayout()
   for(column <- state.idData.columns.defaultColumnOrder.toArray) {
     val col = new TableColumn(viewer.getTable, SWT.NONE)
-    col.setText(state.i18n.user(column))
+    col.setText(state.i18n.user(column.title))
     col.setMoveable(false)
-    tableLayout.setColumnData(col, new ColumnWeightData(100, true))
+    tableLayout.setColumnData(col, new ColumnPixelData(column.width, true))
   }
   setLayout(tableLayout)
 

@@ -22,9 +22,10 @@
 
 package moe.lymia.princess.editor.core
 
-import moe.lymia.princess.core._
-import moe.lymia.princess.editor.nodes._
 import moe.lymia.lua._
+import moe.lymia.princess.core._
+import moe.lymia.princess.editor.lua._
+import moe.lymia.princess.editor.nodes._
 import moe.lymia.princess.editor.utils.RxOwner
 import moe.lymia.princess.renderer.RenderManager
 import org.eclipse.swt.widgets._
@@ -86,15 +87,14 @@ object RootSource {
     create(game, controlCtx, i18n, game.getRequiredEntryPoint(export), method)
 }
 
-final case class TableColumnData(L: LuaState, fn: LuaClosure)
-final case class LuaColumnData(columns: Map[String, TableColumnData], defaultColumnOrder: Seq[String])
+final class TableColumnData(val title: String, val width: Int, val L: LuaState, val fn: LuaClosure)
+final case class LuaColumnData(columns: Seq[TableColumnData], defaultColumnOrder: Seq[TableColumnData])
 object LuaColumnData {
   def apply(game: GameManager): LuaColumnData = {
     val L = game.lua.L.newThread()
     val fn = L.getTable(game.getRequiredEntryPoint("card-columns"), "cardColumns").as[LuaClosure]
     val Seq(columns, defaultColumnOrder) = L.call(fn, 2)
-    LuaColumnData(columns.as[Map[String, LuaClosure]].map { t => t._1 -> TableColumnData(game.lua.L, t._2) },
-                  defaultColumnOrder.as[Seq[String]])
+    LuaColumnData(columns.as[Seq[TableColumnData]], defaultColumnOrder.as[Seq[TableColumnData]])
   }
 }
 

@@ -20,21 +20,19 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor
+package moe.lymia.princess.editor.lua
 
+import moe.lymia.lua._
 import moe.lymia.princess.core._
+import moe.lymia.princess.editor.core.TableColumnData
 
-package object lua
-  extends LuaFieldNodeImplicits
-  with    LuaControlNodeImplicits
-  with    LuaControlTypeImplicits
-  with    LuaContainerImplicits
-  with    LuaUIImplicits {
+trait LuaUIImplicits {
+  implicit object LuaTableColumnData extends LuaUserdataType[TableColumnData]
+}
 
-  case class EditorModule(i18n: I18N) extends LuaModule {
-    override val moduleName: String = "editor"
-    override def getLibraries(ctx: LuaContext): Seq[LuaLibrary] = Seq(
-      ControlNodeLib, ControlTypeLib, ContainerLib, FieldLib, I18NLib(i18n), UILib
-    )
+object UILib extends LuaLibrary {
+  override def open(L: LuaState, table: LuaTable): Unit = {
+    L.register(table, "Column", (L: LuaState, name: String, width: Int, fn: LuaClosure) =>
+      new TableColumnData(name, width, L, fn))
   }
 }

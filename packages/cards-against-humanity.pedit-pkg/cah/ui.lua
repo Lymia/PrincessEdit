@@ -18,21 +18,6 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-local size  = {250, 350}
-local scale = 0.01 * inch
-
-local black = {0, 0, 0}
-local white = {255, 255, 255}
-
-local font  = "FreeSans-Bold"
-
-function cardColumns()
-    return {
-        ["$cah.text"] = function(card) return card.text end,
-        ["$cah.cardType"] = function(card) return i18n((card.blankCount > 0) and "cah.black" or "cah.white") end,
-    }, { "$cah.text", "$cah.cardType" }
-end
-
 function cardForm()
     local textNode = ui.node.Input("text", ui.control.TextField)
     local overrideBlankCount = ui.node.Input("overrideBlankCount", ui.control.CheckBox("$cah.overrideBlankCount"))
@@ -58,39 +43,9 @@ function cardForm()
     }
 end
 
-local function indicatorLine(layout, x, y, header, count, fgColor, bgColor)
-    layout.addComponent(x, y, component.LeftAlign(component.SimpleText(header, font, 10, fgColor)))
-    layout.addComponent(x + 15, y - 5, component.Circle(10, fgColor))
-    layout.addComponent(x + 15, y - 5, component.Center(component.SimpleText(tostring(count), font, 12, bgColor)))
-end
-
-function render(cardData)
-    local text = cardData.text
-    local blankCount = cardData.blankCount
-    local isBlackCard = blankCount > 0
-
-    local bgColor = isBlackCard and black or white
-    local fgColor = isBlackCard and white or black
-
-    local layout = component.BasicLayout(size)
-    layout.addComponent(0, 0, component.Fill(size, bgColor))
-    layout.addComponent(0, 0, component.Resource("cah/cah-logo.svg", size))
-    layout.addComponent(59, 322.5, component.SimpleText("Cards Against Humanity", font, 5.25, fgColor))
-
-    local textLayout = component.SimpleTextLayout({25, 30, 225, 300}, text, font, 15, fgColor)
-    textLayout.lineBreakSize = 1.25
-    layout.addComponent(0, 0, textLayout)
-
-    if blankCount > 1 then
-        indicatorLine(layout, 200, 324, "PICK", blankCount    , fgColor, bgColor)
-    end
-    if blankCount > 2 then
-        indicatorLine(layout, 200, 299, "DRAW", blankCount - 1, fgColor, bgColor)
-        textLayout.addExclusion({150, 275, 250, 350})
-    end
-
-    return {
-        component = component.Mask(component.Resource("cah/card-mask.svg", size), layout),
-        size = size, scale = scale,
-    }
+function cardColumns()
+    local text = ui.Column("$cah.text", 400, function(card) return card.text end)
+    local cardType = ui.Column("$cah.cardType", 75,
+        function(card) return i18n((card.blankCount > 0) and "cah.black" or "cah.white") end)
+    return { text, cardType }, { text, cardType }
 end
