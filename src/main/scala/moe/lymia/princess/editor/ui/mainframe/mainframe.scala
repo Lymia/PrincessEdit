@@ -27,7 +27,6 @@ import java.nio.file.{Files, Path, Paths}
 import moe.lymia.princess.core.{GameID, I18NLoader, PackageManager}
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.lua.EditorModule
-import moe.lymia.princess.editor.nodes.UIContextExtensions
 import moe.lymia.princess.editor.project.{CardSource, Project}
 import moe.lymia.princess.editor.ui.editor.EditorPane
 import moe.lymia.princess.editor.utils._
@@ -65,6 +64,7 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
             lock.foreach(_.release())
             lock = Some(x)
             currentSaveLocation = Some(currentPath)
+            mainFrame.updateTitle()
             true
           case None =>
             UIUtils.openMessage(mainFrame, SWT.ICON_ERROR | SWT.OK, i18n, "_princess.main.projectLocked")
@@ -72,11 +72,14 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
         }
       case None =>
         currentSaveLocation = None
+        mainFrame.updateTitle()
         lock.foreach(_.release())
         true
     }
   }
   projectSource.setSaveLocation(this)
+
+  def getSaveName = currentSaveLocation.fold(i18n.system("_princess.main.untitledProject"))(_.getFileName.toString)
 
   @volatile private var unsavedChangesExist: Boolean = getSaveLocation.isEmpty
   @volatile private var lastUnsavedChange: Long = System.currentTimeMillis()
@@ -84,14 +87,15 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
   def needsSaving() = {
     if(!unsavedChangesExist) lastUnsavedChange = System.currentTimeMillis()
     unsavedChangesExist = true
+    mainFrame.updateTitle()
   }
 
   private def chooseSaveLocation() = {
     val selector = new FileDialog(mainFrame.getShell, SWT.SAVE)
-    selector.setFileName("Untitled Project.pedit-project") // TODO I18N
+    selector.setFileName(getSaveName)
     selector.setFilterNames(Array(i18n.system("_princess.main.project")))
     selector.setFilterExtensions(Array("*.pedit-project"))
-    selector.setFilterPath(Paths.get(".").toAbsolutePath.toString)
+    selector.setFilterPath(currentSaveLocation.fold(Paths.get(".").toAbsolutePath.toString)(_.getParent.toString))
     selector.setOverwrite(true)
     selector.open() match {
       case null => false
@@ -103,6 +107,7 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
     val fs = IOUtils.openZip(getSaveLocation.get, create = true)
     try project.writeTo(fs.getPath("/")) finally fs.close()
     unsavedChangesExist = false
+    mainFrame.updateTitle()
   }
   def save() = if(getSaveLocation.isDefined || chooseSaveLocation()) {
     doSave()
@@ -154,9 +159,13 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
 
   override def configureShell(shell: Shell): Unit = {
     super.configureShell(shell)
-    shell.setText(s"PrincessEdit v${VersionInfo.versionString}")
     shell.addListener(SWT.Dispose, event => state.dispose())
+    updateTitle(shell)
   }
+
+  def updateTitle(shell: Shell = getShell) =
+    if(shell != null)
+      shell.setText(s"${if(state.hasUnsavedChanges.isDefined) "*" else ""}${state.getSaveName} - PrincessEdit")
 
   override def handleShellCloseEvent(): Unit = {
     state.hasUnsavedChanges match {
@@ -170,9 +179,7 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
           Seq("_princess.main.confirmSave.closeWithoutSaving", "_princess.main.confirmSave.cancel",
               if(state.getSaveLocation.isDefined) "_princess.main.confirmSave.save"
               else "_princess.main.confirmSave.saveAs"), 2,
-          // TODO I18N
-          "_princess.main.confirmSave",
-          state.getSaveLocation.fold("Untitled Project")(_.getFileName.toString), timeName)
+          "_princess.main.confirmSave", state.getSaveName, timeName)
         result match {
           case SWT.DEFAULT | 1 => // cancel
           case 0 => super.handleShellCloseEvent() // close without saving
@@ -206,11 +213,8 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
   }
 }
 object MainFrame {
-  private[mainframe] def lockFile(path: Path) = {
-    val lockPath = IOUtils.lock(IOUtils.mapFileName(path, "." + _ + ".lock"))
-    if(!Files.exists(path)) sys.error("can't lock file that doesn't exist")
-    IOUtils.lock(path)
-  }
+  private[mainframe] def lockFile(path: Path) =
+    IOUtils.lock(IOUtils.mapFileName(path, "." + _ + ".lock"))
 
   def showOpenDialog(parent: Window, ctx: ControlContext, closeOnAccept: Boolean = false) = {
     val selector = new FileDialog(parent.getShell, SWT.OPEN)

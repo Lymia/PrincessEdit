@@ -31,6 +31,7 @@ import org.eclipse.swt.widgets._
 
 import rx._
 
+// TODO: Only set the data modified flag if user input caused the component state to change
 trait BasicControlType[T <: Control] extends ControlType {
   def create(parent: Composite, data: ControlData): T
   def registerListener(t: T, data: ControlData, fn: () => Unit)
