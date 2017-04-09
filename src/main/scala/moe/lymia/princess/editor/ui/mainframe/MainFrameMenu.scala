@@ -36,24 +36,6 @@ class MainFrameMenu(menu: MenuManager, frame: MainFrame, state: MainFrameState) 
   val file = new MenuManager()
   file.setMenuText(state.i18n.system("_princess.main.menu.file"))
 
-  def chooseSaveLocation() = {
-    val selector = new FileDialog(frame.getShell, SWT.SAVE)
-    selector.setFileName("New Project.pedit-project")
-    selector.setFilterNames(Array(state.i18n.system("_princess.main.project")))
-    selector.setFilterExtensions(Array("*.pedit-project"))
-    selector.setFilterPath(Paths.get(".").toAbsolutePath.toString)
-    selector.setOverwrite(true)
-    selector.open() match {
-      case null => false
-      case target =>
-        state.setSaveLocation(Some(Paths.get(target)))
-    }
-  }
-  def doSave() = {
-    val fs = IOUtils.openZip(state.getSaveLocation.get, create = true)
-    try state.project.writeTo(fs.getPath("/")) finally fs.close()
-  }
-
   private val newAction = new Action() {
     setText(state.i18n.system("_princess.main.menu.file.new"))
     override def run() = new GameSelectorDialog(frame, state.ctx).open()
@@ -66,12 +48,12 @@ class MainFrameMenu(menu: MenuManager, frame: MainFrame, state: MainFrameState) 
   }
   private val saveAction = new Action() {
     setText(state.i18n.system("_princess.main.menu.file.save"))
-    override def run() = if(state.getSaveLocation.isDefined || chooseSaveLocation()) doSave()
+    override def run() = state.save()
     file.add(this)
   }
   private val saveAsAction = new Action() {
     setText(state.i18n.system("_princess.main.menu.file.saveAs"))
-    override def run() = if(chooseSaveLocation()) doSave()
+    override def run() = state.saveAs()
     file.add(this)
   }
 

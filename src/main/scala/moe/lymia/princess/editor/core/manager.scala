@@ -114,7 +114,6 @@ class ControlContext(val display: Display, state: VolatileState, factory: SVGRas
     }
   }
 
-  def needsSaving() = { } // TODO
   def queueUpdate[A, B <: A](rxVar: Var[A], newValue: B): Unit = state.varUpdates.put(rxVar, newValue)
 
   def asyncRenderAwt(key: Any, svg: SVGRenderable, x: Int, y: Int)(callback: BufferedImage => Unit) =

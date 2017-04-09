@@ -70,7 +70,7 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
           _.marginWidth = 5,
           _.marginHeight = 5
         ),
-        x => ui = cardData.root.createUI(x)
+        x => ui = cardData.root.createUI(x, state)
       ),
       _.setContent(uiContainer),
       _.setExpandVertical(true),

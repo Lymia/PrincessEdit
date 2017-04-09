@@ -198,8 +198,6 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
   }
 }
 
-// TODO: Check if com.sun.imageio.plugins.jpeg.JPEGImageWriter and com.sun.imageio.plugins.png.PNGImageWriter are still broken
-
 object ExportFormat {
   case object PNG  extends SimpleRasterExport("_princess.export.png", Seq("png")) {
     private val oracleImpl = "com.sun.imageio.plugins.png.PNGImageWriter"

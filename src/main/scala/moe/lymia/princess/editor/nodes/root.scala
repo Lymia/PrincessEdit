@@ -38,17 +38,6 @@ import rx._
 import scala.collection.mutable
 import scala.collection.JavaConverters._
 
-final class UIContext(prefix: String, val registerControlCallbacks: Control => Unit) {
-  private val uiActivatedCardField = new mutable.HashSet[String]
-  def activateCardField(name: String) = {
-      if(uiActivatedCardField.contains(name))
-        throw EditorException(s"Cannot reuse UI element controlling card data field '${prefix+name}'!")
-      uiActivatedCardField.add(name)
-  }
-
-  def newUIContext(ctx: NodeContext) = new UIContext(ctx.prefix, registerControlCallbacks)
-}
-
 final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext, val i18n: I18N,
                         val prefixSeq: Seq[String] = Seq()) {
   val internal_L = L.newThread()
@@ -80,8 +69,8 @@ final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: Co
       case None => activatedCardFields.put(name, node)
     }
 
-  def newUIContext(registerControlCallbacks: Control => Unit) =
-    new UIContext(prefix, registerControlCallbacks)
+  def newUIContext(ext: UIContextExtensions, registerControlCallbacks: Control => Unit) =
+    new UIContext(prefix, ext, registerControlCallbacks)
 }
 
 final class RxPane(uiRoot: Composite, context: NodeContext, uiCtx: UIContext, rootRx: Rx[ActiveRootNode])

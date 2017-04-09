@@ -22,20 +22,19 @@
 
 package moe.lymia.princess.editor.ui.mainframe
 
-import java.nio.file.{FileSystems, Files, Path, Paths}
-import java.util.UUID
+import java.nio.file.{Files, Path, Paths}
 
-import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.PrincessEdit
 import moe.lymia.princess.core.{GameID, I18NLoader, PackageManager}
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.lua.EditorModule
+import moe.lymia.princess.editor.nodes.UIContextExtensions
 import moe.lymia.princess.editor.project.{CardSource, Project}
 import moe.lymia.princess.editor.ui.editor.EditorPane
 import moe.lymia.princess.editor.utils._
 import moe.lymia.princess.renderer.lua.RenderModule
 import moe.lymia.princess.util.{FileLock, IOUtils, VersionInfo}
-import org.eclipse.jface.action.{Action, MenuManager}
+import org.eclipse.jface.action.MenuManager
+import org.eclipse.jface.dialogs.MessageDialog
 import org.eclipse.jface.window.{IShellProvider, Window}
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.{Image, Point}
@@ -43,7 +42,10 @@ import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._
 
-final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projectSource: ProjectSource) {
+final case class UnsavedChanges(since: Long)
+final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projectSource: ProjectSource)
+  extends UIContextExtensions {
+
   val gameId = projectSource.getGameID
   val game = PackageManager.default.loadGameId(gameId)
   val i18n = new I18NLoader(game).i18n
@@ -77,6 +79,41 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
     }
   }
   projectSource.setSaveLocation(this)
+
+  @volatile private var unsavedChangesExist: Boolean = getSaveLocation.isEmpty
+  @volatile private var lastUnsavedChange: Long = System.currentTimeMillis()
+  def hasUnsavedChanges = if(unsavedChangesExist) Some(UnsavedChanges(lastUnsavedChange)) else None
+  override def needsSaving() = {
+    if(!unsavedChangesExist) lastUnsavedChange = System.currentTimeMillis()
+    unsavedChangesExist = true
+  }
+
+  private def chooseSaveLocation() = {
+    val selector = new FileDialog(mainFrame.getShell, SWT.SAVE)
+    selector.setFileName("Untitled Project.pedit-project") // TODO I18N
+    selector.setFilterNames(Array(i18n.system("_princess.main.project")))
+    selector.setFilterExtensions(Array("*.pedit-project"))
+    selector.setFilterPath(Paths.get(".").toAbsolutePath.toString)
+    selector.setOverwrite(true)
+    selector.open() match {
+      case null => false
+      case target =>
+        setSaveLocation(Some(Paths.get(target)))
+    }
+  }
+  private def doSave() = {
+    val fs = IOUtils.openZip(getSaveLocation.get, create = true)
+    try project.writeTo(fs.getPath("/")) finally fs.close()
+    unsavedChangesExist = false
+  }
+  def save() = if(getSaveLocation.isDefined || chooseSaveLocation()) {
+    doSave()
+    true
+  } else false
+  def saveAs() = if(chooseSaveLocation()) {
+    doSave()
+    true
+  } else false
 
   val shell: IShellProvider = mainFrame
 
@@ -120,6 +157,32 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
   override def configureShell(shell: Shell): Unit = {
     super.configureShell(shell)
     shell.setText(s"PrincessEdit v${VersionInfo.versionString}")
+    shell.addListener(SWT.Dispose, event => state.dispose())
+  }
+
+  override def handleShellCloseEvent(): Unit = {
+    state.hasUnsavedChanges match {
+      case Some(UnsavedChanges(since)) =>
+        val timeSpan = System.currentTimeMillis() - since
+        val timeName = if(timeSpan > 1000 * 60 * 60)
+          state.i18n.system("_princess.main.confirmSave.hours", math.ceil(timeSpan.toDouble / (1000 * 60 * 60)).toLong)
+        else
+          state.i18n.system("_princess.main.confirmSave.minutes", math.ceil(timeSpan.toDouble / (1000 * 60)).toLong)
+        val result = UIUtils.openMessage(this, MessageDialog.WARNING, state.i18n,
+          Seq("_princess.main.confirmSave.closeWithoutSaving", "_princess.main.confirmSave.cancel",
+              if(state.getSaveLocation.isDefined) "_princess.main.confirmSave.save"
+              else "_princess.main.confirmSave.saveAs"), 2,
+          // TODO I18N
+          "_princess.main.confirmSave",
+          state.getSaveLocation.fold("Untitled Project")(_.getFileName.toString), timeName)
+        result match {
+          case SWT.DEFAULT | 1 => // cancel
+          case 0 => super.handleShellCloseEvent() // close without saving
+          case 2 => if(state.saveAs()) super.handleShellCloseEvent()
+        }
+      case None =>
+        super.handleShellCloseEvent()
+    }
   }
 
   var currentTab: PrincessEditTab = _

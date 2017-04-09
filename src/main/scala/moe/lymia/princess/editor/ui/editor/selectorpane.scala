@@ -112,12 +112,14 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   private val paste = new Action(state.i18n.system("_princess.editor.copyCard")) {
     setAccelerator(SWT.CTRL | 'V')
     override def run() = state.ctx.clipboard.getContents(CardTransfer) match {
-      case transfer: CardTransferData => for(card <- transfer.json) {
-        val uuid = state.project.newCard()
-        val data = state.project.cards.now(uuid)
-        data.deserialize(card)
-        data.copied()
-      }
+      case transfer: CardTransferData =>
+        for(card <- transfer.json) {
+          val uuid = state.project.newCard()
+          val data = state.project.cards.now(uuid)
+          data.deserialize(card)
+          data.copied()
+        }
+        state.needsSaving()
       case _ =>
     }
   }
@@ -127,7 +129,10 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   }
   private val addCard = new Action(state.i18n.system("_princess.editor.newCard")) {
     setAccelerator(SWT.CTRL | SWT.CR)
-    override def run() = setSelection(state.project.newCard())
+    override def run() = {
+      setSelection(state.project.newCard())
+      state.needsSaving()
+    }
   }
   private val editCard = new Action(state.i18n.system("_princess.editor.editCard")) {
     setAccelerator(SWT.CR)

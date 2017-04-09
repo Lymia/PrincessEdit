@@ -42,7 +42,7 @@ trait BasicControlType[T <: Control] extends ControlType {
 
     setValue(component, data, data.backing.now)
     registerListener(component, data, () => {
-      data.ctx.needsSaving()
+      data.ext.needsSaving()
       data.ctx.queueUpdate(data.backing, getValue(component, data))
     })
 
@@ -56,7 +56,7 @@ trait BasicControlType[T <: Control] extends ControlType {
           }
         }
         if(isDefault) {
-          data.ctx.needsSaving()
+          data.ext.needsSaving()
           data.ctx.queueUpdate(data.backing, field)
         }
       }

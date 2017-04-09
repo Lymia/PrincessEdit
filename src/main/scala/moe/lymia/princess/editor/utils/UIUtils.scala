@@ -27,7 +27,9 @@ import java.nio.file.{Files, Path}
 import moe.lymia.princess.core.I18N
 import moe.lymia.princess.renderer.SVGFile
 import moe.lymia.princess.util.IOUtils
+import org.eclipse.jface.dialogs.MessageDialog
 import org.eclipse.jface.window.IShellProvider
+import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Point
 import org.eclipse.swt.widgets.MessageBox
 
@@ -39,7 +41,16 @@ object UIUtils {
     messageBox.setText(i18n.system(s"$root.title", args : _*))
     messageBox.setMessage(i18n.system(s"$root.message", args : _*))
     messageBox.open()
-    messageBox
+  }
+
+  def openMessage(shell: IShellProvider, icon: Int, i18n: I18N, options: Seq[String], defaultOption: Int,
+                  root: String, args: Any*) = {
+    val messageDialog =
+      new MessageDialog(if(shell ne null) shell.getShell else null,
+                        i18n.system(s"$root.title", args : _*), null, i18n.system(s"$root.message", args : _*),
+                        icon, options.map(x => i18n.system(x, args : _*)).toArray, defaultOption)
+    messageDialog.setBlockOnOpen(true)
+    messageDialog.open()
   }
 
   def computeSizeFromRatio(canvasSize: Point, width: Double, height: Double) = {

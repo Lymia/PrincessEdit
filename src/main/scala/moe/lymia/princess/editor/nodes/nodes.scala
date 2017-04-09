@@ -24,17 +24,31 @@ package moe.lymia.princess.editor.nodes
 
 import moe.lymia.princess.editor.core._
 import moe.lymia.lua._
-import moe.lymia.princess.core.I18N
-
+import moe.lymia.princess.core.{EditorException, I18N}
 import org.eclipse.swt.widgets._
-
 import rx._
+
+import scala.collection.mutable
 
 sealed trait TreeNode
 
+trait UIContextExtensions {
+  def needsSaving(): Unit
+}
+final class UIContext(prefix: String, val ext: UIContextExtensions, val registerControlCallbacks: Control => Unit) {
+  private val uiActivatedCardField = new mutable.HashSet[String]
+  def activateCardField(name: String) = {
+      if(uiActivatedCardField.contains(name))
+        throw EditorException(s"Cannot reuse UI element controlling card data field '${prefix+name}'!")
+      uiActivatedCardField.add(name)
+  }
+
+  def newUIContext(ctx: NodeContext) = new UIContext(ctx.prefix, ext, registerControlCallbacks)
+}
+
 final case class ControlDataDefault(isDefault: Rx[Boolean], field: Rx[DataField])
-final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlContext, i18n: I18N,
-                             backing: Var[DataField], default: Option[ControlDataDefault])
+final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlContext, ext: UIContextExtensions,
+                             i18n: I18N, backing: Var[DataField], default: Option[ControlDataDefault])
 trait ControlType {
   def expectedFieldType: DataFieldType[_]
   def defaultValue: DataField
@@ -88,7 +102,7 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
     ctx.activateCardField(fieldName, this)
     uiCtx.activateCardField(fieldName)
 
-    val data = ControlData(ctx.L, ctx.internal_L, ctx.controlCtx, ctx.i18n, checkDefault(ctx),
+    val data = ControlData(ctx.L, ctx.internal_L, ctx.controlCtx, uiCtx.ext, ctx.i18n, checkDefault(ctx),
                            default.map(v => ControlDataDefault(
                              ctx.activateNode(v.isDefault).map(_.fromLua[Boolean](ctx.internal_L)),
                              ctx.activateNode(v.field).map(x =>
