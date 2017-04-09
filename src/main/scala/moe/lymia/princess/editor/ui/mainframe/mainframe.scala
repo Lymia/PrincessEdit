@@ -81,8 +81,8 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
 
   def getSaveName = currentSaveLocation.fold(i18n.system("_princess.main.untitledProject"))(_.getFileName.toString)
 
-  @volatile private var unsavedChangesExist: Boolean = getSaveLocation.isEmpty
-  @volatile private var lastUnsavedChange: Long = System.currentTimeMillis()
+  @volatile private var unsavedChangesExist: Boolean = false
+  @volatile private var lastUnsavedChange: Long = 0
   def hasUnsavedChanges = if(unsavedChangesExist) Some(UnsavedChanges(lastUnsavedChange)) else None
   def needsSaving() = {
     if(!unsavedChangesExist) lastUnsavedChange = System.currentTimeMillis()
@@ -175,6 +175,7 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
           state.i18n.system("_princess.main.confirmSave.hours", math.ceil(timeSpan.toDouble / (1000 * 60 * 60)).toLong)
         else
           state.i18n.system("_princess.main.confirmSave.minutes", math.ceil(timeSpan.toDouble / (1000 * 60)).toLong)
+        // TODO: Change button order depending on platform
         val result = UIUtils.openMessage(this, MessageDialog.WARNING, state.i18n,
           Seq("_princess.main.confirmSave.closeWithoutSaving", "_princess.main.confirmSave.cancel",
               if(state.getSaveLocation.isDefined) "_princess.main.confirmSave.save"
