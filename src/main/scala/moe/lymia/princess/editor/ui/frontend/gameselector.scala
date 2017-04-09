@@ -104,9 +104,15 @@ final class GameSelectorDialog(parent: Window, ctx: ControlContext, closeParent:
   override def getInitialSize: Point = new Point(800, 600)
 
   def newProject() = {
-    new MainFrame(ctx, ProjectSource.NewProject(selector.getGameID.get)).open()
-    close()
-    if(closeParent) parent.close()
+    selector.getGameID match {
+      case Some(x) =>
+        new MainFrame(ctx, ProjectSource.NewProject(x)).open()
+        close()
+        if(closeParent) parent.close()
+      case None =>
+        UIUtils.openMessage(this, SWT.ICON_ERROR | SWT.OK,
+                            PackageManager.systemI18N, "_princess.frontend.noGameSelected")
+    }
   }
 
   private var selector: GameSelectorViewer = _
