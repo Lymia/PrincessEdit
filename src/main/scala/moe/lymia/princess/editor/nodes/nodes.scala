@@ -33,7 +33,7 @@ import scala.collection.mutable
 sealed trait TreeNode
 
 trait UIContextExtensions {
-  def needsSaving(): Unit
+  def onDataModify(): Unit
 }
 final class UIContext(prefix: String, val ext: UIContextExtensions, val registerControlCallbacks: Control => Unit) {
   private val uiActivatedCardField = new mutable.HashSet[String]

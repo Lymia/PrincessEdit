@@ -43,9 +43,7 @@ import org.eclipse.swt.widgets._
 import rx._
 
 final case class UnsavedChanges(since: Long)
-final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projectSource: ProjectSource)
-  extends UIContextExtensions {
-
+final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projectSource: ProjectSource) {
   val gameId = projectSource.getGameID
   val game = PackageManager.default.loadGameId(gameId)
   val i18n = new I18NLoader(game).i18n
@@ -83,7 +81,7 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
   @volatile private var unsavedChangesExist: Boolean = getSaveLocation.isEmpty
   @volatile private var lastUnsavedChange: Long = System.currentTimeMillis()
   def hasUnsavedChanges = if(unsavedChangesExist) Some(UnsavedChanges(lastUnsavedChange)) else None
-  override def needsSaving() = {
+  def needsSaving() = {
     if(!unsavedChangesExist) lastUnsavedChange = System.currentTimeMillis()
     unsavedChangesExist = true
   }

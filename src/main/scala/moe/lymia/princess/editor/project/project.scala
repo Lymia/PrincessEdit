@@ -35,6 +35,9 @@ import SerializeUtils._
 final class CardData(project: Project) extends JsonSerializable {
   val fields = new DataStore
   var createTime = System.currentTimeMillis()
+  var modifyTime = System.currentTimeMillis()
+
+  def modified() = modifyTime = System.currentTimeMillis()
 
   val root = project.ctx.syncLuaExec { project.idData.card.createRoot(fields, Seq()) }
 
@@ -49,10 +52,11 @@ final class CardData(project: Project) extends JsonSerializable {
 
   def copied() = createTime = System.currentTimeMillis()
 
-  def serialize = Json.obj("fields" -> fields.serialize, "createTime" -> createTime)
+  def serialize = Json.obj("fields" -> fields.serialize, "createTime" -> createTime, "modifyTime" -> modifyTime)
   def deserialize(js: JsValue) = {
     fields.deserialize((js \ "fields").as[JsValue])
     createTime = (js \ "createTime").as[Long]
+    modifyTime = (js \ "modifyTime").as[Long]
   }
 }
 
