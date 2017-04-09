@@ -34,15 +34,16 @@ import scala.collection.mutable
 object ContainerUtils {
   case class Align(align: Int)
 
-  class Setups[T](setups: Seq[T => Unit], newValue: => T) extends (() => T) {
+  final class Setups[T](setups: Seq[T => Unit], newValue: => T) extends (() => T) {
     def apply() = {
       val value = newValue
       setups.foreach(_(value))
       value
     }
   }
-  class SetupsBuilder[T](L: LuaState, table: LuaTable, newValue: => T) {
+  final class SetupsBuilder[T](L: LuaState, table: LuaTable, newValue: => T) {
     val setups = new mutable.ArrayBuffer[T => Unit]()
+    def addSetup(setup: T => Unit) = setups += setup
     def flag(s: String, setup: T => Unit) =
       if(L.rawGet(table, s).as[Boolean]) setups += setup
     def value[U : FromLua](s: String, setup: (T, U) => Unit) =
@@ -107,7 +108,10 @@ object ContainerLib extends LuaLibrary {
         GridComponent(component, x, y, tabOrder, setups.getFn)
       }
 
-      val setups = new SetupsBuilder(L, table, new GridLayout())
+      val setups = new SetupsBuilder(L, data, new GridLayout())
+
+      setups.addSetup(_.marginWidth = 0)
+      setups.addSetup(_.marginHeight = 0)
 
       setups.flag("equalColumns", _.makeColumnsEqualWidth = true)
 

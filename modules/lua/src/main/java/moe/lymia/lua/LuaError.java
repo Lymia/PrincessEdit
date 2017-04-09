@@ -30,8 +30,8 @@ package moe.lymia.lua;
 public final class LuaError extends RuntimeException {
     int errorStatus;
 
-    LuaError(int errorStatus, String message) {
-        super(message);
+    LuaError(int errorStatus, String message, Throwable e) {
+        super(message, e);
         this.errorStatus = errorStatus;
     }
 }

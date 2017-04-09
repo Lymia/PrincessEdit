@@ -496,7 +496,17 @@ public final class Lua {
      * @return never.
      */
     public int error(Object message) {
-        return gErrormsg(where(1) + message);
+        return error(message, null);
+    }
+
+    /**
+     * Generates a Lua error using the error message.
+     *
+     * @param message the error message.
+     * @return never.
+     */
+    public int error(Object message, Exception e) {
+        return gErrormsg(where(1) + message, e);
     }
 
     /**
@@ -507,7 +517,7 @@ public final class Lua {
      * @return never.
      */
     public int error(Object message, int level) {
-        return gErrormsg(where(level) + message);
+        return gErrormsg(where(level) + message, null);
     }
 
     /**
@@ -2259,7 +2269,11 @@ public final class Lua {
     }
 
     void dThrow(int status, String message) {
-        throw new LuaError(status, message);
+        throw new LuaError(status, message, null);
+    }
+
+    void dThrow(int status, String message, Throwable e) {
+        throw new LuaError(status, message, e);
     }
 
 
@@ -2347,17 +2361,17 @@ public final class Lua {
         return true;
     }
 
-    private int gErrormsg(Object message) {
+    private int gErrormsg(Object message, Throwable e) {
         push(message);
         if (errfunc != null)        // is there an error handling function
         {
             if (!isFunction(errfunc)) {
-                dThrow(ERRERR, message.toString());
+                dThrow(ERRERR, message.toString(), e);
             }
             insert(errfunc, getTop());        // push function (under error arg)
             vmCall(stackSize - 2, 1);        // call it
         }
-        dThrow(ERRRUN, message.toString());
+        dThrow(ERRRUN, message.toString(), e);
         // NOTREACHED
         return 0;
     }
@@ -2384,7 +2398,7 @@ public final class Lua {
     }
 
     void gRunerror(String s) {
-        gErrormsg(ciWhere() + s);
+        gErrormsg(ciWhere() + s, null);
     }
 
     private void gTypeerror(Object o, String op) {

@@ -62,7 +62,7 @@ case class ScalaLuaClosure(fn: LuaJavaCallback) extends AnyVal {
     } catch {
       case e: LuaError => throw e
       case e: LuaErrorMarker => L.error(e.getMessage)
-      case e: Exception => L.error(s"Java error - ${e.getClass}: ${e.getMessage}")
+      case e: Exception => L.error(s"Java error - ${e.getClass}: ${e.getMessage}", e)
     }) else this
 }
 object ScalaLuaClosure {

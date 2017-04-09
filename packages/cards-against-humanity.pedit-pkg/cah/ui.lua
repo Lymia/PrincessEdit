@@ -33,13 +33,12 @@ function cardForm()
     return {
         text = textNode,
         blankCount = blankCount.map(tonumber),
-    }, ui.node.Grid {
-        {ui.node.Label("$cah.text"), x = 0, y = 0, xAlign = ui.node.Grid.BEGINNING},
-        {textNode, x = 1, y = 0, xFill = true, xExpand = true},
-
-        {ui.node.Label("$cah.blankCount"), x = 0, y = 1, xAlign = ui.node.Grid.BEGINNING},
-        {overrideBlankCount, x = 1, y = 1, xAlign = ui.node.Grid.BEGINNING},
-        {blankCount, x = 1, y = 2, xFill = true, xExpand = true},
+    }, ui.node.Labeled {
+        {"$cah.text", textNode},
+        {"$cah.blankCount", {
+            {overrideBlankCount, xAlign = ui.node.Grid.BEGINNING},
+            {blankCount, xFill = true, xExpand = true}
+        }}
     }
 end
 

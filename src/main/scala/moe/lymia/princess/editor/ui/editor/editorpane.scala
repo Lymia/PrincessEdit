@@ -58,13 +58,21 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
   )
 
   private var scrolled: ScrolledComposite = _
+  private var uiContainer: Composite = _
   private var ui: UIData = _
 
   this.contains (
     *[ScrolledComposite](SWT.V_SCROLL | SWT.BORDER) (
       scrolled = _,
-      x => ui = cardData.root.createUI(x),
-      _.setContent(ui.control),
+      composite(
+        uiContainer = _,
+        fillLayout(
+          _.marginWidth = 5,
+          _.marginHeight = 5
+        ),
+        x => ui = cardData.root.createUI(x)
+      ),
+      _.setContent(uiContainer),
       _.setExpandVertical(true),
       _.setExpandHorizontal(true),
       _.layoutData = new GridData(SWT.FILL, SWT.FILL, true, true)
@@ -77,7 +85,7 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
   )
 
   private def updateScrolledComposite() = {
-    scrolled.setMinSize(ui.control.computeSize(SWT.DEFAULT, SWT.DEFAULT))
+    scrolled.setMinSize(uiContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT))
     scrolled.layout(true)
   }
   updateScrolledComposite()
@@ -115,17 +123,17 @@ final class EditorPane(parent: Composite, mainState: MainFrameState)
   private var selector: CardSelectorTableViewer = _
 
   this.contains(
-    _.setLayout(new FillLayout()),
+    fillLayout(),
     sashForm (
-      _.setLayout(new FillLayout()),
+      fillLayout(),
       *[Composite](SWT.BORDER) (
-        _.setLayout(new FillLayout()),
+        fillLayout(),
         x => new RendererPane(x, editorState)
       ),
       composite (
         _.setLayout(stack),
         *[Composite](SWT.BORDER) (
-          _.setLayout(new FillLayout()),
+          fillLayout(),
           x => selector = new CardSelectorTableViewer(x, editorState),
           selectorContainer = _
         ),
