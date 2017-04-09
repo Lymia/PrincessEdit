@@ -26,6 +26,7 @@ import java.nio.file.{FileSystems, Files, Path, Paths}
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
+import moe.lymia.princess.PrincessEdit
 import moe.lymia.princess.core.{GameID, I18NLoader, PackageManager}
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.lua.EditorModule
@@ -33,7 +34,7 @@ import moe.lymia.princess.editor.project.{CardSource, Project}
 import moe.lymia.princess.editor.ui.editor.EditorPane
 import moe.lymia.princess.editor.utils._
 import moe.lymia.princess.renderer.lua.RenderModule
-import moe.lymia.princess.util.{IOUtils, VersionInfo}
+import moe.lymia.princess.util.{FileLock, IOUtils, VersionInfo}
 import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.jface.window.{IShellProvider, Window}
 import org.eclipse.swt.SWT
@@ -54,12 +55,28 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
   val currentPool = Var[CardSource](project)
 
   private var currentSaveLocation: Option[Path] = None
+  private var lock: Option[FileLock] = None
   def getSaveLocation = currentSaveLocation
-  def setSaveLocation(path: Option[Path]) = {
-    // TODO: Lock open files
-    currentSaveLocation = path
+  def setSaveLocation(path: Option[Path], preLock: Option[FileLock] = None) = {
+    path match {
+      case Some(currentPath) =>
+        preLock.orElse(MainFrame.lockFile(currentPath)) match {
+          case Some(x) =>
+            lock.foreach(_.release())
+            lock = Some(x)
+            currentSaveLocation = Some(currentPath)
+            true
+          case None =>
+            UIUtils.openMessage(mainFrame, SWT.ICON_ERROR | SWT.OK, i18n, "_princess.main.projectLocked")
+            false
+        }
+      case None =>
+        currentSaveLocation = None
+        lock.foreach(_.release())
+        true
+    }
   }
-  setSaveLocation(projectSource.getSaveLocation)
+  projectSource.setSaveLocation(this)
 
   val shell: IShellProvider = mainFrame
 
@@ -78,21 +95,21 @@ trait PrincessEditTab { this: Control =>
 sealed trait ProjectSource {
   def getGameID: String
   def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project
-  def getSaveLocation: Option[Path]
+  def setSaveLocation(state: MainFrameState): Unit
 }
 object ProjectSource {
   // TODO: Throw an error if the given GameID isn't installed
-  case class OpenProject(path: Path) extends ProjectSource {
+  case class OpenProject(path: Path, lock: FileLock) extends ProjectSource {
     override def getGameID: String = Project.getProjectGameID(path)
     override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project =
       Project.loadProject(ctx, gameID, idData, path)
-    override def getSaveLocation: Option[Path] = Some(path)
+    override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(Some(path), Some(lock))
   }
   case class NewProject(id: GameID) extends ProjectSource {
     override def getGameID: String = id.name
     override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project =
       new Project(ctx, gameID, idData)
-    override def getSaveLocation: Option[Path] = None
+    override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(None, None)
   }
 }
 
@@ -142,8 +159,15 @@ object MainFrame {
     selector.open() match {
       case null =>
       case target =>
-        new MainFrame(ctx, ProjectSource.OpenProject(Paths.get(target))).open()
-        if(closeOnAccept) parent.close()
+        val path = Paths.get(target)
+        lockFile(path) match {
+          case Some(lock) =>
+            new MainFrame(ctx, ProjectSource.OpenProject(path, lock)).open()
+            if(closeOnAccept) parent.close()
+          case None =>
+            UIUtils.openMessage(parent, SWT.ICON_ERROR | SWT.OK,
+                                PackageManager.systemI18N, "_princess.main.projectLocked")
+        }
     }
   }
 }

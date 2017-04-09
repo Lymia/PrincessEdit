@@ -47,7 +47,6 @@ class MainFrameMenu(menu: MenuManager, frame: MainFrame, state: MainFrameState) 
       case null => false
       case target =>
         state.setSaveLocation(Some(Paths.get(target)))
-        true
     }
   }
   def doSave() = {

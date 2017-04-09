@@ -24,7 +24,7 @@ package moe.lymia.princess.util
 
 import java.io.{File, IOException, InputStream, InputStreamReader}
 import java.net.URI
-import java.nio.channels.FileChannel
+import java.nio.channels.{FileChannel, OverlappingFileLockException}
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
@@ -37,7 +37,11 @@ import scala.io.Codec
 
 final class FileLock(lockFile: Path) {
   private val channel  = FileChannel.open(lockFile, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
-  private val lock     = Option(channel.tryLock)
+  private val lock     = try {
+    Option(channel.tryLock)
+  } catch {
+    case e: OverlappingFileLockException => None
+  }
   private var released = false
 
   val acquired = lock.isDefined
