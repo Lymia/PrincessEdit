@@ -187,7 +187,7 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
               if(state.getSaveLocation.isDefined) "_princess.main.confirmSave.save"
               else "_princess.main.confirmSave.saveAs")), platformReverseOrder(2),
           "_princess.main.confirmSave", state.getSaveName, timeName)
-        platformReverseOrder(result) match {
+        platformButtonOrder(result) match {
           case SWT.DEFAULT | 1 => // cancel
           case 0 => super.handleShellCloseEvent() // close without saving
           case 2 => if(state.saveAs()) super.handleShellCloseEvent()
