@@ -185,7 +185,7 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
           platformButtonOrder.map(Seq(
               "_princess.main.confirmSave.closeWithoutSaving", "_princess.main.confirmSave.cancel",
               if(state.getSaveLocation.isDefined) "_princess.main.confirmSave.save"
-              else "_princess.main.confirmSave.saveAs")), platformButtonOrder(2),
+              else "_princess.main.confirmSave.saveAs")), platformReverseOrder(2),
           "_princess.main.confirmSave", state.getSaveName, timeName)
         platformReverseOrder(result) match {
           case SWT.DEFAULT | 1 => // cancel
