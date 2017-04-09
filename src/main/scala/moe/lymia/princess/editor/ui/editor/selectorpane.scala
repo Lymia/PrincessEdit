@@ -187,7 +187,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   }
   viewer.getTable.addKeyListener(new KeyListener {
     override def keyPressed(keyEvent: KeyEvent): Unit = {
-      val ctrl = (keyEvent.stateMask & SWT.CTRL) == SWT.CTRL
+      val ctrl = keyEvent.stateMask == SWT.CTRL
 
       val doit = keyEvent.doit
       keyEvent.doit = false
