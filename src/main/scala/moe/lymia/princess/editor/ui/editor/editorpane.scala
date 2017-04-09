@@ -25,13 +25,14 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
+import moe.lymia.princess.editor.core.UIData
 import moe.lymia.princess.editor.project.CardData
 import moe.lymia.princess.editor.ui.mainframe.{MainFrameState, PrincessEditTab}
 import moe.lymia.princess.editor.utils.RxOwner
 import org.eclipse.jface.action.MenuManager
-import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt._
 import org.eclipse.swt.custom._
+import org.eclipse.swt.events.SelectionEvent
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._
@@ -39,19 +40,49 @@ import rx._
 final class CardEditorPane(parent: Composite, state: EditorState, cardData: CardData)
   extends Composite(parent, SWT.NONE) {
 
-  setLayout(new FillLayout())
+  private val grid = new GridLayout()
+  grid.marginWidth = 0
+  grid.marginHeight = 0
+  setLayout(grid)
 
   private var deactivated = false
+  private def deactivate() = {
+      if(!deactivated) state.deactivateEditor()
+      deactivated = true
+  }
   addTraverseListener(event =>
     if(event.detail == SWT.TRAVERSE_ESCAPE) {
       event.doit = false
-      if(!deactivated) state.deactivateEditor()
-      deactivated = true
+      deactivate()
     }
   )
 
-  val ui = cardData.root.createUI(this)
-  setTabList(Array(ui.control))
+  private var scrolled: ScrolledComposite = _
+  private var ui: UIData = _
+
+  this.contains (
+    *[ScrolledComposite](SWT.V_SCROLL | SWT.BORDER) (
+      scrolled = _,
+      x => ui = cardData.root.createUI(x),
+      _.setContent(ui.control),
+      _.setExpandVertical(true),
+      _.setExpandHorizontal(true),
+      _.layoutData = new GridData(SWT.FILL, SWT.FILL, true, true)
+    ),
+    button (
+      state.i18n.system("_princess.editor.back"),
+      (event: SelectionEvent) => deactivate(),
+      _.layoutData = new GridData(SWT.FILL, SWT.NONE, true, false)
+    )
+  )
+
+  private def updateScrolledComposite() = {
+    scrolled.setMinSize(ui.control.computeSize(SWT.DEFAULT, SWT.DEFAULT))
+    scrolled.layout(true)
+  }
+  updateScrolledComposite()
+  ui.control.addListener(SWT.Resize, _ => updateScrolledComposite())
+
   addDisposeListener(_ => ui.kill())
 }
 
@@ -78,27 +109,33 @@ final class EditorPane(parent: Composite, mainState: MainFrameState)
   private val editorState = new EditorState(this, mainState)
 
   private val stack = new StackLayout
+
   private var listContainer: Composite = _
+  private var selectorContainer: Composite = _
   private var selector: CardSelectorTableViewer = _
 
   this.contains(
     _.setLayout(new FillLayout()),
-    sashForm(
+    sashForm (
       _.setLayout(new FillLayout()),
       *[Composite](SWT.BORDER) (
         _.setLayout(new FillLayout()),
         x => new RendererPane(x, editorState)
       ),
-      *[Composite](SWT.BORDER) (
+      composite (
         _.setLayout(stack),
-        listContainer = _,
-        x => selector = new CardSelectorTableViewer(x, editorState)
+        *[Composite](SWT.BORDER) (
+          _.setLayout(new FillLayout()),
+          x => selector = new CardSelectorTableViewer(x, editorState),
+          selectorContainer = _
+        ),
+        listContainer = _
       ),
       _.setWeights(Array(1000, 1618))
     )
   )
 
-  stack.topControl = selector
+  stack.topControl = selectorContainer
 
   private var currentEditor: Option[CardEditorPane] = None
   private def clearCurrentEditor() = {
@@ -107,7 +144,7 @@ final class EditorPane(parent: Composite, mainState: MainFrameState)
       case None =>
     }
     currentEditor = None
-    stack.topControl = selector
+    stack.topControl = selectorContainer
   }
 
   private var editorActive = false
