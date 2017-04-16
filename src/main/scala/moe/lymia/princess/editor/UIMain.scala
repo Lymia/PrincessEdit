@@ -22,21 +22,30 @@
 
 package moe.lymia.princess.editor
 
+import java.nio.file.Paths
+
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.ui.frontend.SplashScreen
+import moe.lymia.princess.editor.ui.mainframe.MainFrame
 import moe.lymia.princess.rasterizer._
 
 class UIMain {
+  private var loadFile: Option[String] = None
   trait ScoptArgs { this: scopt.OptionParser[Unit] =>
     def uiOptions() = {
-      // TODO
+      arg[String]("<project.pedit-project>").foreach(x => loadFile = Some(x)).hidden().optional()
     }
   }
   def main() = {
     val plaf = InkscapePlatform.instance
-    val manager = new UIManager(new InkscapeConnectionFactory(plaf.locateBinary().head))
+    val manager = new UIManager(plaf.locateBinary().head.createFactory())
     manager.mainLoop { ctx =>
-      new SplashScreen(ctx).open()
+      loadFile match {
+        case Some(x) =>
+          MainFrame.loadProject(null, ctx, Paths.get(x))
+        case None =>
+          new SplashScreen(ctx).open()
+      }
     }
   }
 }

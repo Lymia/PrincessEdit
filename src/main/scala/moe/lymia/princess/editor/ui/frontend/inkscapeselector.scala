@@ -20,20 +20,8 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.lua
+package moe.lymia.princess.editor.ui.frontend
 
-import moe.lymia.lua._
-import moe.lymia.princess.core._
-import moe.lymia.princess.editor.core.TableColumnData
+class inkscapeselector {
 
-trait LuaUIImplicits {
-  implicit object LuaTableColumnData extends LuaUserdataType[TableColumnData]
-}
-
-object UILib extends LuaLibrary {
-  override def open(L: LuaState, table: LuaTable): Unit = {
-    L.register(table, "Column", (L: LuaState, name: String, width: Int, fn: LuaClosure, sortFn: Option[LuaClosure],
-                                 isDefault: Boolean) =>
-      new TableColumnData(name, width, isDefault, L, fn, sortFn))
-  }
 }

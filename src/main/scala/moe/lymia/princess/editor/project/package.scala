@@ -20,20 +20,10 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.lua
+package moe.lymia.princess.editor
 
-import moe.lymia.lua._
-import moe.lymia.princess.core._
-import moe.lymia.princess.editor.core.TableColumnData
+import play.api.libs.json.Json
 
-trait LuaUIImplicits {
-  implicit object LuaTableColumnData extends LuaUserdataType[TableColumnData]
-}
-
-object UILib extends LuaLibrary {
-  override def open(L: LuaState, table: LuaTable): Unit = {
-    L.register(table, "Column", (L: LuaState, name: String, width: Int, fn: LuaClosure, sortFn: Option[LuaClosure],
-                                 isDefault: Boolean) =>
-      new TableColumnData(name, width, isDefault, L, fn, sortFn))
-  }
+package object project {
+  implicit val format = Json.format[ColumnData]
 }

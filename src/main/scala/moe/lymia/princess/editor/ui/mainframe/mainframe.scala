@@ -27,7 +27,7 @@ import java.nio.file.{Files, Path, Paths}
 import moe.lymia.princess.core.{GameID, I18NLoader, PackageManager}
 import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.lua.EditorModule
-import moe.lymia.princess.editor.project.{CardSource, Project}
+import moe.lymia.princess.editor.project.{CardSource, Project, ProjectMetadata}
 import moe.lymia.princess.editor.ui.editor.EditorPane
 import moe.lymia.princess.editor.utils._
 import moe.lymia.princess.renderer.lua.RenderModule
@@ -95,7 +95,8 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
     selector.setFileName(getSaveName)
     selector.setFilterNames(Array(i18n.system("_princess.main.project")))
     selector.setFilterExtensions(Array("*.pedit-project"))
-    selector.setFilterPath(currentSaveLocation.fold(Paths.get(".").toAbsolutePath.toString)(_.getParent.toString))
+    selector.setFilterPath(currentSaveLocation.fold(Paths.get(".").toAbsolutePath.toString)
+                                                   (_.toAbsolutePath.getParent.toString))
     selector.setOverwrite(true)
     selector.open() match {
       case null => false
@@ -139,8 +140,8 @@ sealed trait ProjectSource {
 }
 object ProjectSource {
   // TODO: Throw an error if the given GameID isn't installed
-  case class OpenProject(path: Path, lock: FileLock) extends ProjectSource {
-    override def getGameID: String = Project.getProjectGameID(path)
+  case class OpenProject(path: Path, meta: ProjectMetadata, lock: FileLock) extends ProjectSource {
+    override def getGameID: String = meta.gameId
     override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project =
       Project.loadProject(ctx, gameID, idData, path)
     override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(Some(path), Some(lock))
@@ -190,7 +191,7 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
         platformButtonOrder(result) match {
           case SWT.DEFAULT | 1 => // cancel
           case 0 => super.handleShellCloseEvent() // close without saving
-          case 2 => if(state.saveAs()) super.handleShellCloseEvent()
+          case 2 => if(state.save()) super.handleShellCloseEvent()
         }
       case None =>
         super.handleShellCloseEvent()
@@ -223,6 +224,29 @@ object MainFrame {
   private[mainframe] def lockFile(path: Path) =
     IOUtils.lock(IOUtils.mapFileName(path, "." + _ + ".lock"))
 
+  def loadProject(parent: Window, ctx: ControlContext, path: Path, closeOnAccept: Boolean = false) =
+    lockFile(path) match {
+      case Some(lock) =>
+        val meta = Project.getProjectMetadata(path)
+        lazy val errorSeq = Seq(meta.createdBy, meta.versionMajor, meta.versionMinor,
+                                s"PrincessEdit ${VersionInfo.versionString}", Project.VER_MAJOR, Project.VER_MINOR)
+
+        if(meta.versionMajor <= Project.VER_MAJOR) {
+          if(meta.versionMinor <= Project.VER_MINOR ||
+             UIUtils.openMessage(parent, SWT.ICON_WARNING | SWT.YES | SWT.NO, PackageManager.systemI18N,
+                                 "_princess.main.incompatibleMinorVersion", errorSeq : _*) == SWT.YES) {
+            new MainFrame(ctx, ProjectSource.OpenProject(path, meta, lock)).open()
+            if(closeOnAccept) parent.close()
+          } else lock.release()
+        } else {
+          UIUtils.openMessage(parent, SWT.ICON_ERROR | SWT.OK, PackageManager.systemI18N,
+                              "_princess.main.incompatibleMajorVersion", errorSeq : _*)
+          lock.release()
+        }
+      case None =>
+        UIUtils.openMessage(parent, SWT.ICON_ERROR | SWT.OK,
+                            PackageManager.systemI18N, "_princess.main.projectLocked")
+    }
   def showOpenDialog(parent: Window, ctx: ControlContext, closeOnAccept: Boolean = false) = {
     val selector = new FileDialog(parent.getShell, SWT.OPEN)
     selector.setFilterNames(Array(PackageManager.systemI18N.system("_princess.main.project")))
@@ -231,15 +255,7 @@ object MainFrame {
     selector.open() match {
       case null =>
       case target =>
-        val path = Paths.get(target)
-        lockFile(path) match {
-          case Some(lock) =>
-            new MainFrame(ctx, ProjectSource.OpenProject(path, lock)).open()
-            if(closeOnAccept) parent.close()
-          case None =>
-            UIUtils.openMessage(parent, SWT.ICON_ERROR | SWT.OK,
-                                PackageManager.systemI18N, "_princess.main.projectLocked")
-        }
+        loadProject(parent, ctx, Paths.get(target), closeOnAccept)
     }
   }
 }

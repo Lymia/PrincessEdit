@@ -89,7 +89,7 @@ object RootSource {
 }
 
 final class TableColumnData(val title: String, val width: Int, val isDefault: Boolean,
-                            val L: LuaState, val fn: LuaClosure)
+                            val L: LuaState, val fn: LuaClosure, val sortFn: Option[LuaClosure])
 final case class LuaColumnData(columns: Seq[TableColumnData])
 object LuaColumnData {
   def apply(game: GameManager): LuaColumnData = {

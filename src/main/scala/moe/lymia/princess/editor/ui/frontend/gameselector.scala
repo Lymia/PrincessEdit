@@ -98,7 +98,7 @@ final class GameSelectorDialog(parent: Window, ctx: ControlContext, closeParent:
 
   override def configureShell(shell: Shell): Unit = {
     super.configureShell(shell)
-    shell.setText(PackageManager.systemI18N.system("_princess.selector.title"))
+    shell.setText(PackageManager.systemI18N.system("_princess.gameSelector.title"))
   }
 
   override def getInitialSize: Point = new Point(800, 600)
@@ -111,7 +111,7 @@ final class GameSelectorDialog(parent: Window, ctx: ControlContext, closeParent:
         if(closeParent) parent.close()
       case None =>
         UIUtils.openMessage(this, SWT.ICON_ERROR | SWT.OK,
-                            PackageManager.systemI18N, "_princess.frontend.noGameSelected")
+                            PackageManager.systemI18N, "_princess.gameSelector.noGameSelected")
     }
   }
 
@@ -123,7 +123,7 @@ final class GameSelectorDialog(parent: Window, ctx: ControlContext, closeParent:
       _.layoutData = new GridData(SWT.FILL, SWT.FILL, true, true)
     ),
     button(
-      PackageManager.systemI18N.system("_princess.selector.create"),
+      PackageManager.systemI18N.system("_princess.gameSelector.create"),
       (event: SelectionEvent) => newProject(),
       _.layoutData = new GridData(SWT.END, SWT.CENTER, false, false)
     )

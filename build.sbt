@@ -130,12 +130,14 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Version
   fork in run := true,
   envVars in run += ("SWT_GTK3", "0"),
 
-  libraryDependencies += "org.ini4j" % "ini4j" % "0.5.2",
+  libraryDependencies += "org.ini4j" % "ini4j" % "0.5.4",
   libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
   libraryDependencies += "org.jfree" % "jfreesvg" % "3.2",
   libraryDependencies += "com.lihaoyi" %% "scalarx" % "0.3.2",
-  libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.0-M5",
+  libraryDependencies += "com.typesafe.play" %% "play-json" % "2.6.0-M6",
   libraryDependencies += "com.github.scopt" %% "scopt" % "3.5.0",
+  libraryDependencies += "net.java.dev.jna" % "jna" % "4.4.0",
+  libraryDependencies += "net.java.dev.jna" % "jna-platform" % "4.4.0",
 
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"

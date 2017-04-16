@@ -71,12 +71,18 @@ final class SlotData(project: Project) extends JsonSerializable {
   }
 }
 
+final case class ColumnData(name: String, isActive: Boolean)
 final class CardSourceInfo(project: Project) extends JsonSerializable {
   val fields = new DataStore
   val root = project.ctx.syncLuaExec { project.idData.set.createRoot(fields, Seq()) }
 
-  def serialize = Json.obj("fields" -> fields.serialize)
-  def deserialize(js: JsValue) = fields.deserialize((js \ "fields").as[JsValue])
+  var columnData: Seq[ColumnData] = Seq()
+
+  def serialize = Json.obj("fields" -> fields.serialize, "columnData" -> columnData)
+  def deserialize(js: JsValue) = {
+    fields.deserialize((js \ "fields").as[JsValue])
+    columnData = (js \ "columnData").as[Seq[ColumnData]]
+  }
 }
 
 trait CardSource {
@@ -149,6 +155,7 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
     uuid
   }
 
+  var uuid = UUID.randomUUID()
   override val info: CardSourceInfo = new CardSourceInfo(this)
 
   override val allCards: Rx[Seq[UUID]] = Rx.unsafe {
@@ -163,30 +170,41 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
     writeJsonMap(path.resolve("cards"), cards.now)(_.toString)
     writeDirMap (path.resolve("pools"), pools.now)(_.toString)
     writeJson(path.resolve("info.json"), Json.obj(
+      "uuid" -> uuid,
       "info" -> info.serialize
     ))
     writeJson(path.resolve("metadata.json"), Json.obj(
-      "gameId" -> gameId
-    ))
-    writeJson(path.resolve("version.json"), Json.obj(
-      "version"   -> 1,
+      "version"   -> Json.obj(
+        "major" -> Project.VER_MAJOR,
+        "minor" -> Project.VER_MINOR
+      ),
+      "gameId" -> gameId,
       "program"   -> Json.arr("PrincessEdit", VersionInfo.versionString),
       "writeTime" -> System.currentTimeMillis()
     ))
   }
   def readFrom(path: Path) = {
-    val fileGameId = (readJson(path.resolve("metadata.json")) \ "gameId").as[String]
+    val metadata = readJson(path.resolve("metadata.json"))
+    val fileGameId = (metadata \ "gameId").as[String]
     if(fileGameId != gameId)
       sys.error(s"tried to load file for GameID '$fileGameId' in project for GameID '$gameId'")
 
-    val version = (readJson(path.resolve("version.json")) \ "version").as[Int]
-    if(version != 1) sys.error(s"unknown file format version $version")
+    val version = (metadata \ "version" \ "major").as[Int]
+    if(version != Project.VER_MAJOR) sys.error(s"unknown file format version $version")
     cards.update(readJsonMap(path.resolve("cards"), () => new CardData(this))(_.toString))
     pools.update(readDirMap (path.resolve("pools"), () => new CardPool(this))(_.toString))
-    info.deserialize((readJson(path.resolve("info.json")) \ "info").as[JsValue])
+
+    val infoJson = readJson(path.resolve("info.json"))
+    uuid = (infoJson \ "uuid").as[UUID]
+    info.deserialize((infoJson \ "info").as[JsValue])
   }
 }
+
+case class ProjectMetadata(gameId: String, versionMajor: Int, versionMinor: Int, createdBy: String)
 object Project {
+  val VER_MAJOR = 1
+  val VER_MINOR = 0
+
   private def openPath[T](path: Path)(callback: Path => T): T =
     if(Files.isDirectory(path)) callback(path)
     else {
@@ -195,8 +213,16 @@ object Project {
       finally filesystem.close()
     }
 
-  def getProjectGameID(path: Path) =
-    openPath(path)(x => (readJson(x.resolve("metadata.json")) \ "gameId").as[String])
+  def getProjectMetadata(path: Path) =
+    openPath(path)(x => {
+      val metadata = readJson(x.resolve("metadata.json"))
+      ProjectMetadata(
+        (metadata \ "gameId").as[String],
+        (metadata \ "version" \ "major").as[Int],
+        (metadata \ "version" \ "minor").as[Int],
+        (metadata \ "program").as[Seq[String]].mkString(" ")
+      )
+    })
   def loadProject(ctx: ControlContext, gameID: String, idData: GameIDData, path: Path) =
     openPath(path) { x =>
       val project = new Project(ctx, gameID, idData)

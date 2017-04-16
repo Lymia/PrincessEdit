@@ -29,10 +29,12 @@ function cardForm()
             return tostring(ret)
         end
     ))
+    local intBlankCount = blankCount.map(tonumber)
 
     return {
         text = textNode,
-        blankCount = blankCount.map(tonumber),
+        blankCount = intBlankCount,
+        isBlack = intBlankCount.map(function(x) return x > 0 end)
     }, ui.node.Labeled {
         {"$cah.text", textNode},
         {"$cah.blankCount", {
@@ -43,8 +45,9 @@ function cardForm()
 end
 
 function cardColumns()
-    local text = ui.Column("$cah.text", 400, function(card) return card.text end, true)
+    local text = ui.Column("$cah.text", 400, function(card) return card.text end, nil, true)
     local cardType = ui.Column("$cah.cardType", 75,
-        function(card) return i18n((card.blankCount > 0) and "cah.black" or "cah.white") end, true)
+        function(card) return i18n(card.isBlack and "cah.black" or "cah.white") end,
+        function(a, b) return (a.isBlack and 1 or 0) - (b.isBlack and 1 or 0) end, true)
     return { text, cardType }
 end

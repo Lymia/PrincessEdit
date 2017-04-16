@@ -69,7 +69,7 @@ object IOUtils {
   def hideFile(path: Path) =
     Files.setAttribute(path, "dos:hidden", true)
   def mapFileName(path: Path, mapFn: String => String) =
-    path.getParent.resolve(mapFn(path.getFileName.toString))
+    path.toAbsolutePath.getParent.resolve(mapFn(path.getFileName.toString))
 
   def writeFile(path: Path, data: Array[Byte]): Unit = {
     if(path.getParent != null) Files.createDirectories(path.getParent)

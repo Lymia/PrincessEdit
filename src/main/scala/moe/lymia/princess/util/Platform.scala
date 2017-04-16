@@ -20,20 +20,35 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.lua
+package moe.lymia.princess.util
 
-import moe.lymia.lua._
-import moe.lymia.princess.core._
-import moe.lymia.princess.editor.core.TableColumnData
+import java.nio.file.{Path, Paths}
 
-trait LuaUIImplicits {
-  implicit object LuaTableColumnData extends LuaUserdataType[TableColumnData]
+import com.sun.jna.platform.win32.{Shell32Util, ShlObj}
+
+sealed trait Platform {
+  val configurationRoot: Path
 }
-
-object UILib extends LuaLibrary {
-  override def open(L: LuaState, table: LuaTable): Unit = {
-    L.register(table, "Column", (L: LuaState, name: String, width: Int, fn: LuaClosure, sortFn: Option[LuaClosure],
-                                 isDefault: Boolean) =>
-      new TableColumnData(name, width, isDefault, L, fn, sortFn))
+object Platform {
+  case object Windows extends Platform {
+    override lazy val configurationRoot: Path =
+      Paths.get(Shell32Util.getFolderPath(ShlObj.CSIDL_APPDATA))
   }
+  case object MacOS extends Platform {
+    override lazy val configurationRoot: Path =
+      Paths.get(System.getProperty("user.home")).resolve("Library/Preferences")
+  }
+  case object Linux extends Platform {
+    override lazy val configurationRoot: Path =
+      Paths.get(System.getProperty("user.home"))
+  }
+
+  lazy val platformOption = sys.props("os.name") match {
+    case null => None
+    case x if x.startsWith("Windows ") => Some(Windows)
+    case x if x.startsWith("Mac ") => Some(MacOS)
+    case "Linux" => Some(Linux)
+    case _ => None
+  }
+  def platform = platformOption.get
 }

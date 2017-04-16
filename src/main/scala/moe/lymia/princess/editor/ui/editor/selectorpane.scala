@@ -57,14 +57,19 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
       RowData(id, info, state.idData.columns.columns.filter(_.isDefault).map(columns))
     })
   }
-  private val tableLayout = new TableColumnLayout()
-  for(column <- state.idData.columns.columns.filter(_.isDefault).toArray) {
-    val col = new TableColumn(viewer.getTable, SWT.NONE)
-    col.setText(state.i18n.user(column.title))
-    col.setMoveable(false)
-    tableLayout.setColumnData(col, new ColumnPixelData(column.width, true))
+  def refreshColumns() = {
+    for(column <- viewer.getTable.getColumns) column.dispose()
+
+    val tableLayout = new TableColumnLayout()
+    for(column <- state.idData.columns.columns.filter(_.isDefault).toArray) {
+      val col = new TableColumn(viewer.getTable, SWT.NONE)
+      col.setText(state.i18n.user(column.title))
+      col.setMoveable(false)
+      tableLayout.setColumnData(col, new ColumnPixelData(column.width, true))
+    }
+    setLayout(tableLayout)
   }
-  setLayout(tableLayout)
+  refreshColumns()
 
   // Setup viewer providers
   viewer.setContentProvider(new IStructuredContentProvider {

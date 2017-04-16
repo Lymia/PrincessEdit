@@ -124,7 +124,7 @@ class CLI {
   private def cmd_rasterize(): Unit = {
     val (mainObj, cardData) = renderCommon()
     val rasterizer = time("Creating rasterizer instance") {
-      new InkscapeConnectionFactory(InkscapePlatform.instance.locateBinary().head).createRasterizer()
+      InkscapePlatform.instance.locateBinary().head.createFactory().createRasterizer()
     }
     try {
       val data = time("Executing components") { mainObj.render(Seq(cardData), RasterizeResourceLoader) }
