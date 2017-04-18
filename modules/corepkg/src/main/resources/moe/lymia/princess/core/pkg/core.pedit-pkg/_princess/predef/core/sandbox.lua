@@ -48,9 +48,7 @@ local log, TRACE, where = core.log, core.LogLevel.TRACE, core.where
 -- Remove non-whitelisted functions
 
 local function trace(str)
-    local loc = where(1)
-    if loc then loc = "script "..loc end
-    return log(TRACE, loc, function() return str end)
+    return log(TRACE, where(1), function() return str end)
 end
 
 local function set(t)
