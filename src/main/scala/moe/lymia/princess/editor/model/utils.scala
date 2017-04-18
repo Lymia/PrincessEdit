@@ -28,6 +28,35 @@ import java.nio.file.{Files, Path}
 import moe.lymia.princess.util.IOUtils
 import play.api.libs.json._
 
+trait TrackModifyTime {
+  var createTime = System.currentTimeMillis()
+  var modifyTime = System.currentTimeMillis()
+
+  def modified() = modifyTime = System.currentTimeMillis()
+
+  protected def serializeModifyTime = Json.obj("create" -> createTime, "modify" -> modifyTime)
+  protected def deserializeModifyTime(js: JsValue) = {
+    createTime = (js \ "create").as[Long]
+    modifyTime = (js \ "modify").as[Long]
+  }
+}
+
+trait HasDataStore extends TrackModifyTime {
+  protected val project: Project
+
+  val fields = new DataStore
+  fields.addChangeListener((_, _) => {
+    project.modified()
+    modified()
+  })
+
+  protected def serializeDataStore = Json.obj("fields" -> fields.serialize, "time" -> serializeModifyTime)
+  protected def deserializeDataStore(js: JsValue) = {
+    fields.deserialize((js \ "fields").as[JsValue])
+    deserializeModifyTime((js \ "time").as[JsValue])
+  }
+}
+
 trait JsonSerializable {
   def serialize: JsValue
   def deserialize(js: JsValue): Unit

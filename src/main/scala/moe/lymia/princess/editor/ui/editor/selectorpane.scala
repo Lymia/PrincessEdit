@@ -121,9 +121,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
           val uuid = state.project.newCard()
           val data = state.project.cards.now(uuid)
           data.deserialize(card)
-          data.copied()
         }
-        state.needsSaving()
       case _ =>
     }
   }
@@ -133,10 +131,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   }
   private val addCard = new Action(state.i18n.system("_princess.editor.newCard")) {
     setAccelerator(SWT.CTRL | SWT.CR)
-    override def run() = {
-      setSelection(state.project.newCard())
-      state.needsSaving()
-    }
+    override def run() = setSelection(state.project.newCard())
   }
   private val editCard = new Action(state.i18n.system("_princess.editor.editCard")) {
     setAccelerator(SWT.CR)

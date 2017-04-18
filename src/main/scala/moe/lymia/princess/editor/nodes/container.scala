@@ -32,6 +32,7 @@ import rx._
 import scala.collection.mutable
 
 case class LabelNode(text: String) extends ControlNode {
+  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = SetupData.none
   override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {
     val label = new Label(parent, SWT.NONE)
     label.setText(ctx.i18n.user(text))
@@ -40,11 +41,18 @@ case class LabelNode(text: String) extends ControlNode {
 }
 
 case object SpacerNode extends ControlNode {
+  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = SetupData.none
   override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) =
     new Label(parent, SWT.NONE)
 }
 
 case class VisibilityNode(isVisible: FieldNode, contents: ControlNode) extends ControlNode {
+  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner): SetupData = {
+    ctx.setupNode(isVisible)
+    ctx.setupNode(contents)
+    SetupData.none
+  }
+
   override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {
     val container = new Composite(parent, SWT.NONE)
     container.setLayout(new GridLayout)
@@ -69,6 +77,10 @@ case class VisibilityNode(isVisible: FieldNode, contents: ControlNode) extends C
 case class GridComponent(component: ControlNode, x: Int, y: Int, tabOrder: Int, newConstraints: () => GridData)
 private case class ComputedGridComponent(component: ControlNode, tabOrder: Int, newConstraints: () => GridData)
 class GridNode private (data: Seq[ComputedGridComponent], newLayout: () => GridLayout) extends ControlNode {
+  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = {
+    data.foreach(x => ctx.setupNode(x.component))
+    SetupData.none
+  }
   override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {
     val pane = new Composite(parent, SWT.NONE)
     pane.setLayout(newLayout())

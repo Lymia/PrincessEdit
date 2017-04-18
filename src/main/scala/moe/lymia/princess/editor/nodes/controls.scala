@@ -29,7 +29,6 @@ import org.eclipse.swt.events._
 import org.eclipse.swt.widgets._
 import rx._
 
-// TODO: Only set the data modified flag if user input caused the component state to change
 trait BasicControlType[T <: Control] extends ControlType {
   def create(parent: Composite, data: ControlData): T
   def registerListener(t: T, data: ControlData, fn: () => Unit)
@@ -40,24 +39,16 @@ trait BasicControlType[T <: Control] extends ControlType {
     val component = create(parent, data)
 
     setValue(component, data, data.backing.now)
-    registerListener(component, data, () => {
-      data.ext.onDataModify()
-      data.ctx.queueUpdate(data.backing, getValue(component, data))
-    })
 
-    data.default.map { default =>
-      val rx = Rx { (default.isDefault(), default.field()) }
-      rx.foreach { case (isDefault : Boolean, field : DataField) =>
-        data.ctx.asyncUiExec {
-          if(!component.isDisposed) {
-            component.setEnabled(!isDefault)
-            if(isDefault) setValue(component, data, field)
-          }
-        }
-        if(isDefault) {
-          data.ext.onDataModify()
-          data.ctx.queueUpdate(data.backing, field)
-        }
+    registerListener(component, data, () => data.ctx.queueUpdate(data.backing, getValue(component, data)))
+    data.backing.foreach { n =>
+      data.ctx.asyncUiExec {
+        if(!component.isDisposed) if(getValue(component, data) != n) setValue(component, data, n)
+      }
+    }
+    data.isEnabled.foreach { enabled =>
+      data.ctx.asyncUiExec {
+        if(!component.isDisposed) component.setEnabled(enabled)
       }
     }
 

@@ -43,13 +43,26 @@ final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: Co
 
   val prefix = if(prefixSeq.isEmpty) "" else s"${prefixSeq.mkString(":")}:"
 
-  private val activatedRxes = new mutable.HashMap[FieldNode, Rx[Any]]
-  private val activatingRxes = new mutable.HashSet[FieldNode]
+  private val setupData = new util.IdentityHashMap[TreeNode, SetupData].asScala
+  private val currentSetup = new util.IdentityHashMap[TreeNode, Unit].asScala
+  def setupNode(node: TreeNode)(implicit owner: Ctx.Owner): Unit = setupData.getOrElseUpdate(node, {
+    if(currentSetup.contains(node))
+      throw EditorException("Cycle in nodes!")
+    try {
+      currentSetup.put(node, ())
+      node.setupNode(this, owner)
+    } finally {
+      currentSetup.remove(node)
+    }
+  })
+
+  private val activatedRxes = new util.IdentityHashMap[FieldNode, Rx[Any]].asScala
+  private val activatingRxes = new util.IdentityHashMap[FieldNode, Unit].asScala
   def activateNode(node: FieldNode)(implicit owner: Ctx.Owner): Rx[Any] = activatedRxes.getOrElseUpdate(node, {
     if(activatingRxes.contains(node))
       throw EditorException("Cycle in field nodes!")
     try {
-      activatingRxes.add(node)
+      activatingRxes.put(node, ())
       node.createRx(this, owner)
     } finally {
       activatingRxes.remove(node)
@@ -68,8 +81,8 @@ final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: Co
       case None => activatedCardFields.put(name, node)
     }
 
-  def newUIContext(ext: UIContextExtensions, registerControlCallbacks: Control => Unit) =
-    new UIContext(prefix, ext, registerControlCallbacks)
+  def newUIContext(registerControlCallbacks: Control => Unit) =
+    new UIContext(prefix, registerControlCallbacks)
 }
 
 final class RxPane(uiRoot: Composite, context: NodeContext, uiCtx: UIContext, rootRx: Rx[ActiveRootNode])
@@ -90,16 +103,33 @@ final class RxPane(uiRoot: Composite, context: NodeContext, uiCtx: UIContext, ro
   }
 }
 
-final class ActiveRootNode private (context: NodeContext, root: Option[ControlNode],
+private case class OutputTable(v: Map[String, Any])
+private object OutputTable {
+  val empty = OutputTable(Map())
+  implicit object LuaOutputTable extends LuaUserdataType[OutputTable] {
+    metatable { (L, mt) =>
+      L.register(mt, "__index", (m: OutputTable, s: String) => m.v.getOrElse(s, Lua.NIL))
+    }
+  }
+}
+
+final class ActiveRootNode private (ctx: NodeContext, root: Option[ControlNode],
                                     fields: Option[Map[String, Rx[Any]]])(implicit owner: Ctx.Owner) {
   def renderUI(uiRoot: Composite, uiCtx: UIContext) =
-    root.map(_.createControl(uiRoot)(context, uiCtx.newUIContext(context), owner))
+    root.map(_.createControl(uiRoot)(ctx, uiCtx.newUIContext(ctx), owner))
+
   lazy val luaOutput = fields.map { fields => Rx { fields.map(x => x.copy(_2 = x._2())) } }
+  lazy val luaOutputObj = Rx {
+    import OutputTable._
+    luaOutput.fold(OutputTable.empty)(x => OutputTable(x())).toLua(ctx.internal_L)
+  }
 }
 object ActiveRootNode {
   def apply(L: LuaState, data: DataStore, controlCtx: ControlContext, i18n: I18N, prefix: Seq[String],
             uiRoot: Option[ControlNode], fields: Option[Map[String, FieldNode]])(implicit owner: Ctx.Owner) = {
     val ctx = new NodeContext(L, data, controlCtx, i18n, prefix)
+    uiRoot.foreach(ctx.setupNode)
+    fields.foreach(_.values.foreach(ctx.setupNode))
     new ActiveRootNode(ctx, uiRoot, fields.map(_.mapValues(x => ctx.activateNode(x))))
   }
 }
@@ -121,12 +151,16 @@ final case class RootNode(subtableName: Option[String], params: Seq[FieldNode], 
       }
     })
 
+  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = {
+    params.foreach(ctx.setupNode)
+    SetupData.none
+  }
+
   override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = {
     subtableName.foreach(n => ctx.activateCardField(n, this))
 
     val active = makeActiveNode(ctx)
-    // TODO: Consider optimizing this to not copy the entire table to a Lua one
-    Rx { active().luaOutput.fold[Any](ctx.internal_L.newTable().toLua(ctx.internal_L))(_().toLua(ctx.internal_L)) }
+    Rx { active().luaOutputObj() }
   }
 
   override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {

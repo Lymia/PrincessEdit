@@ -82,12 +82,24 @@ object DataField {
 }
 
 final class DataStore {
-  protected val fieldsVar = new mutable.HashMap[String, Var[DataField]]
+  private val fieldsVar = new mutable.HashMap[String, Var[DataField]]
+  private val fieldsObses = new mutable.ArrayBuffer[Obs]()
+
   val fields = Rx.unsafe { fieldsVar.map(x => x.copy(_2 = x._2())).toMap }
+
+  type ChangeListener = (String, DataField) => Unit
+  private val listeners = new mutable.ArrayBuffer[ChangeListener]()
+  def addChangeListener(l: ChangeListener)  = listeners += l
 
   def getDataField(name: String, default: => DataField = DataField.Nil) = {
     if(!fieldsVar.contains(name)) {
-      fieldsVar.put(name, Var(default))
+      import Ctx.Owner.Unsafe._
+
+      val newVar = Var(default)
+      newVar.foreach(x =>
+        listeners.foreach(f => f(name, x))
+      )
+      fieldsVar.put(name, newVar)
       fields.recalc()
     }
     fieldsVar(name)
@@ -97,11 +109,13 @@ final class DataStore {
     val map = json.as[Map[String, JsValue]]
     for((k, v) <- map) getDataField(k).update(DataField.deserialize(v))
     for((k, v) <- fieldsVar if !map.contains(k)) getDataField(k).update(DataField.Nil)
+    fields.recalc()
   }
   def serialize = Json.toJson(fieldsVar.mapValues(_.now.serialize))
 
   def kill() = {
     for((_, rx) <- fieldsVar) rx.kill()
+    for(obs <- fieldsObses) obs.kill()
     fields.kill()
   }
 }

@@ -32,12 +32,11 @@ import moe.lymia.princess.renderer.RenderManager
 import org.eclipse.swt.widgets._
 import rx._
 
-final class UIData(parent: Composite, node: RootNode, ext: UIContextExtensions,
-                   registerControlCallbacks: Control => Unit)
+final class UIData(parent: Composite, node: RootNode, registerControlCallbacks: Control => Unit)
                   (implicit ctx: NodeContext, owner: Ctx.Owner) {
   private val rootRxValue = Rx { () }
   implicit val rootRx = new Ctx.Owner(rootRxValue)
-  val control = node.createControl(parent)(ctx, ctx.newUIContext(ext, registerControlCallbacks), rootRx)
+  val control = node.createControl(parent)(ctx, ctx.newUIContext(registerControlCallbacks), rootRx)
 
   def kill() = rootRxValue.kill()
 }
@@ -48,8 +47,8 @@ final class DataRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, i
   private implicit val ctx = new NodeContext(L.newThread(), data, controlCtx, i18n)
 
   val luaData = node.createRx
-  def createUI(parent: Composite, ext: UIContextExtensions, registerControlCallbacks: Control => Unit = _ => ()) =
-    new UIData(parent, node, ext, registerControlCallbacks)
+  def createUI(parent: Composite, registerControlCallbacks: Control => Unit = _ => ()) =
+    new UIData(parent, node, registerControlCallbacks)
 }
 
 sealed abstract class RootSource(L: LuaState, controlCtx: ControlContext, i18n: I18N) {

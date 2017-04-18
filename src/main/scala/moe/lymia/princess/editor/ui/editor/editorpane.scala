@@ -27,7 +27,6 @@ import java.util.UUID
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.editor.UIData
 import moe.lymia.princess.editor.model.CardData
-import moe.lymia.princess.editor.nodes.UIContextExtensions
 import moe.lymia.princess.editor.ui.mainframe.{MainFrameState, PrincessEditTab}
 import moe.lymia.princess.editor.utils.RxOwner
 import org.eclipse.jface.action.MenuManager
@@ -71,12 +70,7 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
           _.marginWidth = 5,
           _.marginHeight = 5
         ),
-        x => ui = cardData.root.createUI(x, new UIContextExtensions {
-          override def onDataModify(): Unit = {
-            state.needsSaving()
-            cardData.modified()
-          }
-        })
+        x => ui = cardData.root.createUI(x)
       ),
       _.setContent(uiContainer),
       _.setExpandVertical(true),

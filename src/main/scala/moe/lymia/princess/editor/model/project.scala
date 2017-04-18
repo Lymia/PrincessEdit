@@ -31,13 +31,11 @@ import moe.lymia.princess.util.{IOUtils, VersionInfo}
 import play.api.libs.json._
 import rx._
 
-final class CardData(project: Project) extends JsonSerializable {
-  val fields = new DataStore
-  var createTime = System.currentTimeMillis()
-  var modifyTime = System.currentTimeMillis()
+import scala.collection.mutable
 
-  def modified() = modifyTime = System.currentTimeMillis()
+// TODO: Cleanup this file, maybe split it or factor out more traits
 
+final class CardData(protected val project: Project) extends JsonSerializable with HasDataStore {
   val root = project.ctx.syncLuaExec { project.idData.card.createRoot(fields, Seq()) }
 
   val columnData = project.ctx.syncLuaExec {
@@ -49,33 +47,25 @@ final class CardData(project: Project) extends JsonSerializable {
     }
   }
 
-  def copied() = createTime = System.currentTimeMillis()
-
-  def serialize = Json.obj("fields" -> fields.serialize, "createTime" -> createTime, "modifyTime" -> modifyTime)
-  def deserialize(js: JsValue) = {
-    fields.deserialize((js \ "fields").as[JsValue])
-    createTime = (js \ "createTime").as[Long]
-    modifyTime = (js \ "modifyTime").as[Long]
-  }
+  def serialize = serializeDataStore
+  def deserialize(js: JsValue) = deserializeDataStore(js)
 }
 
-final class SlotData(project: Project) extends JsonSerializable {
+final class SlotData(protected val project: Project) extends JsonSerializable with HasDataStore {
   val cardRef = Var[Option[UUID]](None)
-  val fields = new DataStore
 
-  def serialize = Json.obj("cardRef" -> cardRef.now, "fields" -> fields.serialize)
+  def serialize = Json.obj("cardRef" -> cardRef.now, "data" -> serializeDataStore)
   def deserialize(js: JsValue): Unit = {
-    cardRef.update((js \ "fields").asOpt[UUID])
-    fields.deserialize((js \ "fields").as[JsValue])
+    cardRef.update((js \ "cardRef").asOpt[UUID])
+    deserializeDataStore((js \ "data").as[JsValue])
   }
 }
 
-final class CardSourceInfo(project: Project) extends JsonSerializable {
-  val fields = new DataStore
+final class CardSourceInfo(protected val project: Project) extends JsonSerializable with HasDataStore {
   val root = project.ctx.syncLuaExec { project.idData.set.createRoot(fields, Seq()) }
 
-  def serialize = Json.obj("fields" -> fields.serialize)
-  def deserialize(js: JsValue) = fields.deserialize((js \ "fields").as[JsValue])
+  def serialize = serializeDataStore
+  def deserialize(js: JsValue) = deserializeDataStore(js)
 }
 
 trait CardSource {
@@ -89,7 +79,6 @@ trait CardSource {
 final class CardPool(project: Project) extends CardSource with DirSerializable {
   val displayName = Var[String]("")
   val slots = Var(Seq.empty[SlotData])
-  var createTime = System.currentTimeMillis()
 
   override val info: CardSourceInfo = new CardSourceInfo(project)
 
@@ -100,6 +89,7 @@ final class CardPool(project: Project) extends CardSource with DirSerializable {
   def addSlot(card: UUID): Unit = addSlot({
     val slot = new SlotData(project)
     slot.cardRef.update(Some(card))
+    project.modified()
     slot
   })
 
@@ -111,14 +101,11 @@ final class CardPool(project: Project) extends CardSource with DirSerializable {
 
   def removeSlot(slot: SlotData): Unit = slots.update(slots.now.filter(_ != slot))
 
-  def copied() = createTime = System.currentTimeMillis()
-
   override def writeTo(path: Path): Unit = {
     writeJsonMap(path.resolve("slots"), slots.now.zipWithIndex.map(x => (x._2 + 1) -> x._1).toMap)(_.toString)
     writeJson(path.resolve("info.json"), Json.obj(
       "displayName" -> displayName.now,
-      "info" -> info.serialize,
-      "createTime" -> createTime
+      "info" -> info.serialize
     ))
   }
   override def readFrom(path: Path): Unit = {
@@ -127,17 +114,28 @@ final class CardPool(project: Project) extends CardSource with DirSerializable {
     val js = readJson(path.resolve("info.json"))
     displayName.update((js \ "displayName").as[String])
     info.deserialize((js \ "info").as[JsValue])
-    createTime = (js \ "createTime").as[Long]
   }
 }
 
 final class Project(val ctx: ControlContext, val gameId: String, val idData: GameIDData)
   extends CardSource with DirSerializable {
 
+  var uuid = UUID.randomUUID()
+  override val info: CardSourceInfo = new CardSourceInfo(this)
+
+  type ModifyListener = () => Unit
+  private var listeners = new mutable.ArrayBuffer[ModifyListener]()
+  def addModifyListener(listener: ModifyListener) = listeners += listener
+  def modified() = {
+    listeners.foreach(_())
+    info.modified()
+  }
+
   val cards = Var(Map.empty[UUID, CardData])
   def newCard() = {
     val uuid = UUID.randomUUID()
     cards.update(cards.now + ((uuid, new CardData(this))))
+    modified()
     uuid
   }
 
@@ -145,18 +143,16 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
   def newCardPool() = {
     val uuid = UUID.randomUUID()
     pools.update(pools.now + ((uuid, new CardPool(this))))
+    modified()
     uuid
   }
-
-  var uuid = UUID.randomUUID()
-  override val info: CardSourceInfo = new CardSourceInfo(this)
 
   override val allCards: Rx[Seq[UUID]] = Rx.unsafe {
     cards().toSeq.sortBy(x => (x._2.createTime, x._1.toString)).map(_._1)
   }
   override val allSlots: Option[Rx[Seq[SlotData]]] = None
 
-  val sources = Rx.unsafe { this +: pools().values.toSeq.sortBy(_.createTime) }
+  val sources = Rx.unsafe { this +: pools().values.toSeq.sortBy(_.info.createTime) }
 
   // Main serialization entry point
   def writeTo(path: Path) = {

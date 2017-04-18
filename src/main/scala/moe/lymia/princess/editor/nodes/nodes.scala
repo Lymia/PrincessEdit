@@ -31,12 +31,18 @@ import rx._
 
 import scala.collection.mutable
 
-sealed trait TreeNode
+// TODO: Make sure no cycles can be created.
 
-trait UIContextExtensions {
-  def onDataModify(): Unit
+case class SetupData(obses: Seq[Obs] = Seq.empty)
+object SetupData {
+  val none = SetupData()
 }
-final class UIContext(prefix: String, val ext: UIContextExtensions, val registerControlCallbacks: Control => Unit) {
+
+sealed trait TreeNode {
+  def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner): SetupData
+}
+
+final class UIContext(prefix: String, val registerControlCallbacks: Control => Unit) {
   private val uiActivatedCardField = new mutable.HashSet[String]
   def activateCardField(name: String) = {
       if(uiActivatedCardField.contains(name))
@@ -44,12 +50,11 @@ final class UIContext(prefix: String, val ext: UIContextExtensions, val register
       uiActivatedCardField.add(name)
   }
 
-  def newUIContext(ctx: NodeContext) = new UIContext(ctx.prefix, ext, registerControlCallbacks)
+  def newUIContext(ctx: NodeContext) = new UIContext(ctx.prefix, registerControlCallbacks)
 }
 
-final case class ControlDataDefault(isDefault: Rx[Boolean], field: Rx[DataField])
-final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlContext, ext: UIContextExtensions,
-                             i18n: I18N, backing: Var[DataField], default: Option[ControlDataDefault])
+final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlContext,
+                             i18n: I18N, backing: Var[DataField], isEnabled: Rx[Boolean])
 trait ControlType {
   def expectedFieldType: DataFieldType[_]
   def defaultValue: DataField
@@ -65,6 +70,11 @@ trait FieldNode extends TreeNode {
 }
 
 final case class DerivedFieldNode(params: Seq[FieldNode], fn: LuaClosure) extends FieldNode {
+  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = {
+    params.foreach(ctx.setupNode)
+    SetupData.none
+  }
+
   override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner) = {
     val fields = params.map(x => ctx.activateNode(x))
     Rx { ctx.L.newThread().call(fn, 1, fields.map(_() : LuaObject) : _*).head.as[Any] }
@@ -72,11 +82,13 @@ final case class DerivedFieldNode(params: Seq[FieldNode], fn: LuaClosure) extend
 }
 
 final case class ConstFieldNode(data: Any) extends FieldNode {
+  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = SetupData.none
   override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] =
     Rx { data }
 }
 
 final case class RxFieldNode(rx: Rx[Any]) extends FieldNode {
+  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = SetupData.none
   override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = rx
 }
 
@@ -92,6 +104,26 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
     field
   }
 
+  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = {
+    ctx.activateCardField(fieldName, this)
+    default match {
+      case Some(data) =>
+        ctx.setupNode(data.isDefault)
+        ctx.setupNode(data.field)
+
+        val backing = checkDefault(ctx)
+        val isDefaultRx = ctx.activateNode(data.isDefault).map(_.fromLua[Boolean](ctx.internal_L))
+        val fieldRx = ctx.activateNode(data.field).map(x => DataField(expected, expected.fromLua(ctx.internal_L, x)))
+        SetupData(obses = Seq(
+          Rx { (isDefaultRx(), fieldRx()) }.foreach {
+            case (isDefault, field) =>
+              if(isDefault) ctx.controlCtx.queueUpdate(backing, field)
+          }
+        ))
+      case None => SetupData.none
+    }
+  }
+
   override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = {
     ctx.activateCardField(fieldName, this)
 
@@ -103,12 +135,10 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
     ctx.activateCardField(fieldName, this)
     uiCtx.activateCardField(fieldName)
 
-    val data = ControlData(ctx.L, ctx.internal_L, ctx.controlCtx, uiCtx.ext, ctx.i18n, checkDefault(ctx),
-                           default.map(v => ControlDataDefault(
-                             ctx.activateNode(v.isDefault).map(_.fromLua[Boolean](ctx.internal_L)),
-                             ctx.activateNode(v.field).map(x =>
-                               DataField(expected, expected.fromLua(ctx.internal_L, x)))
-                           )))
+    val data = ControlData(ctx.L, ctx.internal_L, ctx.controlCtx, ctx.i18n, checkDefault(ctx),
+                           default.fold(Rx(true))(x =>
+                             ctx.activateNode(x.isDefault).map(y => !y.fromLua[Boolean](ctx.internal_L))
+                           ))
     control.createComponent(parent, data)
   }
 }

@@ -89,6 +89,7 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
     unsavedChangesExist = true
     mainFrame.updateTitle()
   }
+  project.addModifyListener(() => needsSaving())
 
   private def chooseSaveLocation() = {
     val selector = new FileDialog(mainFrame.getShell, SWT.SAVE)
@@ -165,8 +166,10 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
   }
 
   def updateTitle(shell: Shell = getShell) =
-    if(shell != null)
-      shell.setText(s"${if(state.hasUnsavedChanges.isDefined) "*" else ""}${state.getSaveName} - PrincessEdit")
+    ctx.asyncUiExec {
+      if(shell != null)
+        shell.setText(s"${if(state.hasUnsavedChanges.isDefined) "*" else ""}${state.getSaveName} - PrincessEdit")
+    }
 
   private val platformButtonOrder = SWT.getPlatform match {
     case "win32" => Array(2, 0, 1)
