@@ -31,12 +31,19 @@ import moe.lymia.princess.rasterizer._
 private case class CLIException(message: String) extends Exception
 
 class CLI {
-  private var command: () => Unit = cmd_default _
-  private var loadFile: Option[String] = None
-  val parser = new scopt.OptionParser[Unit]("./PrincessEdit") {
+  private type CommandFn = () => Unit
+
+  private var command: Option[CommandFn] = None
+  private var loadTarget: Option[String] = None
+  private val parser = new scopt.OptionParser[Unit]("./PrincessEdit") {
     help("help").text("Shows this help message.")
     note("")
-    arg[String]("<project.pedit-project>").foreach(x => loadFile = Some(x)).hidden().optional()
+    arg[String]("<project.pedit-project>").foreach(x => loadTarget = Some(x)).hidden().optional()
+    note("")
+    opt[String]('l', "loadProject").valueName("<project.pedit-project>").text("Loads a project.").foreach{ x =>
+      setCmd(cmd_load _)
+      loadTarget = Some(x)
+    }
   }
 
   private def error(s: String) = throw CLIException(s)
@@ -46,25 +53,36 @@ class CLI {
     println(s"$what in ${System.currentTimeMillis() - time}ms.")
     res
   }
-
-  def cmd_default() = {
+  private def setCmd(cmd: () => Unit) = {
+    if(command.isDefined) error("Command already set!")
+    command = Some(cmd)
+  }
+  private def mainLoop[T](f: ControlContext => T) = {
     val plaf = InkscapePlatform.instance
     val manager = new UIManager(plaf.locateBinary().head.createFactory())
-    manager.mainLoop { ctx =>
-      loadFile match {
+    manager.mainLoop { x => f(x) }
+  }
+
+  private def cmd_default() = {
+    mainLoop { ctx =>
+      loadTarget match {
         case Some(x) =>
-          MainFrame.loadProject(null, ctx, Paths.get(x))
+          MainFrame.loadProject(null, ctx, Paths.get(loadTarget.get))
         case None =>
           new SplashScreen(ctx).open()
       }
     }
   }
+  private def cmd_load() = {
+    mainLoop { ctx =>
+      MainFrame.loadProject(null, ctx, Paths.get(loadTarget.get))
+    }
+  }
 
   def main(args: Seq[String]) = try {
-    if(parser.parse(args)) command()
+    if(parser.parse(args)) command.getOrElse(cmd_default _)()
   } catch {
     case CLIException(e) => println(e)
     case e: Exception => e.printStackTrace()
   }
 }
-
