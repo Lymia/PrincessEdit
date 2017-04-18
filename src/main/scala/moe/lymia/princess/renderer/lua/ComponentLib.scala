@@ -22,10 +22,10 @@
 
 package moe.lymia.princess.renderer.lua
 
+import moe.lymia.lua._
 import moe.lymia.princess.core._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.renderer.components._
-import moe.lymia.lua._
 
 import scala.collection.mutable
 

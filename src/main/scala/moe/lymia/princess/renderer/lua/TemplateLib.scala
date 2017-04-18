@@ -22,9 +22,9 @@
 
 package moe.lymia.princess.renderer.lua
 
+import moe.lymia.lua._
 import moe.lymia.princess.core._
 import moe.lymia.princess.renderer._
-import moe.lymia.lua._
 
 case class PhysicalScale(unPerViewport: Double, unit: PhysicalUnit)
 trait LuaTemplateImplicits {

@@ -22,13 +22,11 @@
 
 package moe.lymia.princess.editor.nodes
 
-import moe.lymia.princess.editor.core._
 import moe.lymia.lua._
-
+import moe.lymia.princess.editor.model.{DataField, DataFieldType}
 import org.eclipse.swt._
 import org.eclipse.swt.events._
 import org.eclipse.swt.widgets._
-
 import rx._
 
 // TODO: Only set the data modified flag if user input caused the component state to change

@@ -22,14 +22,14 @@
 
 package moe.lymia.princess.editor.ui.mainframe
 
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Path, Paths}
 
 import moe.lymia.princess.core.{GameID, I18NLoader, PackageManager}
-import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.lua.EditorModule
-import moe.lymia.princess.editor.project.{CardSource, Project, ProjectMetadata}
+import moe.lymia.princess.editor.model.{CardSource, Project, ProjectMetadata}
 import moe.lymia.princess.editor.ui.editor.EditorPane
 import moe.lymia.princess.editor.utils._
+import moe.lymia.princess.editor.{ControlContext, GameIDData}
 import moe.lymia.princess.renderer.lua.RenderModule
 import moe.lymia.princess.util.{FileLock, IOUtils, VersionInfo}
 import org.eclipse.jface.action.MenuManager
@@ -228,8 +228,9 @@ object MainFrame {
     lockFile(path) match {
       case Some(lock) =>
         val meta = Project.getProjectMetadata(path)
-        lazy val errorSeq = Seq(meta.createdBy, meta.versionMajor, meta.versionMinor,
-                                s"PrincessEdit ${VersionInfo.versionString}", Project.VER_MAJOR, Project.VER_MINOR)
+        lazy val errorSeq =
+          Seq[Any](meta.createdBy, meta.versionMajor, meta.versionMinor,
+                   s"PrincessEdit ${VersionInfo.versionString}", Project.VER_MAJOR, Project.VER_MINOR)
 
         if(meta.versionMajor <= Project.VER_MAJOR) {
           if(meta.versionMinor <= Project.VER_MINOR ||

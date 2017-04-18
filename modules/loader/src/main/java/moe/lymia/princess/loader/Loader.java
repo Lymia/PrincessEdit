@@ -34,7 +34,7 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 class LoaderException extends RuntimeException {
-    public LoaderException(String message, Throwable cause) {
+    LoaderException(String message, Throwable cause) {
         super(message, cause);
     }
 }
@@ -57,13 +57,13 @@ public final class Loader {
         return new LoaderException(error, e);
     }
 
-    private Path getExecutableDirectory() {
+    private Path getExecutablePath() {
         try {
             String resourcePath = getClass().getPackage().getName().replace('.', '/')+"/marker.txt";
             URL resourceURL = getClass().getClassLoader().getResource(resourcePath);
             if(resourceURL == null) throw error("Marker resource not found.", null);
             JarURLConnection connection = (JarURLConnection) resourceURL.openConnection();
-            return Paths.get(connection.getJarFileURL().toURI()).getParent();
+            return Paths.get(connection.getJarFileURL().toURI()).toAbsolutePath();
         } catch (LoaderException e) {
             throw e;
         } catch (Exception e) {
@@ -121,8 +121,11 @@ public final class Loader {
         }
     }
 
-    private void start(String[] args) {
-        Path dir = getExecutableDirectory();
+    private void start(String[] args) throws InvocationTargetException {
+        Path bin = getExecutablePath();
+        Path dir = bin.getParent();
+        System.setProperty("moe.lymia.princess.startedFromLoader", "true");
+        System.setProperty("moe.lymia.princess.loaderBinary", bin.toUri().toString());
         System.setProperty("moe.lymia.princess.rootDirectory", dir.toUri().toString());
         System.setProperty("moe.lymia.princess.libDirectory", dir.resolve("lib").toUri().toString());
         Class<?> main = loadMainClass(dir.resolve("lib"));
@@ -139,12 +142,10 @@ public final class Loader {
             m.invoke(null, new Object[] { args });
         } catch (IllegalAccessException e) {
             throw error("Main class is not accessible.", e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InvocationTargetException {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {

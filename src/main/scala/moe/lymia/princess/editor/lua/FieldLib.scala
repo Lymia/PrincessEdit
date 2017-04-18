@@ -22,9 +22,9 @@
 
 package moe.lymia.princess.editor.lua
 
+import moe.lymia.lua._
 import moe.lymia.princess.core._
 import moe.lymia.princess.editor.nodes._
-import moe.lymia.lua._
 
 case class DeriveList(elements: Seq[FieldNode])
 

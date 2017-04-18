@@ -29,7 +29,7 @@ import java.text.MessageFormat
 import java.util.{Locale, Properties}
 
 import com.google.i18n.pseudolocalization.PseudolocalizationPipeline
-import moe.lymia.princess.util.{CountedCache, IOUtils}
+import moe.lymia.princess.util.CountedCache
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable

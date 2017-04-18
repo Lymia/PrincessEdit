@@ -25,9 +25,9 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.editor.core.UIData
+import moe.lymia.princess.editor.UIData
+import moe.lymia.princess.editor.model.CardData
 import moe.lymia.princess.editor.nodes.UIContextExtensions
-import moe.lymia.princess.editor.project.CardData
 import moe.lymia.princess.editor.ui.mainframe.{MainFrameState, PrincessEditTab}
 import moe.lymia.princess.editor.utils.RxOwner
 import org.eclipse.jface.action.MenuManager

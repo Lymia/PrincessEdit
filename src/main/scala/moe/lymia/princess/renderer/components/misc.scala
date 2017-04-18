@@ -22,10 +22,10 @@
 
 package moe.lymia.princess.renderer.components
 
+import moe.lymia.lua._
 import moe.lymia.princess.core._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.renderer.lua._
-import moe.lymia.lua._
 
 class ComponentWrapper(underlying: ComponentReference) extends Component {
   override def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager) =

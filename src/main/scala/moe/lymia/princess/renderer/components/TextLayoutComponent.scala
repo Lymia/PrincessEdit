@@ -22,13 +22,13 @@
 
 package moe.lymia.princess.renderer.components
 
-import java.awt.{BasicStroke, Color, Font}
 import java.awt.font.{FontRenderContext, LineBreakMeasurer, TextLayout}
 import java.awt.geom.Area
+import java.awt.{BasicStroke, Color}
 
+import moe.lymia.lua._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.renderer.lua._
-import moe.lymia.lua._
 import org.jfree.graphics2d.svg.SVGGraphics2D
 
 import scala.collection.mutable

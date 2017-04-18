@@ -22,14 +22,10 @@
 
 package moe.lymia.princess.editor.ui.mainframe
 
-import java.nio.file.Paths
-import java.util.UUID
-
 import moe.lymia.princess.editor.ui.frontend.GameSelectorDialog
-import moe.lymia.princess.util.IOUtils
 import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.swt.SWT
-import org.eclipse.swt.widgets.{Display, FileDialog, Listener}
+import org.eclipse.swt.widgets.{Display, Listener}
 
 // TODO: Support saving to directory
 class MainFrameMenu(menu: MenuManager, frame: MainFrame, state: MainFrameState) {

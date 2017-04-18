@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.utils
+package moe.lymia.princess.editor
 
 object MimeType {
   val CardData = "application/vnd.princessedit-cards+json"

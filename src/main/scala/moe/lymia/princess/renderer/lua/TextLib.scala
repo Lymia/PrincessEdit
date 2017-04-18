@@ -25,10 +25,10 @@ package moe.lymia.princess.renderer.lua
 import java.awt.{Color, Font}
 import java.nio.file.Files
 
+import moe.lymia.lua._
 import moe.lymia.princess.core._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.renderer.components._
-import moe.lymia.lua._
 
 trait LuaTextImplicits {
   implicit object LuaFont extends PropertiesUserdataType[Font] {

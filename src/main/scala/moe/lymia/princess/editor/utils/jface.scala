@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.editor.utils
 
-import moe.lymia.princess.editor.core.ControlContext
+import moe.lymia.princess.editor.ControlContext
 import org.eclipse.jface.dialogs.Dialog
 import org.eclipse.jface.window.{ApplicationWindow, IShellProvider, Window}
 import org.eclipse.swt.SWT

@@ -24,19 +24,30 @@ package moe.lymia.princess.editor
 
 import java.nio.file.Paths
 
-import moe.lymia.princess.editor.core._
 import moe.lymia.princess.editor.ui.frontend.SplashScreen
 import moe.lymia.princess.editor.ui.mainframe.MainFrame
 import moe.lymia.princess.rasterizer._
 
-class UIMain {
+private case class CLIException(message: String) extends Exception
+
+class CLI {
+  private var command: () => Unit = cmd_default _
   private var loadFile: Option[String] = None
-  trait ScoptArgs { this: scopt.OptionParser[Unit] =>
-    def uiOptions() = {
-      arg[String]("<project.pedit-project>").foreach(x => loadFile = Some(x)).hidden().optional()
-    }
+  val parser = new scopt.OptionParser[Unit]("./PrincessEdit") {
+    help("help").text("Shows this help message.")
+    note("")
+    arg[String]("<project.pedit-project>").foreach(x => loadFile = Some(x)).hidden().optional()
   }
-  def main() = {
+
+  private def error(s: String) = throw CLIException(s)
+  private def time[T](what: String)(v: => T) = {
+    val time = System.currentTimeMillis()
+    val res = v
+    println(s"$what in ${System.currentTimeMillis() - time}ms.")
+    res
+  }
+
+  def cmd_default() = {
     val plaf = InkscapePlatform.instance
     val manager = new UIManager(plaf.locateBinary().head.createFactory())
     manager.mainLoop { ctx =>
@@ -48,4 +59,12 @@ class UIMain {
       }
     }
   }
+
+  def main(args: Seq[String]) = try {
+    if(parser.parse(args)) command()
+  } catch {
+    case CLIException(e) => println(e)
+    case e: Exception => e.printStackTrace()
+  }
 }
+

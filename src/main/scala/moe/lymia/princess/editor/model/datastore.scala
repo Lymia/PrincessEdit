@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.core
+package moe.lymia.princess.editor.model
 
 import moe.lymia.lua._
 import play.api.libs.json._

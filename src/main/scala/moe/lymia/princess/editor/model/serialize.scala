@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.project
+package moe.lymia.princess.editor.model
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}

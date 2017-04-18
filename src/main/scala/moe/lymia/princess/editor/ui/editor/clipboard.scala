@@ -24,7 +24,7 @@ package moe.lymia.princess.editor.ui.editor
 
 import java.nio.charset.StandardCharsets
 
-import moe.lymia.princess.editor.utils.MimeType
+import moe.lymia.princess.editor.MimeType
 import org.eclipse.swt.dnd.{ByteArrayTransfer, Transfer, TransferData}
 import play.api.libs.json._
 

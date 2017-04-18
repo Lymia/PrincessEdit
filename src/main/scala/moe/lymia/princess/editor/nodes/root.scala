@@ -24,19 +24,18 @@ package moe.lymia.princess.editor.nodes
 
 import java.util
 
-import moe.lymia.princess.core._
-import moe.lymia.princess.editor.core._
-import moe.lymia.princess.editor.lua._
 import moe.lymia.lua._
-
+import moe.lymia.princess.core._
+import moe.lymia.princess.editor.ControlContext
+import moe.lymia.princess.editor.lua._
+import moe.lymia.princess.editor.model.DataStore
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
-
 import rx._
 
-import scala.collection.mutable
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext, val i18n: I18N,
                         val prefixSeq: Seq[String] = Seq()) {

@@ -20,21 +20,20 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.core
+package moe.lymia.princess.editor
 
 import java.awt.image.BufferedImage
-import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
 import moe.lymia.princess.editor.utils.ExtendedResourceManager
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.util._
 import org.eclipse.jface.resource.{JFaceResources, LocalResourceManager}
+import org.eclipse.jface.window._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.dnd.Clipboard
 import org.eclipse.swt.graphics._
 import org.eclipse.swt.widgets._
-import org.eclipse.jface.window._
 import rx._
 
 import scala.util.Try

@@ -24,7 +24,7 @@ package moe.lymia.princess.editor.lua
 
 import moe.lymia.lua._
 import moe.lymia.princess.core._
-import moe.lymia.princess.editor.core.TableColumnData
+import moe.lymia.princess.editor.TableColumnData
 
 trait LuaUIImplicits {
   implicit object LuaTableColumnData extends LuaUserdataType[TableColumnData]

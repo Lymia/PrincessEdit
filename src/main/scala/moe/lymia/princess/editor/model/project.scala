@@ -20,17 +20,16 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.editor.project
+package moe.lymia.princess.editor.model
 
 import java.nio.file.{Files, Path}
 import java.util.UUID
 
-import moe.lymia.princess.editor.core._
+import moe.lymia.princess.editor.model.SerializeUtils._
+import moe.lymia.princess.editor.{ControlContext, GameIDData}
 import moe.lymia.princess.util.{IOUtils, VersionInfo}
 import play.api.libs.json._
 import rx._
-
-import SerializeUtils._
 
 final class CardData(project: Project) extends JsonSerializable {
   val fields = new DataStore
@@ -71,18 +70,12 @@ final class SlotData(project: Project) extends JsonSerializable {
   }
 }
 
-final case class ColumnData(name: String, isActive: Boolean)
 final class CardSourceInfo(project: Project) extends JsonSerializable {
   val fields = new DataStore
   val root = project.ctx.syncLuaExec { project.idData.set.createRoot(fields, Seq()) }
 
-  var columnData: Seq[ColumnData] = Seq()
-
-  def serialize = Json.obj("fields" -> fields.serialize, "columnData" -> columnData)
-  def deserialize(js: JsValue) = {
-    fields.deserialize((js \ "fields").as[JsValue])
-    columnData = (js \ "columnData").as[Seq[ColumnData]]
-  }
+  def serialize = Json.obj("fields" -> fields.serialize)
+  def deserialize(js: JsValue) = fields.deserialize((js \ "fields").as[JsValue])
 }
 
 trait CardSource {

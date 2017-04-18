@@ -24,8 +24,7 @@ package moe.lymia.princess.editor.ui.editor
 
 import java.util.UUID
 
-import moe.lymia.princess.editor.core._
-import moe.lymia.princess.editor.project.CardData
+import moe.lymia.princess.editor.model.CardData
 import moe.lymia.princess.editor.ui.export.ExportCardsDialog
 import moe.lymia.princess.editor.utils.RxWidget
 import org.eclipse.jface.action._

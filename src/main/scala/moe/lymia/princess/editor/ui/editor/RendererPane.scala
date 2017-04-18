@@ -29,7 +29,7 @@ import moe.lymia.princess.renderer._
 import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{MouseEvent, MouseListener}
-import org.eclipse.swt.graphics.{GC, Image, Point}
+import org.eclipse.swt.graphics.Image
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._

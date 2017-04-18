@@ -22,12 +22,11 @@
 
 package moe.lymia.princess.editor.lua
 
-import org.eclipse.swt.SWT
-import org.eclipse.swt.layout._
-
+import moe.lymia.lua._
 import moe.lymia.princess.core._
 import moe.lymia.princess.editor.nodes._
-import moe.lymia.lua._
+import org.eclipse.swt.SWT
+import org.eclipse.swt.layout._
 
 import scala.collection.mutable
 
@@ -62,7 +61,7 @@ object ContainerUtils {
     ud
   }
 }
-import ContainerUtils._
+import moe.lymia.princess.editor.lua.ContainerUtils._
 
 trait LuaContainerImplicits {
   implicit object LuaAlign extends LuaUserdataType[Align]

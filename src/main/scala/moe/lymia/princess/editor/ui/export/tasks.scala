@@ -26,7 +26,7 @@ import java.nio.file.{Files, Path}
 import java.util.UUID
 
 import moe.lymia.lua._
-import moe.lymia.princess.editor.project.{CardData, CardSource}
+import moe.lymia.princess.editor.model.{CardData, CardSource}
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
 import moe.lymia.princess.renderer.RasterizeResourceLoader
 import moe.lymia.princess.util.IOUtils

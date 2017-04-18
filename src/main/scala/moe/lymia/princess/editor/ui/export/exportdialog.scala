@@ -26,7 +26,7 @@ import java.nio.file.Paths
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.editor.project.{CardData, CardSource}
+import moe.lymia.princess.editor.model.{CardData, CardSource}
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
 import moe.lymia.princess.editor.utils.{DialogBase, HelpButton, UIUtils}
 import org.eclipse.jface.dialogs.ProgressMonitorDialog

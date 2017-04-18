@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.core
 
-import java.nio.file.{FileSystems, Files, Path}
+import java.nio.file.{Files, Path}
 
 import moe.lymia.princess.util.{CountedCache, _}
 

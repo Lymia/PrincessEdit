@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.editor.utils
 
-import moe.lymia.princess.editor.core.ControlContext
+import moe.lymia.princess.editor.ControlContext
 import moe.lymia.princess.renderer.SVGRenderable
 import org.eclipse.jface.resource._
 import org.eclipse.swt.graphics._

@@ -24,7 +24,7 @@ package moe.lymia.princess.editor.ui.frontend
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.PackageManager
-import moe.lymia.princess.editor.core._
+import moe.lymia.princess.editor.ControlContext
 import moe.lymia.princess.editor.ui.mainframe.MainFrame
 import moe.lymia.princess.editor.utils.WindowBase
 import org.eclipse.swt.events.SelectionEvent

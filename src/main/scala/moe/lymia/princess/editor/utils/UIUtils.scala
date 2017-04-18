@@ -29,7 +29,6 @@ import moe.lymia.princess.renderer.SVGFile
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.jface.dialogs.MessageDialog
 import org.eclipse.jface.window.IShellProvider
-import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Point
 import org.eclipse.swt.widgets.MessageBox
 

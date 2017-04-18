@@ -24,7 +24,7 @@ package moe.lymia.princess.editor.ui.frontend
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.{GameID, PackageManager}
-import moe.lymia.princess.editor.core.ControlContext
+import moe.lymia.princess.editor.ControlContext
 import moe.lymia.princess.editor.ui.mainframe.{MainFrame, ProjectSource}
 import moe.lymia.princess.editor.utils.{DialogBase, UIUtils}
 import org.eclipse.jface.viewers.{ITreeContentProvider, LabelProvider}

@@ -22,9 +22,10 @@
 
 package moe.lymia.princess.editor.nodes
 
-import moe.lymia.princess.editor.core._
 import moe.lymia.lua._
 import moe.lymia.princess.core.{EditorException, I18N}
+import moe.lymia.princess.editor.ControlContext
+import moe.lymia.princess.editor.model.{DataField, DataFieldType}
 import org.eclipse.swt.widgets._
 import rx._
 
