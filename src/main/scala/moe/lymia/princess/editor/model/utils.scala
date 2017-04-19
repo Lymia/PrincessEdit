@@ -71,11 +71,13 @@ object SerializeUtils {
   def writeJson(path: Path, json: JsValue) =
     Files.write(path, Json.prettyPrint(json).getBytes(StandardCharsets.UTF_8))
   def writeJsonMap[K : Writes, V <: JsonSerializable](path: Path, map: Map[K, V])(fileName: K => String) = {
+    if(Files.exists(path)) IOUtils.deleteDirectory(path)
     Files.createDirectories(path)
     writeJson(path.resolve("index.json"), Json.toJson(map.keys.map(fileName)))
     for((id, entry) <- map) writeJson(path.resolve(s"${fileName(id)}.json"), entry.serialize)
   }
   def writeDirMap[K : Writes, V <: DirSerializable](path: Path, map: Map[K, V])(fileName: K => String) = {
+    if(Files.exists(path)) IOUtils.deleteDirectory(path)
     Files.createDirectories(path)
     writeJson(path.resolve("index.json"), Json.toJson(map.keys.map(fileName)))
     for((id, entry) <- map) entry.writeTo(path.resolve(fileName(id)))
