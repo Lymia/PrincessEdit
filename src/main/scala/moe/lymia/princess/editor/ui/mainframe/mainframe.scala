@@ -29,7 +29,7 @@ import moe.lymia.princess.editor.lua.EditorModule
 import moe.lymia.princess.editor.model.{CardSource, Project, ProjectMetadata}
 import moe.lymia.princess.editor.ui.editor.EditorPane
 import moe.lymia.princess.editor.utils._
-import moe.lymia.princess.editor.{ControlContext, GameIDData}
+import moe.lymia.princess.editor.{ControlContext, GameIDData, Settings}
 import moe.lymia.princess.renderer.lua.RenderModule
 import moe.lymia.princess.util.{FileLock, IOUtils, VersionInfo}
 import org.eclipse.jface.action.MenuManager
@@ -224,8 +224,7 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
   }
 }
 object MainFrame {
-  private[mainframe] def lockFile(path: Path) =
-    IOUtils.lock(IOUtils.mapFileName(path, "." + _ + ".lock"))
+  private[mainframe] def lockFile(path: Path) = IOUtils.lock(Settings.getProjectLock(path))
 
   def loadProject(parent: Window, ctx: ControlContext, path: Path, closeOnAccept: Boolean = false) =
     lockFile(path) match {

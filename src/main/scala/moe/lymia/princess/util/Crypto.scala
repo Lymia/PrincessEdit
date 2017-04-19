@@ -22,37 +22,24 @@
 
 package moe.lymia.princess.util
 
-import java.nio.file.{Path, Paths}
+import java.security.MessageDigest
 
-import com.sun.jna.platform.win32.{Shell32Util, ShlObj}
+object Crypto {
+  def digest(algorithm: String, data: Array[Byte]) = {
+    val md = MessageDigest.getInstance(algorithm)
+    val hash = md.digest(data)
+    hash
+  }
+  def hexdigest(algorithm: String, data: Array[Byte]) =
+    digest(algorithm, data).map(x => "%02x".format(x)).reduce(_ + _)
 
-sealed trait Platform {
-  val configurationRoot: Path
-  def mapConfigName(name: String) = name
+  def md5_hex   (data: Array[Byte]) = hexdigest("MD5"    , data)
+  def sha1_hex  (data: Array[Byte]) = hexdigest("SHA-1"  , data)
+  def sha256_hex(data: Array[Byte]) = hexdigest("SHA-256", data)
+  def sha512_hex(data: Array[Byte]) = hexdigest("SHA-512", data)
 
-  def getConfigDirectory(name: String) = configurationRoot.resolve(mapConfigName(name))
-}
-object Platform {
-  case object Windows extends Platform {
-    override lazy val configurationRoot: Path =
-      Paths.get(Shell32Util.getFolderPath(ShlObj.CSIDL_APPDATA))
-  }
-  case object MacOS extends Platform {
-    override lazy val configurationRoot: Path =
-      Paths.get(System.getProperty("user.home")).resolve("Library/Preferences")
-  }
-  case object Linux extends Platform {
-    override lazy val configurationRoot: Path =
-      Paths.get(System.getProperty("user.home"))
-    override def mapConfigName(name: String) = s".$name"
-  }
-
-  lazy val platformOption = sys.props("os.name") match {
-    case null => None
-    case x if x.startsWith("Windows ") => Some(Windows)
-    case x if x.startsWith("Mac ") => Some(MacOS)
-    case "Linux" => Some(Linux)
-    case _ => None
-  }
-  def platform = platformOption.get
+  def md5   (data: Array[Byte]) = digest("MD5"    , data)
+  def sha1  (data: Array[Byte]) = digest("SHA-1"  , data)
+  def sha256(data: Array[Byte]) = digest("SHA-256", data)
+  def sha512(data: Array[Byte]) = digest("SHA-512", data)
 }

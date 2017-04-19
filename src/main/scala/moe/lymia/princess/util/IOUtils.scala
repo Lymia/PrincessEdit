@@ -36,8 +36,8 @@ import scala.collection.JavaConverters._
 import scala.io.Codec
 
 final class FileLock(lockFile: Path) {
-  private val channel  = FileChannel.open(lockFile, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
-  private val lock     = try {
+  private val channel = FileChannel.open(lockFile, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+  private val lock    = try {
     Option(channel.tryLock)
   } catch {
     case e: OverlappingFileLockException => None
@@ -51,8 +51,6 @@ final class FileLock(lockFile: Path) {
     released = true
   }
   if(lock.isEmpty) release()
-
-  if(acquired) IOUtils.hideFile(lockFile)
 }
 
 object IOUtils {
