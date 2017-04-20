@@ -50,4 +50,4 @@ abstract class WindowBase(protected val ctx: ControlContext) extends Application
 }
 
 abstract class DialogBase(parent: IShellProvider, protected val ctx: ControlContext)
-  extends Dialog(parent) with JFaceWindowBase
+  extends Dialog(if(parent == null) null else parent.getShell) with JFaceWindowBase

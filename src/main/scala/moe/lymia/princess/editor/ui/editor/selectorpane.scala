@@ -24,6 +24,7 @@ package moe.lymia.princess.editor.ui.editor
 
 import java.util.UUID
 
+import moe.lymia.princess.editor.TableColumnData
 import moe.lymia.princess.editor.model.CardData
 import moe.lymia.princess.editor.ui.export.ExportCardsDialog
 import moe.lymia.princess.editor.utils.RxWidget
@@ -31,11 +32,15 @@ import org.eclipse.jface.action._
 import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
 import org.eclipse.swt.SWT
-import org.eclipse.swt.events.{KeyEvent, KeyListener}
+import org.eclipse.swt.events.{KeyEvent, KeyListener, SelectionAdapter, SelectionEvent}
 import org.eclipse.swt.graphics.{Image, Point}
 import org.eclipse.swt.widgets._
 import rx._
 
+import scala.collection.JavaConverters._
+
+// TODO: Factor out the table sort management code, etc
+// TODO: Make sorting code more efficient (don't run it in the editor)
 case class RowData(id: UUID, data: CardData, fields: Seq[String])
 final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   extends Composite(parent, SWT.NONE) with RxWidget {
@@ -48,31 +53,89 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   viewer.getTable.setLinesVisible(true)
 
   // Setup columns
+  private var activeColumns = Var(state.idData.columns.columns.filter(_.isDefault))
+  private var sortOrder = Var[Option[Ordering[RowData]]](None)
+  def setColumnOrder(columns: Seq[TableColumnData]) = {
+    viewer.getTable.setRedraw(false)
+    activeColumns.update(columns)
+    refreshColumns()
+  }
+  def refreshColumns() = {
+    viewer.getTable.setRedraw(false)
+
+    viewer.getTable.setSortColumn(null)
+    viewer.getTable.setSortDirection(SWT.DOWN)
+
+    for(column <- viewer.getTable.getColumns) column.dispose()
+
+    val tableLayout = new TableColumnLayout()
+    for((column, i) <- activeColumns.now.zipWithIndex) {
+      val col = new TableColumn(viewer.getTable, SWT.NONE)
+      col.setText(state.i18n.user(column.title))
+      col.setMoveable(false)
+      col.addSelectionListener(new SelectionAdapter {
+        override def widgetSelected(e: SelectionEvent): Unit = {
+          if(viewer.getTable.getSortColumn eq col) {
+            viewer.getTable.setSortDirection(viewer.getTable.getSortDirection match {
+              case SWT.NONE => SWT.UP
+              case SWT.UP   => SWT.DOWN
+              case SWT.DOWN => SWT.NONE
+            })
+            viewer.refresh()
+          } else {
+            viewer.getTable.setSortColumn(col)
+            viewer.getTable.setSortDirection(SWT.UP)
+          }
+
+          if(viewer.getTable.getSortDirection == SWT.NONE) sortOrder.update(None)
+          else {
+            val multiplier = viewer.getTable.getSortDirection match {
+              case SWT.UP   => 1
+              case SWT.DOWN => -1
+            }
+            sortOrder.update(Some(
+              ((a, b) => multiplier * (column.sortFn match {
+                case None =>
+                  // TODO: Ensure this is safe
+                  a.fields(i).compare(b.fields(i))
+                case Some(fn) =>
+                  column.L.newThread().call(fn, 1, a.data.root.luaData.now, b.data.root.luaData.now).head.as[Int]
+              })) : Ordering[RowData]
+            ))
+          }
+        }
+      })
+      tableLayout.setColumnData(col, new ColumnPixelData(column.width, true))
+    }
+    setLayout(tableLayout)
+
+    viewer.getTable.setRedraw(true)
+    viewer.refresh()
+  }
+  refreshColumns()
+
+  // Setup cards rx
   private val cardsRx: Rx[Seq[RowData]] = Rx {
     val cards = state.project.cards()
     state.currentPool().allCards().map(id => {
       val info = cards(id)
       val columns = info.columnData()
-      RowData(id, info, state.idData.columns.columns.filter(_.isDefault).map(columns))
+      RowData(id, info, activeColumns().map(columns))
     })
   }
-  def refreshColumns() = {
-    for(column <- viewer.getTable.getColumns) column.dispose()
-
-    val tableLayout = new TableColumnLayout()
-    for(column <- state.idData.columns.columns.filter(_.isDefault).toArray) {
-      val col = new TableColumn(viewer.getTable, SWT.NONE)
-      col.setText(state.i18n.user(column.title))
-      col.setMoveable(false)
-      tableLayout.setColumnData(col, new ColumnPixelData(column.width, true))
+  private val sortedCards: Rx[Seq[RowData]] = Rx {
+    sortOrder() match {
+      case None => cardsRx()
+      case Some(ordering) => cardsRx().sorted(ordering)
     }
-    setLayout(tableLayout)
   }
-  refreshColumns()
+  private val obs = sortedCards.foreach { _ =>
+    state.ctx.asyncUiExec { viewer.refresh() }
+  }
 
   // Setup viewer providers
   viewer.setContentProvider(new IStructuredContentProvider {
-    override def getElements(o: scala.Any): Array[AnyRef] = cardsRx.now.toArray
+    override def getElements(o: scala.Any): Array[AnyRef] = sortedCards.now.toArray
   })
   viewer.setLabelProvider(new LabelProvider with ITableLabelProvider {
     override def getColumnText(o: scala.Any, i: Int): String = {
@@ -84,14 +147,14 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   viewer.setInput(this)
 
   // This is a hack to deal with the fact that this panel losing focus sets the current card to None
-  private var savedSelection: ISelection = _
+  private var savedSelection: Seq[UUID] = _
   private var lockSelection = false
   def editorOpened() = {
-    savedSelection = viewer.getStructuredSelection
+    savedSelection = viewer.getStructuredSelection.iterator().asScala.toSeq.map(_.asInstanceOf[RowData].id)
     lockSelection = true
   }
   def editorClosed() = {
-    viewer.setSelection(savedSelection, true)
+    setSelection(savedSelection : _*)
     savedSelection = null
     lockSelection = false
     viewer.getTable.setFocus()
@@ -100,10 +163,12 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   // Menu
   def getSelectedCards =
     viewer.getStructuredSelection.toArray.map(_.asInstanceOf[RowData])
-  def setSelection(uuid: UUID) = {
+  def setSelection(uuid: UUID*) = {
     viewer.refresh()
-    cardsRx.now.find(_.id == uuid).foreach(x => viewer.setSelection(new StructuredSelection(x), true))
-    state.ctx.queueUpdate(state.currentCardSelection, Seq(uuid))
+    val uuidSet = uuid.toSet
+    val selection = new StructuredSelection(sortedCards.now.filter(x => uuidSet.contains(x.id)).toArray[Object])
+    viewer.setSelection(selection, true)
+    state.ctx.queueUpdate(state.currentCardSelection, uuid)
   }
 
   private val copy = new Action(state.i18n.system("_princess.editor.copyCard")) {
@@ -206,8 +271,5 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   viewer.addDoubleClickListener { event =>
     setSelectionFromViewer()
     state.activateEditor()
-  }
-  private val obs = cardsRx.foreach { _ =>
-    state.ctx.asyncUiExec { viewer.refresh() }
   }
 }

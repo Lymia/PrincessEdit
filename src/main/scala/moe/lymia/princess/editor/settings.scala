@@ -68,25 +68,37 @@ class SettingsStore {
     for((k, v) <- js.as[Map[String, JsValue]]) underlying.put(k, SettingsStoreJsonEntry(v))
   }
 }
+
 class FilesystemSettingsStore(path: Path) extends SettingsStore {
   def load() = deserialize(Json.parse(IOUtils.readFileAsString(path)))
   def save() = IOUtils.writeFile(path, Json.prettyPrint(serialize))
+}
+object FilesystemSettingsStore {
+  def load(path: Path) = {
+    val store = new FilesystemSettingsStore(path)
+    store.load()
+    store
+  }
 }
 
 object Settings {
   val rootDirectory = Platform.platform.getConfigDirectory("PrincessEdit")
   Files.createDirectories(rootDirectory)
 
+  private val globalSettingsPath = rootDirectory.resolve("settings.json")
+
   private def hashPath(path: Path) =
     Base64.getUrlEncoder.encodeToString(
       Crypto.sha256(path.toAbsolutePath.toUri.toString.getBytes(StandardCharsets.UTF_8))).replace("=", "")
 
-  private val projectSpecificDirectory = rootDirectory.resolve("project-settings")
-  Files.createDirectories(projectSpecificDirectory)
+  private val projectSettingsDirectory = rootDirectory.resolve("project-settings")
+  Files.createDirectories(projectSettingsDirectory)
 
   private val projectLockDirectory = rootDirectory.resolve("project-locks")
   Files.createDirectories(projectLockDirectory)
 
-  def getProjectSettings(path: Path) = projectSpecificDirectory.resolve(s"${hashPath(path)}.json")
+  lazy val global = FilesystemSettingsStore.load(globalSettingsPath)
+  def getProjectSettings(path: Path) =
+    FilesystemSettingsStore.load(projectSettingsDirectory.resolve(s"${hashPath(path)}.json"))
   def getProjectLock(path: Path) = projectLockDirectory.resolve(hashPath(path))
 }

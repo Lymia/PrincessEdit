@@ -69,6 +69,8 @@ final class CardSourceInfo(protected val project: Project) extends JsonSerializa
 }
 
 trait CardSource {
+  def uuid: UUID
+
   val info: CardSourceInfo
   val allCards: Rx[Seq[UUID]]
   val allSlots: Option[Rx[Seq[SlotData]]]
@@ -76,7 +78,7 @@ trait CardSource {
   def newCard(): UUID
 }
 
-final class CardPool(project: Project) extends CardSource with DirSerializable {
+final class CardPool(val uuid: UUID, project: Project) extends CardSource with DirSerializable {
   val displayName = Var[String]("")
   val slots = Var(Seq.empty[SlotData])
 
@@ -105,15 +107,15 @@ final class CardPool(project: Project) extends CardSource with DirSerializable {
     writeJsonMap(path.resolve("slots"), slots.now.zipWithIndex.map(x => (x._2 + 1) -> x._1).toMap)(_.toString)
     writeJson(path.resolve("info.json"), Json.obj(
       "displayName" -> displayName.now,
-      "info" -> info.serialize
+      "poolInfo" -> info.serialize
     ))
   }
   override def readFrom(path: Path): Unit = {
-    slots.update(readJsonMap(path.resolve("slots"),
-                             () => new SlotData(project))((x: Int) => x.toString).toSeq.sortBy(_._1).map(_._2))
+    slots.update(readJsonMap(path.resolve("slots"))
+                            ((_: Int) => new SlotData(project), (x: Int) => x.toString).toSeq.sortBy(_._1).map(_._2))
     val js = readJson(path.resolve("info.json"))
     displayName.update((js \ "displayName").as[String])
-    info.deserialize((js \ "info").as[JsValue])
+    info.deserialize((js \ "poolInfo").as[JsValue])
   }
 }
 
@@ -142,7 +144,7 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
   val pools = Var(Map.empty[UUID, CardPool])
   def newCardPool() = {
     val uuid = UUID.randomUUID()
-    pools.update(pools.now + ((uuid, new CardPool(this))))
+    pools.update(pools.now + ((uuid, new CardPool(uuid, this))))
     modified()
     uuid
   }
@@ -160,7 +162,7 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
     writeDirMap (path.resolve("pools"), pools.now)(_.toString)
     writeJson(path.resolve("info.json"), Json.obj(
       "uuid" -> uuid,
-      "info" -> info.serialize
+      "poolInfo" -> info.serialize
     ))
     writeJson(path.resolve("metadata.json"), Json.obj(
       "version"   -> Json.obj(
@@ -180,12 +182,12 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
 
     val version = (metadata \ "version" \ "major").as[Int]
     if(version != Project.VER_MAJOR) sys.error(s"unknown file format version $version")
-    cards.update(readJsonMap(path.resolve("cards"), () => new CardData(this))(_.toString))
-    pools.update(readDirMap (path.resolve("pools"), () => new CardPool(this))(_.toString))
+    cards.update(readJsonMap(path.resolve("cards"))(_ => new CardData(   this), _.toString))
+    pools.update(readDirMap (path.resolve("pools"))(k => new CardPool(k, this), _.toString))
 
     val infoJson = readJson(path.resolve("info.json"))
     uuid = (infoJson \ "uuid").as[UUID]
-    info.deserialize((infoJson \ "info").as[JsValue])
+    info.deserialize((infoJson \ "poolInfo").as[JsValue])
   }
 }
 

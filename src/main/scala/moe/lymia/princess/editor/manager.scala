@@ -38,6 +38,8 @@ import rx._
 
 import scala.util.Try
 
+// TODO: Improve error handling
+
 private case class RasterizerRequest(getData: () => (SVGRenderable, Int, Int),
                                      callback: Either[BufferedImage => Unit, ImageData => Unit])
 private class VolatileState {
@@ -83,12 +85,12 @@ private class LuaThread(state: VolatileState) extends Thread {
     }
 }
 
-// TODO: Catch errors during asynchronous execution
-class ControlContext(val display: Display, state: VolatileState, factory: SVGRasterizerFactory,
+class ControlContext(val display: Display, state: VolatileState, loop: UILoop, factory: SVGRasterizerFactory,
                      luaThread: LuaThread, uiThread: Thread) extends SVGRasterizerFactory {
-  val wm = new WindowManager()
   val clipboard = new Clipboard(display)
   val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
+
+  val wm = loop.wm
 
   private val jfaceResources = JFaceResources.getResources(display)
   val resources = new ExtendedResourceManager(jfaceResources, this)
@@ -164,7 +166,23 @@ class ControlContext(val display: Display, state: VolatileState, factory: SVGRas
   }
 }
 
-class UIManager(factory: SVGRasterizerFactory) {
+class UILoop {
+  val wm = new WindowManager()
+
+  def mainLoop(init: Display => Unit) = {
+    val display = new Display()
+    try {
+      init(display)
+      while(!display.isDisposed && wm.getWindowCount > 0) if(!display.readAndDispatch()) display.sleep()
+    } catch {
+      case e: Exception => e.printStackTrace()
+    } finally {
+      if(!display.isDisposed) display.dispose()
+    }
+  }
+}
+
+class UIManager(loop: UILoop, factory: SVGRasterizerFactory) {
   private val state = new VolatileState
 
   private val luaThread = new LuaThread(state)
@@ -173,18 +191,9 @@ class UIManager(factory: SVGRasterizerFactory) {
   luaThread.start()
   rasterizeThread.start()
 
-  def mainLoop(init: ControlContext => Unit) = {
-    val display = new Display()
-    try {
-      val ctx = new ControlContext(display, state, factory, luaThread, Thread.currentThread())
-      init(ctx)
-      while(!display.isDisposed && ctx.wm.getWindowCount > 0 && state.isRunning)
-        if(!display.readAndDispatch()) display.sleep()
-    } catch {
-      case e: Exception => e.printStackTrace()
-    } finally {
-      if(!display.isDisposed) display.dispose()
-      if(state.isRunning) state.shutdown()
-    }
+  def mainLoop(display: Display)(init: ControlContext => Unit) = {
+    val ctx = new ControlContext(display, state, loop, factory, luaThread, Thread.currentThread())
+    init(ctx)
+    display.addListener(SWT.Dispose, _ => state.shutdown())
   }
 }

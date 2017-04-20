@@ -22,6 +22,28 @@
 
 package moe.lymia.princess.editor.ui.frontend
 
-class inkscapeselector {
+import com.coconut_palm_software.xscalawt.XScalaWT._
+import moe.lymia.princess.core.PackageManager
+import moe.lymia.princess.editor.ControlContext
+import moe.lymia.princess.editor.utils.DialogBase
+import org.eclipse.jface.window.Window
+import org.eclipse.swt.SWT
+import org.eclipse.swt.graphics.Point
+import org.eclipse.swt.widgets.{Composite, Shell}
 
+final class InkscapeSelectorDialog(parent: Window, ctx: ControlContext, closeParent: Boolean = false)
+  extends DialogBase(parent, ctx) {
+
+  setShellStyle(getShellStyle | SWT.RESIZE)
+
+  override def configureShell(shell: Shell): Unit = {
+    super.configureShell(shell)
+    shell.setText(PackageManager.systemI18N.system("_princess.gameSelector.title"))
+  }
+
+  override def getInitialSize: Point = new Point(800, 600)
+
+  override protected def frameContents(frame: Composite): Unit = frame.contains(
+
+  )
 }

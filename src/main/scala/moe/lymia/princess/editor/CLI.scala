@@ -57,10 +57,13 @@ class CLI {
     if(command.isDefined) error("Command already set!")
     command = Some(cmd)
   }
-  private def mainLoop[T](f: ControlContext => T) = {
+  private def mainLoop[T](f: ControlContext => Unit) = {
     val plaf = InkscapePlatform.instance
-    val manager = new UIManager(plaf.locateBinary().head.createFactory())
-    manager.mainLoop { x => f(x) }
+    val loop = new UILoop
+    loop.mainLoop { display =>
+      val manager = new UIManager(loop, plaf.locateBinary().head.createFactory())
+      manager.mainLoop(display)(f)
+    }
   }
 
   private def cmd_default() = {

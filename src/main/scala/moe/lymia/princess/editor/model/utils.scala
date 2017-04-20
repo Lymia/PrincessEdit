@@ -83,18 +83,18 @@ object SerializeUtils {
   }
 
   def readJson(path: Path) = Json.parse(IOUtils.readFileAsString(path))
-  def readJsonMap[K: Reads, V <: JsonSerializable](path: Path, newValue: () => V)(fileName: K => String) = {
+  def readJsonMap[K: Reads, V <: JsonSerializable](path: Path)(newValue: K => V, fileName: K => String) = {
     val list = readJson(path.resolve("index.json")).as[Seq[K]]
     (for(k <- list) yield k -> {
-      val v = newValue()
+      val v = newValue(k)
       v.deserialize(readJson(path.resolve(s"${fileName(k)}.json")))
       v
     }).toMap
   }
-  def readDirMap[K : Reads, V <: DirSerializable](path: Path, newValue: () => V)(fileName: K => String) = {
+  def readDirMap[K : Reads, V <: DirSerializable](path: Path)(newValue: K => V, fileName: K => String) = {
     val list = readJson(path.resolve("index.json")).as[Seq[K]]
     (for(k <- list) yield k -> {
-      val v = newValue()
+      val v = newValue(k)
       v.readFrom(path.resolve(fileName(k)))
       v
     }).toMap

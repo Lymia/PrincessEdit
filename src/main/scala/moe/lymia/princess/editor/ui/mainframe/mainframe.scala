@@ -167,7 +167,7 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
 
   def updateTitle(shell: Shell = getShell) =
     ctx.asyncUiExec {
-      if(shell != null)
+      if(shell != null && !shell.isDisposed)
         shell.setText(s"${if(state.hasUnsavedChanges.isDefined) "*" else ""}${state.getSaveName} - PrincessEdit")
     }
 
