@@ -21,7 +21,7 @@
  */
 
 object Config {
-  val config_scalaVersion = "2.12.1"
+  val config_scalaVersion = "2.12.2"
   val config_home_url     = "https://github.com/Lymia/PrincessEdit"
 
   val version_baseVersion = "0.1.0"
