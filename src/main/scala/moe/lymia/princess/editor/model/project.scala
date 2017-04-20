@@ -126,7 +126,7 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
   override val info: CardSourceInfo = new CardSourceInfo(this)
 
   type ModifyListener = () => Unit
-  private var listeners = new mutable.ArrayBuffer[ModifyListener]()
+  private val listeners = new mutable.ArrayBuffer[ModifyListener]()
   def addModifyListener(listener: ModifyListener) = listeners += listener
   def modified() = {
     listeners.foreach(_())

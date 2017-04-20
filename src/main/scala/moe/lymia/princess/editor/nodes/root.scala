@@ -72,7 +72,6 @@ final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: Co
   val activatedRoots = new util.IdentityHashMap[RootNode, Rx[ActiveRootNode]].asScala
 
   private val activatedCardFields = new mutable.HashMap[String, TreeNode]
-  private val uiActivatedCardField = new mutable.HashSet[String]
   def activateCardField(name: String, node: TreeNode) =
     activatedCardFields.get(name) match {
       case Some(f) =>

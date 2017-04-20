@@ -30,7 +30,6 @@ import moe.lymia.princess.util.{Crypto, IOUtils, Platform}
 import play.api.libs.json._
 
 import scala.collection.mutable
-import scala.language.existentials
 
 final case class SettingsKey[T : Reads : Writes](name: String) {
   def serialize(t: T) = Json.toJson(t)

@@ -25,7 +25,7 @@ package moe.lymia.princess.util
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
 object ThreadId {
-  private var threadId = new AtomicInteger(0)
+  private val threadId = new AtomicInteger(0)
   def make() = threadId.incrementAndGet()
 }
 

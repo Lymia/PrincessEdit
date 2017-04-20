@@ -53,8 +53,8 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   viewer.getTable.setLinesVisible(true)
 
   // Setup columns
-  private var activeColumns = Var(state.idData.columns.columns.filter(_.isDefault))
-  private var sortOrder = Var[Option[Ordering[RowData]]](None)
+  private val activeColumns = Var(state.idData.columns.columns.filter(_.isDefault))
+  private val sortOrder = Var[Option[Ordering[RowData]]](None)
   def setColumnOrder(columns: Seq[TableColumnData]) = {
     viewer.getTable.setRedraw(false)
     activeColumns.update(columns)

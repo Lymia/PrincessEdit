@@ -81,7 +81,7 @@ trait DataURLRasterLoader {
           ImageIO.write(image, reencodeTo, byteOut)
           byteOut.toByteArray
       }
-      val uri = s"data:$expectedMime;base64,${DatatypeConverter.printBase64Binary(Files.readAllBytes(path))}"
+      val uri = s"data:$expectedMime;base64,${DatatypeConverter.printBase64Binary(data)}"
       (uri, uri.length)
     })}/>
 }
@@ -145,5 +145,4 @@ object ResourceManager {
     ImageFormat(Seq("jpg", "jpeg"), ResourceFormatType.Raster("image/jpeg"))
   )
   private val formatSearchList = imageFormats.flatMap(x => x.extensions.map(y => (y, x)))
-  private val extensions = formatSearchList.toMap
 }
