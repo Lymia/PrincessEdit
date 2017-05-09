@@ -61,6 +61,7 @@ class VersionInfo(properties: VersionInfoSource) {
   lazy val versionString = properties("princessedit.version.string", "<unknown>")
   lazy val isDirty       = properties("princessedit.version.clean", "false") == "false"
 
+  lazy val buildId       = properties("build.id", "<unknown>")
   lazy val buildDate     = new Date(properties("build.time", "0").toLong)
   lazy val buildUser     = properties("build.user", "<unknown>")
 }

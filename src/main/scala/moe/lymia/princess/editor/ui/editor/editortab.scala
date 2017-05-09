@@ -27,14 +27,15 @@ import java.util.UUID
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.editor.UIData
 import moe.lymia.princess.editor.model.CardData
-import moe.lymia.princess.editor.ui.mainframe.{MainFrameState, PrincessEditTab}
-import moe.lymia.princess.editor.utils.RxOwner
+import moe.lymia.princess.editor.ui.mainframe.{MainFrameState, PrincessEditTab, TabID, TabProvider}
+import moe.lymia.princess.editor.utils.{RxOwner, UIUtils}
 import org.eclipse.jface.action.MenuManager
 import org.eclipse.swt._
 import org.eclipse.swt.custom._
 import org.eclipse.swt.events.SelectionEvent
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
+import play.api.libs.json.Json
 import rx._
 
 final class CardEditorPane(parent: Composite, state: EditorState, cardData: CardData)
@@ -81,7 +82,8 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
       state.i18n.system("_princess.editor.back"),
       (event: SelectionEvent) => deactivate(),
       _.layoutData = new GridData(SWT.FILL, SWT.NONE, true, false)
-    )
+    ),
+    UIUtils.transparentStyle.apply
   )
 
   private def updateScrolledComposite() = {
@@ -94,9 +96,10 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
   addDisposeListener(_ => ui.kill())
 }
 
-final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) extends RxOwner {
+final class EditorState(parent: EditorTab, data: EditorTabData, val mainFrameState: MainFrameState) extends RxOwner {
   val currentCardSelection = Var(Seq.empty[UUID])
 
+  val currentPool = Rx { mainFrameState.project.getPool(data.setId).getOrElse(sys.error("Unknown pool")) }
   val currentCard = Rx { currentCardSelection().lastOption }
   val currentCardData = Rx { currentCard().flatMap(mainFrameState.project.cards.now.get) }
 
@@ -111,10 +114,11 @@ final class EditorState(parent: EditorPane, val mainFrameState: MainFrameState) 
   }
 }
 
-final class EditorPane(parent: Composite, mainState: MainFrameState)
+final case class EditorTabData(setId: UUID)
+final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFrameState)
   extends Composite(parent, SWT.NONE) with PrincessEditTab {
 
-  private val editorState = new EditorState(this, mainState)
+  private val editorState = new EditorState(this, data, mainState)
 
   private val stack = new StackLayout
 
@@ -140,7 +144,8 @@ final class EditorPane(parent: Composite, mainState: MainFrameState)
         listContainer = _
       ),
       _.setWeights(Array(1000, 1618))
-    )
+    ),
+    UIUtils.transparentStyle.apply
   )
 
   stack.topControl = selectorContainer
@@ -181,4 +186,14 @@ final class EditorPane(parent: Composite, mainState: MainFrameState)
   override def addMenuItems(m: MenuManager): Unit = {
     // TODO
   }
+
+  override val tabName = Rx.unsafe { "Edit Cards" }
+}
+object EditorTab {
+  private implicit val editorTabDataFormats = Json.format[EditorTabData]
+  val id = new TabID[EditorTabData](UUID.fromString("64a35118-343a-11e7-956d-3afa38669cf4"))
+}
+
+class EditorTabProvider extends TabProvider {
+  tabId(EditorTab.id)((parent, data, state) => new EditorTab(parent, data, state))
 }

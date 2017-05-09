@@ -132,6 +132,11 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   private val obs = sortedCards.foreach { _ =>
     state.ctx.asyncUiExec { viewer.refresh() }
   }
+  addDisposeListener(_ => {
+    cardsRx.kill()
+    sortedCards.kill()
+    obs.kill()
+  })
 
   // Setup viewer providers
   viewer.setContentProvider(new IStructuredContentProvider {

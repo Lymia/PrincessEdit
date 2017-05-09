@@ -24,14 +24,14 @@ package moe.lymia.princess.editor
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import java.util.Base64
+import java.util.{Base64, UUID}
 
 import moe.lymia.princess.util.{Crypto, IOUtils, Platform}
 import play.api.libs.json._
 
 import scala.collection.mutable
 
-final case class SettingsKey[T : Reads : Writes](name: String) {
+final case class SettingsKey[T : Reads : Writes](id: UUID) {
   def serialize(t: T) = Json.toJson(t)
   def deserialize(t: JsValue) = t.as[T]
 }
@@ -40,36 +40,53 @@ private sealed trait SettingsStoreEntry
 private final case class SettingsStoreObjEntry[T](key: SettingsKey[T], obj: T) extends SettingsStoreEntry
 private final case class SettingsStoreJsonEntry(value: JsValue) extends SettingsStoreEntry
 
-class SettingsStore {
-  private val underlying = new mutable.HashMap[String, SettingsStoreEntry]
+abstract class SettingsStore {
+  private val underlying = new mutable.HashMap[UUID, SettingsStoreEntry]
 
-  def getSetting[T](key: SettingsKey[T], default: => T) = underlying.get(key.name) match {
+  def clear() = underlying.clear()
+
+  def getSetting[T](key: SettingsKey[T], default: => T) = underlying.get(key.id) match {
     case Some(SettingsStoreObjEntry(_, obj)) =>
       obj.asInstanceOf[T]
     case Some(SettingsStoreJsonEntry(js)) =>
       val v = key.deserialize(js)
-      underlying.put(key.name, SettingsStoreObjEntry(key, v))
+      underlying.put(key.id, SettingsStoreObjEntry(key, v))
       v
     case None =>
       val v = default
-      underlying.put(key.name, SettingsStoreObjEntry(key, v))
+      underlying.put(key.id, SettingsStoreObjEntry(key, v))
       v
   }
-  def setSetting[T](key: SettingsKey[T], obj: T): Unit =
-    underlying.put(key.name, SettingsStoreObjEntry(key, obj))
+  def setSetting[T](key: SettingsKey[T], obj: T): Unit = {
+    underlying.put(key.id, SettingsStoreObjEntry(key, obj))
+    save()
+  }
 
-  def serialize = Json.toJson(underlying.mapValues {
+  def transferFrom(store: SettingsStore) = {
+    underlying.clear()
+    underlying ++= store.underlying
+    save()
+  }
+
+  def serialize = Json.toJson(underlying.map(x => (x._1.toString, x._2)).mapValues {
     case SettingsStoreObjEntry(key, obj) => key.serialize(obj)
     case SettingsStoreJsonEntry(js) => js
   })
   def deserialize(js: JsValue) = {
     underlying.clear()
-    for((k, v) <- js.as[Map[String, JsValue]]) underlying.put(k, SettingsStoreJsonEntry(v))
+    for((k, v) <- js.as[Map[String, JsValue]]) underlying.put(UUID.fromString(k), SettingsStoreJsonEntry(v))
   }
+
+  def load()
+  def save()
 }
 
+class UnbackedSettingsStore extends SettingsStore {
+  def load() = { }
+  def save() = { }
+}
 class FilesystemSettingsStore(path: Path) extends SettingsStore {
-  def load() = deserialize(Json.parse(IOUtils.readFileAsString(path)))
+  def load() = if(!Files.exists(path)) clear() else deserialize(Json.parse(IOUtils.readFileAsString(path)))
   def save() = IOUtils.writeFile(path, Json.prettyPrint(serialize))
 }
 object FilesystemSettingsStore {

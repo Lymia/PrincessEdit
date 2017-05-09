@@ -149,6 +149,9 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
     uuid
   }
 
+  def getPool(id: UUID)(implicit rx: Ctx.Data): Option[CardSource] =
+    if(uuid == id) Some(this) else cards().get(id).asInstanceOf[Option[CardSource]]
+
   override val allCards: Rx[Seq[UUID]] = Rx.unsafe {
     cards().toSeq.sortBy(x => (x._2.createTime, x._1.toString)).map(_._1)
   }

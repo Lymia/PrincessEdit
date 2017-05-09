@@ -80,6 +80,7 @@ class MainFrameMenu(menu: MenuManager, frame: MainFrame, state: MainFrameState) 
   def updateMenu(): Unit = {
     menu.removeAll()
     menu.add(file)
-    if(frame.currentTab != null) frame.currentTab.addMenuItems(menu)
+    frame.tabFolder.currentTab.now.foreach(_.addMenuItems(menu))
+    menu.update(true)
   }
 }

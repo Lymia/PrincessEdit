@@ -24,13 +24,15 @@ package moe.lymia.princess.editor.utils
 
 import java.nio.file.{Files, Path}
 
+import com.coconut_palm_software.xscalawt.XScalaWTStyles._
 import moe.lymia.princess.core.I18N
 import moe.lymia.princess.renderer.SVGFile
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.jface.dialogs.MessageDialog
 import org.eclipse.jface.window.IShellProvider
+import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Point
-import org.eclipse.swt.widgets.MessageBox
+import org.eclipse.swt.widgets.{Composite, Control, MessageBox, Widget}
 
 import scala.xml.XML
 
@@ -61,4 +63,8 @@ object UIUtils {
 
   def loadSVGFromResource(res: String) = SVGFile(XML.load(IOUtils.getResource(res)))
   def loadSVGFromPath(path: Path) = SVGFile(XML.load(Files.newInputStream(path)))
+
+  // XScalaWT compatible
+  def transparent(c: Control) = c.setBackground(c.getDisplay.getSystemColor(SWT.COLOR_TRANSPARENT))
+  object transparentStyle extends Stylesheet ($[Control](transparent))
 }

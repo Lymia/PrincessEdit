@@ -29,6 +29,7 @@ import moe.lymia.princess.core._
 import moe.lymia.princess.editor.ControlContext
 import moe.lymia.princess.editor.lua._
 import moe.lymia.princess.editor.model.DataStore
+import moe.lymia.princess.editor.utils.UIUtils
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
@@ -97,6 +98,7 @@ final class RxPane(uiRoot: Composite, context: NodeContext, uiCtx: UIContext, ro
         lastComponent.foreach(_.dispose())
         lastComponent = currentRoot.renderUI(pane, uiCtx)
         pane.layout(true)
+        UIUtils.transparentStyle.apply(pane)
       } else componentObs.kill()
     }
   }
@@ -119,7 +121,6 @@ final class ActiveRootNode private (ctx: NodeContext, root: Option[ControlNode],
 
   lazy val luaOutput = fields.map { fields => Rx { fields.map(x => x.copy(_2 = x._2())) } }
   lazy val luaOutputObj = Rx {
-    import OutputTable._
     luaOutput.fold(OutputTable.empty)(x => OutputTable(x())).toLua(ctx.internal_L)
   }
 }

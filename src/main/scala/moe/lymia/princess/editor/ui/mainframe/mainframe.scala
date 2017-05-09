@@ -27,9 +27,9 @@ import java.nio.file.{Path, Paths}
 import moe.lymia.princess.core.{GameID, I18NLoader, PackageManager}
 import moe.lymia.princess.editor.lua.EditorModule
 import moe.lymia.princess.editor.model.{CardSource, Project, ProjectMetadata}
-import moe.lymia.princess.editor.ui.editor.EditorPane
+import moe.lymia.princess.editor.ui.editor.{EditorTab, EditorTabData}
 import moe.lymia.princess.editor.utils._
-import moe.lymia.princess.editor.{ControlContext, GameIDData, Settings}
+import moe.lymia.princess.editor._
 import moe.lymia.princess.renderer.lua.RenderModule
 import moe.lymia.princess.util.{FileLock, IOUtils, VersionInfo}
 import org.eclipse.jface.action.MenuManager
@@ -51,7 +51,8 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
   val idData = new GameIDData(game, ctx, i18n)
   val project = projectSource.openProject(ctx, gameId, idData)
 
-  val currentPool = Var[CardSource](project)
+  private var settings0: SettingsStore = projectSource.openSettings()
+  def settings = settings0
 
   private var currentSaveLocation: Option[Path] = None
   private var lock: Option[FileLock] = None
@@ -64,6 +65,11 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
             lock.foreach(_.release())
             lock = Some(x)
             currentSaveLocation = Some(currentPath)
+
+            val oldSettings = settings
+            settings0 = Settings.getProjectSettings(currentPath)
+            settings0.transferFrom(oldSettings)
+
             mainFrame.updateTitle()
             true
           case None =>
@@ -122,20 +128,14 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
 
   val shell: IShellProvider = mainFrame
 
-  def dispose() = {
-    currentPool.kill()
+  def dispose(): Unit = {
+
   }
-}
-
-trait PrincessEditTab { this: Control =>
-  def addMenuItems(m: MenuManager)
-
-  def tabText (): String = ""
-  def tabImage(): Image  = null
 }
 
 sealed trait ProjectSource {
   def getGameID: String
+  def openSettings(): SettingsStore
   def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project
   def setSaveLocation(state: MainFrameState): Unit
 }
@@ -143,25 +143,29 @@ object ProjectSource {
   // TODO: Throw an error if the given GameID isn't installed
   case class OpenProject(path: Path, meta: ProjectMetadata, lock: FileLock) extends ProjectSource {
     override def getGameID: String = meta.gameId
+    override def openSettings(): SettingsStore = Settings.getProjectSettings(path)
     override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project =
       Project.loadProject(ctx, gameID, idData, path)
     override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(Some(path), Some(lock))
   }
   case class NewProject(id: GameID) extends ProjectSource {
     override def getGameID: String = id.name
+    override def openSettings(): SettingsStore = new UnbackedSettingsStore
     override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project =
       new Project(ctx, gameID, idData)
     override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(None, None)
   }
 }
 
-case class TabData(tab: PrincessEditTab)
-final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends WindowBase(ctx) {
+final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends WindowBase(ctx) with RxOwner {
   private val state = new MainFrameState(this, ctx, projectSource)
 
   override def configureShell(shell: Shell): Unit = {
     super.configureShell(shell)
-    shell.addListener(SWT.Dispose, event => state.dispose())
+    shell.addDisposeListener { event =>
+      state.dispose()
+      kill()
+    }
     updateTitle(shell)
   }
 
@@ -191,8 +195,8 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
               if(state.getSaveLocation.isDefined) "_princess.main.confirmSave.save"
               else "_princess.main.confirmSave.saveAs")), platformReverseOrder(2),
           "_princess.main.confirmSave", state.getSaveName, timeName)
-        platformButtonOrder(result) match {
-          case SWT.DEFAULT | 1 => // cancel
+        if(result != SWT.DEFAULT) platformButtonOrder(result) match {
+          case 1 => // cancel
           case 0 => super.handleShellCloseEvent() // close without saving
           case 2 => if(state.save()) super.handleShellCloseEvent()
         }
@@ -201,13 +205,12 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
     }
   }
 
-  var currentTab: PrincessEditTab = _
-
+  var tabFolder: MainTabFolder = _
   var menu: MainFrameMenu = _
+
   override def createMenuManager: MenuManager = {
     val manager = super.createMenuManager()
     menu = new MainFrameMenu(manager, this, state)
-    menu.updateMenu()
     manager
   }
   this.addMenuBar()
@@ -216,11 +219,13 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
 
   override def frameContents(frame: Composite) = {
     val fill = new FillLayout
-    fill.marginHeight = 1
-    fill.marginWidth = 1
+    fill.marginHeight = 5
+    fill.marginWidth = 5
     frame.setLayout(fill)
 
-    currentTab = new EditorPane(frame, state)
+    tabFolder = new MainTabFolder(frame, state)
+    tabFolder.openTab(EditorTab.id, EditorTabData(state.project.uuid))
+    tabFolder.currentTab.foreach(_ => menu.updateMenu())
   }
 }
 object MainFrame {

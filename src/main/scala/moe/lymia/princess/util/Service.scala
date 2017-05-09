@@ -22,37 +22,12 @@
 
 package moe.lymia.princess.util
 
-import java.nio.file.{Path, Paths}
+import java.util.ServiceLoader
 
-import com.sun.jna.platform.win32.{Shell32Util, ShlObj}
+import scala.reflect.ClassTag
+import scala.collection.JavaConverters._
 
-sealed trait Platform {
-  val configurationRoot: Path
-  def mapConfigName(name: String) = name
-
-  def getConfigDirectory(name: String) = configurationRoot.resolve(mapConfigName(name))
-}
-object Platform {
-  case object Windows extends Platform {
-    override lazy val configurationRoot: Path =
-      Paths.get(Shell32Util.getFolderPath(ShlObj.CSIDL_LOCAL_APPDATA))
-  }
-  case object MacOS extends Platform {
-    override lazy val configurationRoot: Path =
-      Paths.get(System.getProperty("user.home")).resolve("Library/Preferences")
-  }
-  case object Linux extends Platform {
-    override lazy val configurationRoot: Path =
-      Paths.get(System.getProperty("user.home"))
-    override def mapConfigName(name: String) = s".$name"
-  }
-
-  lazy val platformOption = sys.props("os.name") match {
-    case null => None
-    case x if x.startsWith("Windows ") => Some(Windows)
-    case x if x.startsWith("Mac ") => Some(MacOS)
-    case "Linux" => Some(Linux)
-    case _ => None
-  }
-  def platform = platformOption.get
+object Service {
+  def get[T : ClassTag]: Iterable[T] =
+    ServiceLoader.load(implicitly[ClassTag[T]].runtimeClass).asScala.asInstanceOf[Iterable[T]]
 }

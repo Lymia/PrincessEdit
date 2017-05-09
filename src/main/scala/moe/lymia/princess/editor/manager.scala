@@ -175,7 +175,11 @@ class UILoop {
       init(display)
       while(!display.isDisposed && wm.getWindowCount > 0) if(!display.readAndDispatch()) display.sleep()
     } catch {
-      case e: Exception => e.printStackTrace()
+      case e: Exception =>
+        e.printStackTrace()
+      case t: Throwable =>
+        t.printStackTrace()
+        throw t
     } finally {
       if(!display.isDisposed) display.dispose()
     }

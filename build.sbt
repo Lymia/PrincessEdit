@@ -131,6 +131,7 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Version
   envVars in run += ("SWT_GTK3", "0"),
 
   libraryDependencies += "org.ini4j" % "ini4j" % "0.5.4",
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % config_scalaVersion,
   libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
   libraryDependencies += "org.jfree" % "jfreesvg" % "3.2",
   libraryDependencies += "com.lihaoyi" %% "scalarx" % "0.3.2",
