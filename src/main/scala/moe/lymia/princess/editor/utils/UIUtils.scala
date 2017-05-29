@@ -32,7 +32,7 @@ import org.eclipse.jface.dialogs.MessageDialog
 import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Point
-import org.eclipse.swt.widgets.{Composite, Control, MessageBox, Widget}
+import org.eclipse.swt.widgets.{Control, MessageBox}
 
 import scala.xml.XML
 

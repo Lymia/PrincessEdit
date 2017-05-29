@@ -24,7 +24,6 @@ package moe.lymia.princess.editor.ui.mainframe
 
 import java.util.UUID
 
-import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.editor.SettingsKey
 import moe.lymia.princess.editor.utils.RxWidget
 import moe.lymia.princess.util.Service

@@ -25,11 +25,11 @@ package moe.lymia.princess.editor.ui.mainframe
 import java.nio.file.{Path, Paths}
 
 import moe.lymia.princess.core.{GameID, I18NLoader, PackageManager}
+import moe.lymia.princess.editor._
 import moe.lymia.princess.editor.lua.EditorModule
 import moe.lymia.princess.editor.model.{Project, ProjectMetadata, StaticPoolID}
 import moe.lymia.princess.editor.ui.editor.{EditorTab, EditorTabData}
 import moe.lymia.princess.editor.utils._
-import moe.lymia.princess.editor._
 import moe.lymia.princess.renderer.lua.RenderModule
 import moe.lymia.princess.util.{FileLock, IOUtils, VersionInfo}
 import org.eclipse.jface.action.MenuManager

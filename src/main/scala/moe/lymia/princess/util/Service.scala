@@ -24,8 +24,8 @@ package moe.lymia.princess.util
 
 import java.util.ServiceLoader
 
-import scala.reflect.ClassTag
 import scala.collection.JavaConverters._
+import scala.reflect.ClassTag
 
 object Service {
   def get[T : ClassTag]: Iterable[T] =
