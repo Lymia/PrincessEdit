@@ -25,7 +25,7 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import moe.lymia.princess.editor.TableColumnData
-import moe.lymia.princess.editor.model.CardData
+import moe.lymia.princess.editor.model.FullCardData
 import moe.lymia.princess.editor.ui.export.ExportCardsDialog
 import moe.lymia.princess.editor.utils.RxWidget
 import org.eclipse.jface.action._
@@ -35,13 +35,14 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{KeyEvent, KeyListener, SelectionAdapter, SelectionEvent}
 import org.eclipse.swt.graphics.{Image, Point}
 import org.eclipse.swt.widgets._
+import play.api.libs.json.JsObject
 import rx._
 
 import scala.collection.JavaConverters._
 
 // TODO: Factor out the table sort management code, etc
 // TODO: Make sorting code more efficient (don't run it in the editor)
-case class RowData(id: UUID, data: CardData, fields: Seq[String])
+case class RowData(id: UUID, data: FullCardData, fields: Seq[String])
 final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   extends Composite(parent, SWT.NONE) with RxWidget {
 
@@ -87,19 +88,19 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
             viewer.getTable.setSortDirection(SWT.UP)
           }
 
-          if(viewer.getTable.getSortDirection == SWT.NONE) sortOrder.update(None)
+          if(viewer.getTable.getSortDirection == SWT.NONE) state.ctx.queueUpdate(sortOrder, None)
           else {
             val multiplier = viewer.getTable.getSortDirection match {
               case SWT.UP   => 1
               case SWT.DOWN => -1
             }
-            sortOrder.update(Some(
+            state.ctx.queueUpdate(sortOrder, Some(
               ((a, b) => multiplier * (column.sortFn match {
                 case None =>
                   // TODO: Ensure this is safe
                   a.fields(i).compare(b.fields(i))
                 case Some(fn) =>
-                  column.L.newThread().call(fn, 1, a.data.root.luaData.now, b.data.root.luaData.now).head.as[Int]
+                  column.L.newThread().call(fn, 1, a.data.luaData.now, b.data.luaData.now).head.as[Int]
               })) : Ordering[RowData]
             ))
           }
@@ -116,17 +117,17 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
 
   // Setup cards rx
   private val cardsRx: Rx[Seq[RowData]] = Rx {
-    val cards = state.project.cards()
-    state.currentPool().allCards().map(id => {
-      val info = cards(id)
-      val columns = info.columnData()
-      RowData(id, info, activeColumns().map(columns))
+    state.currentPool().fullCardList().map(card => {
+      val columns = card.columnData()
+      RowData(card.uuid, card, activeColumns().map(columns))
     })
   }
-  private val sortedCards: Rx[Seq[RowData]] = Rx {
-    sortOrder() match {
-      case None => cardsRx()
-      case Some(ordering) => cardsRx().sorted(ordering)
+  private val sortedCards: Rx[Seq[RowData]] = state.ctx.syncLuaExec {
+    Rx {
+      sortOrder() match {
+        case None => cardsRx()
+        case Some(ordering) => cardsRx().sorted(ordering)
+      }
     }
   }
   private val obs = sortedCards.foreach { _ =>
@@ -179,29 +180,32 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   private val copy = new Action(state.i18n.system("_princess.editor.copyCard")) {
     setAccelerator(SWT.CTRL | 'C')
     override def run() = {
-      val cards = getSelectedCards.map(_.data.serialize)
+      val cards = getSelectedCards.map(_.data.cardData.serialize)
       state.ctx.clipboard.setContents(Array(CardTransferData(cards : _*)), Array(CardTransfer))
     }
   }
-  private val paste = new Action(state.i18n.system("_princess.editor.copyCard")) {
+  private val paste = new Action(state.i18n.system("_princess.editor.pasteCard")) {
     setAccelerator(SWT.CTRL | 'V')
     override def run() = state.ctx.clipboard.getContents(CardTransfer) match {
       case transfer: CardTransferData =>
-        for(card <- transfer.json) {
-          val uuid = state.project.newCard()
-          val data = state.project.cards.now(uuid)
-          data.deserialize(card)
+        val ids = state.ctx.syncLuaExec {
+          for(card <- transfer.json) yield {
+            val (uuid, data) = state.project.cards.create()
+            data.deserialize(card.as[JsObject])
+            uuid
+          }
         }
+        setSelection(ids : _*)
       case _ =>
     }
   }
   private val export = new Action(state.i18n.system("_princess.editor.exportCard")) {
     override def run() =
-      ExportCardsDialog.open(state, state.currentPool.now, getSelectedCards.map(x => x.id -> x.data) : _*)
+      ExportCardsDialog.open(state, getSelectedCards.map(x => x.id -> x.data) : _*)
   }
   private val addCard = new Action(state.i18n.system("_princess.editor.newCard")) {
     setAccelerator(SWT.CTRL | SWT.CR)
-    override def run() = setSelection(state.project.newCard())
+    override def run() = setSelection(state.ctx.syncLuaExec(state.project.cards.create()._1))
   }
   private val editCard = new Action(state.i18n.system("_princess.editor.editCard")) {
     setAccelerator(SWT.CR)
@@ -261,10 +265,13 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
       val doit = keyEvent.doit
       keyEvent.doit = false
 
-      if(ctrl && keyEvent.keyCode == SWT.CR) addCard.run()
-      else if(ctrl && keyEvent.keyCode == 'c') copy.run()
-      else if(ctrl && keyEvent.keyCode == 'v') paste.run()
-      else if(ctrl && keyEvent.keyCode == 'a') viewer.getTable.selectAll()
+      if(ctrl) keyEvent.keyCode match {
+        case SWT.CR => addCard.run()
+        case 'c'    => copy.run()
+        case 'v'    => paste.run()
+        case 'a'    => viewer.getTable.selectAll()
+        case _ =>
+      }
 
       else keyEvent.doit = doit
     }

@@ -36,6 +36,7 @@ import org.eclipse.swt.graphics._
 import org.eclipse.swt.widgets._
 import rx._
 
+import scala.annotation.elidable
 import scala.util.Try
 
 // TODO: Improve error handling
@@ -86,11 +87,20 @@ private class LuaThread(state: VolatileState) extends Thread {
 }
 
 class ControlContext(val display: Display, state: VolatileState, loop: UILoop, factory: SVGRasterizerFactory,
-                     luaThread: LuaThread, uiThread: Thread) extends SVGRasterizerFactory {
+                     luaThread: LuaThread, uiThread: Thread, rasterizeThread: Thread) extends SVGRasterizerFactory {
   val clipboard = new Clipboard(display)
   val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
 
   val wm = loop.wm
+
+  @elidable(elidable.ASSERTION)
+  def assertUIThread(): Unit = assert(Thread.currentThread() eq uiThread)
+
+  @elidable(elidable.ASSERTION)
+  def assertLuaThread(): Unit = assert(Thread.currentThread() eq luaThread)
+
+  @elidable(elidable.ASSERTION)
+  def assertRasterizeThread(): Unit = assert(Thread.currentThread() eq rasterizeThread)
 
   private val jfaceResources = JFaceResources.getResources(display)
   val resources = new ExtendedResourceManager(jfaceResources, this)
@@ -196,7 +206,7 @@ class UIManager(loop: UILoop, factory: SVGRasterizerFactory) {
   rasterizeThread.start()
 
   def mainLoop(display: Display)(init: ControlContext => Unit) = {
-    val ctx = new ControlContext(display, state, loop, factory, luaThread, Thread.currentThread())
+    val ctx = new ControlContext(display, state, loop, factory, luaThread, Thread.currentThread(), rasterizeThread)
     init(ctx)
     display.addListener(SWT.Dispose, _ => state.shutdown())
   }

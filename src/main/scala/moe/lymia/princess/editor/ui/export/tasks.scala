@@ -26,22 +26,22 @@ import java.nio.file.{Files, Path}
 import java.util.UUID
 
 import moe.lymia.lua._
-import moe.lymia.princess.editor.model.{CardData, CardSource}
+import moe.lymia.princess.editor.model.FullCardData
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
 import moe.lymia.princess.renderer.RasterizeResourceLoader
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.jface.operation.IRunnableWithProgress
 
-final class ExportSingleTask[Options, Init](state: MainFrameState, pool: CardSource, outFile: Path,
+final class ExportSingleTask[Options, Init](state: MainFrameState, outFile: Path,
                                             exportFormat: ExportFormat[Options, Init], exportData: Options,
-                                            exportTarget: (UUID, CardData)) {
+                                            exportTarget: (UUID, FullCardData)) {
   def run() = {
     val init = exportFormat.initRender(state)
     try {
       val (id, target) = exportTarget
       val rendered = state.ctx.syncLuaExec(state.idData.renderer.render(
-        Seq(target.root.luaData.now, pool.info.root.luaData.now), RasterizeResourceLoader
+        Seq(target.luaData.now), RasterizeResourceLoader
       ))
       exportFormat.export(rendered, exportData, init, outFile)
     } finally {
@@ -49,9 +49,9 @@ final class ExportSingleTask[Options, Init](state: MainFrameState, pool: CardSou
     }
   }
 }
-final class ExportMultiTask[Options, Init](state: MainFrameState, pool: CardSource, outDir: Path, name: LuaNameSpec,
+final class ExportMultiTask[Options, Init](state: MainFrameState, outDir: Path, name: LuaNameSpec,
                                            exportFormat: ExportFormat[Options, Init], exportData: Options,
-                                           exportTargets: Seq[(UUID, CardData)])
+                                           exportTargets: Seq[(UUID, FullCardData)])
   extends IRunnableWithProgress {
 
   // TODO: Add extra error checking
@@ -62,12 +62,12 @@ final class ExportMultiTask[Options, Init](state: MainFrameState, pool: CardSour
       IOUtils.withTemporaryDirectory("princess-edit-export-") { temp =>
         for((id, target) <- exportTargets) {
           val name = exportFormat.addExtension(state.ctx.syncLuaExec(
-            this.name.makeName(id.toString, target.root.luaData.now, pool.info.root.luaData.now)
+            this.name.makeName(id.toString, target.luaData.now)
           ).left.get)
           progress.subTask(state.i18n.system("_princess.export.exportingTo", name))
 
           val rendered = state.ctx.syncLuaExec(state.idData.renderer.render(
-            Seq(target.root.luaData.now, pool.info.root.luaData.now), RasterizeResourceLoader
+            Seq(target.luaData.now), RasterizeResourceLoader
           ))
 
           exportFormat.export(rendered, exportData, init, temp.resolve(name))

@@ -43,7 +43,7 @@ val commonSettings = versionWithGit ++ Seq(
       resolver.setUrl(url)
       new RawRepository(resolver)
     }
-    Seq(updateSiteResolver("Eclipse updates site", "http://download.eclipse.org/eclipse/updates/4.6"),
+    Seq(updateSiteResolver("Eclipse 4.7rc update site", "http://download.eclipse.org/eclipse/updates/4.7milestones"),
         updateSiteResolver("Nebula update site", "http://download.eclipse.org/nebula/releases/1.2.0/"))
   },
 
@@ -92,7 +92,7 @@ val swtArtifact =
     case (os, arch) => sys.error("Cannot obtain lib for OS '" + os + "' and architecture '" + arch + "'")
   })
 def swtDep(artifact: String) =
-  ("bundle" % artifact % config_swt_version
+  ("bundle" % artifact % "3.106.0.v20170523-1901"
     exclude("package", "org.mozilla.xpcom")
     exclude("package", "org.eclipse.swt.accessibility2"))
 
@@ -101,10 +101,14 @@ lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
   name := "princess-edit-swt",
 
   libraryDependencies += swtDep(swtArtifact),
-  libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.11.3.v20170209-1843",
-  libraryDependencies += "bundle" % "org.eclipse.equinox.common" % "3.8.0.v20160509-1230",
-  libraryDependencies += "bundle" % "org.eclipse.jface" % "3.12.2.v20170113-2113"
+  libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.12.0.v20170512-1932",
+  libraryDependencies += "bundle" % "org.eclipse.equinox.common" % "3.9.0.v20170207-1454",
+  libraryDependencies += "bundle" % "org.eclipse.jface" % "3.13.0.v20170503-1507"
     exclude("bundle", "org.eclipse.equinox.bidi")
+    // provided by default in JDK 8
+    exclude("package", "javax.xml.parsers")
+    exclude("package", "org.w3c.dom")
+    exclude("package", "org.xml.sax")
 ))
 
 lazy val xscalawt = project in file("modules/xscalawt") settings (commonSettings ++ Seq(

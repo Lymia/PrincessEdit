@@ -26,8 +26,6 @@ object Config {
 
   val version_baseVersion = "0.1.0"
 
-  val config_swt_version = "3.105.2.v20161122-0613"
-
     // hardcoded mirror because redirection handling is :(
   val config_launch4j_url = "https://superb-sea2.dl.sourceforge.net/project/launch4j/launch4j-3/3.9/launch4j-3.9-linux.tgz"
 }

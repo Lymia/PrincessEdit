@@ -29,7 +29,7 @@ import java.util.{Base64, UUID}
 import moe.lymia.princess.util.{Crypto, IOUtils, Platform}
 import play.api.libs.json._
 
-import scala.collection.mutable
+import scala.collection.concurrent
 
 final case class SettingsKey[T : Reads : Writes](id: UUID) {
   def serialize(t: T) = Json.toJson(t)
@@ -41,7 +41,7 @@ private final case class SettingsStoreObjEntry[T](key: SettingsKey[T], obj: T) e
 private final case class SettingsStoreJsonEntry(value: JsValue) extends SettingsStoreEntry
 
 abstract class SettingsStore {
-  private val underlying = new mutable.HashMap[UUID, SettingsStoreEntry]
+  private val underlying = new concurrent.TrieMap[UUID, SettingsStoreEntry]
 
   def clear() = underlying.clear()
 

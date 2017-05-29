@@ -64,3 +64,4 @@ end
 
 print = log.info
 _G.gameId = gameId
+table.stablesort = core.stableSort

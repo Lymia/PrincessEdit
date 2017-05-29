@@ -26,7 +26,7 @@ import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.editor.UIData
-import moe.lymia.princess.editor.model.CardData
+import moe.lymia.princess.editor.model.{CardData, FullCardData}
 import moe.lymia.princess.editor.ui.mainframe.{MainFrameState, PrincessEditTab, TabID, TabProvider}
 import moe.lymia.princess.editor.utils.{RxOwner, UIUtils}
 import org.eclipse.jface.action.MenuManager
@@ -99,9 +99,9 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
 final class EditorState(parent: EditorTab, data: EditorTabData, val mainFrameState: MainFrameState) extends RxOwner {
   val currentCardSelection = Var(Seq.empty[UUID])
 
-  val currentPool = Rx { mainFrameState.project.getPool(data.setId).getOrElse(sys.error("Unknown pool")) }
+  val currentPool = Rx { mainFrameState.project.allPools().getOrElse(data.setId, sys.error("Unknown pool")) }
   val currentCard = Rx { currentCardSelection().lastOption }
-  val currentCardData = Rx { currentCard().flatMap(mainFrameState.project.cards.now.get) }
+  val currentCardData = Rx { currentCard().flatMap(currentPool().getFullCard) }
 
   def isEditorActive = parent.isEditorActive
 
@@ -162,11 +162,11 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
 
   private var editorActive = false
   def isEditorActive = editorActive
-  def activateEditor(cardData: CardData) = {
+  def activateEditor(cardData: FullCardData) = {
     editorActive = true
     clearCurrentEditor()
     selector.editorOpened()
-    val editor = new CardEditorPane(listContainer, editorState, cardData)
+    val editor = new CardEditorPane(listContainer, editorState, cardData.cardData)
     currentEditor = Some(editor)
     stack.topControl = editor
     listContainer.layout()
@@ -187,7 +187,7 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
     // TODO
   }
 
-  override val tabName = Rx.unsafe { "Edit Cards" }
+  override val tabName = Rx.unsafe { "Edit Cards" } // TODO
 }
 object EditorTab {
   private implicit val editorTabDataFormats = Json.format[EditorTabData]

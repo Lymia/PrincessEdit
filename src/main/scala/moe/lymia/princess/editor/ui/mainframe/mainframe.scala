@@ -26,7 +26,7 @@ import java.nio.file.{Path, Paths}
 
 import moe.lymia.princess.core.{GameID, I18NLoader, PackageManager}
 import moe.lymia.princess.editor.lua.EditorModule
-import moe.lymia.princess.editor.model.{CardSource, Project, ProjectMetadata}
+import moe.lymia.princess.editor.model.{Project, ProjectMetadata, StaticPoolID}
 import moe.lymia.princess.editor.ui.editor.{EditorTab, EditorTabData}
 import moe.lymia.princess.editor.utils._
 import moe.lymia.princess.editor._
@@ -36,7 +36,7 @@ import org.eclipse.jface.action.MenuManager
 import org.eclipse.jface.dialogs.MessageDialog
 import org.eclipse.jface.window.{IShellProvider, Window}
 import org.eclipse.swt.SWT
-import org.eclipse.swt.graphics.{Image, Point}
+import org.eclipse.swt.graphics.Point
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._
@@ -145,7 +145,7 @@ object ProjectSource {
     override def getGameID: String = meta.gameId
     override def openSettings(): SettingsStore = Settings.getProjectSettings(path)
     override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project =
-      Project.loadProject(ctx, gameID, idData, path)
+      ctx.syncLuaExec(Project.loadProject(ctx, gameID, idData, path))
     override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(Some(path), Some(lock))
   }
   case class NewProject(id: GameID) extends ProjectSource {
@@ -224,7 +224,7 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
     frame.setLayout(fill)
 
     tabFolder = new MainTabFolder(frame, state)
-    tabFolder.openTab(EditorTab.id, EditorTabData(state.project.uuid))
+    tabFolder.openTab(EditorTab.id, EditorTabData(StaticPoolID.AllCards))
     tabFolder.currentTab.foreach(_ => menu.updateMenu())
   }
 }

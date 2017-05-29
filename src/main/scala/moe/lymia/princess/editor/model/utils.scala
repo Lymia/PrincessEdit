@@ -23,79 +23,121 @@
 package moe.lymia.princess.editor.model
 
 import java.nio.file.{Files, Path}
+import java.util.UUID
 
 import moe.lymia.princess.util.IOUtils
 import play.api.libs.json._
+import rx._
 
-trait TrackModifyTime {
+trait PathSerializable {
+  val extension = ""
+  def writeTo(path: Path): Unit = { }
+  def readFrom(path: Path): Unit = { }
+}
+
+trait JsonSerializable {
+  def serialize: JsObject = Json.obj()
+  def deserialize(js: JsObject): Unit = { }
+}
+
+trait DirSerializable extends PathSerializable {
+  override def writeTo(path: Path): Unit = {
+    super.writeTo(path)
+    Files.createDirectories(path)
+  }
+  override def readFrom(path: Path): Unit = super.readFrom(path)
+}
+
+trait JsonPathSerializable extends JsonSerializable with PathSerializable {
+  override val extension = ".json"
+  override def writeTo(path: Path): Unit = {
+    super.writeTo(path)
+    SerializeUtils.writeJson(path, serialize)
+  }
+  override def readFrom(path: Path): Unit = {
+    super.readFrom(path)
+    deserialize(SerializeUtils.readJson(path).as[JsObject])
+  }
+}
+
+trait TrackModifyTime extends JsonSerializable {
   var createTime = System.currentTimeMillis()
   var modifyTime = System.currentTimeMillis()
 
   def modified() = modifyTime = System.currentTimeMillis()
 
-  protected def serializeModifyTime = Json.obj("create" -> createTime, "modify" -> modifyTime)
-  protected def deserializeModifyTime(js: JsValue) = {
+  override def serialize = super.serialize ++ Json.obj("create" -> createTime, "modify" -> modifyTime)
+  override def deserialize(js: JsObject) = {
+    super.deserialize(js)
     createTime = (js \ "create").as[Long]
     modifyTime = (js \ "modify").as[Long]
   }
 }
 
-trait HasDataStore extends TrackModifyTime {
+trait HasDataStore extends JsonSerializable {
   protected val project: Project
 
   val fields = new DataStore
+
+  override def serialize = super.serialize ++ Json.obj("fields" -> fields.serialize)
+  override def deserialize(js: JsObject) = {
+    super.deserialize(js)
+    fields.deserialize((js \ "fields").as[JsValue])
+  }
+}
+
+final class UUIDMapVar[T <: PathSerializable](newFn: UUID => T)
+  extends Var[Map[UUID, T]](Map.empty) with PathSerializable {
+
+  def create(): (UUID, T) = {
+    val uuid = UUID.randomUUID()
+    val tuple = uuid -> newFn(uuid)
+    update(now + tuple)
+    tuple
+  }
+  def get(uuid: UUID)(implicit ctx: Ctx.Data) = apply().get(uuid)
+
+  override def writeTo(path: Path): Unit = {
+    super.writeTo(path)
+    SerializeUtils.writeMap(path, now)(_.toString)
+  }
+  override def readFrom(path: Path): Unit = {
+    super.readFrom(path)
+    update(SerializeUtils.readMap(path)(newFn, _.toString))
+  }
+}
+
+private[model] trait RefCount {
+  private var refCount0 = 0
+  private[model] def refCount = refCount0
+  private[model] def ref()    = refCount0 = refCount + 1
+  private[model] def unref()  = refCount0 = refCount - 1
+}
+
+trait DataStoreModifyListener { this: HasDataStore with TrackModifyTime =>
   fields.addChangeListener((_, _) => {
     project.modified()
     modified()
   })
-
-  protected def serializeDataStore = Json.obj("fields" -> fields.serialize, "time" -> serializeModifyTime)
-  protected def deserializeDataStore(js: JsValue) = {
-    fields.deserialize((js \ "fields").as[JsValue])
-    deserializeModifyTime((js \ "time").as[JsValue])
-  }
 }
-
-trait JsonSerializable {
-  def serialize: JsValue
-  def deserialize(js: JsValue): Unit
-}
-
-trait DirSerializable {
-  def writeTo(path: Path): Unit
-  def readFrom(path: Path): Unit
-}
+trait HasModifyTimeDataStore extends HasDataStore with TrackModifyTime with DataStoreModifyListener
 
 object SerializeUtils {
   def writeJson(path: Path, json: JsValue) =
     IOUtils.writeFile(path, Json.prettyPrint(json))
-  def writeJsonMap[K : Writes, V <: JsonSerializable](path: Path, map: Map[K, V])(fileName: K => String) = {
+  def writeMap[K : Writes, V <: PathSerializable](path: Path, map: Map[K, V])(fileName: K => String) = {
     if(Files.exists(path)) IOUtils.deleteDirectory(path)
     Files.createDirectories(path)
-    writeJson(path.resolve("index.json"), Json.toJson(map.keys.map(fileName)))
-    for((id, entry) <- map) writeJson(path.resolve(s"${fileName(id)}.json"), entry.serialize)
-  }
-  def writeDirMap[K : Writes, V <: DirSerializable](path: Path, map: Map[K, V])(fileName: K => String) = {
-    if(Files.exists(path)) IOUtils.deleteDirectory(path)
-    Files.createDirectories(path)
-    writeJson(path.resolve("index.json"), Json.toJson(map.keys.map(fileName)))
-    for((id, entry) <- map) entry.writeTo(path.resolve(fileName(id)))
+    writeJson(path.resolve("_index.json"), Json.toJson(map.keys.map(fileName)))
+    for((id, entry) <- map) entry.writeTo(path.resolve(s"${fileName(id)}${entry.extension}"))
   }
 
   def readJson(path: Path) = Json.parse(IOUtils.readFileAsString(path))
-  def readJsonMap[K: Reads, V <: JsonSerializable](path: Path)(newValue: K => V, fileName: K => String) = {
-    val list = readJson(path.resolve("index.json")).as[Seq[K]]
+  def readMap[K: Reads, V <: PathSerializable](path: Path)(newValue: K => V, fileName: K => String) = {
+    val list = readJson(path.resolve("_index.json")).as[Seq[K]]
     (for(k <- list) yield k -> {
       val v = newValue(k)
-      v.deserialize(readJson(path.resolve(s"${fileName(k)}.json")))
-      v
-    }).toMap
-  }
-  def readDirMap[K : Reads, V <: DirSerializable](path: Path)(newValue: K => V, fileName: K => String) = {
-    val list = readJson(path.resolve("index.json")).as[Seq[K]]
-    (for(k <- list) yield k -> {
-      val v = newValue(k)
-      v.readFrom(path.resolve(fileName(k)))
+      v.readFrom(path.resolve(s"${fileName(k)}${v.extension}"))
       v
     }).toMap
   }

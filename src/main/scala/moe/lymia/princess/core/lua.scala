@@ -37,8 +37,12 @@ trait LuaModule {
   def getLibraries(ctx: LuaContext): Seq[LuaLibrary]
 }
 
-private final case class CoreLib(context: LuaContext) extends LuaLibrary {
+private object CoreLib {
+  val defaultSort = LuaClosure((L: LuaState, a: Any, b: Any) => L.lessThan(a, b))
   implicit case object LuaLogLevel extends LuaUserdataType[LogLevel]
+}
+private final case class CoreLib(context: LuaContext) extends LuaLibrary {
+  import CoreLib._
 
   def open(L: LuaState, table: LuaTable) = {
     L.rawSet(table, "gameId", context.packages.gameId)
@@ -63,6 +67,13 @@ private final case class CoreLib(context: LuaContext) extends LuaLibrary {
 
     L.register(table, "trimString", (s: String) => s.trim)
     L.register(table, "splitString", (s: String, on: String) => s.split(on).toSeq)
+
+    L.register(table, "stableSort", (L: LuaState, t: Seq[Any], cmp: Option[LuaClosure]) => {
+      // TODO: Optimize
+      val sortFn = cmp.getOrElse(defaultSort)
+      def lt(x: Any, y: Any) = L.call(sortFn, 1, x, y).head.as[Boolean]
+      t.sorted((x : Any, y : Any) => if(lt(x, y)) -1 else if(lt(y, x)) 1 else 0)
+    })
 
     L.register(table, "Object", () => new LuaLookup { } : HasLuaMethods)
 
@@ -180,7 +191,7 @@ final class LuaContext(val packages: PackageList, val logger: Logger, modules: S
     val mt = L.newTable()
     L.setMetatable(_G, mt)
 
-    L.register(mt , "__tostring" , (tbl: Any) => s"environment for ${path}")
+    L.register(mt , "__tostring" , (tbl: Any) => s"environment for $path")
     L.rawSet  (mt , "__metatable", s"export environment metatable")
     L.register(mt, "__index"     , (L: LuaState, tbl: Any, k: Any) => {
       if(overwrittenKeys.contains(k)) LuaRet(L.rawGet(exports, k))

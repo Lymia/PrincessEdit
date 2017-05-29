@@ -111,9 +111,11 @@ object LuaExportData {
 }
 
 final class GameIDData(game: GameManager, controlCtx: ControlContext, i18n: I18N) {
-  val card     = RootSource         (game, controlCtx, i18n, "card-form", "cardForm")
-  val set      = RootSource.optional(game, controlCtx, i18n, "set-form" , "setForm" )
-  val columns  = LuaColumnData(game)
-  val renderer = new RenderManager(game, controlCtx.cache)
-  val export   = LuaExportData(game)
+  val internal_L = game.lua.L.newThread()
+
+  val card       = RootSource         (game, controlCtx, i18n, "card-form", "cardForm")
+  val set        = RootSource.optional(game, controlCtx, i18n, "set-form" , "setForm" )
+  val columns    = LuaColumnData(game)
+  val renderer   = new RenderManager(game, controlCtx.cache)
+  val export     = LuaExportData(game)
 }

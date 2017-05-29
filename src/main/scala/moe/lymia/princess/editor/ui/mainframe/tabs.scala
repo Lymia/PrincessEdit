@@ -47,6 +47,8 @@ case class TabID[T : Writes : Reads](id: UUID) {
 trait PrincessEditTab { this: Control =>
   def addMenuItems(m: MenuManager)
 
+  val isClosable = true
+
   val tabName: Rx[String]
   addDisposeListener(_ => tabName.kill())
 }
@@ -126,11 +128,22 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
     override def widgetDefaultSelected(selectionEvent: SelectionEvent): Unit = { }
   })
 
+  private val openTabs = new mutable.HashSet[(TabID[_], _)]
   def openTab[T](id: TabID[T], data: T) = {
-    tabs.append(TabData(id, data, MainTabFolder.getTabType(id).getOrElse(sys.error(s"Tab ID $id not registered"))
-      .createTab(tabFolder, data, state)))
-    updateTabItems()
-    saveSettings()
+    val idTuple = (id, data)
+    if(!openTabs.contains(idTuple)) {
+      openTabs.add(idTuple)
+      val tab = TabData(id, data, MainTabFolder.getTabType(id).getOrElse(sys.error(s"Tab ID $id not registered"))
+        .createTab(tabFolder, data, state))
+      tab.control.addDisposeListener(_ => openTabs.remove(idTuple))
+      tabs.append(tab)
+      updateTabItems()
+      saveSettings()
+    }
+    tabFolder.setSelection(tabFolder.getItems.find { x =>
+      val tabData = x.getData(MainTabFolder.dataUUID).asInstanceOf[TabData[_]]
+      tabData.tabID == id && tabData.data == data
+    }.get)
   }
 
   private def clearTabs() = {

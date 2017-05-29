@@ -26,7 +26,7 @@ import java.nio.file.Paths
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.editor.model.{CardData, CardSource}
+import moe.lymia.princess.editor.model.FullCardData
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
 import moe.lymia.princess.editor.utils.{DialogBase, HelpButton, UIUtils}
 import org.eclipse.jface.dialogs.ProgressMonitorDialog
@@ -141,7 +141,7 @@ sealed abstract class ExportCardsDialogBase[Data](state: MainFrameState) extends
   }
 }
 
-final class ExportCardsDialogSingle(state: MainFrameState, pool: CardSource, exportTarget: (UUID, CardData))
+final class ExportCardsDialogSingle(state: MainFrameState, exportTarget: (UUID, FullCardData))
   extends ExportCardsDialogBase[Unit](state) {
 
   override protected val cardCount: Int = 1
@@ -155,8 +155,7 @@ final class ExportCardsDialogSingle(state: MainFrameState, pool: CardSource, exp
     val nameSpec =
       LuaNameSpec(state.game.lua.L, state.idData.export.defaultNameFormat, ExportMultiTask.NameSpecFieldNames : _*)
     val defaultName =
-      nameSpec.left.get.makeName(exportTarget._1.toString, exportTarget._2.root.luaData.now,
-                                 pool.info.root.luaData.now)
+      nameSpec.left.get.makeName(exportTarget._1.toString, exportTarget._2.luaData.now)
 
     selector.setFileName(format.addExtension(defaultName.left.get))
 
@@ -168,13 +167,13 @@ final class ExportCardsDialogSingle(state: MainFrameState, pool: CardSource, exp
       case null =>
         // canceled
       case name =>
-        new ExportSingleTask(state, pool, Paths.get(name), format, options, exportTarget).run()
+        new ExportSingleTask(state, Paths.get(name), format, options, exportTarget).run()
         this.close()
     }
   }
 }
 
-final class ExportCardsDialogMulti(state: MainFrameState, pool: CardSource, exportTargets: Seq[(UUID, CardData)])
+final class ExportCardsDialogMulti(state: MainFrameState, exportTargets: Seq[(UUID, FullCardData)])
   extends ExportCardsDialogBase[LuaNameSpec](state) {
 
   override protected val cardCount: Int = exportTargets.length
@@ -222,15 +221,15 @@ final class ExportCardsDialogMulti(state: MainFrameState, pool: CardSource, expo
       case null =>
       case name =>
         this.close()
-        val runnable = new ExportMultiTask(state, pool, Paths.get(name), nameSpec, format, options, exportTargets)
+        val runnable = new ExportMultiTask(state, Paths.get(name), nameSpec, format, options, exportTargets)
         new ProgressMonitorDialog(state.shell.getShell).run(true, true, runnable)
     }
   }
 }
 
 object ExportCardsDialog {
-  def open(state: MainFrameState, pool: CardSource, exportTargets: (UUID, CardData)*) =
+  def open(state: MainFrameState, exportTargets: (UUID, FullCardData)*) =
     if(exportTargets.isEmpty) sys.error("No export targets!")
-    else if(exportTargets.length == 1) new ExportCardsDialogSingle(state, pool, exportTargets.head).open()
-    else new ExportCardsDialogMulti(state, pool, exportTargets).open()
+    else if(exportTargets.length == 1) new ExportCardsDialogSingle(state, exportTargets.head).open()
+    else new ExportCardsDialogMulti(state, exportTargets).open()
 }

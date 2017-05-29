@@ -33,151 +33,62 @@ import rx._
 
 import scala.collection.mutable
 
-// TODO: Cleanup this file, maybe split it or factor out more traits
-
-final class CardData(protected val project: Project) extends JsonSerializable with HasDataStore {
-  val root = project.ctx.syncLuaExec { project.idData.card.createRoot(fields, Seq()) }
-
-  val columnData = project.ctx.syncLuaExec {
-    Rx.unsafe {
-      val fields = root.luaData()
-      project.idData.columns.columns.map { f =>
-        f -> f.L.newThread().call(f.fn, 1, fields).head.as[String]
-      }.toMap
-    }
-  }
-
-  def serialize = serializeDataStore
-  def deserialize(js: JsValue) = deserializeDataStore(js)
+final class AllCardsView(protected val project: Project) extends CardPool {
+  override def cardIdList: Rx[Set[UUID]] = Rx.unsafe { project.cards().keySet }
 }
 
-final class SlotData(protected val project: Project) extends JsonSerializable with HasDataStore {
-  val cardRef = Var[Option[UUID]](None)
-
-  def serialize = Json.obj("cardRef" -> cardRef.now, "data" -> serializeDataStore)
-  def deserialize(js: JsValue): Unit = {
-    cardRef.update((js \ "cardRef").asOpt[UUID])
-    deserializeDataStore((js \ "data").as[JsValue])
-  }
-}
-
-final class CardSourceInfo(protected val project: Project) extends JsonSerializable with HasDataStore {
-  val root = project.ctx.syncLuaExec { project.idData.set.createRoot(fields, Seq()) }
-
-  def serialize = serializeDataStore
-  def deserialize(js: JsValue) = deserializeDataStore(js)
-}
-
-trait CardSource {
-  def uuid: UUID
-
-  val info: CardSourceInfo
-  val allCards: Rx[Seq[UUID]]
-  val allSlots: Option[Rx[Seq[SlotData]]]
-
-  def newCard(): UUID
-}
-
-final class CardPool(val uuid: UUID, project: Project) extends CardSource with DirSerializable {
-  val displayName = Var[String]("")
-  val slots = Var(Seq.empty[SlotData])
-
-  override val info: CardSourceInfo = new CardSourceInfo(project)
-
-  override val allCards = Rx.unsafe { slots().flatMap(_.cardRef()) }
-  override val allSlots = Some(slots)
-
-  def addSlot(slot: SlotData): Unit = slots.update(slots.now :+ slot)
-  def addSlot(card: UUID): Unit = addSlot({
-    val slot = new SlotData(project)
-    slot.cardRef.update(Some(card))
-    project.modified()
-    slot
-  })
-
-  override def newCard(): UUID = {
-    val uuid = project.newCard()
-    addSlot(uuid)
-    uuid
-  }
-
-  def removeSlot(slot: SlotData): Unit = slots.update(slots.now.filter(_ != slot))
-
-  override def writeTo(path: Path): Unit = {
-    writeJsonMap(path.resolve("slots"), slots.now.zipWithIndex.map(x => (x._2 + 1) -> x._1).toMap)(_.toString)
-    writeJson(path.resolve("info.json"), Json.obj(
-      "displayName" -> displayName.now,
-      "poolInfo" -> info.serialize
-    ))
-  }
-  override def readFrom(path: Path): Unit = {
-    slots.update(readJsonMap(path.resolve("slots"))
-                            ((_: Int) => new SlotData(project), (x: Int) => x.toString).toSeq.sortBy(_._1).map(_._2))
-    val js = readJson(path.resolve("info.json"))
-    displayName.update((js \ "displayName").as[String])
-    info.deserialize((js \ "poolInfo").as[JsValue])
-  }
-}
-
-final class Project(val ctx: ControlContext, val gameId: String, val idData: GameIDData)
-  extends CardSource with DirSerializable {
-
+final class Project(val ctx: ControlContext, val gameId: String, val idData: GameIDData) extends DirSerializable {
   var uuid = UUID.randomUUID()
-  override val info: CardSourceInfo = new CardSourceInfo(this)
 
   type ModifyListener = () => Unit
   private val listeners = new mutable.ArrayBuffer[ModifyListener]()
   def addModifyListener(listener: ModifyListener) = listeners += listener
   def modified() = {
     listeners.foreach(_())
-    info.modified()
   }
 
-  val cards = Var(Map.empty[UUID, CardData])
-  def newCard() = {
-    val uuid = UUID.randomUUID()
-    cards.update(cards.now + ((uuid, new CardData(this))))
-    modified()
-    uuid
+  val cards = new UUIDMapVar(id => {
+    ctx.assertLuaThread()
+    new CardData(this)
+  })
+  val pools = new UUIDMapVar(id => {
+    ctx.assertLuaThread()
+    new ListCardPool(this)
+  })
+
+  val allCardsView = new AllCardsView(this)
+  val allPools = Rx.unsafe {
+    Map(
+      StaticPoolID.AllCards -> allCardsView
+    ) ++ pools()
   }
 
-  val pools = Var(Map.empty[UUID, CardPool])
-  def newCardPool() = {
-    val uuid = UUID.randomUUID()
-    pools.update(pools.now + ((uuid, new CardPool(uuid, this))))
-    modified()
-    uuid
-  }
-
-  def getPool(id: UUID)(implicit rx: Ctx.Data): Option[CardSource] =
-    if(uuid == id) Some(this) else cards().get(id).asInstanceOf[Option[CardSource]]
-
-  override val allCards: Rx[Seq[UUID]] = Rx.unsafe {
-    cards().toSeq.sortBy(x => (x._2.createTime, x._1.toString)).map(_._1)
-  }
-  override val allSlots: Option[Rx[Seq[SlotData]]] = None
-
-  val sources = Rx.unsafe { this +: pools().values.toSeq.sortBy(_.info.createTime) }
+  val sources = Rx.unsafe { allCardsView +: pools().values.toSeq.sortBy(_.info.createTime) }
 
   // Main serialization entry point
-  def writeTo(path: Path) = {
-    writeJsonMap(path.resolve("cards"), cards.now)(_.toString)
-    writeDirMap (path.resolve("pools"), pools.now)(_.toString)
-    writeJson(path.resolve("info.json"), Json.obj(
-      "uuid" -> uuid,
-      "poolInfo" -> info.serialize
-    ))
+  override def writeTo(path: Path) = {
+    super.writeTo(path)
+
+    cards.writeTo(path.resolve("cards"))
+    pools.writeTo(path.resolve("pools"))
+    allCardsView.writeTo(path.resolve("pools").resolve("all-cards"))
+
     writeJson(path.resolve("metadata.json"), Json.obj(
       "version"   -> Json.obj(
         "major" -> Project.VER_MAJOR,
         "minor" -> Project.VER_MINOR
       ),
-      "gameId" -> gameId,
+      "gameId"    -> gameId,
       "program"   -> Json.arr("PrincessEdit", VersionInfo.versionString),
-      "writeTime" -> System.currentTimeMillis()
+      "writeTime" -> System.currentTimeMillis(),
+      "uuid"      -> uuid
     ))
   }
-  def readFrom(path: Path) = {
+  override def readFrom(path: Path) = {
+    ctx.assertLuaThread()
+
+    super.readFrom(path)
+
     val metadata = readJson(path.resolve("metadata.json"))
     val fileGameId = (metadata \ "gameId").as[String]
     if(fileGameId != gameId)
@@ -185,12 +96,12 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
 
     val version = (metadata \ "version" \ "major").as[Int]
     if(version != Project.VER_MAJOR) sys.error(s"unknown file format version $version")
-    cards.update(readJsonMap(path.resolve("cards"))(_ => new CardData(   this), _.toString))
-    pools.update(readDirMap (path.resolve("pools"))(k => new CardPool(k, this), _.toString))
 
-    val infoJson = readJson(path.resolve("info.json"))
-    uuid = (infoJson \ "uuid").as[UUID]
-    info.deserialize((infoJson \ "poolInfo").as[JsValue])
+    cards.readFrom(path.resolve("cards"))
+    pools.readFrom(path.resolve("pools"))
+    allCardsView.writeTo(path.resolve("pools").resolve("all-cards"))
+
+    uuid = (metadata \ "uuid").as[UUID]
   }
 }
 
@@ -223,4 +134,8 @@ object Project {
       project.readFrom(x)
       project
     }
+}
+
+object StaticPoolID {
+  val AllCards = UUID.fromString("2d083912-441b-11e7-8b8b-e793e0991f26")
 }

@@ -34,10 +34,12 @@ import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._
 
-final class CardSelectorCanvas(parent: Composite, state: EditorState) extends Canvas(parent, SWT.NONE) with RxWidget {
+private final class RendererCanvas(parent: Composite, state: EditorState)
+  extends Canvas(parent, SWT.NONE) with RxWidget {
+
   private var currentImage: Image = _
   private val currentCardData: Rx[Option[Seq[LuaObject]]] = Rx {
-    val card = state.currentCardData().map(_.root.luaData())
+    val card = state.currentCardData().map(_.luaData())
     val pool = state.currentPool().info.root.luaData()
     card.map(cardData => Seq(cardData, pool))
   }
@@ -85,14 +87,12 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
   fill.marginHeight = 5
   this.setLayout(fill)
 
-  private val canvas = new CardSelectorCanvas(this, state)
+  private val canvas = new RendererCanvas(this, state)
 
   private val menuManager = new MenuManager()
   private val export = new Action(state.i18n.system("_princess.editor.exportCard")) {
     override def run() = {
-      val id   = state.currentCard.now.get
-      val data = state.project.cards.now(id)
-      ExportCardsDialog.open(state, state.currentPool.now, id -> data)
+      ExportCardsDialog.open(state, state.currentCard.now.get -> state.currentCardData.now.get)
     }
   }
   menuManager.add(export)
