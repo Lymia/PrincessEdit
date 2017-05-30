@@ -27,7 +27,8 @@ import org.eclipse.jface.dialogs.Dialog
 import org.eclipse.jface.window.{ApplicationWindow, IShellProvider, Window}
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.FillLayout
-import org.eclipse.swt.widgets.{Composite, Control}
+import org.eclipse.swt.widgets.{Composite, Control, Shell}
+import rx._
 
 trait JFaceWindowBase extends Window {
   protected val ctx: ControlContext
@@ -35,6 +36,12 @@ trait JFaceWindowBase extends Window {
   ctx.wm.add(this)
 
   protected def frameContents(frame: Composite)
+
+  override def configureShell(newShell: Shell): Unit = {
+    super.configureShell(newShell)
+    newShell.setImages(ctx.resources.loadIcon(IconData.AppIcon))
+    // TODO: Manage shell title
+  }
 
   override protected final def createContents(parent: Composite): Control = {
     parent.setLayout(new FillLayout())

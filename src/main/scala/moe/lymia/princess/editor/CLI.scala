@@ -27,6 +27,7 @@ import java.nio.file.Paths
 import moe.lymia.princess.editor.ui.frontend.SplashScreen
 import moe.lymia.princess.editor.ui.mainframe.MainFrame
 import moe.lymia.princess.rasterizer._
+import org.eclipse.swt.widgets.Display
 
 private case class CLIException(message: String) extends Exception
 
@@ -82,10 +83,13 @@ class CLI {
     }
   }
 
-  def main(args: Seq[String]) = try {
-    if(parser.parse(args)) command.getOrElse(cmd_default _)()
-  } catch {
-    case CLIException(e) => println(e)
-    case e: Exception => e.printStackTrace()
+  def main(args: Seq[String]) = {
+    try {
+      Display.setAppName(AppName.PrincessEdit)
+      if(parser.parse(args)) command.getOrElse(cmd_default _)()
+    } catch {
+      case CLIException(e) => println(e)
+      case e: Exception => e.printStackTrace()
+    }
   }
 }

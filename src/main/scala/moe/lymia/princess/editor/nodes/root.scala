@@ -98,7 +98,7 @@ final class RxPane(uiRoot: Composite, context: NodeContext, uiCtx: UIContext, ro
         lastComponent.foreach(_.dispose())
         lastComponent = currentRoot.renderUI(pane, uiCtx)
         pane.layout(true)
-        UIUtils.transparentStyle.apply(pane)
+        UIUtils.listBackgroundStyle.apply(pane)
       } else componentObs.kill()
     }
   }

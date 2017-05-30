@@ -32,7 +32,7 @@ import org.eclipse.jface.action._
 import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
 import org.eclipse.swt.SWT
-import org.eclipse.swt.events.{KeyEvent, KeyListener, SelectionAdapter, SelectionEvent}
+import org.eclipse.swt.events._
 import org.eclipse.swt.graphics.{Image, Point}
 import org.eclipse.swt.widgets._
 import play.api.libs.json.JsObject
@@ -263,17 +263,16 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
       val ctrl = keyEvent.stateMask == SWT.CTRL
 
       val doit = keyEvent.doit
-      keyEvent.doit = false
-
-      if(ctrl) keyEvent.keyCode match {
-        case SWT.CR => addCard.run()
-        case 'c'    => copy.run()
-        case 'v'    => paste.run()
-        case 'a'    => viewer.getTable.selectAll()
-        case _ =>
+      if(ctrl) {
+        keyEvent.doit = false
+        keyEvent.keyCode match {
+          case SWT.CR => addCard.run()
+          case 'c'    => copy.run()
+          case 'v'    => paste.run()
+          case 'a'    => viewer.getTable.selectAll()
+          case _      => keyEvent.doit = doit
+        }
       }
-
-      else keyEvent.doit = doit
     }
     override def keyReleased(keyEvent: KeyEvent): Unit = { }
   })

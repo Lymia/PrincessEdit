@@ -29,5 +29,6 @@ import scala.reflect.ClassTag
 
 object Service {
   def get[T : ClassTag]: Iterable[T] =
-    ServiceLoader.load(implicitly[ClassTag[T]].runtimeClass).asScala.asInstanceOf[Iterable[T]]
+    ServiceLoader.load(implicitly[ClassTag[T]].runtimeClass, getClass.getClassLoader)
+      .asScala.asInstanceOf[Iterable[T]]
 }

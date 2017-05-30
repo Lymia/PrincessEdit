@@ -44,6 +44,7 @@ object Launch4JBuild {
     val launch4jConfig       = TaskKey[File]("launch4j-config")
     val launch4jManifest     = TaskKey[File]("launch4j-manifest")
     val launch4jSourceJar    = TaskKey[File]("launch4j-source-jar")
+    val launch4jIcon         = TaskKey[File]("launch4j-icon")
 
     val launch4jOutput       = TaskKey[File]("launch4j-output")
   }
@@ -76,6 +77,7 @@ object Launch4JBuild {
       config.setJar     (jarFile)
       config.setOutfile (outDir / s"$jarFileShortName.exe")
       config.setManifest(launch4jManifest.value)
+      config.setIcon    (launch4jIcon.value)
 
       config.getVersionInfo.setFileVersion      (versionString)
       config.getVersionInfo.setTxtFileVersion   (version.value)

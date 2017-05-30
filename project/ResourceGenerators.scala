@@ -32,7 +32,7 @@ import Utils._
 
 import scala.collection.mutable.ArrayBuffer
 
-object VersionBuild {
+object ResourceGenerators {
   private def tryProperty(s: => String) = try {
     val str = s
     if(str == null) "<null>" else str
@@ -107,7 +107,14 @@ object VersionBuild {
         (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "README.md"
       IO.copyFile(new File("README.md"), readmeFilePath)
 
-      Seq(versionPropertiesPath, licenseFilePath, readmeFilePath)
+      val icoFiles = for(file <- IO.listFiles(baseDirectory.value / "project" / "ico")) yield {
+        val target =
+          (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "editor" / "res" / file.getName
+        IO.copyFile(file, target)
+        target
+      }
+
+      Seq(versionPropertiesPath, licenseFilePath, readmeFilePath) ++ icoFiles
     }.taskValue
   )
 }

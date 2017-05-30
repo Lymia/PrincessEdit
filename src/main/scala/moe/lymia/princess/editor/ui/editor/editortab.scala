@@ -83,7 +83,7 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
       (event: SelectionEvent) => deactivate(),
       _.layoutData = new GridData(SWT.FILL, SWT.NONE, true, false)
     ),
-    UIUtils.transparentStyle.apply
+    UIUtils.listBackgroundStyle.apply
   )
 
   private def updateScrolledComposite() = {
@@ -145,7 +145,7 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
       ),
       _.setWeights(Array(1000, 1618))
     ),
-    UIUtils.transparentStyle.apply
+    UIUtils.listBackgroundStyle.apply
   )
 
   stack.topControl = selectorContainer

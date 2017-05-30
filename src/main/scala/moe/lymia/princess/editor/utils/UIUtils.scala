@@ -65,6 +65,6 @@ object UIUtils {
   def loadSVGFromPath(path: Path) = SVGFile(XML.load(Files.newInputStream(path)))
 
   // XScalaWT compatible
-  def transparent(c: Control) = c.setBackground(c.getDisplay.getSystemColor(SWT.COLOR_TRANSPARENT))
-  object transparentStyle extends Stylesheet ($[Control](transparent))
+  def listBackground(c: Control) = c.setBackground(c.getDisplay.getSystemColor(SWT.COLOR_LIST_BACKGROUND))
+  object listBackgroundStyle extends Stylesheet ($[Control](listBackground))
 }

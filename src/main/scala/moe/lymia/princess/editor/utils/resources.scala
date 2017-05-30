@@ -24,12 +24,33 @@ package moe.lymia.princess.editor.utils
 
 import moe.lymia.princess.editor.ControlContext
 import moe.lymia.princess.renderer.SVGRenderable
+import moe.lymia.princess.util.IOUtils
 import org.eclipse.jface.resource._
 import org.eclipse.swt.graphics._
+
+import scala.collection.mutable
+
+final class IconData(val svgData: Array[Byte], val imageData: Map[Int, ImageData])
+object IconData {
+  private def getIconData(iconName: String) = {
+    val loader = new ImageLoader()
+    loader.load(IOUtils.getResource(s"editor/res/icon-$iconName.ico"))
+    val imageDataMap = for(data <- loader.data if data.width == data.height) yield
+      data.width -> data
+    new IconData(IOUtils.loadBinaryResource(s"editor/res/icon-$iconName.svg"), imageDataMap.toMap)
+  }
+
+  lazy val AppIcon      = getIconData("app")
+  lazy val DocumentIcon = getIconData("document")
+}
 
 final class ExtendedResourceManager(underlying: ResourceManager, ctx: ControlContext) {
   def createImage(data: ImageData) =
     underlying.createImage(ImageDescriptor.createFromImageData(data))
+
+  private lazy val imageCache = new mutable.HashMap[IconData, Array[Image]]
+  def loadIcon(iconData: IconData) =
+    imageCache.getOrElseUpdate(iconData, iconData.imageData.values.map(createImage).toArray)
 
   def createImageFromSVG(data: SVGRenderable, bx: Int, by: Int) = {
     val (x, y) = UIUtils.computeSizeFromRatio(new Point(bx,  by), data.size.width, data.size.height)
