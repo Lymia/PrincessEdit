@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 rm -rv ico
 mkdir -v ico
 cp -rv icon-*.svg ico
@@ -11,3 +11,5 @@ done
 convert -verbose ico/icon-app-{16,20,22,24,32,40,48,64,96,256}.png ico/icon-app.ico
 convert -verbose ico/icon-document-{16,20,22,24,32,40,48,64,96,256}.png ico/icon-document.ico
 rm -v ico/*.png
+cp -v ico/*.ico .
+rm -rv ico

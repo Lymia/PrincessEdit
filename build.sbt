@@ -168,7 +168,7 @@ lazy val dist = project in file("modules/dist") settings (commonSettings ++ Seq(
 
 Launch4JBuild.settings
 Launch4JBuild.Keys.launch4jSourceJar := (packageBin in Compile in loader).value
-Launch4JBuild.Keys.launch4jIcon := baseDirectory.value / "project" / "ico" / "icon-app.ico"
+Launch4JBuild.Keys.launch4jIcon := baseDirectory.value / "project" / "icon-app.ico"
 
 InputKey[Unit]("dist") := {
   val distClasspath = (fullClasspath in Compile).value.filter(_.get(moduleID.key).get.name != swtArtifact)

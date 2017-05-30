@@ -107,12 +107,13 @@ object ResourceGenerators {
         (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "README.md"
       IO.copyFile(new File("README.md"), readmeFilePath)
 
-      val icoFiles = for(file <- IO.listFiles(baseDirectory.value / "project" / "ico")) yield {
-        val target =
-          (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "editor" / "res" / file.getName
-        IO.copyFile(file, target)
-        target
-      }
+      val icoFiles =
+        for(file <- IO.listFiles(baseDirectory.value / "project") if file.getName.startsWith("icon-")) yield {
+          val target =
+            (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "editor" / "res" / file.getName
+          IO.copyFile(file, target)
+          target
+        }
 
       Seq(versionPropertiesPath, licenseFilePath, readmeFilePath) ++ icoFiles
     }.taskValue
