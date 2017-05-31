@@ -28,7 +28,6 @@ import org.eclipse.jface.window.{ApplicationWindow, IShellProvider, Window}
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.FillLayout
 import org.eclipse.swt.widgets.{Composite, Control, Shell}
-import rx._
 
 trait JFaceWindowBase extends Window {
   protected val ctx: ControlContext

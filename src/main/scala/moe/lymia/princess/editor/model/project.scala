@@ -31,11 +31,17 @@ import moe.lymia.princess.util.{IOUtils, VersionInfo}
 import play.api.libs.json._
 import rx._
 
-import scala.collection.mutable
-
 final class AllCardsView(protected val project: Project) extends CardPool {
   override def cardIdList: Rx[Set[UUID]] = Rx.unsafe { project.cards().keySet }
-  override val name: Rx[String] = Rx.unsafe { "All Cards" }
+  override val name: Rx[String] = Rx.unsafe { "All Cards" } // TODO I18N
+
+  def addCard(uuid: UUID) = { }
+  def removeCard(uuid: UUID) = { } // TODO: Make UI aware of views with different remove semantics
+}
+
+final class DeletedCardsView(protected val project: Project) extends CardPool {
+  override def cardIdList: Rx[Set[UUID]] = Rx.unsafe { project.cards().filter(_._2.refCount == 0).keySet }
+  override val name: Rx[String] = Rx.unsafe { "Deleted Cards" } // TODO I18N
 
   def addCard(uuid: UUID) = { }
   def removeCard(uuid: UUID) = { }
@@ -59,8 +65,11 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
   })
 
   val allCardsView = new AllCardsView(this)
+  val deletedCardsView = new DeletedCardsView(this)
+
   private val staticPools = Map(
-    StaticPoolID.AllCards -> allCardsView
+    StaticPoolID.AllCards -> allCardsView,
+    StaticPoolID.DeletedCards -> deletedCardsView
   )
   for(pool <- staticPools.values) pool.info.addModifyListener(this)
 
@@ -74,6 +83,7 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
     cards.writeTo(path.resolve("cards"))
     pools.writeTo(path.resolve("pools"))
     allCardsView.writeTo(path.resolve("pools").resolve("all-cards"))
+    deletedCardsView.writeTo(path.resolve("pools").resolve("deleted-cards"))
 
     writeJson(path.resolve("metadata.json"), Json.obj(
       "version"   -> Json.obj(
@@ -102,6 +112,7 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
     cards.readFrom(path.resolve("cards"))
     pools.readFrom(path.resolve("pools"))
     allCardsView.readFrom(path.resolve("pools").resolve("all-cards"))
+    deletedCardsView.readFrom(path.resolve("pools").resolve("deleted-cards"))
 
     uuid = (metadata \ "uuid").as[UUID]
   }
@@ -139,5 +150,6 @@ object Project {
 }
 
 object StaticPoolID {
-  val AllCards = UUID.fromString("2d083912-441b-11e7-8b8b-e793e0991f26")
+  val AllCards     = UUID.fromString("2d083912-441b-11e7-8b8b-e793e0991f26")
+  val DeletedCards = UUID.fromString("7e676322-4615-11e7-b815-161899dad660")
 }

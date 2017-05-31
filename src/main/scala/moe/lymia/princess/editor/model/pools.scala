@@ -67,37 +67,36 @@ trait CardPool extends PathSerializable {
   }
   override def readFrom(path: Path): Unit = {
     super.readFrom(path)
-    println("CardPool.readFrom")
     info.readFrom(path.resolve("info.json"))
   }
 }
 
-final class ListCardPool(protected val project: Project) extends CardPool with DirSerializable {
-  val slots = Var(Seq.empty[SlotData])
+trait CardList extends DirSerializable {
+  protected val project: Project
+  lazy val idList = Var(Set.empty[UUID]) // lazy val to fix initialization order issues
 
-  override lazy val cardIdList = Var(Set.empty[UUID]) // lazy val to fix initialization order issues
-
-  def addCard(uuid: UUID) = if(!cardIdList.now.contains(uuid)) {
-    project.cards.now.get(uuid).foreach { card =>
-      card.ref()
-    }
-    cardIdList.update(cardIdList.now + uuid)
+  def addCard(uuid: UUID) = if(!idList.now.contains(uuid)) {
+    project.cards.now.get(uuid).foreach(_.ref())
+    idList.update(idList.now + uuid)
   }
-  def removeCard(uuid: UUID) = if(cardIdList.now.contains(uuid)) {
-    project.cards.now.get(uuid).foreach { card =>
-      card.unref()
-    }
-    cardIdList.update(cardIdList.now - uuid)
+  def removeCard(uuid: UUID) = if(idList.now.contains(uuid)) {
+    project.cards.now.get(uuid).foreach(_.unref())
+    idList.update(idList.now - uuid)
   }
 
   override def writeTo(path: Path): Unit = {
     super.writeTo(path)
-    SerializeUtils.writeJson(path.resolve("cards.json"), Json.toJson(cardIdList.now))
+    SerializeUtils.writeJson(path.resolve("cards.json"), Json.toJson(idList.now))
   }
   override def readFrom(path: Path): Unit = {
     super.readFrom(path)
-    for(uuid <- cardIdList.now) removeCard(uuid)
-    cardIdList.update(SerializeUtils.readJson(path.resolve("cards.json")).as[Set[UUID]])
+    for(uuid <- idList.now) removeCard(uuid)
+    idList.update(SerializeUtils.readJson(path.resolve("cards.json")).as[Set[UUID]])
     for(uuid <- Json.fromJson[Set[UUID]](SerializeUtils.readJson(path.resolve("cards.json"))).get) addCard(uuid)
   }
+}
+
+final class ListCardPool(protected val project: Project) extends CardPool with DirSerializable with CardList {
+  val slots = Var(Seq.empty[SlotData])
+  override def cardIdList = idList
 }

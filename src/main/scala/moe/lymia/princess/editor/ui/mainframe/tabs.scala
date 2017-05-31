@@ -38,9 +38,15 @@ import rx._
 
 import scala.collection.mutable
 
-case class TabID[T : Writes : Reads](id: UUID) {
-  def serialize(v: T) = Json.toJson(v)
-  def deserialize(js: JsValue): T = js.as[T]
+object TabDefs {
+  type TabBase = Control with PrincessEditTab
+}
+import TabDefs._
+
+abstract case class TabID[Data : Writes : Reads, TabClass <: TabBase, TabAPI](id: UUID) {
+  def serialize(v: Data) = Json.toJson(v)
+  def deserialize(js: JsValue): Data = js.as[Data]
+  def extractData(tab: TabClass): TabAPI
 }
 
 trait PrincessEditTab { this: Control =>
@@ -52,28 +58,33 @@ trait PrincessEditTab { this: Control =>
   addDisposeListener(_ => tabName.kill())
 }
 
-trait TabType[T] {
-  def createTab(parent: Composite, data: T, state: MainFrameState): Control with PrincessEditTab
+trait TabType[Data, TabClass <: TabBase, TabAPI] {
+  def createTab(parent: Composite, data: Data, state: MainFrameState): TabClass
 }
 trait TabProvider {
-  private val ids = new mutable.HashMap[TabID[_], TabType[_]]
-  protected def tabId[T](id: TabID[T])(fn: (Composite, T, MainFrameState) => Control with PrincessEditTab) = {
+  private val ids = new mutable.HashMap[TabID[_, _, _], TabType[_, _, _]]
+  protected def tabId[Data, TabClass <: TabBase, TabAPI](id: TabID[Data, TabClass, TabAPI])
+                                                        (fn: (Composite, Data, MainFrameState) => TabClass) = {
     if(ids.contains(id)) sys.error(s"Duplicate TabID $id")
-    ids.put(id, ((parent, data, state) => fn(parent, data, state)) : TabType[T])
+    ids.put(id, ((parent, data, state) => fn(parent, data, state)) : TabType[Data, TabClass, TabAPI])
   }
-  private[mainframe] def getTabTypes: Map[TabID[_], TabType[_]] = ids.toMap
+  private[mainframe] def getTabTypes: Map[TabID[_, _, _], TabType[_, _, _]] = ids.toMap
 }
 
-private[mainframe] case class TabData[T](tabID: TabID[T], data: T, control: Control with PrincessEditTab) {
+private[mainframe] case class TabData[Data, TabClass <: TabBase, TabAPI](tabID: TabID[Data, TabClass, TabAPI],
+                                                                         data: Data, control: TabClass) {
   def serialize = Json.obj(
     "id" -> tabID.id,
     "data" -> tabID.serialize(data)
   )
 }
 private object TabData {
-  def deserialize(parent: Composite, js: JsValue, state: MainFrameState): TabData[_] = {
+  def deserialize(parent: Composite,
+                  js: JsValue, state: MainFrameState): TabData[_, _ <: TabBase, _] = {
     val uuid = (js \ "id").as[UUID]
-    val id = MainTabFolder.getTabIDByUUID(uuid).getOrElse(sys.error(s"Unknown uuid $uuid")).asInstanceOf[TabID[Any]]
+    val id =
+      MainTabFolder.getTabIDByUUID(uuid).getOrElse(sys.error(s"Unknown uuid $uuid"))
+        .asInstanceOf[TabID[Any, TabBase, Any]]
     val t = MainTabFolder.getTabType(id).getOrElse(sys.error(s"unexpected error: inconsistent state"))
     val data = id.deserialize((js \ "data").as[JsValue])
     TabData(id, data, t.createTab(parent, data, state))
@@ -85,8 +96,8 @@ private object MainTabFolder {
   private val tabData = new SettingsKey[JsValue](UUID.fromString("973b7496-3437-11e7-bc04-3afa38669cf4"))
 
   private lazy val (forUUID, forTabID) = {
-    val forUUID = new mutable.HashMap[UUID, TabID[_]]
-    val forTabID = new mutable.HashMap[TabID[_], TabType[_]]
+    val forUUID = new mutable.HashMap[UUID, TabID[_, _, _]]
+    val forTabID = new mutable.HashMap[TabID[_, _, _], TabType[_, _, _]]
     for(provider <- Service.get[TabProvider]; (id, t) <- provider.getTabTypes) {
       if(forUUID.contains(id.id)) sys.error(s"Duplicate UUID ${id.id}")
       if(forTabID.contains(id)) sys.error(s"Duplicate TabID $id")
@@ -98,7 +109,8 @@ private object MainTabFolder {
   }
 
   def getTabIDByUUID(id: UUID) = forUUID.get(id)
-  def getTabType[T](id: TabID[T]) = forTabID.get(id).asInstanceOf[Option[TabType[T]]]
+  def getTabType[Data, TabClass <: TabBase, TabAPI](id: TabID[Data, TabClass, TabAPI]) =
+    forTabID.get(id).asInstanceOf[Option[TabType[Data, TabClass, TabAPI]]]
 }
 private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrameState)
   extends Composite(parent, SWT.NONE) with RxWidget {
@@ -111,24 +123,24 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
     override def maximize(cTabFolderEvent: CTabFolderEvent): Unit = { }
     override def showList(cTabFolderEvent: CTabFolderEvent): Unit = { }
     override def close(cTabFolderEvent: CTabFolderEvent): Unit = {
-      cTabFolderEvent.item.getData(MainTabFolder.dataUUID).asInstanceOf[TabData[_]].control.dispose()
+      cTabFolderEvent.item.getData(MainTabFolder.dataUUID).asInstanceOf[TabData[_, _ <: TabBase, _]].control.dispose()
     }
   })
 
-  private val tabs = new mutable.ArrayBuffer[TabData[_]]
+  private val tabs = new mutable.ArrayBuffer[TabData[_, _ <: TabBase, _]]
 
-  val currentTab = Rx {
+  val currentTab: Rx[Option[TabBase]] = Rx {
     val selection = tabFolder.getSelection
     if(selection == null) None
-    else Some(selection.getData(MainTabFolder.dataUUID).asInstanceOf[TabData[_]].control)
+    else Some(selection.getData(MainTabFolder.dataUUID).asInstanceOf[TabData[_, TabBase, _]].control)
   }
   tabFolder.addSelectionListener(new SelectionListener {
     override def widgetSelected(selectionEvent: SelectionEvent): Unit = currentTab.recalc()
     override def widgetDefaultSelected(selectionEvent: SelectionEvent): Unit = { }
   })
 
-  private val openTabs = new mutable.HashSet[(TabID[_], _)]
-  def openTab[T](id: TabID[T], data: T) = {
+  private val openTabs = new mutable.HashSet[(TabID[_, _, _], _)]
+  def openTab[Data, TabClass <: TabBase, TabAPI](id: TabID[Data, TabClass, TabAPI], data: Data): TabAPI = {
     val idTuple = (id, data)
     if(!openTabs.contains(idTuple)) {
       openTabs.add(idTuple)
@@ -139,10 +151,13 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
       updateTabItems()
       saveSettings()
     }
-    tabFolder.setSelection(tabFolder.getItems.find { x =>
-      val tabData = x.getData(MainTabFolder.dataUUID).asInstanceOf[TabData[_]]
+
+    val tab = tabFolder.getItems.find { x =>
+      val tabData = x.getData(MainTabFolder.dataUUID).asInstanceOf[TabData[_, _, _]]
       tabData.tabID == id && tabData.data == data
-    }.get)
+    }.get
+    tabFolder.setSelection(tab)
+    id.extractData(tab.getControl.asInstanceOf[TabClass])
   }
 
   private def clearTabs() = {
@@ -176,7 +191,7 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
       deserialize(v)
       true
     } catch {
-      case _ => false
+      case _: Throwable => false
     }
   }
   def saveSettings() = state.settings.setSetting(MainTabFolder.tabData, serialize)

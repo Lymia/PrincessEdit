@@ -24,7 +24,6 @@ package moe.lymia.princess
 
 import moe.lymia.princess.editor.CLI
 import moe.lymia.princess.util._
-import org.eclipse.swt.widgets.Display
 
 object PrincessEdit {
   def main(args: Array[String]) = {

@@ -25,10 +25,10 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.editor.{DataRoot, UIData}
-import moe.lymia.princess.editor.model.{CardData, FullCardData}
-import moe.lymia.princess.editor.ui.mainframe.{MainFrameState, PrincessEditTab, TabID, TabProvider}
+import moe.lymia.princess.editor.model.FullCardData
+import moe.lymia.princess.editor.ui.mainframe._
 import moe.lymia.princess.editor.utils.{RxOwner, RxWidget, UIUtils}
+import moe.lymia.princess.editor.{DataRoot, UIData}
 import org.eclipse.jface.action.MenuManager
 import org.eclipse.swt._
 import org.eclipse.swt.custom._
@@ -96,7 +96,15 @@ final class DataRootEditorPane(parent: Composite, state: EditorState, root: Data
   addDisposeListener(_ => ui.kill())
 }
 
-final class EditorState(parent: EditorTab, data: EditorTabData, val mainFrameState: MainFrameState) extends RxOwner {
+sealed trait EditorAPI {
+  def data: EditorTabData
+  def activateEditor()
+  def activatePoolDataEditor()
+  def deactivateEditor()
+}
+final class EditorState(parent: EditorTab, val data: EditorTabData, val mainFrameState: MainFrameState)
+  extends RxOwner with EditorAPI {
+
   val currentCardSelection = Var(Seq.empty[UUID])
 
   val currentPool = Rx { mainFrameState.project.allPools().getOrElse(data.setId, sys.error("Unknown pool")) }
@@ -196,7 +204,9 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
 }
 object EditorTab {
   private implicit val editorTabDataFormats = Json.format[EditorTabData]
-  val id = new TabID[EditorTabData](UUID.fromString("64a35118-343a-11e7-956d-3afa38669cf4"))
+  val id = new TabID[EditorTabData, EditorTab, EditorAPI](UUID.fromString("64a35118-343a-11e7-956d-3afa38669cf4")) {
+    override def extractData(tab: EditorTab): EditorAPI = tab.editorState
+  }
 }
 
 class EditorTabProvider extends TabProvider {
