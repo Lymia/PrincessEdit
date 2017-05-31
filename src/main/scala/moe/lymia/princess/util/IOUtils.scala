@@ -90,9 +90,12 @@ object IOUtils {
   }
 
   private val zipFilesystem = new ZipFileSystemProvider
-  def openZip(path: Path, create: Boolean = false): FileSystem =
-    zipFilesystem.newFileSystem(URI.create(s"jar:${path.toUri}"),
+  def openZip(path: Path, create: Boolean = false, readOnly: Boolean = false): FileSystem = {
+    val zipFs = zipFilesystem.newFileSystem(URI.create(s"jar:${path.toUri}"),
       if(create) Map("create" -> "true").asJava else Map[String, Any]().asJava)
+    if(readOnly) zipFs.setReadOnly()
+    zipFs
+  }
 
   private val validFilenameRegex = Pattern.compile("^[- 0-9a-zA-Z_./]+$")
   def paranoidResolve(basePath: Path, path: String, dir: Boolean = false): Option[Path] =

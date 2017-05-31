@@ -151,8 +151,11 @@ object ProjectSource {
   case class NewProject(id: GameID) extends ProjectSource {
     override def getGameID: String = id.name
     override def openSettings(): SettingsStore = new UnbackedSettingsStore
-    override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project =
-      new Project(ctx, gameID, idData)
+    override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project = {
+      val project = new Project(ctx, gameID, idData)
+      ctx.syncLuaExec(project.pools.create())
+      project
+    }
     override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(None, None)
   }
 }
@@ -224,7 +227,9 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
     frame.setLayout(fill)
 
     tabFolder = new MainTabFolder(frame, state)
-    tabFolder.openTab(EditorTab.id, EditorTabData(StaticPoolID.AllCards))
+    if(!tabFolder.loadSettings())
+      if(state.project.pools.now.nonEmpty)
+        tabFolder.openTab(EditorTab.id, EditorTabData(state.project.pools.now.minBy(_._2.info.createTime)._1))
     tabFolder.currentTab.foreach(_ => menu.updateMenu())
   }
 }

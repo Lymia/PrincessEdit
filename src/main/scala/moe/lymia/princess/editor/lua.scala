@@ -89,7 +89,14 @@ object RootSource {
 }
 
 final class TableColumnData(val title: String, val width: Int, val isDefault: Boolean,
-                            val L: LuaState, val fn: LuaClosure, val sortFn: Option[LuaClosure])
+                            L: LuaState, fn: LuaClosure, orderFn: Option[LuaClosure]) {
+  def computeColumnData(v: Any) = L.newThread().call(fn, 1, v).head.as[String]
+  def computeOrdering(a: Any, aColumn: String, b: Any, bColumn: String) = orderFn match {
+    case Some(order) =>
+      L.newThread().call(order, 1, a, b).head.as[Int]
+    case None => aColumn.compare(bColumn)
+  }
+}
 final case class LuaColumnData(columns: Seq[TableColumnData])
 object LuaColumnData {
   def apply(game: GameManager): LuaColumnData = {
@@ -110,11 +117,25 @@ object LuaExportData {
   }
 }
 
+final class LuaPoolData(L: LuaState, poolTypeName: String, poolNameFn: LuaClosure) {
+  def computeName(v: Any) = L.newThread().call(poolNameFn, 1, v).head.as[String]
+}
+object LuaPoolData {
+  def apply(game: GameManager): LuaPoolData = {
+    val L = game.lua.L.newThread()
+    val ep = game.getRequiredEntryPoint("pool-data")
+    val typeName = L.getTable(ep, "poolIdentifier").as[String]
+    val poolNameFn = L.getTable(ep, "poolName").as[LuaClosure]
+    new LuaPoolData(L, typeName, poolNameFn)
+  }
+}
+
 final class GameIDData(game: GameManager, controlCtx: ControlContext, i18n: I18N) {
   val internal_L = game.lua.L.newThread()
 
-  val card       = RootSource         (game, controlCtx, i18n, "card-form", "cardForm")
-  val set        = RootSource.optional(game, controlCtx, i18n, "set-form" , "setForm" )
+  val card       = RootSource(game, controlCtx, i18n, "card-form", "cardForm")
+  val poolRoot   = RootSource(game, controlCtx, i18n, "pool-data", "poolForm")
+  val poolData   = LuaPoolData(game)
   val columns    = LuaColumnData(game)
   val renderer   = new RenderManager(game, controlCtx.cache)
   val export     = LuaExportData(game)

@@ -24,6 +24,7 @@ package moe.lymia.princess.editor.lua
 
 import moe.lymia.lua._
 import moe.lymia.princess.core._
+import moe.lymia.princess.editor.model.{DataField, DataFieldType}
 import moe.lymia.princess.editor.nodes._
 
 case class DeriveList(elements: Seq[FieldNode])
@@ -65,9 +66,19 @@ object FieldLib extends LuaLibrary {
     L.register(node, "Const", (a: Any) => ConstFieldNode(a))
     L.register(node, "Input", {
       (L: LuaState, fieldName: String, control: ControlType,
-       isDefault: Option[FieldNode], defaultValue: Option[FieldNode]) =>
-        val default = isDefault.flatMap(a => defaultValue.map(b => InputFieldDefault(a, b)))
-        InputFieldNode(checkName(L, fieldName), control, default)
+       defaultDiscriminator: Any, defaultValue: Option[FieldNode]) =>
+        val defaultData = Lua.`type`(defaultDiscriminator) match {
+          case Lua.TUSERDATA => Some(
+            InputFieldDerivedDefault(defaultDiscriminator.fromLua[FieldNode](L),
+                                     defaultValue.getOrElse(L.error("isDefault given but no defaultVaue given")))
+          )
+          case Lua.TNIL => None
+          case _ =>
+            val luaValue = control.expectedFieldType.fromLua(L, defaultDiscriminator)
+            val dataField = DataField(control.expectedFieldType.asInstanceOf[DataFieldType[Any]], luaValue)
+            Some(InputFieldStaticDefault(dataField))
+        }
+        InputFieldNode(checkName(L, fieldName), control, defaultData)
     })
   }
 }

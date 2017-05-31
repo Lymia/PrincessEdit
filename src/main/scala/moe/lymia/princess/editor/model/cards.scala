@@ -39,7 +39,7 @@ private final class MergeLuaTable(tables: Any*) {
   private val cache = new mutable.HashMap[String, Any]
   private def findObject(L: LuaState, k: String): Any = {
     for(t <- tables) {
-      val o = L.getTable(t, k).as[Any]
+      val o = L.getTable(t, k).as[Any].asInstanceOf[AnyRef]
       if(o ne Lua.NIL) return o
     }
     Lua.NIL
@@ -62,6 +62,6 @@ final case class FullCardData(uuid: UUID, project: Project, cardData: CardData, 
     new MergeLuaTable(globalData().fold(table)(_ +: table) : _*).toLua(project.idData.internal_L)
   }
   val columnData = Rx {
-    project.idData.columns.columns.map(f => f -> f.L.newThread().call(f.fn, 1, luaData()).head.as[String]).toMap
+    project.idData.columns.columns.map(f => f -> f.computeColumnData(luaData())).toMap
   }
 }

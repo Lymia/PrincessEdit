@@ -35,34 +35,36 @@ import scala.collection.mutable
 
 final class AllCardsView(protected val project: Project) extends CardPool {
   override def cardIdList: Rx[Set[UUID]] = Rx.unsafe { project.cards().keySet }
+  override val name: Rx[String] = Rx.unsafe { "All Cards" }
+
+  def addCard(uuid: UUID) = { }
+  def removeCard(uuid: UUID) = { }
 }
 
-final class Project(val ctx: ControlContext, val gameId: String, val idData: GameIDData) extends DirSerializable {
+final class Project(val ctx: ControlContext, val gameId: String, val idData: GameIDData)
+  extends JsonSerializable with DirSerializable with TrackModifyTime {
   var uuid = UUID.randomUUID()
-
-  type ModifyListener = () => Unit
-  private val listeners = new mutable.ArrayBuffer[ModifyListener]()
-  def addModifyListener(listener: ModifyListener) = listeners += listener
-  def modified() = {
-    listeners.foreach(_())
-  }
 
   val cards = new UUIDMapVar(id => {
     ctx.assertLuaThread()
-    new CardData(this)
+    val data = new CardData(this)
+    data.addModifyListener(this)
+    data
   })
   val pools = new UUIDMapVar(id => {
     ctx.assertLuaThread()
-    new ListCardPool(this)
+    val data = new ListCardPool(this)
+    data.info.addModifyListener(this)
+    data
   })
 
   val allCardsView = new AllCardsView(this)
-  val allPools = Rx.unsafe {
-    Map(
-      StaticPoolID.AllCards -> allCardsView
-    ) ++ pools()
-  }
+  private val staticPools = Map(
+    StaticPoolID.AllCards -> allCardsView
+  )
+  for(pool <- staticPools.values) pool.info.addModifyListener(this)
 
+  val allPools = Rx.unsafe { staticPools ++ pools() }
   val sources = Rx.unsafe { allCardsView +: pools().values.toSeq.sortBy(_.info.createTime) }
 
   // Main serialization entry point
@@ -99,7 +101,7 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
 
     cards.readFrom(path.resolve("cards"))
     pools.readFrom(path.resolve("pools"))
-    allCardsView.writeTo(path.resolve("pools").resolve("all-cards"))
+    allCardsView.readFrom(path.resolve("pools").resolve("all-cards"))
 
     uuid = (metadata \ "uuid").as[UUID]
   }
@@ -113,7 +115,7 @@ object Project {
   private def openPath[T](path: Path)(callback: Path => T): T =
     if(Files.isDirectory(path)) callback(path)
     else {
-      val filesystem = IOUtils.openZip(path)
+      val filesystem = IOUtils.openZip(path, readOnly = true)
       try callback(filesystem.getPath("/"))
       finally filesystem.close()
     }

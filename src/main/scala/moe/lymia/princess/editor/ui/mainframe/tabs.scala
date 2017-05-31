@@ -170,6 +170,14 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
     updateTabItems()
   }
 
-  def loadSettings() = deserialize(state.settings.getSetting(MainTabFolder.tabData, JsArray.empty))
+  def loadSettings() = state.settings.getSetting(MainTabFolder.tabData, JsNull) match {
+    case JsNull => false
+    case v => try {
+      deserialize(v)
+      true
+    } catch {
+      case _ => false
+    }
+  }
   def saveSettings() = state.settings.setSetting(MainTabFolder.tabData, serialize)
 }

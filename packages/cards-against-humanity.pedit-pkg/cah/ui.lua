@@ -18,12 +18,39 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
+poolIdentifier = "$cah.expansion"
+
+function poolForm()
+    local expansionName = ui.node.Input("expansionName", ui.control.TextField)
+    local expansionCode = ui.node.Input("expansionCode", ui.control.TextField)
+    local cardGameName = ui.node.Input("cardGameName", ui.control.TextField, "Cards Against Humanity")
+
+    return {
+        expansionName = expansionName,
+        expansionCode = expansionCode,
+        cardGameName = cardGameName
+    }, ui.node.Labeled {
+        { "$cah.expansionName", expansionName },
+        { "$cah.expansionCode", expansionCode },
+        { "$cah.cardGameName", cardGameName }
+    }
+end
+
+function poolName(root)
+    local name = root.expansionName
+    if #name == 0 then
+        return i18n("cah.unnamed")
+    else
+        return name
+    end
+end
+
 function cardForm()
-    local textNode = ui.node.Input("text", ui.control.TextField)
+    local text = ui.node.Input("text", ui.control.TextField)
     local overrideBlankCount = ui.node.Input("overrideBlankCount", ui.control.CheckBox("$cah.overrideBlankCount"))
     local isDefault = overrideBlankCount.map(function(b) return not b end)
 
-    local blankCount = ui.node.Input("blankCount", ui.control.TextField, isDefault, textNode.map(
+    local blankCount = ui.node.Input("blankCount", ui.control.TextField, isDefault, text.map(
         function(text)
             local _, ret = text:gsub("_+", "")
             return tostring(ret)
@@ -32,11 +59,11 @@ function cardForm()
     local intBlankCount = blankCount.map(tonumber)
 
     return {
-        text = textNode,
+        text = text,
         blankCount = intBlankCount,
         isBlack = intBlankCount.map(function(x) return x > 0 end)
     }, ui.node.Labeled {
-        {"$cah.text", textNode},
+        {"$cah.text", text },
         {"$cah.blankCount", {
             {overrideBlankCount, xAlign = ui.node.Grid.BEGINNING},
             {blankCount, xFill = true, xExpand = true}

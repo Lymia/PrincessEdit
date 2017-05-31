@@ -29,6 +29,8 @@ import moe.lymia.princess.util.IOUtils
 import play.api.libs.json._
 import rx._
 
+import scala.collection.mutable
+
 trait PathSerializable {
   val extension = ""
   def writeTo(path: Path): Unit = { }
@@ -56,15 +58,27 @@ trait JsonPathSerializable extends JsonSerializable with PathSerializable {
   }
   override def readFrom(path: Path): Unit = {
     super.readFrom(path)
+    println(path, SerializeUtils.readJson(path).as[JsObject])
     deserialize(SerializeUtils.readJson(path).as[JsObject])
   }
 }
 
-trait TrackModifyTime extends JsonSerializable {
+trait ModifyListener extends {
+  def onModified(): Unit
+}
+trait TrackModifyTime extends JsonSerializable with ModifyListener {
   var createTime = System.currentTimeMillis()
   var modifyTime = System.currentTimeMillis()
 
-  def modified() = modifyTime = System.currentTimeMillis()
+  private var listeners = new mutable.ArrayBuffer[ModifyListener]()
+  def addModifyListener(listener: ModifyListener) = listeners += listener
+  def removeModifyListener(listener: ModifyListener) = listeners = listeners.filter(_ ne listener)
+  def modified() = {
+    listeners.foreach(_.onModified())
+    modifyTime = System.currentTimeMillis()
+  }
+
+  override def onModified(): Unit = modified()
 
   override def serialize = super.serialize ++ Json.obj("create" -> createTime, "modify" -> modifyTime)
   override def deserialize(js: JsObject) = {
@@ -115,10 +129,7 @@ private[model] trait RefCount {
 }
 
 trait DataStoreModifyListener { this: HasDataStore with TrackModifyTime =>
-  fields.addChangeListener((_, _) => {
-    project.modified()
-    modified()
-  })
+  fields.addChangeListener((_, _) => modified())
 }
 trait HasModifyTimeDataStore extends HasDataStore with TrackModifyTime with DataStoreModifyListener
 

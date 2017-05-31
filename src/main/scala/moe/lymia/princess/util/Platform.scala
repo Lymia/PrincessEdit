@@ -28,9 +28,7 @@ import com.sun.jna.platform.win32.{Shell32Util, ShlObj}
 
 sealed trait Platform {
   val configurationRoot: Path
-  def mapConfigName(name: String) = name
-
-  def getConfigDirectory(name: String) = configurationRoot.resolve(mapConfigName(name))
+  def getConfigDirectory(name: String) = configurationRoot.resolve(name)
 }
 object Platform {
   case object Windows extends Platform {
@@ -43,8 +41,10 @@ object Platform {
   }
   case object Linux extends Platform {
     override lazy val configurationRoot: Path =
-      Paths.get(System.getProperty("user.home"))
-    override def mapConfigName(name: String) = s".$name"
+      System.getenv("XDG_CONFIG_HOME") match {
+        case null => Paths.get(System.getProperty("user.home")).resolve(".config")
+        case str  => Paths.get(str)
+      }
   }
 
   lazy val platformOption = sys.props("os.name") match {

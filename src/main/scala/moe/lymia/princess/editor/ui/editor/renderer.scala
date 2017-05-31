@@ -91,9 +91,8 @@ class RendererPane(parent: Composite, state: EditorState) extends Composite(pare
 
   private val menuManager = new MenuManager()
   private val export = new Action(state.i18n.system("_princess.editor.exportCard")) {
-    override def run() = {
+    override def run() =
       ExportCardsDialog.open(state, state.currentCard.now.get -> state.currentCardData.now.get)
-    }
   }
   menuManager.add(export)
   menuManager.addMenuListener(_ => {

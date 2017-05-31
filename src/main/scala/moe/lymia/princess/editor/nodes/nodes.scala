@@ -83,8 +83,7 @@ final case class DerivedFieldNode(params: Seq[FieldNode], fn: LuaClosure) extend
 
 final case class ConstFieldNode(data: Any) extends FieldNode {
   override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = SetupData.none
-  override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] =
-    Rx { data }
+  override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = Rx { data }
 }
 
 final case class RxFieldNode(rx: Rx[Any]) extends FieldNode {
@@ -92,35 +91,43 @@ final case class RxFieldNode(rx: Rx[Any]) extends FieldNode {
   override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = rx
 }
 
-final case class InputFieldDefault(isDefault: FieldNode, field: FieldNode)
+sealed trait InputFieldDefault
+final case class InputFieldDerivedDefault(isDefault: FieldNode, field: FieldNode) extends InputFieldDefault
+final case class InputFieldStaticDefault(fieldData: DataField) extends InputFieldDefault
+
 final case class InputFieldNode(fieldName: String, control: ControlType, default: Option[InputFieldDefault])
   extends FieldNode with ControlNode {
 
   private val expected = control.expectedFieldType.asInstanceOf[DataFieldType[Any]]
+  private val defaultField = default match {
+    case Some(InputFieldStaticDefault(value)) => value
+    case _ => control.defaultValue
+  }
 
   private def checkDefault(ctx: NodeContext) = {
-    val field = ctx.data.getDataField(ctx.prefix+fieldName, control.defaultValue)
-    if(field.now.t != expected) field.update(control.defaultValue)
+    val field = ctx.data.getDataField(ctx.prefix+fieldName, defaultField)
+    if(field.now.t != expected) field.update(defaultField)
     field
   }
 
   override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = {
     ctx.activateCardField(fieldName, this)
     default match {
-      case Some(data) =>
-        ctx.setupNode(data.isDefault)
-        ctx.setupNode(data.field)
+      case Some(InputFieldDerivedDefault(isDefaultNode, defaultFieldNode)) =>
+        ctx.setupNode(isDefaultNode)
+        ctx.setupNode(defaultFieldNode)
 
         val backing = checkDefault(ctx)
-        val isDefaultRx = ctx.activateNode(data.isDefault).map(_.fromLua[Boolean](ctx.internal_L))
-        val fieldRx = ctx.activateNode(data.field).map(x => DataField(expected, expected.fromLua(ctx.internal_L, x)))
+        val isDefaultRx = ctx.activateNode(isDefaultNode).map(_.fromLua[Boolean](ctx.internal_L))
+        val fieldRx =
+          ctx.activateNode(defaultFieldNode).map(x => DataField(expected, expected.fromLua(ctx.internal_L, x)))
         SetupData(obses = Seq(
           Rx { (isDefaultRx(), fieldRx()) }.foreach {
             case (isDefault, field) =>
               if(isDefault) ctx.controlCtx.queueUpdate(backing, field)
           }
         ))
-      case None => SetupData.none
+      case _ => SetupData.none
     }
   }
 
@@ -136,9 +143,11 @@ final case class InputFieldNode(fieldName: String, control: ControlType, default
     uiCtx.activateCardField(fieldName)
 
     val data = ControlData(ctx.L, ctx.internal_L, ctx.controlCtx, ctx.i18n, checkDefault(ctx),
-                           default.fold(Rx(true))(x =>
-                             ctx.activateNode(x.isDefault).map(y => !y.fromLua[Boolean](ctx.internal_L))
-                           ))
+                           default match {
+                             case Some(InputFieldDerivedDefault(isDefaultNode, _)) =>
+                               ctx.activateNode(isDefaultNode).map(y => !y.fromLua[Boolean](ctx.internal_L))
+                             case _ => Rx(true)
+                           })
     control.createComponent(parent, data)
   }
 }

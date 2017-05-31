@@ -34,16 +34,19 @@ import org.jfree.graphics2d.svg.SVGGraphics2D
 
 
 sealed abstract class SimpleTextComponentBase(protected var fontSize: Double) extends GraphicsComponent {
-  def createLayout(manager: ComponentRenderManager, graphics: SVGGraphics2D): TextLayout
+  def createLayout(manager: ComponentRenderManager, graphics: SVGGraphics2D): Option[TextLayout]
   def preRender(manager: ComponentRenderManager, graphics: SVGGraphics2D): Unit = { }
 
-  def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D, table: LuaTable): Bounds = {
-    val layout = createLayout(manager, graphics)
-    val bounds = layout.getBounds
-    preRender(manager, graphics)
-    layout.draw(graphics, 0, 0)
-    Bounds(bounds.getMinX, bounds.getMinY, bounds.getMaxX, bounds.getMaxY)
-  }
+  def renderComponent(manager: ComponentRenderManager, graphics: SVGGraphics2D, table: LuaTable): Bounds =
+    createLayout(manager, graphics) match {
+      case Some(layout) =>
+        val bounds = layout.getBounds
+        preRender(manager, graphics)
+        layout.draw(graphics, 0, 0)
+        Bounds(bounds.getMinX, bounds.getMinY, bounds.getMaxX, bounds.getMaxY)
+      case None =>
+        Bounds(0, 0, 0, 0)
+    }
 
   property("fontSize", L => fontSize     , (L, newSize: Double ) => fontSize      = newSize)
 }
@@ -53,7 +56,8 @@ class SimpleTextComponent(private var text: String, private var font: Font, font
   extends SimpleTextComponentBase(fontSizeParam) {
 
   def createLayout(manager: ComponentRenderManager, graphics: SVGGraphics2D) =
-    new TextLayout(text, manager.settings.scaleFont(font, fontSize.toFloat), graphics.getFontRenderContext)
+    if(text.isEmpty) None
+    else Some(new TextLayout(text, manager.settings.scaleFont(font, fontSize.toFloat), graphics.getFontRenderContext))
 
   override def preRender(manager: ComponentRenderManager, graphics: SVGGraphics2D): Unit = graphics.setColor(color)
 
@@ -66,12 +70,12 @@ class SimpleFormattedTextComponent(private var text: FormattedString, fontSizePa
   extends SimpleTextComponentBase(fontSizeParam) {
 
   def createLayout(manager: ComponentRenderManager, graphics: SVGGraphics2D) = {
-    var str: AttributedString = null
+    var str: Option[AttributedString] = None
     text.execute(manager, fontSize) {
-      case FormatInstruction.RenderString(s) => str = s
+      case FormatInstruction.RenderString(s) => str = Some(s)
       case _ => throw EditorException("invalid render string in SimpleFormattedText object")
     }
-    new TextLayout(str.getIterator, graphics.getFontRenderContext)
+    str.map(s => new TextLayout(s.getIterator, graphics.getFontRenderContext))
   }
 
   property("text", L => text, (L, newText: FormattedString) => text = newText)

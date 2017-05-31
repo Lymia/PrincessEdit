@@ -25,10 +25,10 @@ package moe.lymia.princess.editor.ui.editor
 import java.util.UUID
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.editor.UIData
+import moe.lymia.princess.editor.{DataRoot, UIData}
 import moe.lymia.princess.editor.model.{CardData, FullCardData}
 import moe.lymia.princess.editor.ui.mainframe.{MainFrameState, PrincessEditTab, TabID, TabProvider}
-import moe.lymia.princess.editor.utils.{RxOwner, UIUtils}
+import moe.lymia.princess.editor.utils.{RxOwner, RxWidget, UIUtils}
 import org.eclipse.jface.action.MenuManager
 import org.eclipse.swt._
 import org.eclipse.swt.custom._
@@ -38,7 +38,7 @@ import org.eclipse.swt.widgets._
 import play.api.libs.json.Json
 import rx._
 
-final class CardEditorPane(parent: Composite, state: EditorState, cardData: CardData)
+final class DataRootEditorPane(parent: Composite, state: EditorState, root: DataRoot)
   extends Composite(parent, SWT.NONE) {
 
   private val grid = new GridLayout()
@@ -48,8 +48,8 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
 
   private var deactivated = false
   private def deactivate() = {
-      if(!deactivated) state.deactivateEditor()
-      deactivated = true
+    if(!deactivated) state.deactivateEditor()
+    deactivated = true
   }
   addTraverseListener(event =>
     if(event.detail == SWT.TRAVERSE_ESCAPE) {
@@ -71,7 +71,7 @@ final class CardEditorPane(parent: Composite, state: EditorState, cardData: Card
           _.marginWidth = 5,
           _.marginHeight = 5
         ),
-        x => ui = cardData.root.createUI(x)
+        x => ui = root.createUI(x)
       ),
       _.setContent(uiContainer),
       _.setExpandVertical(true),
@@ -106,6 +106,7 @@ final class EditorState(parent: EditorTab, data: EditorTabData, val mainFrameSta
   def isEditorActive = parent.isEditorActive
 
   def activateEditor() = currentCardData.now.foreach(card => parent.activateEditor(card))
+  def activatePoolDataEditor() = parent.activatePoolDataEditor()
   def deactivateEditor() = parent.deactivateEditor()
 
   override def kill(): Unit = {
@@ -116,7 +117,7 @@ final class EditorState(parent: EditorTab, data: EditorTabData, val mainFrameSta
 
 final case class EditorTabData(setId: UUID)
 final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFrameState)
-  extends Composite(parent, SWT.NONE) with PrincessEditTab {
+  extends Composite(parent, SWT.NONE) with PrincessEditTab with RxWidget {
 
   private val editorState = new EditorState(this, data, mainState)
 
@@ -150,7 +151,7 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
 
   stack.topControl = selectorContainer
 
-  private var currentEditor: Option[CardEditorPane] = None
+  private var currentEditor: Option[Control] = None
   private def clearCurrentEditor() = {
     currentEditor match {
       case Some(x) => x.dispose()
@@ -162,17 +163,21 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
 
   private var editorActive = false
   def isEditorActive = editorActive
-  def activateEditor(cardData: FullCardData) = {
+  private def activatePane(pane: => Control) = {
     editorActive = true
     clearCurrentEditor()
     selector.editorOpened()
-    val editor = new CardEditorPane(listContainer, editorState, cardData.cardData)
-    currentEditor = Some(editor)
-    stack.topControl = editor
+    val newPane = pane
+    currentEditor = Some(newPane)
+    stack.topControl = newPane
     listContainer.layout()
-    editor.forceFocus()
-    editorState.ctx.asyncUiExec { editor.traverse(SWT.TRAVERSE_TAB_NEXT) }
+    newPane.forceFocus()
+    editorState.ctx.asyncUiExec { newPane.traverse(SWT.TRAVERSE_TAB_NEXT) }
   }
+  def activateEditor(cardData: FullCardData) =
+    activatePane(new DataRootEditorPane(listContainer, editorState, cardData.cardData.root))
+  def activatePoolDataEditor() =
+    activatePane(new DataRootEditorPane(listContainer, editorState, editorState.currentPool.now.info.root))
   def deactivateEditor() = {
     editorActive = false
     clearCurrentEditor()
@@ -187,7 +192,7 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
     // TODO
   }
 
-  override val tabName = Rx.unsafe { "Edit Cards" } // TODO
+  override val tabName = Rx { editorState.currentPool().name() }
 }
 object EditorTab {
   private implicit val editorTabDataFormats = Json.format[EditorTabData]

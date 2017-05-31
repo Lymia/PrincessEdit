@@ -95,13 +95,9 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
               case SWT.DOWN => -1
             }
             state.ctx.queueUpdate(sortOrder, Some(
-              ((a, b) => multiplier * (column.sortFn match {
-                case None =>
-                  // TODO: Ensure this is safe
-                  a.fields(i).compare(b.fields(i))
-                case Some(fn) =>
-                  column.L.newThread().call(fn, 1, a.data.luaData.now, b.data.luaData.now).head.as[Int]
-              })) : Ordering[RowData]
+              ((a, b) =>
+                multiplier * column.computeOrdering(a.data.luaData.now, a.fields(i), b.data.luaData.now, b.fields(i))
+              ) : Ordering[RowData]
             ))
           }
         }
@@ -205,13 +201,23 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   }
   private val addCard = new Action(state.i18n.system("_princess.editor.newCard")) {
     setAccelerator(SWT.CTRL | SWT.CR)
-    override def run() = setSelection(state.ctx.syncLuaExec(state.project.cards.create()._1))
+    override def run() = setSelection(state.ctx.syncLuaExec {
+      val (id, _) = state.project.cards.create()
+      state.currentPool.now.addCard(id)
+      id
+    })
   }
   private val editCard = new Action(state.i18n.system("_princess.editor.editCard")) {
     setAccelerator(SWT.CR)
     override def run() = {
       setSelectionFromViewer()
       state.activateEditor()
+    }
+  }
+  private val editPoolData = new Action(state.i18n.system("_princess.editor.editCardPool")) {
+    override def run() = {
+      setSelectionFromViewer()
+      state.activatePoolDataEditor()
     }
   }
 
@@ -239,6 +245,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
       menuManager.add(addCard)
       editCard.setEnabled(viewer.getStructuredSelection.size == 1)
       menuManager.add(editCard)
+      menuManager.add(editPoolData)
     }
   }
   viewer.getControl.setMenu(menuManager.createContextMenu(viewer.getControl))
