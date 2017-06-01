@@ -29,6 +29,7 @@ import moe.lymia.princess.core.I18N
 import moe.lymia.princess.renderer.SVGFile
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.jface.dialogs.MessageDialog
+import org.eclipse.jface.resource.FontDescriptor
 import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Point
@@ -67,4 +68,7 @@ object UIUtils {
   // XScalaWT compatible
   def listBackground(c: Control) = c.setBackground(c.getDisplay.getSystemColor(SWT.COLOR_LIST_BACKGROUND))
   object listBackgroundStyle extends Stylesheet ($[Control](listBackground))
+
+  def fontStyle(style: Int)(c: Control) =
+    c.setFont(FontDescriptor.createFrom(c.getFont).setStyle(style).createFont(c.getDisplay))
 }

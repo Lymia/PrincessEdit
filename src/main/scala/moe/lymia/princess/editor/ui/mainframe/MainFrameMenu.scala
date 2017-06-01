@@ -27,6 +27,7 @@ import moe.lymia.princess.editor.ui.editor.{EditorTab, EditorTabData}
 import moe.lymia.princess.editor.ui.frontend.GameSelectorDialog
 import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.swt.SWT
+import org.eclipse.swt.program.Program
 import org.eclipse.swt.widgets.{Display, Listener}
 
 // TODO: Support saving to directory
@@ -65,6 +66,14 @@ class MainFrameMenu(menu: MenuManager, frame: MainFrame, state: MainFrameState) 
   val views = new MenuManager()
   views.setMenuText(state.i18n.system("_princess.main.menu.views"))
 
+  private val createView = new Action() {
+    setText(state.i18n.system("_princess.main.menu.views.createView"))
+    override def run() = {
+      val (uuid, _) = state.ctx.syncLuaExec(state.project.views.create())
+      state.openTab(EditorTab, EditorTabData(uuid))
+    }
+    views.add(this)
+  }
   private val allCardsView = new Action() {
     setText(state.i18n.system("_princess.main.menu.views.allCardsView"))
     override def run() = state.openTab(EditorTab, EditorTabData(StaticViewID.AllCards))
@@ -74,6 +83,25 @@ class MainFrameMenu(menu: MenuManager, frame: MainFrame, state: MainFrameState) 
     setText(state.i18n.system("_princess.main.menu.views.deletedCardsView"))
     override def run() = state.openTab(EditorTab, EditorTabData(StaticViewID.DeletedCards))
     views.add(this)
+  }
+
+  val help = new MenuManager()
+  help.setMenuText(state.i18n.system("_princess.main.menu.help"))
+
+  private val website = new Action() {
+    setText(state.i18n.system("_princess.main.menu.menu.website"))
+    override def run() = Program.launch("https://github.com/Lymia/PrincessEdit")
+    help.add(this)
+  }
+  private val reportBug = new Action() {
+    setText(state.i18n.system("_princess.main.menu.menu.reportBug"))
+    override def run() = Program.launch("https://github.com/Lymia/PrincessEdit/issues")
+    help.add(this)
+  }
+  private val about = new Action() {
+    setText(state.i18n.system("_princess.main.menu.menu.about"))
+    override def run() = new AboutDialog(frame, state).open()
+    help.add(this)
   }
 
   private val display = Display.getCurrent
@@ -98,6 +126,7 @@ class MainFrameMenu(menu: MenuManager, frame: MainFrame, state: MainFrameState) 
     menu.add(file)
     frame.tabFolder.currentTab.now.foreach(_.addMenuItems(menu))
     menu.add(views)
+    menu.add(help)
     menu.update(true)
   }
 }

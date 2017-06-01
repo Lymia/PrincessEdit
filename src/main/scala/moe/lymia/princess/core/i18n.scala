@@ -71,6 +71,9 @@ final case class StaticI18NSource(locale: Locale, map: Map[String, String]) exte
 
 final case class I18N(userLua: I18NSource, system: I18NSource) {
   val user = MarkedI18NSource(userLua)
+
+  assert(userLua.locale == system.locale)
+  val locale = system.locale
 }
 
 final class I18NLoader(game: GameManager) {

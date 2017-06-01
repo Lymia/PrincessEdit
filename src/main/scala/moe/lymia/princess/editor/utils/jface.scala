@@ -51,6 +51,15 @@ trait JFaceWindowBase extends Window {
   }
 }
 
+trait WithResources extends JFaceWindowBase {
+  val resourceManager = ctx.newResourceManager()
+
+  override def configureShell(newShell: Shell): Unit = {
+    super.configureShell(newShell)
+    resourceManager.dispose()
+  }
+}
+
 abstract class WindowBase(protected val ctx: ControlContext) extends ApplicationWindow(null) with JFaceWindowBase {
   override def showTopSeperator(): Boolean = false
 }
