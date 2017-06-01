@@ -18,17 +18,19 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-poolIdentifier = "$cah.expansion"
+viewTypeName = "$cah.expansion"
 
-function poolForm()
+function viewForm()
     local expansionName = ui.node.Input("expansionName", ui.control.TextField)
     local expansionCode = ui.node.Input("expansionCode", ui.control.TextField)
     local cardGameName = ui.node.Input("cardGameName", ui.control.TextField, "Cards Against Humanity")
 
     return {
-        expansionName = expansionName,
-        expansionCode = expansionCode,
-        cardGameName = cardGameName
+        expansion = {
+            name = expansionName,
+            code = expansionCode,
+            gameName = cardGameName
+        }
     }, ui.node.Labeled {
         { "$cah.expansionName", expansionName },
         { "$cah.expansionCode", expansionCode },
@@ -36,8 +38,8 @@ function poolForm()
     }
 end
 
-function poolName(root)
-    local name = root.expansionName
+function viewName(root)
+    local name = root.expansion.name
     if #name == 0 then
         return i18n("cah.unnamed")
     else

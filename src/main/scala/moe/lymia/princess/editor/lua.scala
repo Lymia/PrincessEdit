@@ -117,26 +117,26 @@ object LuaExportData {
   }
 }
 
-final class LuaPoolData(L: LuaState, poolTypeName: String, poolNameFn: LuaClosure) {
-  def computeName(v: Any) = L.newThread().call(poolNameFn, 1, v).head.as[String]
+final class LuaViewData(L: LuaState, viewTypeName: String, setNameFn: LuaClosure) {
+  def computeName(v: Any) = L.newThread().call(setNameFn, 1, v).head.as[String]
 }
-object LuaPoolData {
-  def apply(game: GameManager): LuaPoolData = {
+object LuaViewData {
+  def apply(game: GameManager): LuaViewData = {
     val L = game.lua.L.newThread()
-    val ep = game.getRequiredEntryPoint("pool-data")
-    val typeName = L.getTable(ep, "poolIdentifier").as[String]
-    val poolNameFn = L.getTable(ep, "poolName").as[LuaClosure]
-    new LuaPoolData(L, typeName, poolNameFn)
+    val ep = game.getRequiredEntryPoint("view-data")
+    val viewTypeName = L.getTable(ep, "viewTypeName").as[String]
+    val setNameFn = L.getTable(ep, "viewName").as[LuaClosure]
+    new LuaViewData(L, viewTypeName, setNameFn)
   }
 }
 
 final class GameIDData(game: GameManager, controlCtx: ControlContext, i18n: I18N) {
   val internal_L = game.lua.L.newThread()
 
-  val card       = RootSource(game, controlCtx, i18n, "card-form", "cardForm")
-  val poolRoot   = RootSource(game, controlCtx, i18n, "pool-data", "poolForm")
-  val poolData   = LuaPoolData(game)
-  val columns    = LuaColumnData(game)
-  val renderer   = new RenderManager(game, controlCtx.cache)
-  val export     = LuaExportData(game)
+  val card     = RootSource(game, controlCtx, i18n, "card-form", "cardForm")
+  val viewRoot = RootSource(game, controlCtx, i18n, "view-data", "viewForm")
+  val viewData = LuaViewData(game)
+  val columns  = LuaColumnData(game)
+  val renderer = new RenderManager(game, controlCtx.cache)
+  val export   = LuaExportData(game)
 }

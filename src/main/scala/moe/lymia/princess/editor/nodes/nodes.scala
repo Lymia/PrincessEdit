@@ -22,16 +22,17 @@
 
 package moe.lymia.princess.editor.nodes
 
-import moe.lymia.lua._
+import java.util
+
+import moe.lymia.lua.LuaState
 import moe.lymia.princess.core.{EditorException, I18N}
 import moe.lymia.princess.editor.ControlContext
-import moe.lymia.princess.editor.model.{DataField, DataFieldType}
-import org.eclipse.swt.widgets._
-import rx._
+import moe.lymia.princess.editor.model.{DataField, DataFieldType, DataStore}
+import org.eclipse.swt.widgets.{Composite, Control}
+import rx.{Ctx, Obs, Rx, Var}
 
 import scala.collection.mutable
-
-// TODO: Make sure no cycles can be created.
+import scala.collection.JavaConverters._
 
 case class SetupData(obses: Seq[Obs] = Seq.empty)
 object SetupData {
@@ -40,17 +41,6 @@ object SetupData {
 
 sealed trait TreeNode {
   def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner): SetupData
-}
-
-final class UIContext(prefix: String, val registerControlCallbacks: Control => Unit) {
-  private val uiActivatedCardField = new mutable.HashSet[String]
-  def activateCardField(name: String) = {
-      if(uiActivatedCardField.contains(name))
-        throw EditorException(s"Cannot reuse UI element controlling card data field '${prefix+name}'!")
-      uiActivatedCardField.add(name)
-  }
-
-  def newUIContext(ctx: NodeContext) = new UIContext(ctx.prefix, registerControlCallbacks)
 }
 
 final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlContext,
@@ -69,85 +59,59 @@ trait FieldNode extends TreeNode {
   override val hashCode = super.hashCode
 }
 
-final case class DerivedFieldNode(params: Seq[FieldNode], fn: LuaClosure) extends FieldNode {
-  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = {
-    params.foreach(ctx.setupNode)
-    SetupData.none
+final class UIContext(prefix: String, val registerControlCallbacks: Control => Unit) {
+  private val uiActivatedCardField = new mutable.HashSet[String]
+  def activateCardField(name: String) = {
+      if(uiActivatedCardField.contains(name))
+        throw EditorException(s"Cannot reuse UI element controlling card data field '${prefix+name}'!")
+      uiActivatedCardField.add(name)
   }
 
-  override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner) = {
-    val fields = params.map(x => ctx.activateNode(x))
-    Rx { ctx.L.newThread().call(fn, 1, fields.map(_() : LuaObject) : _*).head.as[Any] }
-  }
+  def newUIContext(ctx: NodeContext) = new UIContext(ctx.prefix, registerControlCallbacks)
 }
 
-final case class ConstFieldNode(data: Any) extends FieldNode {
-  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = SetupData.none
-  override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = Rx { data }
-}
+final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext, val i18n: I18N,
+                        val prefixSeq: Seq[String] = Seq()) {
+  val internal_L = L.newThread()
 
-final case class RxFieldNode(rx: Rx[Any]) extends FieldNode {
-  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = SetupData.none
-  override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = rx
-}
+  val prefix = if(prefixSeq.isEmpty) "" else s"${prefixSeq.mkString(":")}:"
 
-sealed trait InputFieldDefault
-final case class InputFieldDerivedDefault(isDefault: FieldNode, field: FieldNode) extends InputFieldDefault
-final case class InputFieldStaticDefault(fieldData: DataField) extends InputFieldDefault
-
-final case class InputFieldNode(fieldName: String, control: ControlType, default: Option[InputFieldDefault])
-  extends FieldNode with ControlNode {
-
-  private val expected = control.expectedFieldType.asInstanceOf[DataFieldType[Any]]
-  private val defaultField = default match {
-    case Some(InputFieldStaticDefault(value)) => value
-    case _ => control.defaultValue
-  }
-
-  private def checkDefault(ctx: NodeContext) = {
-    val field = ctx.data.getDataField(ctx.prefix+fieldName, defaultField)
-    if(field.now.t != expected) field.update(defaultField)
-    field
-  }
-
-  override def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner) = {
-    ctx.activateCardField(fieldName, this)
-    default match {
-      case Some(InputFieldDerivedDefault(isDefaultNode, defaultFieldNode)) =>
-        ctx.setupNode(isDefaultNode)
-        ctx.setupNode(defaultFieldNode)
-
-        val backing = checkDefault(ctx)
-        val isDefaultRx = ctx.activateNode(isDefaultNode).map(_.fromLua[Boolean](ctx.internal_L))
-        val fieldRx =
-          ctx.activateNode(defaultFieldNode).map(x => DataField(expected, expected.fromLua(ctx.internal_L, x)))
-        SetupData(obses = Seq(
-          Rx { (isDefaultRx(), fieldRx()) }.foreach {
-            case (isDefault, field) =>
-              if(isDefault) ctx.controlCtx.queueUpdate(backing, field)
-          }
-        ))
-      case _ => SetupData.none
+  private val setupData = new util.IdentityHashMap[TreeNode, SetupData].asScala
+  private val currentSetup = new util.IdentityHashMap[TreeNode, Unit].asScala
+  def setupNode(node: TreeNode)(implicit owner: Ctx.Owner): Unit = setupData.getOrElseUpdate(node, {
+    if(currentSetup.contains(node))
+      throw EditorException("Cycle in nodes!")
+    try {
+      currentSetup.put(node, ())
+      node.setupNode(this, owner)
+    } finally {
+      currentSetup.remove(node)
     }
-  }
+  })
 
-  override def createRx(implicit ctx: NodeContext, owner: Ctx.Owner): Rx[Any] = {
-    ctx.activateCardField(fieldName, this)
+  private val activatedRxes = new util.IdentityHashMap[FieldNode, Rx[Any]].asScala
+  private val activatingRxes = new util.IdentityHashMap[FieldNode, Unit].asScala
+  def activateNode(node: FieldNode)(implicit owner: Ctx.Owner): Rx[Any] = activatedRxes.getOrElseUpdate(node, {
+    if(activatingRxes.contains(node))
+      throw EditorException("Cycle in field nodes!")
+    try {
+      activatingRxes.put(node, ())
+      node.createRx(this, owner)
+    } finally {
+      activatingRxes.remove(node)
+    }
+  })
 
-    val field = checkDefault(ctx)
-    Rx { field().toLua(ctx.internal_L) }
-  }
+  val activatedRoots = new util.IdentityHashMap[RootNode, Rx[ActiveRootNode]].asScala
+  private val activatedCardFields = new mutable.HashMap[String, TreeNode]
+  def activateCardField(name: String, node: TreeNode) =
+    activatedCardFields.get(name) match {
+      case Some(f) =>
+        if(f ne node)
+          throw EditorException(s"Cannot control card data field '${prefix+name}' with two different nodes.")
+      case None => activatedCardFields.put(name, node)
+    }
 
-  override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {
-    ctx.activateCardField(fieldName, this)
-    uiCtx.activateCardField(fieldName)
-
-    val data = ControlData(ctx.L, ctx.internal_L, ctx.controlCtx, ctx.i18n, checkDefault(ctx),
-                           default match {
-                             case Some(InputFieldDerivedDefault(isDefaultNode, _)) =>
-                               ctx.activateNode(isDefaultNode).map(y => !y.fromLua[Boolean](ctx.internal_L))
-                             case _ => Rx(true)
-                           })
-    control.createComponent(parent, data)
-  }
+  def newUIContext(registerControlCallbacks: Control => Unit) =
+    new UIContext(prefix, registerControlCallbacks)
 }

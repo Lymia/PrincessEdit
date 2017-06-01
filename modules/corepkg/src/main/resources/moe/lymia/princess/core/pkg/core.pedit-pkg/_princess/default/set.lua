@@ -18,22 +18,22 @@
 -- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 -- THE SOFTWARE.
 
-poolIdentifier = "$_princess.pool"
+viewTypeName = "$_princess.default.view"
 
-function poolForm()
-    local poolName = ui.node.Input("poolName", ui.control.TextField)
+function viewForm()
+    local viewName = ui.node.Input("viewName", ui.control.TextField)
 
     return {
-        poolName = poolName,
+        viewName = viewName,
     }, ui.node.Labeled {
-        { "$_princess.poolName", poolName }
+        { "$_princess.default.viewName", viewName }
     }
 end
 
-function poolName(root)
-    local name = root.poolName
+function viewName(root)
+    local name = root.viewName
     if #name == 0 then
-        return i18n("_princess.unnamedPool")
+        return i18n("_princess.default.unnamedView")
     else
         return name
     end

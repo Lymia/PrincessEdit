@@ -43,6 +43,7 @@ object TabDefs {
 }
 import TabDefs._
 
+// TODO: Should we really use an UUID here?
 abstract case class TabID[Data : Writes : Reads, TabClass <: TabBase, TabAPI](id: UUID) {
   def serialize(v: Data) = Json.toJson(v)
   def deserialize(js: JsValue): Data = js.as[Data]
@@ -74,26 +75,26 @@ trait TabProvider {
 private[mainframe] case class TabData[Data, TabClass <: TabBase, TabAPI](tabID: TabID[Data, TabClass, TabAPI],
                                                                          data: Data, control: TabClass) {
   def serialize = Json.obj(
-    "id" -> tabID.id,
-    "data" -> tabID.serialize(data)
+    "tabType" -> tabID.id,
+    "parameters" -> tabID.serialize(data)
   )
 }
 private object TabData {
   def deserialize(parent: Composite,
                   js: JsValue, state: MainFrameState): TabData[_, _ <: TabBase, _] = {
-    val uuid = (js \ "id").as[UUID]
+    val uuid = (js \ "tabType").as[UUID]
     val id =
       MainTabFolder.getTabIDByUUID(uuid).getOrElse(sys.error(s"Unknown uuid $uuid"))
         .asInstanceOf[TabID[Any, TabBase, Any]]
     val t = MainTabFolder.getTabType(id).getOrElse(sys.error(s"unexpected error: inconsistent state"))
-    val data = id.deserialize((js \ "data").as[JsValue])
+    val data = id.deserialize((js \ "parameters").as[JsValue])
     TabData(id, data, t.createTab(parent, data, state))
   }
 }
 
 private object MainTabFolder {
-  private val dataUUID = "dd51f4c8-343c-11e7-80b1-3afa38669cf4"
-  private val tabData = new SettingsKey[JsValue](UUID.fromString("973b7496-3437-11e7-bc04-3afa38669cf4"))
+  private val tabDataId = "dd51f4c8-343c-11e7-80b1-3afa38669cf4"
+  private val tabData = new SettingsKey[JsValue]("princess.openTabs")
 
   private lazy val (forUUID, forTabID) = {
     val forUUID = new mutable.HashMap[UUID, TabID[_, _, _]]
@@ -123,7 +124,7 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
     override def maximize(cTabFolderEvent: CTabFolderEvent): Unit = { }
     override def showList(cTabFolderEvent: CTabFolderEvent): Unit = { }
     override def close(cTabFolderEvent: CTabFolderEvent): Unit = {
-      cTabFolderEvent.item.getData(MainTabFolder.dataUUID).asInstanceOf[TabData[_, _ <: TabBase, _]].control.dispose()
+      cTabFolderEvent.item.getData(MainTabFolder.tabDataId).asInstanceOf[TabData[_, _ <: TabBase, _]].control.dispose()
     }
   })
 
@@ -132,7 +133,7 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
   val currentTab: Rx[Option[TabBase]] = Rx {
     val selection = tabFolder.getSelection
     if(selection == null) None
-    else Some(selection.getData(MainTabFolder.dataUUID).asInstanceOf[TabData[_, TabBase, _]].control)
+    else Some(selection.getData(MainTabFolder.tabDataId).asInstanceOf[TabData[_, TabBase, _]].control)
   }
   tabFolder.addSelectionListener(new SelectionListener {
     override def widgetSelected(selectionEvent: SelectionEvent): Unit = currentTab.recalc()
@@ -153,7 +154,7 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
     }
 
     val tab = tabFolder.getItems.find { x =>
-      val tabData = x.getData(MainTabFolder.dataUUID).asInstanceOf[TabData[_, _, _]]
+      val tabData = x.getData(MainTabFolder.tabDataId).asInstanceOf[TabData[_, _, _]]
       tabData.tabID == id && tabData.data == data
     }.get
     tabFolder.setSelection(tab)
@@ -170,7 +171,7 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
     for(item <- tabFolder.getItems) item.dispose()
     for(tab <- tabs) {
       val item = new CTabItem(tabFolder, SWT.NONE)
-      item.setData(MainTabFolder.dataUUID, tab)
+      item.setData(MainTabFolder.tabDataId, tab)
       val obs = tab.control.tabName.foreach(x => state.ctx.asyncUiExec { if(!item.isDisposed) item.setText(x) })
       item.addDisposeListener(_ => obs.kill())
       item.setControl(tab.control)

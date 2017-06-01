@@ -40,8 +40,8 @@ private final class RendererCanvas(parent: Composite, state: EditorState)
   private var currentImage: Image = _
   private val currentCardData: Rx[Option[Seq[LuaObject]]] = Rx {
     val card = state.currentCardData().map(_.luaData())
-    val pool = state.currentPool().info.root.luaData()
-    card.map(cardData => Seq(cardData, pool))
+    val view = state.currentView().info.root.luaData()
+    card.map(cardData => Seq(cardData, view))
   }
   private val obs = currentCardData.foreach { d =>
     if(!this.isDisposed) d match {

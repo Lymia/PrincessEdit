@@ -29,6 +29,7 @@ import moe.lymia.princess.editor._
 import moe.lymia.princess.editor.lua.EditorModule
 import moe.lymia.princess.editor.model.{Project, ProjectMetadata}
 import moe.lymia.princess.editor.ui.editor.{EditorTab, EditorTabData}
+import moe.lymia.princess.editor.ui.mainframe.TabDefs.TabBase
 import moe.lymia.princess.editor.utils._
 import moe.lymia.princess.renderer.lua.RenderModule
 import moe.lymia.princess.util.{FileLock, IOUtils, VersionInfo}
@@ -51,7 +52,7 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
   val idData = new GameIDData(game, ctx, i18n)
   val project = projectSource.openProject(ctx, gameId, idData)
 
-  private var settings0: SettingsStore = projectSource.openSettings()
+  private var settings0: SettingsStore = projectSource.openSettings(project)
   def settings = settings0
 
   private var currentSaveLocation: Option[Path] = None
@@ -67,7 +68,7 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
             currentSaveLocation = Some(currentPath)
 
             val oldSettings = settings
-            settings0 = Settings.getProjectSettings(currentPath)
+            settings0 = Settings.getProjectSettings(currentPath, project.uuid)
             settings0.transferFrom(oldSettings)
 
             mainFrame.updateTitle()
@@ -128,6 +129,9 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
 
   val shell: IShellProvider = mainFrame
 
+  def openTab[Data, TabClass <: TabBase, TabAPI](id: TabID[Data, TabClass, TabAPI], data: Data): TabAPI =
+    mainFrame.tabFolder.openTab(id, data)
+
   def dispose(): Unit = {
 
   }
@@ -135,7 +139,7 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
 
 sealed trait ProjectSource {
   def getGameID: String
-  def openSettings(): SettingsStore
+  def openSettings(project: Project): SettingsStore
   def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project
   def setSaveLocation(state: MainFrameState): Unit
 }
@@ -143,17 +147,17 @@ object ProjectSource {
   // TODO: Throw an error if the given GameID isn't installed
   case class OpenProject(path: Path, meta: ProjectMetadata, lock: FileLock) extends ProjectSource {
     override def getGameID: String = meta.gameId
-    override def openSettings(): SettingsStore = Settings.getProjectSettings(path)
+    override def openSettings(project: Project): SettingsStore = Settings.getProjectSettings(path, project.uuid)
     override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project =
       ctx.syncLuaExec(Project.loadProject(ctx, gameID, idData, path))
     override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(Some(path), Some(lock))
   }
   case class NewProject(id: GameID) extends ProjectSource {
     override def getGameID: String = id.name
-    override def openSettings(): SettingsStore = new UnbackedSettingsStore
+    override def openSettings(project: Project): SettingsStore = new UnbackedSettingsStore
     override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project = {
       val project = new Project(ctx, gameID, idData)
-      ctx.syncLuaExec(project.pools.create())
+      ctx.syncLuaExec(project.views.create())
       project
     }
     override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(None, None)
@@ -228,8 +232,8 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
 
     tabFolder = new MainTabFolder(frame, state)
     if(!tabFolder.loadSettings())
-      if(state.project.pools.now.nonEmpty)
-        tabFolder.openTab(EditorTab.id, EditorTabData(state.project.pools.now.minBy(_._2.info.createTime)._1))
+      if(state.project.views.now.nonEmpty)
+        tabFolder.openTab(EditorTab, EditorTabData(state.project.views.now.minBy(_._2.info.createTime)._1))
     tabFolder.currentTab.foreach(_ => menu.updateMenu())
   }
 }

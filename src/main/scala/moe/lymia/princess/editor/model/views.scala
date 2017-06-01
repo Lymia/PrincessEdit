@@ -38,14 +38,14 @@ final class SlotData(protected val project: Project) extends JsonPathSerializabl
   }
 }
 
-final class CardPoolInfo(protected val project: Project) extends JsonPathSerializable with HasModifyTimeDataStore {
-  val root = project.ctx.syncLuaExec { project.idData.poolRoot.createRoot(fields, Seq()) }
-  val name = Rx.unsafe { project.idData.poolData.computeName(root.luaData()) }
+final class ViewInfo(protected val project: Project) extends JsonPathSerializable with HasModifyTimeDataStore {
+  val root = project.ctx.syncLuaExec { project.idData.viewRoot.createRoot(fields, Seq()) }
+  val name = Rx.unsafe { project.idData.viewData.computeName(root.luaData()) }
 }
 
-trait CardPool extends PathSerializable {
+trait CardView extends PathSerializable {
   protected val project: Project
-  val info: CardPoolInfo = new CardPoolInfo(project)
+  val info: ViewInfo = new ViewInfo(project)
   val name: Rx[String] = info.name
 
   def cardIdList: Rx[Set[UUID]]
@@ -53,6 +53,7 @@ trait CardPool extends PathSerializable {
     cardIdList().toSeq.flatMap(x => getFullCard(x)).sortBy(_.cardData.createTime)
   }
 
+  val isStatic = false
   def addCard(uuid: UUID)
   def removeCard(uuid: UUID)
 
@@ -96,7 +97,7 @@ trait CardList extends DirSerializable {
   }
 }
 
-final class ListCardPool(protected val project: Project) extends CardPool with DirSerializable with CardList {
+final class ListCardView(protected val project: Project) extends CardView with DirSerializable with CardList {
   val slots = Var(Seq.empty[SlotData])
   override def cardIdList = idList
 }

@@ -31,20 +31,20 @@ import moe.lymia.princess.util.{IOUtils, VersionInfo}
 import play.api.libs.json._
 import rx._
 
-final class AllCardsView(protected val project: Project) extends CardPool {
-  override def cardIdList: Rx[Set[UUID]] = Rx.unsafe { project.cards().keySet }
-  override val name: Rx[String] = Rx.unsafe { "All Cards" } // TODO I18N
-
-  def addCard(uuid: UUID) = { }
-  def removeCard(uuid: UUID) = { } // TODO: Make UI aware of views with different remove semantics
+trait SyntheticView extends CardView {
+  override val isStatic: Boolean = true
+  override def addCard(uuid: UUID) = { }
+  override def removeCard(uuid: UUID) = { } // TODO: Make UI aware of views with different remove semantics
 }
 
-final class DeletedCardsView(protected val project: Project) extends CardPool {
+final class AllCardsView(protected val project: Project) extends CardView with SyntheticView {
+  override def cardIdList: Rx[Set[UUID]] = Rx.unsafe { project.cards().keySet }
+  override val name: Rx[String] = Rx.unsafe { "All Cards" } // TODO I18N
+}
+
+final class DeletedCardsView(protected val project: Project) extends CardView with SyntheticView {
   override def cardIdList: Rx[Set[UUID]] = Rx.unsafe { project.cards().filter(_._2.refCount == 0).keySet }
   override val name: Rx[String] = Rx.unsafe { "Deleted Cards" } // TODO I18N
-
-  def addCard(uuid: UUID) = { }
-  def removeCard(uuid: UUID) = { }
 }
 
 final class Project(val ctx: ControlContext, val gameId: String, val idData: GameIDData)
@@ -57,9 +57,9 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
     data.addModifyListener(this)
     data
   })
-  val pools = new UUIDMapVar(id => {
+  val views = new UUIDMapVar(id => {
     ctx.assertLuaThread()
-    val data = new ListCardPool(this)
+    val data = new ListCardView(this)
     data.info.addModifyListener(this)
     data
   })
@@ -67,23 +67,23 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
   val allCardsView = new AllCardsView(this)
   val deletedCardsView = new DeletedCardsView(this)
 
-  private val staticPools = Map(
-    StaticPoolID.AllCards -> allCardsView,
-    StaticPoolID.DeletedCards -> deletedCardsView
+  private val staticViews = Map(
+    StaticViewID.AllCards -> allCardsView,
+    StaticViewID.DeletedCards -> deletedCardsView
   )
-  for(pool <- staticPools.values) pool.info.addModifyListener(this)
+  for(view <- staticViews.values) view.info.addModifyListener(this)
 
-  val allPools = Rx.unsafe { staticPools ++ pools() }
-  val sources = Rx.unsafe { allCardsView +: pools().values.toSeq.sortBy(_.info.createTime) }
+  val allViews = Rx.unsafe { staticViews ++ views() }
+  val sources = Rx.unsafe { allCardsView +: views().values.toSeq.sortBy(_.info.createTime) }
 
   // Main serialization entry point
   override def writeTo(path: Path) = {
     super.writeTo(path)
 
     cards.writeTo(path.resolve("cards"))
-    pools.writeTo(path.resolve("pools"))
-    allCardsView.writeTo(path.resolve("pools").resolve("all-cards"))
-    deletedCardsView.writeTo(path.resolve("pools").resolve("deleted-cards"))
+    views.writeTo(path.resolve("views"))
+    allCardsView.writeTo(path.resolve("views").resolve("all-cards"))
+    deletedCardsView.writeTo(path.resolve("views").resolve("deleted-cards"))
 
     writeJson(path.resolve("metadata.json"), Json.obj(
       "version"   -> Json.obj(
@@ -110,9 +110,9 @@ final class Project(val ctx: ControlContext, val gameId: String, val idData: Gam
     if(version != Project.VER_MAJOR) sys.error(s"unknown file format version $version")
 
     cards.readFrom(path.resolve("cards"))
-    pools.readFrom(path.resolve("pools"))
-    allCardsView.readFrom(path.resolve("pools").resolve("all-cards"))
-    deletedCardsView.readFrom(path.resolve("pools").resolve("deleted-cards"))
+    views.readFrom(path.resolve("views"))
+    allCardsView.readFrom(path.resolve("views").resolve("all-cards"))
+    deletedCardsView.readFrom(path.resolve("views").resolve("deleted-cards"))
 
     uuid = (metadata \ "uuid").as[UUID]
   }
@@ -149,7 +149,7 @@ object Project {
     }
 }
 
-object StaticPoolID {
+object StaticViewID {
   val AllCards     = UUID.fromString("2d083912-441b-11e7-8b8b-e793e0991f26")
   val DeletedCards = UUID.fromString("7e676322-4615-11e7-b815-161899dad660")
 }

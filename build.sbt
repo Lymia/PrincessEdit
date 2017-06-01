@@ -203,7 +203,7 @@ InputKey[Unit]("dist") := {
 
     def fixEndings(s: String) = s.replace("\r\n", "\n").replace("\n", "\r\n")
     IO.write(outDir / "README.txt", fixEndings(IO.read(file("project/dist_README.md"))))
-    IO.write(outDir / "LICENSE.txt", fixEndings(IO.read(file("project/LICENSE.md"))))
+    IO.write(outDir / "NOTICE.txt", fixEndings(IO.read(file("project/dist_NOTICE.md"))))
 
     IO.copyFile(Launch4JBuild.Keys.launch4jOutput.value, outDir / "PrincessEdit.exe")
     IO.write(outDir / "PrincessEdit.sh",

@@ -107,9 +107,9 @@ final class EditorState(parent: EditorTab, val data: EditorTabData, val mainFram
 
   val currentCardSelection = Var(Seq.empty[UUID])
 
-  val currentPool = Rx { mainFrameState.project.allPools().getOrElse(data.setId, sys.error("Unknown pool")) }
+  val currentView = Rx { mainFrameState.project.allViews().getOrElse(data.setId, sys.error("Unknown view")) }
   val currentCard = Rx { currentCardSelection().lastOption }
-  val currentCardData = Rx { currentCard().flatMap(currentPool().getFullCard) }
+  val currentCardData = Rx { currentCard().flatMap(currentView().getFullCard) }
 
   def isEditorActive = parent.isEditorActive
 
@@ -185,7 +185,7 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
   def activateEditor(cardData: FullCardData) =
     activatePane(new DataRootEditorPane(listContainer, editorState, cardData.cardData.root))
   def activatePoolDataEditor() =
-    activatePane(new DataRootEditorPane(listContainer, editorState, editorState.currentPool.now.info.root))
+    activatePane(new DataRootEditorPane(listContainer, editorState, editorState.currentView.now.info.root))
   def deactivateEditor() = {
     editorActive = false
     clearCurrentEditor()
@@ -200,15 +200,14 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
     // TODO
   }
 
-  override val tabName = Rx { editorState.currentPool().name() }
+  override val tabName = Rx { editorState.currentView().name() }
 }
-object EditorTab {
-  private implicit val editorTabDataFormats = Json.format[EditorTabData]
-  val id = new TabID[EditorTabData, EditorTab, EditorAPI](UUID.fromString("64a35118-343a-11e7-956d-3afa38669cf4")) {
-    override def extractData(tab: EditorTab): EditorAPI = tab.editorState
-  }
+object EditorTab
+  extends TabID[EditorTabData, EditorTab, EditorAPI](UUID.fromString("64a35118-343a-11e7-956d-3afa38669cf4")) {
+
+  override def extractData(tab: EditorTab): EditorAPI = tab.editorState
 }
 
 class EditorTabProvider extends TabProvider {
-  tabId(EditorTab.id)((parent, data, state) => new EditorTab(parent, data, state))
+  tabId(EditorTab)((parent, data, state) => new EditorTab(parent, data, state))
 }

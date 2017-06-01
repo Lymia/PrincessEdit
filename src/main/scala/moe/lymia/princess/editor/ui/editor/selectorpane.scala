@@ -113,7 +113,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
 
   // Setup cards rx
   private val cardsRx: Rx[Seq[RowData]] = Rx {
-    state.currentPool().fullCardList().map(card => {
+    state.currentView().fullCardList().map(card => {
       val columns = card.columnData()
       RowData(card.uuid, card, activeColumns().map(columns))
     })
@@ -203,7 +203,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
     setAccelerator(SWT.CTRL | SWT.CR)
     override def run() = setSelection(state.ctx.syncLuaExec {
       val (id, _) = state.project.cards.create()
-      state.currentPool.now.addCard(id)
+      state.currentView.now.addCard(id)
       id
     })
   }

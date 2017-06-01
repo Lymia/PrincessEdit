@@ -22,8 +22,6 @@
 
 package moe.lymia.princess.editor.nodes
 
-import java.util
-
 import moe.lymia.lua._
 import moe.lymia.princess.core._
 import moe.lymia.princess.editor.ControlContext
@@ -34,56 +32,6 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._
-
-import scala.collection.JavaConverters._
-import scala.collection.mutable
-
-final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext, val i18n: I18N,
-                        val prefixSeq: Seq[String] = Seq()) {
-  val internal_L = L.newThread()
-
-  val prefix = if(prefixSeq.isEmpty) "" else s"${prefixSeq.mkString(":")}:"
-
-  private val setupData = new util.IdentityHashMap[TreeNode, SetupData].asScala
-  private val currentSetup = new util.IdentityHashMap[TreeNode, Unit].asScala
-  def setupNode(node: TreeNode)(implicit owner: Ctx.Owner): Unit = setupData.getOrElseUpdate(node, {
-    if(currentSetup.contains(node))
-      throw EditorException("Cycle in nodes!")
-    try {
-      currentSetup.put(node, ())
-      node.setupNode(this, owner)
-    } finally {
-      currentSetup.remove(node)
-    }
-  })
-
-  private val activatedRxes = new util.IdentityHashMap[FieldNode, Rx[Any]].asScala
-  private val activatingRxes = new util.IdentityHashMap[FieldNode, Unit].asScala
-  def activateNode(node: FieldNode)(implicit owner: Ctx.Owner): Rx[Any] = activatedRxes.getOrElseUpdate(node, {
-    if(activatingRxes.contains(node))
-      throw EditorException("Cycle in field nodes!")
-    try {
-      activatingRxes.put(node, ())
-      node.createRx(this, owner)
-    } finally {
-      activatingRxes.remove(node)
-    }
-  })
-
-  val activatedRoots = new util.IdentityHashMap[RootNode, Rx[ActiveRootNode]].asScala
-
-  private val activatedCardFields = new mutable.HashMap[String, TreeNode]
-  def activateCardField(name: String, node: TreeNode) =
-    activatedCardFields.get(name) match {
-      case Some(f) =>
-        if(f ne node)
-          throw EditorException(s"Cannot control card data field '${prefix+name}' with two different nodes.")
-      case None => activatedCardFields.put(name, node)
-    }
-
-  def newUIContext(registerControlCallbacks: Control => Unit) =
-    new UIContext(prefix, registerControlCallbacks)
-}
 
 final class RxPane(uiRoot: Composite, context: NodeContext, uiCtx: UIContext, rootRx: Rx[ActiveRootNode])
                   (implicit owner: Ctx.Owner) {
@@ -113,30 +61,53 @@ private object OutputTable {
     }
   }
 }
+class ActiveTable private[nodes] (ctx: NodeContext, fields: Map[String, Rx[Any]])(implicit owner: Ctx.Owner) {
+  lazy val luaOutput = Rx { fields.map(x => x.copy(_2 = x._2())).toLua(ctx.internal_L) }
+}
 
-final class ActiveRootNode private (ctx: NodeContext, root: Option[ControlNode],
-                                    fields: Option[Map[String, Rx[Any]]])(implicit owner: Ctx.Owner) {
+private sealed trait ActiveSetup {
+  def setup(ctx: NodeContext)(implicit owner: Ctx.Owner)
+  def activate(ctx: NodeContext)(implicit owner: Ctx.Owner): Rx[Any]
+}
+private case class LeafSetup(field: FieldNode) extends ActiveSetup {
+  override def setup(ctx: NodeContext)(implicit owner: Ctx.Owner) = ctx.setupNode(field)
+  override def activate(ctx: NodeContext)(implicit owner: Ctx.Owner): Rx[Any] = ctx.activateNode(field)
+}
+private case class TableSetup(fields: Map[String, ActiveSetup]) extends ActiveSetup {
+  override def setup(ctx: NodeContext)(implicit owner: Ctx.Owner) = fields.values.foreach(_.setup(ctx))
+  override def activate(ctx: NodeContext)(implicit owner: Ctx.Owner): Rx[Any] =
+    new ActiveTable(ctx, fields.map(v => v.copy(_2 = v._2.activate(ctx)))).luaOutput
+}
+
+final class ActiveRootNode private (ctx: NodeContext, root: Option[ControlNode], fields: Map[String, Rx[Any]])
+                                   (implicit owner: Ctx.Owner)
+  extends ActiveTable(ctx, fields) {
+
   def renderUI(uiRoot: Composite, uiCtx: UIContext) =
     root.map(_.createControl(uiRoot)(ctx, uiCtx.newUIContext(ctx), owner))
-
-  lazy val luaOutput = fields.map { fields => Rx { fields.map(x => x.copy(_2 = x._2())) } }
-  lazy val luaOutputObj = Rx {
-    luaOutput.fold(OutputTable.empty)(x => OutputTable(x())).toLua(ctx.internal_L)
-  }
 }
 object ActiveRootNode {
   def apply(L: LuaState, data: DataStore, controlCtx: ControlContext, i18n: I18N, prefix: Seq[String],
-            uiRoot: Option[ControlNode], fields: Option[Map[String, FieldNode]])(implicit owner: Ctx.Owner) = {
+            uiRoot: Option[ControlNode], fields: Map[String, ActiveSetup])(implicit owner: Ctx.Owner) = {
     val ctx = new NodeContext(L, data, controlCtx, i18n, prefix)
     uiRoot.foreach(ctx.setupNode)
-    fields.foreach(_.values.foreach(ctx.setupNode))
-    new ActiveRootNode(ctx, uiRoot, fields.map(_.mapValues(x => ctx.activateNode(x))))
+    fields.values.foreach(x => x.setup(ctx))
+    new ActiveRootNode(ctx, uiRoot, fields.map(x => x.copy(_2 = x._2.activate(ctx))))
   }
 }
 
 final case class RootNode(subtableName: Option[String], params: Seq[FieldNode], fn: LuaClosure)
   extends FieldNode with ControlNode {
 
+  private def makeSetup(ctx: NodeContext, v: Any, prefix: Seq[String]): ActiveSetup = v match {
+    case ud: LuaUserdata =>
+      LeafSetup(ud.fromLua[FieldNode](ctx.L))
+    case table: LuaTable =>
+      val data = table.fromLua[Map[String, Any]](ctx.L)
+      TableSetup(data.map(t => t.copy(_2 = makeSetup(ctx, t._2, prefix :+ t._1))))
+    case _ =>
+      typerror(ctx.L.L, Some(s"field ${(ctx.prefixSeq ++ prefix).mkString(".")}"), v, "FieldNode or table")
+  }
   private def makeActiveNode(ctx: NodeContext)(implicit owner: Ctx.Owner) =
     ctx.activatedRoots.getOrElseUpdate(this, {
       val fields = params.map(x => ctx.activateNode(x))
@@ -144,9 +115,9 @@ final case class RootNode(subtableName: Option[String], params: Seq[FieldNode], 
         Rx {
           // unapply not used because apparently scala.rx's macros break on those
           val ret = ctx.L.newThread().call(fn, 2, fields.map(_() : LuaObject) : _*)
-          val node = ActiveRootNode(ctx.L, ctx.data, ctx.controlCtx, ctx.i18n, ctx.prefixSeq ++ subtableName,
-                                    ret.last.as[Option[ControlNode]], ret.head.as[Option[Map[String, FieldNode]]])
-          node
+          val setups = ret.head.as[Map[String, Any]].map(t => t.copy(_2 = makeSetup(ctx, t._2, Seq(t._1))))
+          ActiveRootNode(ctx.L, ctx.data, ctx.controlCtx, ctx.i18n, ctx.prefixSeq ++ subtableName,
+                         ret.last.as[Option[ControlNode]], setups)
         }
       }
     })
@@ -160,7 +131,7 @@ final case class RootNode(subtableName: Option[String], params: Seq[FieldNode], 
     subtableName.foreach(n => ctx.activateCardField(n, this))
 
     val active = makeActiveNode(ctx)
-    Rx { active().luaOutputObj() }
+    Rx { active().luaOutput() }
   }
 
   override def createControl(parent: Composite)(implicit ctx: NodeContext, uiCtx: UIContext, owner: Ctx.Owner) = {

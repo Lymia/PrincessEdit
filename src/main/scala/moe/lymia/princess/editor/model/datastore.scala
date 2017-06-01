@@ -55,13 +55,13 @@ object DataFieldType {
   val typeMap = allTypes.map(x => (x.typeName -> x).asInstanceOf[(String, DataFieldType[_])]).toMap
 }
 
-final case class DataField private(t: DataFieldType[_], value: Any, private val disambiguateConstructors: Boolean) {
+final case class DataField private (t: DataFieldType[_], value: Any) {
   def serialize: JsValue = Json.arr(t.typeName, t.asInstanceOf[DataFieldType[Any]].serialize(value))
   def toLua(L: LuaState) = t.asInstanceOf[DataFieldType[Any]].toLua(L, value)
-  override def toString: String = s"DataField($t, $value)"
 }
 object DataField {
-  def apply[T](t: DataFieldType[T], value: T): DataField = new DataField(t, value, false)
+  // _$DisambiguateMethod is a hack to avoid erasure related errors from scalac.
+  def apply[T](t: DataFieldType[T], value: T, _$DisambiguateMethod: Int = 0): DataField = new DataField(t, value)
 
   val Nil = DataField(DataFieldType.Nil, ())
   val True = DataField(DataFieldType.Boolean, true)

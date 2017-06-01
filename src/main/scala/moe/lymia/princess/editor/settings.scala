@@ -24,14 +24,14 @@ package moe.lymia.princess.editor
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
-import java.util.{Base64, UUID}
+import java.util.UUID
 
 import moe.lymia.princess.util.{Crypto, IOUtils, Platform}
 import play.api.libs.json._
 
 import scala.collection.concurrent
 
-final case class SettingsKey[T : Reads : Writes](id: UUID) {
+final case class SettingsKey[T : Reads : Writes](id: String) {
   def serialize(t: T) = Json.toJson(t)
   def deserialize(t: JsValue) = t.as[T]
 }
@@ -41,7 +41,7 @@ private final case class SettingsStoreObjEntry[T](key: SettingsKey[T], obj: T) e
 private final case class SettingsStoreJsonEntry(value: JsValue) extends SettingsStoreEntry
 
 abstract class SettingsStore {
-  private val underlying = new concurrent.TrieMap[UUID, SettingsStoreEntry]
+  private val underlying = new concurrent.TrieMap[String, SettingsStoreEntry]
 
   def clear() = underlying.clear()
 
@@ -68,13 +68,13 @@ abstract class SettingsStore {
     save()
   }
 
-  def serialize = Json.toJson(underlying.map(x => (x._1.toString, x._2)).mapValues {
+  def serialize = Json.toJson(underlying.mapValues {
     case SettingsStoreObjEntry(key, obj) => key.serialize(obj)
     case SettingsStoreJsonEntry(js) => js
   })
   def deserialize(js: JsValue) = {
     underlying.clear()
-    for((k, v) <- js.as[Map[String, JsValue]]) underlying.put(UUID.fromString(k), SettingsStoreJsonEntry(v))
+    for((k, v) <- js.as[Map[String, JsValue]]) underlying.put(k, SettingsStoreJsonEntry(v))
   }
 
   def load()
@@ -104,8 +104,10 @@ object Settings {
   private val globalSettingsPath = rootDirectory.resolve("settings.json")
 
   private def hashPath(path: Path) =
-    Base64.getUrlEncoder.encodeToString(
-      Crypto.sha256(path.toAbsolutePath.toUri.toString.getBytes(StandardCharsets.UTF_8))).replace("=", "")
+    Crypto.sha256_b64(path.toAbsolutePath.toUri.toString.getBytes(StandardCharsets.UTF_8))
+  private def hashPath(path: Path, id: UUID) =
+    Crypto.sha256_b64(Crypto.combine(path.toAbsolutePath.toUri.toString.getBytes(StandardCharsets.UTF_8),
+                                     id.toString.getBytes(StandardCharsets.UTF_8)))
 
   private val projectSettingsDirectory = rootDirectory.resolve("project-settings")
   Files.createDirectories(projectSettingsDirectory)
@@ -114,7 +116,7 @@ object Settings {
   Files.createDirectories(projectLockDirectory)
 
   lazy val global = FilesystemSettingsStore.load(globalSettingsPath)
-  def getProjectSettings(path: Path) =
-    FilesystemSettingsStore.load(projectSettingsDirectory.resolve(s"${hashPath(path)}.json"))
-  def getProjectLock(path: Path) = projectLockDirectory.resolve(hashPath(path))
+  def getProjectSettings(path: Path, id: UUID) =
+    FilesystemSettingsStore.load(projectSettingsDirectory.resolve(s"${hashPath(path, id)}.json"))
+  def getProjectLock(path: Path) = projectLockDirectory.resolve(s"${hashPath(path)}.lock")
 }

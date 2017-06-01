@@ -58,7 +58,6 @@ trait JsonPathSerializable extends JsonSerializable with PathSerializable {
   }
   override def readFrom(path: Path): Unit = {
     super.readFrom(path)
-    println(path, SerializeUtils.readJson(path).as[JsObject])
     deserialize(SerializeUtils.readJson(path).as[JsObject])
   }
 }

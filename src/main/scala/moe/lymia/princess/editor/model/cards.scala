@@ -54,7 +54,7 @@ private object MergeLuaTable {
   }
 }
 
-final case class FullCardData(uuid: UUID, project: Project, cardData: CardData, sourceInfo: CardPoolInfo,
+final case class FullCardData(uuid: UUID, project: Project, cardData: CardData, sourceInfo: ViewInfo,
                               globalData: Rx[Option[Any]])
                              (implicit owner: Ctx.Owner){
   val luaData = Rx {

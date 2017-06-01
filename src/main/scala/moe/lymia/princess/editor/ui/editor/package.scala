@@ -23,9 +23,11 @@
 package moe.lymia.princess.editor.ui
 
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
+import play.api.libs.json.Json
 
 import scala.language.implicitConversions
 
 package object editor {
   implicit def editorState2mainFrameState(state: EditorState): MainFrameState = state.mainFrameState
+  private[editor] implicit val editorTabDataFormats = Json.format[EditorTabData]
 }

@@ -22,6 +22,8 @@
 
 package moe.lymia.princess.editor.ui.mainframe
 
+import moe.lymia.princess.editor.model.StaticViewID
+import moe.lymia.princess.editor.ui.editor.{EditorTab, EditorTabData}
 import moe.lymia.princess.editor.ui.frontend.GameSelectorDialog
 import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.swt.SWT
@@ -60,6 +62,20 @@ class MainFrameMenu(menu: MenuManager, frame: MainFrame, state: MainFrameState) 
     file.add(this)
   }
 
+  val views = new MenuManager()
+  views.setMenuText(state.i18n.system("_princess.main.menu.views"))
+
+  private val allCardsView = new Action() {
+    setText(state.i18n.system("_princess.main.menu.views.allCardsView"))
+    override def run() = state.openTab(EditorTab, EditorTabData(StaticViewID.AllCards))
+    views.add(this)
+  }
+  private val deletedCardsView = new Action() {
+    setText(state.i18n.system("_princess.main.menu.views.deletedCardsView"))
+    override def run() = state.openTab(EditorTab, EditorTabData(StaticViewID.DeletedCards))
+    views.add(this)
+  }
+
   private val display = Display.getCurrent
   private val filter: Listener = event =>
     if(frame.getShell.isDisposed) display.removeFilter(SWT.KeyDown, filter)
@@ -81,6 +97,7 @@ class MainFrameMenu(menu: MenuManager, frame: MainFrame, state: MainFrameState) 
     menu.removeAll()
     menu.add(file)
     frame.tabFolder.currentTab.now.foreach(_.addMenuItems(menu))
+    menu.add(views)
     menu.update(true)
   }
 }

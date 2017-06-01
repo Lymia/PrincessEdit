@@ -23,6 +23,7 @@
 package moe.lymia.princess.util
 
 import java.security.MessageDigest
+import java.util.Base64
 
 object Crypto {
   def digest(algorithm: String, data: Array[Byte]) = {
@@ -32,11 +33,39 @@ object Crypto {
   }
   def hexdigest(algorithm: String, data: Array[Byte]) =
     digest(algorithm, data).map(x => "%02x".format(x)).reduce(_ + _)
+  def base64digest(algorithm: String, data: Array[Byte]) =
+    Base64.getUrlEncoder.encodeToString(digest(algorithm, data)).replace("=", "")
+
+  @inline private def encodeInt(a: Array[Byte], i: Int, v: Int) = {
+    a(i + 0) = v.toByte
+    a(i + 1) = (v >>> 8).toByte
+    a(i + 2) = (v >>> 16).toByte
+    a(i + 3) = (v >>> 24).toByte
+    Array(v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF)
+  }
+  def combine(data: Array[Byte]*) = {
+    val combined = new Array[Byte](4 + data.length * 4 + data.map(_.length).sum)
+    encodeInt(combined, 0, data.length)
+    for((v, i) <- data.zipWithIndex) encodeInt(combined, 4 + i * 4, v.length)
+
+    var start = 4 + data.length * 4
+    for(v <- data) {
+      System.arraycopy(v, 0, combined, start, v.length)
+      start = start + v.length
+    }
+
+    combined
+  }
 
   def md5_hex   (data: Array[Byte]) = hexdigest("MD5"    , data)
   def sha1_hex  (data: Array[Byte]) = hexdigest("SHA-1"  , data)
   def sha256_hex(data: Array[Byte]) = hexdigest("SHA-256", data)
   def sha512_hex(data: Array[Byte]) = hexdigest("SHA-512", data)
+
+  def md5_b64   (data: Array[Byte]) = base64digest("MD5"    , data)
+  def sha1_b64  (data: Array[Byte]) = base64digest("SHA-1"  , data)
+  def sha256_b64(data: Array[Byte]) = base64digest("SHA-256", data)
+  def sha512_b64(data: Array[Byte]) = base64digest("SHA-512", data)
 
   def md5   (data: Array[Byte]) = digest("MD5"    , data)
   def sha1  (data: Array[Byte]) = digest("SHA-1"  , data)
