@@ -89,17 +89,17 @@ class MainFrameMenu(menu: MenuManager, frame: MainFrame, state: MainFrameState) 
   help.setMenuText(state.i18n.system("_princess.main.menu.help"))
 
   private val website = new Action() {
-    setText(state.i18n.system("_princess.main.menu.menu.website"))
+    setText(state.i18n.system("_princess.main.menu.help.website"))
     override def run() = Program.launch("https://github.com/Lymia/PrincessEdit")
     help.add(this)
   }
   private val reportBug = new Action() {
-    setText(state.i18n.system("_princess.main.menu.menu.reportBug"))
+    setText(state.i18n.system("_princess.main.menu.help.reportBug"))
     override def run() = Program.launch("https://github.com/Lymia/PrincessEdit/issues")
     help.add(this)
   }
   private val about = new Action() {
-    setText(state.i18n.system("_princess.main.menu.menu.about"))
+    setText(state.i18n.system("_princess.main.menu.help.about"))
     override def run() = new AboutDialog(frame, state).open()
     help.add(this)
   }
