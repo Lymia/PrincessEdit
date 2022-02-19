@@ -155,10 +155,6 @@ lazy val dist = project in file("modules/dist") settings (commonSettings ++ Seq(
   autoScalaLibrary := false
 ))
 
-Launch4JBuild.settings
-Launch4JBuild.Keys.launch4jSourceJar := (loader / Compile / packageBin).value
-Launch4JBuild.Keys.launch4jIcon := baseDirectory.value / "project" / "icon-app.ico"
-
 externalIvySettings(baseDirectory(_ / "ivysettings.xml"))
 
 InputKey[Unit]("dist") := {
@@ -194,10 +190,10 @@ InputKey[Unit]("dist") := {
     IO.write(outDir / "README.txt", fixEndings(IO.read(file("project/dist_README.md"))))
     IO.write(outDir / "NOTICE.txt", fixEndings(IO.read(file("project/dist_NOTICE.md"))))
 
-    IO.copyFile(Launch4JBuild.Keys.launch4jOutput.value, outDir / "PrincessEdit.exe")
+    IO.copyFile((loader / Compile / packageBin).value, outDir / "PrincessEdit.jar")
     IO.write(outDir / "PrincessEdit.sh",
       """#!/bin/sh
-        |SWT_GTK3=0 java -cp "$(dirname "$0")"/PrincessEdit.exe moe.lymia.princess.loader.Loader "$@"
+        |SWT_GTK3=0 java -cp "$(dirname "$0")"/PrincessEdit.jar moe.lymia.princess.loader.Loader "$@"
       """.stripMargin)
     (outDir / "PrincessEdit.sh").setExecutable(true)
 
