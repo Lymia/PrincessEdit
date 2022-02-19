@@ -156,7 +156,7 @@ private class TextLayoutArea(parent: TextLayoutComponent, protected val boundsPa
 
     finishLine() // for isolate tracking
 
-    Some((startYOffset, bottomBounds, problems, data))
+    Some((startYOffset, bottomBounds, problems, data.toSeq))
   }
 
   def layout(manager: ComponentRenderManager, frc: FontRenderContext, fontSize: Double): TextLayoutResult = {
@@ -172,7 +172,10 @@ private class TextLayoutArea(parent: TextLayoutComponent, protected val boundsPa
     result
   }
 
-  method("addExclusion") { (bounds: Bounds) => exclusions.append(bounds) }
+  method("addExclusion") { (bounds: Bounds) =>
+    exclusions.append(bounds)
+    ()
+  }
   property("text", _ => text, (_, n: FormattedString) => text = n)
 
   lock()

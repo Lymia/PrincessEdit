@@ -80,7 +80,7 @@ private class LuaThread(state: VolatileState) extends Thread {
       val varUpdates = state.varUpdates.pullAll()
       val actions = state.luaRequests.pullOne()
       if(varUpdates.nonEmpty || actions.nonEmpty) {
-        Var.set(varUpdates.map(x => VarTuple(x._1.asInstanceOf[Var[Any]], x._2)).toSeq : _*)
+        Var.set(varUpdates.map(x => Var.Assignment(x._1.asInstanceOf[Var[Any]], x._2)).toSeq : _*)
         for(action <- actions) action()
       } else state.luaCondition.waitFor()
     }

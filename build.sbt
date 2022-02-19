@@ -127,7 +127,7 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Resourc
   libraryDependencies += "org.scala-lang" % "scala-reflect" % config_scalaVersion,
   libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.0.1",
   libraryDependencies += "org.jfree" % "jfreesvg" % "3.4.2",
-  libraryDependencies += "com.lihaoyi" %% "scalarx" % "0.3.2",
+  libraryDependencies += "com.lihaoyi" %% "scalarx" % "0.4.3",
   libraryDependencies += "com.typesafe.play" %% "play-json" % "2.10.0-RC5",
   libraryDependencies += "com.github.scopt" %% "scopt" % "4.0.1",
   libraryDependencies += "net.java.dev.jna" % "jna" % "5.10.0",
@@ -142,7 +142,7 @@ lazy val loader = project in file("modules/loader") settings (commonSettings ++ 
   name := "princess-edit-loader",
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
 
-  mainClass := Some("moe.lymia.princess.loader.Loader"),
+  Compile / run / mainClass := Some("moe.lymia.princess.loader.Loader"),
 
   autoScalaLibrary := false,
   crossPaths := false

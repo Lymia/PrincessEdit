@@ -123,7 +123,7 @@ object GridNode {
         }
     }
 
-    new GridNode(componentList, () => {
+    new GridNode(componentList.toSeq, () => {
       val layout = newLayout()
       layout.numColumns = numColumns
       layout

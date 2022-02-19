@@ -77,7 +77,7 @@ class FormattedStringBuffer {
     append(s, TextAttributes(font, fontRelativeSize, color))
   }
   private def outputBuffer() = if(lineBuffer.nonEmpty) {
-    data.append(RawFormatInstruction.RenderString(lineBuffer))
+    data.append(RawFormatInstruction.RenderString(lineBuffer.toSeq))
     lineBuffer = new mutable.ArrayBuffer[(String, TextAttributes)]()
   }
   def lineBreak(): Unit = {
@@ -96,8 +96,10 @@ class FormattedStringBuffer {
     outputBuffer()
     data.append(FormatInstruction.NoStartLineHint)
   }
-  def finish() =
-    FormattedString(if(lineBuffer.isEmpty) data else data :+ RawFormatInstruction.RenderString(lineBuffer.clone()))
+  def finish() = {
+    val dataS = data.toSeq
+    FormattedString(if(lineBuffer.isEmpty) dataS else dataS :+ RawFormatInstruction.RenderString(lineBuffer.toSeq))
+  }
 }
 
 case class FormattedString(data: Seq[RawFormatInstruction]) {

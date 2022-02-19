@@ -47,7 +47,7 @@ object ContainerUtils {
       if(L.rawGet(table, s).as[Boolean]) setups += setup
     def value[U : FromLua](s: String, setup: (T, U) => Unit) =
       L.rawGet(table, s).as[Option[U]].foreach(v => setups += (d => setup(d, v)))
-    def getFn = new Setups(setups, newValue) // try to avoid capturing things we don't want in the object
+    def getFn = new Setups(setups.toSeq, newValue) // try to avoid capturing things we don't want in the object
   }
 
   def ContainerType(L: LuaState, constants: (String, LuaObject)*)(s: ScalaLuaClosure) = {

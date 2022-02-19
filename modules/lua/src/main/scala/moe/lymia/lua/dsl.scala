@@ -140,7 +140,7 @@ class LuaImplicits extends LuaGeneratedImplicits {
   implicit val LuaParameterInt    : LuaParameter[Int   ] =
     new LuaParameterNumeric[Int   ](_.toInt  , "int"   , _.isValidInt)
   implicit val LuaParameterLong   : LuaParameter[Long  ] =
-    new LuaParameterNumeric[Long  ](_.toLong , "long"  , x => x.isWhole() && x >= Long.MinValue && x <= Long.MaxValue)
+    new LuaParameterNumeric[Long  ](_.toLong , "long"  , x => x.isWhole && x >= Long.MinValue && x <= Long.MaxValue)
   implicit val LuaParameterFloat  : LuaParameter[Float ] =
     new LuaParameterNumeric[Float ](_.toFloat, "float" , _ => true)
   implicit val LuaParameterDouble : LuaParameter[Double] =

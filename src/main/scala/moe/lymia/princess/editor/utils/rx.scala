@@ -26,8 +26,8 @@ import org.eclipse.swt.widgets.Widget
 import rx._
 
 trait RxOwner {
-  private val dummyRx = Rx.unsafe { () }
-  protected implicit val owner = new Ctx.Owner(dummyRx)
+  protected implicit val owner = Ctx.Owner.Unsafe
+  private val dummyRx = Rx.apply { () }
 
   def kill() = dummyRx.kill()
 }

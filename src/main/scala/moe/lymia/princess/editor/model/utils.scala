@@ -100,7 +100,7 @@ trait HasDataStore extends JsonSerializable {
 }
 
 final class UUIDMapVar[T <: PathSerializable](newFn: UUID => T)
-  extends Var[Map[UUID, T]](Map.empty) with PathSerializable {
+  extends Var.Base[Map[UUID, T]](Map.empty) with PathSerializable {
 
   def create(): (UUID, T) = {
     val uuid = UUID.randomUUID()
@@ -116,7 +116,7 @@ final class UUIDMapVar[T <: PathSerializable](newFn: UUID => T)
   }
   override def readFrom(path: Path): Unit = {
     super.readFrom(path)
-    update(SerializeUtils.readMap(path)(newFn, _.toString))
+    update(SerializeUtils.readMap(path)(newFn, (_ : UUID).toString))
   }
 }
 

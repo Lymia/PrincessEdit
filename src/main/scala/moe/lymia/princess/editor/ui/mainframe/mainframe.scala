@@ -186,7 +186,7 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
     case "win32" => Array(2, 0, 1)
     case _ => Array(0, 1, 2)
   }
-  private val platformReverseOrder = (0 to 2).map(platformButtonOrder.indexOf)
+  private val platformReverseOrder = (0 to 2).map(x => platformButtonOrder.indexOf(x))
   override def handleShellCloseEvent(): Unit = {
     state.hasUnsavedChanges match {
       case Some(UnsavedChanges(since)) =>

@@ -38,7 +38,7 @@ sealed abstract class DataFieldType[T : Reads : Writes : ToLua : FromLua](val ty
 object DataFieldType {
   private implicit object LuaUnit extends LuaParameter[Unit] {
     override def toLua(t: Unit): LuaObject = LuaNil
-    override def fromLua(L: Lua, v: Any, source: => Option[String]): Unit = Unit
+    override def fromLua(L: Lua, v: Any, source: => Option[String]): Unit = ()
   }
   private implicit object UnitFormat extends Format[Unit] {
     override def writes(o: Unit): JsValue = JsNull
