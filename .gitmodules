@@ -4,6 +4,3 @@
 [submodule "modules/xscalawt"]
 	path = modules/xscalawt
 	url = https://github.com/Lymia/XScalaWT.git
-[submodule "modules/java9-zipfs"]
-	path = modules/java9-zipfs
-	url = https://github.com/Lymia/java9-zipfs.git

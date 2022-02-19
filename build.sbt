@@ -60,10 +60,6 @@ lazy val pesudoloc = project in file("modules/pseudolocalization-tool") settings
   exportJars := true
 )
 
-lazy val java9ZipFS = project in file("modules/java9-zipfs") settings (
-  exportJars := true
-)
-
 lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   organization := "moe.lymia",
   name := "lua"
@@ -138,7 +134,7 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Resourc
 
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.202202012159",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.202202012159"
-)) dependsOn corePkg dependsOn swt dependsOn xscalawt dependsOn lua dependsOn pesudoloc dependsOn java9ZipFS
+)) dependsOn corePkg dependsOn swt dependsOn xscalawt dependsOn lua dependsOn pesudoloc
 
 lazy val loader = project in file("modules/loader") settings (commonSettings ++ Seq(
   organization := "moe.lymia.princessedit",
@@ -151,10 +147,8 @@ lazy val loader = project in file("modules/loader") settings (commonSettings ++ 
 
 lazy val dist = project in file("modules/dist") settings (commonSettings ++ Seq(
   libraryDependencies += swtDep("org.eclipse.swt.gtk.linux.x86_64"),
-  libraryDependencies += swtDep("org.eclipse.swt.gtk.linux.x86"),
   libraryDependencies += swtDep("org.eclipse.swt.cocoa.macosx.x86_64"),
   libraryDependencies += swtDep("org.eclipse.swt.win32.win32.x86_64"),
-  libraryDependencies += swtDep("org.eclipse.swt.win32.win32.x86"),
   autoScalaLibrary := false
 ))
 
@@ -170,10 +164,8 @@ InputKey[Unit]("dist") := {
     (fullClasspath in Compile in dist).value.find(_.get(moduleID.key).get.name == artifact).get
 
   val classPaths = Map(
-    "win32-x86"    -> (distClasspath :+ getSWTJar("org.eclipse.swt.win32.win32.x86")),
     "win32-x86_64" -> (distClasspath :+ getSWTJar("org.eclipse.swt.win32.win32.x86_64")),
     "mac-x86_64"   -> (distClasspath :+ getSWTJar("org.eclipse.swt.cocoa.macosx.x86_64")),
-    "linux-x86"    -> (distClasspath :+ getSWTJar("org.eclipse.swt.gtk.linux.x86")),
     "linux-x86_64" -> (distClasspath :+ getSWTJar("org.eclipse.swt.gtk.linux.x86_64"))
   )
   val allJars: Set[Attributed[File]] = classPaths.flatMap(_._2).toSet

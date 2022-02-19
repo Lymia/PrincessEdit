@@ -29,9 +29,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.regex.Pattern
-
-import moe.lymia.zipfs.ZipFileSystemProvider
-
 import scala.collection.JavaConverters._
 import scala.io.Codec
 
@@ -89,11 +86,9 @@ object IOUtils {
     }
   }
 
-  private val zipFilesystem = new ZipFileSystemProvider
-  def openZip(path: Path, create: Boolean = false, readOnly: Boolean = false): FileSystem = {
-    val zipFs = zipFilesystem.newFileSystem(URI.create(s"jar:${path.toUri}"),
+  def openZip(path: Path, create: Boolean = false): FileSystem = {
+    val zipFs = FileSystems.newFileSystem(URI.create(s"jar:${path.toUri}"),
       if(create) Map("create" -> "true").asJava else Map[String, Any]().asJava)
-    if(readOnly) zipFs.setReadOnly()
     zipFs
   }
 

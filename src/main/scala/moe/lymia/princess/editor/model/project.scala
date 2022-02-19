@@ -126,7 +126,7 @@ object Project {
   private def openPath[T](path: Path)(callback: Path => T): T =
     if(Files.isDirectory(path)) callback(path)
     else {
-      val filesystem = IOUtils.openZip(path, readOnly = true)
+      val filesystem = IOUtils.openZip(path)
       try callback(filesystem.getPath("/"))
       finally filesystem.close()
     }
