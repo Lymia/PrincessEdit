@@ -26,11 +26,10 @@ import java.awt.Font
 import java.io.ByteArrayOutputStream
 import java.nio.file.{Files, Path}
 import javax.imageio.ImageIO
-import javax.xml.bind.DatatypeConverter
-
 import moe.lymia.princess.core._
 import moe.lymia.princess.util._
 
+import java.util.Base64
 import scala.collection.mutable
 import scala.xml.{XML => _, _}
 
@@ -81,7 +80,7 @@ trait DataURLRasterLoader {
           ImageIO.write(image, reencodeTo, byteOut)
           byteOut.toByteArray
       }
-      val uri = s"data:$expectedMime;base64,${DatatypeConverter.printBase64Binary(data)}"
+      val uri = s"data:$expectedMime;base64,${Base64.getEncoder.encodeToString(data)}"
       (uri, uri.length)
     })}/>
 }
