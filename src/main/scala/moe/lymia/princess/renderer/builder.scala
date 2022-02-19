@@ -81,10 +81,10 @@ final class SVGBuilder(val settings: RenderSettings) {
 
   private def inlineReferencesIterContinue(elem: Elem): Node =
     elem.copy(child = elem.child.map {
-      case e: Elem => inlineReferencesIter(e)
+      case e: Elem => inlineRefs(e)
       case e => e
     })
-  private def inlineReferencesIter(elem: Elem): Node =
+  private def inlineRefs(elem: Elem): Node =
     if(elem.label == "use") elem.attribute(XMLNS.princess, "reference") match {
       case Some(x) if doInline(x.text) =>
         val newX = elem.attribute(XMLNS.princess, "newX")
@@ -99,7 +99,7 @@ final class SVGBuilder(val settings: RenderSettings) {
                                       !attr.prefixedKey.startsWith("princess:"))
           node = node % attr.copy(Null)
 
-        inlineReferencesIter(node)
+        inlineRefs(node)
       case _ => inlineReferencesIterContinue(elem)
     } else inlineReferencesIterContinue(elem)
 
@@ -140,7 +140,6 @@ final class SVGBuilder(val settings: RenderSettings) {
   def addStylesheetDefinition(str: String) = stylesheetDefs.append(str)
 
   def renderSVGTag(root: SVGDefinitionReference, pretty: Boolean = false): Elem = {
-    def inlineRefs(elem: Elem) = if(pretty) inlineReferencesIter(elem) else elem
     def doMinify(elem: Elem) = if(pretty) MinifyXML.SVG(elem, SVGBuilder.princessScope) else elem
     val rootTag = inlineRefs(root.includeInRect(0, 0, settings.viewport.width, settings.viewport.height))
     doMinify(<svg version="1.1" preserveAspectRatio="none" overflow="hidden"
