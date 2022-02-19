@@ -1,5 +1,6 @@
 # IDE files
 /.idea
+/.bsp
 
 # SBT files
 /target

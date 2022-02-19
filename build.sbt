@@ -35,17 +35,8 @@ val commonSettings = versionWithGit ++ Seq(
   exportJars := true,
 
   // Repositories
+  externalIvySettings(baseDirectory(_ / ".." / ".." / "ivysettings.xml")),
   resolvers += Resolver.mavenLocal,
-  resolvers ++= {
-    def updateSiteResolver(name: String, url: String) = {
-      val resolver = new org.apache.ivy.osgi.updatesite.UpdateSiteResolver
-      resolver.setName(name)
-      resolver.setUrl(url)
-      new RawRepository(resolver)
-    }
-    Seq(updateSiteResolver("Eclipse 4.6 update site", "http://download.eclipse.org/eclipse/updates/4.6"),
-        updateSiteResolver("Nebula update site", "http://download.eclipse.org/nebula/releases/1.2.0/"))
-  },
 
   // Git versioning
   git.baseVersion := version_baseVersion,
@@ -61,7 +52,8 @@ val commonSettings = versionWithGit ++ Seq(
 
   // Scala configuration
   scalaVersion := config_scalaVersion,
-  scalacOptions ++= "-Xlint -target:jvm-1.8 -opt:l:classpath -deprecation -unchecked".split(" ").toSeq
+  //scalacOptions ++= "-Xlint -target:jvm-1.8 -opt:l:classpath -deprecation -unchecked".split(" ").toSeq
+  scalacOptions ++= "-Xlint -target:jvm-1.8 -deprecation -unchecked".split(" ").toSeq
 )
 
 lazy val pesudoloc = project in file("modules/pseudolocalization-tool") settings (
@@ -169,6 +161,8 @@ lazy val dist = project in file("modules/dist") settings (commonSettings ++ Seq(
 Launch4JBuild.settings
 Launch4JBuild.Keys.launch4jSourceJar := (packageBin in Compile in loader).value
 Launch4JBuild.Keys.launch4jIcon := baseDirectory.value / "project" / "icon-app.ico"
+
+externalIvySettings(baseDirectory(_ / "ivysettings.xml"))
 
 InputKey[Unit]("dist") := {
   val distClasspath = (fullClasspath in Compile).value.filter(_.get(moduleID.key).get.name != swtArtifact)
