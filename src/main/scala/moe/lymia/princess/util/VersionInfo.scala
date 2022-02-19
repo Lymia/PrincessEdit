@@ -63,6 +63,7 @@ class VersionInfo(properties: VersionInfoSource) {
 
   lazy val buildId       = properties("build.id", "<unknown>")
   lazy val buildDate     = new Date(properties("build.time", "0").toLong)
+  lazy val buildDateStr  = properties("build.timestr", "<unknown>")
   lazy val buildUser     = properties("build.user", "<unknown>")
 }
 object VersionInfo extends VersionInfo("version.properties") {

@@ -85,7 +85,7 @@ class CLI {
   def main(args: Seq[String]) = {
     try {
       Display.setAppName(AppName.PrincessEdit)
-      if(parser.parse(args)) command.getOrElse(cmd_default _)()
+      if(parser.parse(args, Unit).isDefined) command.getOrElse(cmd_default _)()
     } catch {
       case CLIException(e) => println(e)
       case e: Exception => e.printStackTrace()

@@ -39,7 +39,7 @@ class AboutDialog(parent: IShellProvider, state: MainFrameState)
   override protected def frameContents(frame: Composite): Unit = frame.contains (
     gridLayout(2)(),
     label(
-      resourceManager.createImage(IconData.AppIcon.imageData(48)),
+      resourceManager.createImage(IconData.AppIcon.imageData.head._2),
       _.layoutData = new GridData(SWT.CENTER, SWT.CENTER, false, false)
     ),
     composite(

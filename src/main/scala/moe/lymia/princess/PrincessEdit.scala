@@ -27,8 +27,12 @@ import moe.lymia.princess.util._
 
 object PrincessEdit {
   def main(args: Array[String]) = {
-    println(s"Princess Edit v${VersionInfo.versionString} by Lymia")
+    println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")
     println("Released under the MIT license")
+    println("")
+    println(s"Commit: ${VersionInfo.commit}")
+    println(s"Build ID: ${VersionInfo.buildId}")
+    println(s"Java runtime: ${System.getProperty("java.version")}")
     println("")
 
     new CLI().main(args)
