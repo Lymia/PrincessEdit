@@ -26,8 +26,8 @@
         <chain name="chain">
             <resolver ref="inter-project"/>
             <ibiblio name="central" m2compatible="true" root="https://repo1.maven.org/maven2/"/>
-            <updatesite name="eclipse" url="https://download.eclipse.org/eclipse/updates/4.6/"/>
-            <updatesite name="nebula" url="https://download.eclipse.org/nebula/releases/1.2.0/"/>
+            <updatesite name="eclipse" url="https://download.eclipse.org/eclipse/updates/4.22"/>
+            <updatesite name="nebula" url="https://download.eclipse.org/nebula/releases/2.6.0"/>
         </chain>
     </resolvers>
 </ivysettings>

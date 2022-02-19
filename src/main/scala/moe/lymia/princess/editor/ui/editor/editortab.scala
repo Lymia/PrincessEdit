@@ -152,7 +152,7 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
         ),
         listContainer = _
       ),
-      _.setWeights(Array(1000, 1618))
+      _.setWeights(1000, 1618)
     ),
     UIUtils.listBackgroundStyle.apply
   )

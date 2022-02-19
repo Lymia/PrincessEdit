@@ -84,7 +84,7 @@ val swtArtifact =
     case (os, arch) => sys.error("Cannot obtain lib for OS '" + os + "' and architecture '" + arch + "'")
   })
 def swtDep(artifact: String) =
-  ("bundle" % artifact % "3.105.2.v20161122-0613"
+  ("bundle" % artifact % "3.118.0.v20211123-0851"
     exclude("package", "org.mozilla.xpcom")
     exclude("package", "org.eclipse.swt.accessibility2"))
 
@@ -93,9 +93,9 @@ lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
   name := "princess-edit-swt",
 
   libraryDependencies += swtDep(swtArtifact),
-  libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.11.3.v20170209-1843",
-  libraryDependencies += "bundle" % "org.eclipse.equinox.common" % "3.8.0.v20160509-1230",
-  libraryDependencies += "bundle" % "org.eclipse.jface" % "3.12.2.v20170113-2113"
+  libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.17.100.v20211104-1730",
+  libraryDependencies += "bundle" % "org.eclipse.equinox.common" % "3.15.100.v20211021-1418",
+  libraryDependencies += "bundle" % "org.eclipse.jface" % "3.24.0.v20211110-1517"
     exclude("bundle", "org.eclipse.equinox.bidi")
     // provided by default in JDK 8
     exclude("package", "javax.xml.parsers")
@@ -136,8 +136,8 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Resourc
   libraryDependencies += "net.java.dev.jna" % "jna" % "4.4.0",
   libraryDependencies += "net.java.dev.jna" % "jna-platform" % "4.4.0",
 
-  libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.201703081533",
-  libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.201703081533"
+  libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.202202012159",
+  libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.202202012159"
 )) dependsOn corePkg dependsOn swt dependsOn xscalawt dependsOn lua dependsOn pesudoloc dependsOn java9ZipFS
 
 lazy val loader = project in file("modules/loader") settings (commonSettings ++ Seq(
