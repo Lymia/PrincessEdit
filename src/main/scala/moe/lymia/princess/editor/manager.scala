@@ -87,7 +87,7 @@ private class LuaThread(state: VolatileState) extends Thread {
 }
 
 class ControlContext(val display: Display, state: VolatileState, loop: UILoop, factory: SVGRasterizerFactory,
-                     luaThread: LuaThread, uiThread: Thread, rasterizeThread: Thread) extends SVGRasterizerFactory {
+                     luaThread: LuaThread, uiThread: Thread, rasterizeThread: Thread) {
   val clipboard = new Clipboard(display)
   val cache = SizedCache(1024 * 1024 * 64 /* TODO 64 MB cache, make an option in the future */)
 

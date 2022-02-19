@@ -59,10 +59,9 @@ class CLI {
     command = Some(cmd)
   }
   private def mainLoop[T](f: ControlContext => Unit) = {
-    val plaf = InkscapePlatform.instance
     val loop = new UILoop
     loop.mainLoop { display =>
-      val manager = new UIManager(loop, plaf.locateBinary().head.createFactory())
+      val manager = new UIManager(loop, ResvgConnectionFactory)
       manager.mainLoop(display)(f)
     }
   }
