@@ -142,6 +142,8 @@ lazy val loader = project in file("modules/loader") settings (commonSettings ++ 
   name := "princess-edit-loader",
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
 
+  mainClass := Some("moe.lymia.princess.loader.Loader"),
+
   autoScalaLibrary := false,
   crossPaths := false
 ))
@@ -195,7 +197,7 @@ InputKey[Unit]("dist") := {
     IO.copyFile(Launch4JBuild.Keys.launch4jOutput.value, outDir / "PrincessEdit.exe")
     IO.write(outDir / "PrincessEdit.sh",
       """#!/bin/sh
-        |SWT_GTK3=0 java -jar "$(dirname "$0")"/PrincessEdit.exe "$@"
+        |SWT_GTK3=0 java -cp "$(dirname "$0")"/PrincessEdit.exe moe.lymia.princess.loader.Loader "$@"
       """.stripMargin)
     (outDir / "PrincessEdit.sh").setExecutable(true)
 

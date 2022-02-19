@@ -2,7 +2,7 @@
 <launch4jConfig>
   <headerType>gui</headerType>
   <jre>
-    <minVersion>1.8.0</minVersion>
+    <minVersion>11</minVersion>
   </jre>
   <versionInfo>
     <fileDescription>PrincessEdit</fileDescription>
