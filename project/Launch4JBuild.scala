@@ -20,10 +20,14 @@
  * THE SOFTWARE.
  */
 
-import sbt._
-import sbt.Keys._
 import Config._
 import Utils._
+import sbt.Keys._
+import sbt._
+
+import java.io.FileOutputStream
+
+import sbt.dsl.LinterLevel.Ignore
 
 object Launch4JBuild {
   // Launch4J File
@@ -93,7 +97,8 @@ object Launch4JBuild {
     },
     launch4jDownloadPath := launch4jDir.value / "launch4j.tgz",
     launch4jDownloadTgz := {
-      if(!launch4jDownloadPath.value.exists) IO.download(new URL(config_launch4j_url), launch4jDownloadPath.value)
+      if(!launch4jDownloadPath.value.exists)
+        IO.transferAndClose(new URL(config_launch4j_url).openStream(), new FileOutputStream(launch4jDownloadPath.value))
       launch4jDownloadPath.value
     },
     launch4jBinary := extractLaunch4J(launch4jDownloadTgz.value, launch4jDir.value / "bin") / "launch4j" / "launch4j",

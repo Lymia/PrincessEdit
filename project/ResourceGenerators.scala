@@ -20,17 +20,17 @@
  * THE SOFTWARE.
  */
 
+import Config._
+import Utils._
+import com.typesafe.sbt.SbtGit._
+import sbt.Keys._
+import sbt._
+
 import java.net.InetAddress
 import java.text.DateFormat
 import java.util.{Locale, UUID}
-
-import sbt._
-import sbt.Keys._
-import com.typesafe.sbt.SbtGit._
-import Config._
-import Utils._
-
 import scala.collection.mutable.ArrayBuffer
+import scala.sys.process._
 
 object ResourceGenerators {
   private def tryProperty(s: => String) = try {
@@ -45,8 +45,8 @@ object ResourceGenerators {
     val output = new ArrayBuffer[String]()
     val logger = new ProcessLogger {
       override def buffer[T](f: => T): T = f
-      override def error(s: => String): Unit = output += s
-      override def info(s: => String): Unit = output += s
+      override def err(s: => String): Unit = output += s
+      override def out(s: => String): Unit = output += s
     }
     assertProcess(proc ! logger)
     output.mkString("\n")
@@ -94,23 +94,23 @@ object ResourceGenerators {
 
       path
     },
-    resourceGenerators in Compile += Def.task {
+    Compile / resourceGenerators += Def.task {
       val versionPropertiesPath =
-        (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "version.properties"
+        (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "version.properties"
       IO.copyFile(versionFile.value, versionPropertiesPath)
 
       val licenseFilePath =
-        (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "LICENSE.md"
+        (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "LICENSE.md"
       IO.copyFile(new File("LICENSE.md"), licenseFilePath)
 
       val readmeFilePath =
-        (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "README.md"
+        (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "README.md"
       IO.copyFile(new File("README.md"), readmeFilePath)
 
       val icoFiles =
         for(file <- IO.listFiles(baseDirectory.value / "project") if file.getName.startsWith("icon-")) yield {
           val target =
-            (resourceManaged in Compile).value / "moe" / "lymia" / "princess" / "editor" / "res" / file.getName
+            (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "editor" / "res" / file.getName
           IO.copyFile(file, target)
           target
         }

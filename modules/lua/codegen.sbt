@@ -1,4 +1,4 @@
-sourceGenerators in Compile += Def.task {
+Compile / sourceGenerators += Def.task {
   val maxTuple = 5
   def makeImplicit(count: Int) = {
     val n = 1 to count
@@ -60,7 +60,7 @@ sourceGenerators in Compile += Def.task {
        |}
      """.stripMargin
 
-  val out = (sourceManaged in Compile).value / "moe" / "lymia" / "lua" / "LuaGeneratedImplicits.scala"
+  val out = (Compile / sourceManaged).value / "moe" / "lymia" / "lua" / "LuaGeneratedImplicits.scala"
   IO.write(out, generatedFile)
   Seq(out)
 }.taskValue

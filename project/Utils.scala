@@ -20,7 +20,9 @@
  * THE SOFTWARE.
  */
 
-import sbt.{FileFunction, FilesInfo, IO, Process, _}
+import sbt.{FileFunction, FilesInfo, IO, _}
+
+import scala.sys.process._
 
 object Utils {
   val VersionRegex = "([0-9]+)\\.([0-9]+)(\\.([0-9]+))?(-(.*))?".r // major.minor.patch-suffix
@@ -48,20 +50,20 @@ object Utils {
   def simplePrepareDirectory(path: File) = prepareDirectory(path){ dir => }
 
   // Code generation helpers
-  def cached(cacheDirectory: File, inStyle: FilesInfo.Style = FilesInfo.lastModified, // hack to fix ambigous overload
-             outStyle: FilesInfo.Style = FilesInfo.exists)
+  def cached(cacheDirectory: File, inStyle: FileInfo.Style = FilesInfo.lastModified, // hack to fix ambigous overload
+             outStyle: FileInfo.Style = FilesInfo.exists)
             (fn: Set[File] => Set[File]) = FileFunction.cached(cacheDirectory, inStyle, outStyle)(fn)
   def trackDependencies(cacheDirectory: File, deps: Set[File],
-                        inStyle: FilesInfo.Style = FilesInfo.lastModified,
-                        outStyle: FilesInfo.Style = FilesInfo.exists)(fn: => File) = {
+                        inStyle: FileInfo.Style = FilesInfo.lastModified,
+                        outStyle: FileInfo.Style = FilesInfo.exists)(fn: => File) = {
     val cache = cached(cacheDirectory, inStyle, outStyle) { _ =>
       Set(fn)
     }
     cache(deps).head
   }
   def cachedTransform(cacheDirectory: File, input: File, output: File,
-                      inStyle: FilesInfo.Style = FilesInfo.lastModified,
-                      outStyle: FilesInfo.Style = FilesInfo.exists)(fn: (File, File) => Unit) = {
+                      inStyle: FileInfo.Style = FilesInfo.lastModified,
+                      outStyle: FileInfo.Style = FilesInfo.exists)(fn: (File, File) => Unit) = {
     val cache = cached(cacheDirectory, inStyle, outStyle){ in =>
       fn(in.head, output)
       Set(output)

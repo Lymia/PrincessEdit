@@ -35,6 +35,7 @@ val commonSettings = versionWithGit ++ Seq(
   exportJars := true,
 
   // Repositories
+  ThisBuild / useCoursier := false,
   externalIvySettings(baseDirectory(_ / ".." / ".." / "ivysettings.xml")),
   resolvers += Resolver.mavenLocal,
 
@@ -103,9 +104,9 @@ lazy val xscalawt = project in file("modules/xscalawt") settings (commonSettings
   organization := "moe.lymia",
   name := "xscalawt",
 
-  scalaSource in Compile := baseDirectory.value / "com.coconut_palm_software.xscalawt" / "src",
+  Compile / scalaSource := baseDirectory.value / "com.coconut_palm_software.xscalawt" / "src",
 
-  excludeFilter in unmanagedSources := HiddenFileFilter || new FileFilter() {
+  unmanagedSources / excludeFilter := HiddenFileFilter || new FileFilter() {
     override def accept(pathname: File): Boolean = {
       val src = pathname.toString
       src.contains("XScalaWTBinding.scala") || src.replace('\\', '/').contains("/examples/")
@@ -119,8 +120,8 @@ lazy val princessEdit = project in file(".") settings (commonSettings ++ Resourc
   organization := "moe.lymia.princessedit",
   name := "princess-edit",
 
-  fork in run := true,
-  envVars in run += ("SWT_GTK3", "0"),
+  run / fork := true,
+  run / envVars += ("SWT_GTK3", "0"),
 
   libraryDependencies += "org.ini4j" % "ini4j" % "0.5.4",
   libraryDependencies += "org.scala-lang" % "scala-reflect" % config_scalaVersion,
@@ -153,15 +154,15 @@ lazy val dist = project in file("modules/dist") settings (commonSettings ++ Seq(
 ))
 
 Launch4JBuild.settings
-Launch4JBuild.Keys.launch4jSourceJar := (packageBin in Compile in loader).value
+Launch4JBuild.Keys.launch4jSourceJar := (loader / Compile / packageBin).value
 Launch4JBuild.Keys.launch4jIcon := baseDirectory.value / "project" / "icon-app.ico"
 
 externalIvySettings(baseDirectory(_ / "ivysettings.xml"))
 
 InputKey[Unit]("dist") := {
-  val distClasspath = (fullClasspath in Compile).value.filter(_.get(moduleID.key).get.name != swtArtifact)
+  val distClasspath = (Compile / fullClasspath).value.filter(_.get(moduleID.key).get.name != swtArtifact)
   def getSWTJar(artifact: String) =
-    (fullClasspath in Compile in dist).value.find(_.get(moduleID.key).get.name == artifact).get
+    (dist / Compile / fullClasspath).value.find(_.get(moduleID.key).get.name == artifact).get
 
   val classPaths = Map(
     "win32-x86_64" -> (distClasspath :+ getSWTJar("org.eclipse.swt.win32.win32.x86_64")),
@@ -181,7 +182,7 @@ InputKey[Unit]("dist") := {
   IO.createDirectory(path)
 
   val zipOut = IO.withTemporaryDirectory { dir =>
-    val dirName = s"princess-edit-${(version in princessEdit).value}"
+    val dirName = s"princess-edit-${(princessEdit / version).value}"
     val zipOut = path / s"$dirName.zip"
     val outDir = dir / dirName
 
@@ -203,7 +204,7 @@ InputKey[Unit]("dist") := {
 
     val props = new Properties()
     for((name, path) <- classPaths) props.put(name, classPathString(path))
-    props.put("main", (mainClass in (Compile, run)).value.get)
+    props.put("main", (Compile / run / mainClass).value.get)
     IO.write(props, "Classpath configuration data for PrincessEdit", outDir / "lib" / "manifest.properties")
 
     IO.createDirectory(outDir / "packages")

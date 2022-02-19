@@ -1,23 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   height="64"
-   viewBox="0 0 64 64"
-   width="64"
-   version="1.1"
-   id="svg14"
-   sodipodi:docname="icon.svg"
-   inkscape:version="0.92.1 r"
-   inkscape:export-filename="/home/lymia/Documents/bitmap.png"
-   inkscape:export-xdpi="384"
-   inkscape:export-ydpi="384">
+        xmlns:dc="http://purl.org/dc/elements/1.1/"
+        xmlns:cc="http://creativecommons.org/ns#"
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns="http://www.w3.org/2000/svg"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+        xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+        xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+        height="64"
+        viewBox="0 0 64 64"
+        width="64"
+        version="1.1"
+        id="svg14"
+        sodipodi:docname="icon.svg"
+        inkscape:version="0.92.1 r"
+        inkscape:export-filename="/home/lymia/Documents/bitmap.png"
+        inkscape:export-xdpi="384"
+        inkscape:export-ydpi="384">
   <title
      id="title4488">PrincessEdit Application Icon</title>
   <metadata
