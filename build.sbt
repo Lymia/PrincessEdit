@@ -96,9 +96,15 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   libraryDependencies += "com.lihaoyi" %% "scalarx" % "0.4.3",
   libraryDependencies += "com.typesafe.play" %% "play-json" % "2.10.0-RC5",
   libraryDependencies += "com.github.scopt" %% "scopt" % "4.0.1",
+
+  // Apache Commons
+  libraryDependencies += "commons-codec" % "commons-codec" % "1.15",
+
+  // JNA libraries
   libraryDependencies += "net.java.dev.jna" % "jna" % "5.10.0",
   libraryDependencies += "net.java.dev.jna" % "jna-platform" % "5.10.0",
 
+  // Nebula widgets
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.202202012159",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.202202012159",
 )) dependsOn swt dependsOn xscalawt dependsOn lua

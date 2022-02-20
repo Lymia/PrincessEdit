@@ -20,36 +20,14 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.util
+package moe.lymia.princess
+
+import moe.lymia.princess.util.IOUtils
 
 import java.util.{Date, Properties}
 
-trait VersionInfoSource {
-  def apply(key: String, default: String): String
-}
-object VersionInfoSource {
-  def getPropertySource(resource: String) = {
-    val stream = IOUtils.getResource(resource)
-    if(stream == null) NullSource else {
-      val prop = new Properties()
-      prop.load(stream)
-      PropertiesSource(prop)
-    }
-  }
-}
-
-object NullSource extends VersionInfoSource {
-  def apply(key: String, default: String) = default
-}
-final case class PropertiesSource(prop: Properties) extends VersionInfoSource {
-  def apply(key: String, default: String) = {
-    val p = prop.getProperty(key)
-    if(p == null || p.trim.isEmpty) default else p
-  }
-}
-
-class VersionInfo(properties: VersionInfoSource) {
-  def this(resource: String) = this(VersionInfoSource.getPropertySource(resource))
+class VersionInfo private (properties: VersionInfoSource) {
+  private def this(resource: String) = this(VersionInfoSource.getPropertySource(resource))
 
   lazy val commit        = properties("princessedit.version.commit", "<unknown>")
   lazy val versionString = properties("princessedit.version.string", "<unknown>")
@@ -62,4 +40,27 @@ class VersionInfo(properties: VersionInfoSource) {
 }
 object VersionInfo extends VersionInfo("version.properties") {
   def loadFromResource(resource: String) = new VersionInfo(VersionInfoSource.getPropertySource(resource))
+}
+
+private trait VersionInfoSource {
+  def apply(key: String, default: String): String
+}
+private object VersionInfoSource {
+  def getPropertySource(resource: String) = {
+    val stream = IOUtils.getResource(resource)
+    if(stream == null) NullSource else {
+      val prop = new Properties()
+      prop.load(stream)
+      PropertiesSource(prop)
+    }
+  }
+}
+private object NullSource extends VersionInfoSource {
+  def apply(key: String, default: String) = default
+}
+private final case class PropertiesSource(prop: Properties) extends VersionInfoSource {
+  def apply(key: String, default: String) = {
+    val p = prop.getProperty(key)
+    if(p == null || p.trim.isEmpty) default else p
+  }
 }

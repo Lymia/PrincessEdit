@@ -25,8 +25,8 @@ package moe.lymia.princess.editor
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.util.UUID
-
-import moe.lymia.princess.util.{Crypto, IOUtils, Platform}
+import moe.lymia.princess.util.{IOUtils, Platform}
+import org.apache.commons.codec.digest.DigestUtils
 import play.api.libs.json._
 
 import scala.collection.concurrent
@@ -104,10 +104,10 @@ object Settings {
   private val globalSettingsPath = rootDirectory.resolve("settings.json")
 
   private def hashPath(path: Path) =
-    Crypto.sha256_b64(path.toAbsolutePath.toUri.toString.getBytes(StandardCharsets.UTF_8))
+    DigestUtils.sha256Hex(path.toAbsolutePath.toUri.toString.getBytes(StandardCharsets.UTF_8))
   private def hashPath(path: Path, id: UUID) =
-    Crypto.sha256_b64(Crypto.combine(path.toAbsolutePath.toUri.toString.getBytes(StandardCharsets.UTF_8),
-                                     id.toString.getBytes(StandardCharsets.UTF_8)))
+    DigestUtils.sha256Hex(id.toString.getBytes(StandardCharsets.UTF_8) ++
+      path.toAbsolutePath.toUri.toString.getBytes(StandardCharsets.UTF_8))
 
   private val projectSettingsDirectory = rootDirectory.resolve("project-settings")
   Files.createDirectories(projectSettingsDirectory)

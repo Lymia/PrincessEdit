@@ -23,10 +23,9 @@
 package moe.lymia.princess.editor.ui.mainframe
 
 import java.text.DateFormat
-
 import com.coconut_palm_software.xscalawt.XScalaWT._
+import moe.lymia.princess.VersionInfo
 import moe.lymia.princess.editor.utils.{DialogBase, IconData, UIUtils, WithResources}
-import moe.lymia.princess.util.VersionInfo
 import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData

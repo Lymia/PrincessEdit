@@ -38,3 +38,13 @@ object PrincessEdit {
     new CLI().main(args)
   }
 }
+
+object AppName {
+  val PrincessEdit = "Lymia.PrincessEdit.PrincessEdit"
+}
+
+object MimeType {
+  val CardData = "application/vnd.princessedit-cards+json"
+  val Project = "application/vnd.princessedit-project+zip"
+}
+

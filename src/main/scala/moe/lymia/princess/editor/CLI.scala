@@ -22,8 +22,9 @@
 
 package moe.lymia.princess.editor
 
-import java.nio.file.Paths
+import moe.lymia.princess.AppName
 
+import java.nio.file.Paths
 import moe.lymia.princess.editor.ui.frontend.SplashScreen
 import moe.lymia.princess.editor.ui.mainframe.MainFrame
 import moe.lymia.princess.rasterizer._

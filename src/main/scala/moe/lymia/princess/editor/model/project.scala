@@ -22,12 +22,13 @@
 
 package moe.lymia.princess.editor.model
 
+import moe.lymia.princess.VersionInfo
+
 import java.nio.file.{Files, Path}
 import java.util.UUID
-
 import moe.lymia.princess.editor.model.SerializeUtils._
 import moe.lymia.princess.editor.{ControlContext, GameIDData}
-import moe.lymia.princess.util.{IOUtils, VersionInfo}
+import moe.lymia.princess.util.IOUtils
 import play.api.libs.json._
 import rx._
 
