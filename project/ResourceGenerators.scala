@@ -64,25 +64,14 @@ object ResourceGenerators {
       val dateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.US)
       Map(
         "princessedit.version.string" -> version.value,
-        "princessedit.version.major"  -> major,
-        "princessedit.version.minor"  -> minor,
-        "princessedit.version.patch"  -> patch,
-        "princessedit.version.suffix" -> suffix,
         "princessedit.version.commit" -> git.gitHeadCommit.value.getOrElse("<unknown>"),
         "princessedit.version.clean"  -> (!git.gitUncommittedChanges.value).toString,
 
-        "princessedit.url"            -> config_home_url,
-
         "build.id"                    -> UUID.randomUUID().toString,
-        "build.os"                    -> tryProperty { System.getProperty("os.name") },
         "build.user"                  -> tryProperty { System.getProperty("user.name")+"@"+
                                                        InetAddress.getLocalHost.getHostName },
         "build.time"                  -> new java.util.Date().getTime.toString,
         "build.timestr"               -> dateFormat.format(new java.util.Date()),
-        "build.path"                  -> baseDirectory.value.getAbsolutePath,
-        "build.treestatus"            -> propertyFromProcess("git", "status", "--porcelain"),
-
-        "build.version.sbt"           -> sbtVersion.value
       )
     },
     versionFile := {
@@ -99,14 +88,6 @@ object ResourceGenerators {
         (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "version.properties"
       IO.copyFile(versionFile.value, versionPropertiesPath)
 
-      val licenseFilePath =
-        (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "LICENSE.md"
-      IO.copyFile(new File("LICENSE.md"), licenseFilePath)
-
-      val readmeFilePath =
-        (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "README.md"
-      IO.copyFile(new File("README.md"), readmeFilePath)
-
       val icoFiles =
         for(file <- IO.listFiles(baseDirectory.value / "project") if file.getName.startsWith("icon-")) yield {
           val target =
@@ -115,7 +96,7 @@ object ResourceGenerators {
           target
         }
 
-      Seq(versionPropertiesPath, licenseFilePath, readmeFilePath) ++ icoFiles
+      Seq(versionPropertiesPath) ++ icoFiles
     }.taskValue
   )
 }

@@ -51,13 +51,7 @@ final case class PropertiesSource(prop: Properties) extends VersionInfoSource {
 class VersionInfo(properties: VersionInfoSource) {
   def this(resource: String) = this(VersionInfoSource.getPropertySource(resource))
 
-  lazy val majorVersion  = properties("princessedit.version.major", "-1").toInt
-  lazy val minorVersion  = properties("princessedit.version.minor", "-1").toInt
-  lazy val patchVersion  = properties("princessedit.version.patch", "0").toInt
-
-  lazy val versionSuffix = properties("princessedit.version.suffix", "0")
   lazy val commit        = properties("princessedit.version.commit", "<unknown>")
-  lazy val treeStatus    = properties("build.treestatus", "<clean>")
   lazy val versionString = properties("princessedit.version.string", "<unknown>")
   lazy val isDirty       = properties("princessedit.version.clean", "false") == "false"
 
