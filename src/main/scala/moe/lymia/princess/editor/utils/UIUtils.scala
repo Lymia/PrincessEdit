@@ -22,8 +22,6 @@
 
 package moe.lymia.princess.editor.utils
 
-import java.nio.file.{Files, Path}
-
 import com.coconut_palm_software.xscalawt.XScalaWTStyles._
 import moe.lymia.princess.core.I18N
 import moe.lymia.princess.renderer.SVGFile
@@ -35,6 +33,7 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.graphics.Point
 import org.eclipse.swt.widgets.{Control, MessageBox}
 
+import java.nio.file.{Files, Path}
 import scala.xml.XML
 
 object UIUtils {

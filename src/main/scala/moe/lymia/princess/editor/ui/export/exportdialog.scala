@@ -22,9 +22,6 @@
 
 package moe.lymia.princess.editor.ui.export
 
-import java.nio.file.Paths
-import java.util.UUID
-
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.editor.model.FullCardData
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
@@ -36,6 +33,9 @@ import org.eclipse.swt.SWT
 import org.eclipse.swt.events.SelectionEvent
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
+
+import java.nio.file.Paths
+import java.util.UUID
 
 sealed abstract class ExportCardsDialogBase[Data](state: MainFrameState) extends DialogBase(state.shell, state.ctx) {
   protected val cardCount: Int

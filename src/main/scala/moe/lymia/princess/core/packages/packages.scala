@@ -20,12 +20,13 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess.core.packages
+
+import moe.lymia.princess.core
+import moe.lymia.princess.core.{EditorException, INI}
+import moe.lymia.princess.util._
 
 import java.nio.file.{Files, Path}
-
-import moe.lymia.princess.util.{CountedCache, _}
-
 import scala.collection.mutable
 
 case class DepVersion(minMajor: Int, maxMajor: Int, minor: Int) {
@@ -253,7 +254,7 @@ object PackageResolver {
     PackageResolver(map.toMap)
   }
   def loadPackageDirectory(packages: Path, systemPackages: Path*) =
-    PackageResolver(
+    core.packages.PackageResolver(
       (for(x <- IOUtils.list(packages) if x.getFileName.toString.endsWith(".pedit-pkg"))
         yield Package.loadPackage(x, isSystem = false)) ++
       (for(x <- systemPackages) yield

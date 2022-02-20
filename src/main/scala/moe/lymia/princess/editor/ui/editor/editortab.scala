@@ -22,8 +22,6 @@
 
 package moe.lymia.princess.editor.ui.editor
 
-import java.util.UUID
-
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.editor.model.FullCardData
 import moe.lymia.princess.editor.ui.mainframe._
@@ -35,8 +33,9 @@ import org.eclipse.swt.custom._
 import org.eclipse.swt.events.SelectionEvent
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
-import play.api.libs.json.Json
 import rx._
+
+import java.util.UUID
 
 final class DataRootEditorPane(parent: Composite, state: EditorState, root: DataRoot)
   extends Composite(parent, SWT.NONE) {

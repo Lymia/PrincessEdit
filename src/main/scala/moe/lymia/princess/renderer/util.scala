@@ -27,7 +27,6 @@ import java.awt.geom.Rectangle2D
 import java.security.SecureRandom
 import java.util.concurrent.atomic.AtomicInteger
 import javax.xml.parsers.SAXParserFactory
-
 import scala.xml.factory.XMLLoader
 import scala.xml.{Elem, SAXParser}
 

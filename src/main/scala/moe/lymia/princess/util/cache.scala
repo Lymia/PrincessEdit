@@ -24,7 +24,6 @@ package moe.lymia.princess.util
 
 import java.util
 import java.util.Map.Entry
-
 import scala.collection.JavaConverters._
 
 final class CountedCache[K, V](var maxSize: Int) {

@@ -22,14 +22,14 @@
 
 package moe.lymia.princess.core
 
+import moe.lymia.princess.core.packages.StaticExportIDs
+import moe.lymia.princess.util.CountedCache
+
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.text.MessageFormat
 import java.util.{Locale, Properties}
-
-import moe.lymia.princess.util.CountedCache
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
@@ -85,7 +85,7 @@ final class I18NLoader(game: GameManager) {
     StaticI18NSource(Locale.ENGLISH, map.toMap)
   }
 
-  // DEBUG: Temporary loader
+  // TODO: Temporary loader
   val i18n = {
     val user   = loadExportData(game.gameId, "en", "generic")
     val system = loadExportData("_princess", "en", "generic", system = true)

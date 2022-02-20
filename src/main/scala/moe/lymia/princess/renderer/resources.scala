@@ -22,14 +22,14 @@
 
 package moe.lymia.princess.renderer
 
-import java.awt.Font
-import java.io.ByteArrayOutputStream
-import java.nio.file.{Files, Path}
-import javax.imageio.ImageIO
 import moe.lymia.princess.core._
 import moe.lymia.princess.util._
 
+import java.awt.Font
+import java.io.ByteArrayOutputStream
+import java.nio.file.{Files, Path}
 import java.util.Base64
+import javax.imageio.ImageIO
 import scala.collection.mutable
 import scala.xml.{XML => _, _}
 

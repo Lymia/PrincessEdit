@@ -23,12 +23,12 @@
 package moe.lymia.princess.editor
 
 import moe.lymia.princess.AppName
-
-import java.nio.file.Paths
 import moe.lymia.princess.editor.ui.frontend.SplashScreen
 import moe.lymia.princess.editor.ui.mainframe.MainFrame
 import moe.lymia.princess.rasterizer._
 import org.eclipse.swt.widgets.Display
+
+import java.nio.file.Paths
 
 private case class CLIException(message: String) extends Exception
 

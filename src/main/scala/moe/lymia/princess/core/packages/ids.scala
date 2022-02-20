@@ -20,25 +20,12 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess.core.packages
+
+import moe.lymia.princess.core.{EditorException, GameManager, INI, PackageManager}
 
 import java.nio.file.Path
-
 import scala.collection.mutable
-
-object StaticGameIDs {
-  val System    = "_princess/system-package"
-  val HasGameID = "has-gameid"
-}
-
-object StaticExportIDs {
-  val GameID = "gameid"
-  val ProtectedPath = "_princess/protected-path"
-  val IgnoredPath = "_princess/ignored-path"
-  def Predef(t: String) = s"_princess/predef/$t"
-  def EntryPoint(t: String, ep: String) = s"$t/entry-point/$ep"
-  def I18N(t: String, language: String, country: String) = s"$t/i18n/${language}_$country"
-}
 
 case class GameID(name: String, displayName: String, iconPath: Option[String])
 object GameID {
@@ -48,7 +35,7 @@ object GameID {
     GameID(section.getSingle("name"), section.getSingle("display-name"), section.getSingleOption("icon"))
   }
 
-  def loadGameIDManager(manager: PackageManager) = manager.loadGameId(StaticGameIDs.HasGameID)
+  def loadGameIDManager(manager: PackageManager) = manager.loadGameId(StaticGameIDs.DefinesGameID)
   def loadGameIDs(game: GameManager) = {
     val gameIDExports = game.getExports(StaticExportIDs.GameID).map(_.path).map(game.forceResolve)
 
@@ -59,4 +46,18 @@ object GameID {
     }
     idMap.toMap
   }
+}
+
+object StaticGameIDs {
+  val System        = "_princess/system-package"
+  val DefinesGameID = "defines-gameid"
+}
+
+object StaticExportIDs {
+  val GameID = "gameid"
+  val ProtectedPath = "_princess/protected-path"
+  val IgnoredPath = "_princess/ignored-path"
+  def Predef(t: String) = s"_princess/predef/$t"
+  def EntryPoint(t: String, ep: String) = s"$t/entry-point/$ep"
+  def I18N(t: String, language: String, country: String) = s"$t/i18n/${language}_$country"
 }

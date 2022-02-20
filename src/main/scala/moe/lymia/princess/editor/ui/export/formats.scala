@@ -22,12 +22,6 @@
 
 package moe.lymia.princess.editor.ui.export
 
-import java.awt.Color
-import java.awt.image.BufferedImage
-import java.nio.file.{Files, Path}
-import javax.imageio._
-import javax.imageio.metadata.IIOMetadata
-import javax.imageio.plugins.jpeg.JPEGImageWriteParam
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.VersionInfo
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
@@ -41,6 +35,12 @@ import org.eclipse.swt.graphics.ImageLoader
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets._
 
+import java.awt.Color
+import java.awt.image.BufferedImage
+import java.nio.file.{Files, Path}
+import javax.imageio._
+import javax.imageio.metadata.IIOMetadata
+import javax.imageio.plugins.jpeg.JPEGImageWriteParam
 import scala.collection.JavaConverters._
 
 sealed trait ExportControl[Options] {

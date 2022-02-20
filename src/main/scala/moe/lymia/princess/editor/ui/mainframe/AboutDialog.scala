@@ -22,7 +22,6 @@
 
 package moe.lymia.princess.editor.ui.mainframe
 
-import java.text.DateFormat
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.VersionInfo
 import moe.lymia.princess.editor.utils.{DialogBase, IconData, UIUtils, WithResources}
@@ -30,6 +29,8 @@ import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets.Composite
+
+import java.text.DateFormat
 
 class AboutDialog(parent: IShellProvider, state: MainFrameState)
   extends DialogBase(parent, state.ctx) with WithResources {

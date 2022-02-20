@@ -23,10 +23,10 @@
 package moe.lymia.princess.editor.ui.editor
 
 import moe.lymia.princess.MimeType
-
-import java.nio.charset.StandardCharsets
 import org.eclipse.swt.dnd.{ByteArrayTransfer, Transfer, TransferData}
 import play.api.libs.json._
+
+import java.nio.charset.StandardCharsets
 
 case class CardTransferData(json: JsValue*)
 object CardTransfer extends ByteArrayTransfer {

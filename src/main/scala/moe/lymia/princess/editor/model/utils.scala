@@ -22,13 +22,12 @@
 
 package moe.lymia.princess.editor.model
 
-import java.nio.file.{Files, Path}
-import java.util.UUID
-
 import moe.lymia.princess.util.IOUtils
 import play.api.libs.json._
 import rx._
 
+import java.nio.file.{Files, Path}
+import java.util.UUID
 import scala.collection.mutable
 
 trait PathSerializable {

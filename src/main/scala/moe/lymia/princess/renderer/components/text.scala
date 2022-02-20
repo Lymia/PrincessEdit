@@ -22,12 +22,11 @@
 
 package moe.lymia.princess.renderer.components
 
+import moe.lymia.princess.core._
+
 import java.awt.font.TextAttribute
 import java.awt.{Color, Font}
 import java.text.{AttributedCharacterIterator, AttributedString}
-
-import moe.lymia.princess.core._
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 

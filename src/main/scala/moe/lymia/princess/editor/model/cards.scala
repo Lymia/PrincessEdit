@@ -22,11 +22,10 @@
 
 package moe.lymia.princess.editor.model
 
-import java.util.UUID
-
 import moe.lymia.lua._
 import rx._
 
+import java.util.UUID
 import scala.collection.mutable
 
 final class CardData(protected val project: Project)

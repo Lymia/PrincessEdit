@@ -23,14 +23,14 @@
 package moe.lymia.princess.editor.model
 
 import moe.lymia.princess.VersionInfo
-
-import java.nio.file.{Files, Path}
-import java.util.UUID
 import moe.lymia.princess.editor.model.SerializeUtils._
 import moe.lymia.princess.editor.{ControlContext, GameIDData}
 import moe.lymia.princess.util.IOUtils
 import play.api.libs.json._
 import rx._
+
+import java.nio.file.{Files, Path}
+import java.util.UUID
 
 trait SyntheticView extends CardView {
   override val isStatic: Boolean = true

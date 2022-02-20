@@ -22,8 +22,6 @@
 
 package moe.lymia.princess.editor.ui.editor
 
-import java.util.UUID
-
 import moe.lymia.princess.editor.TableColumnData
 import moe.lymia.princess.editor.model.FullCardData
 import moe.lymia.princess.editor.ui.export.ExportCardsDialog
@@ -38,6 +36,7 @@ import org.eclipse.swt.widgets._
 import play.api.libs.json.JsObject
 import rx._
 
+import java.util.UUID
 import scala.collection.JavaConverters._
 
 // TODO: Factor out the table sort management code, etc

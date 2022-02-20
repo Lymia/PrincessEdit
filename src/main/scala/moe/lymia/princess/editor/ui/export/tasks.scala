@@ -22,9 +22,6 @@
 
 package moe.lymia.princess.editor.ui.export
 
-import java.nio.file.{Files, Path}
-import java.util.UUID
-
 import moe.lymia.lua._
 import moe.lymia.princess.editor.model.FullCardData
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
@@ -32,6 +29,9 @@ import moe.lymia.princess.renderer.RasterizeResourceLoader
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.jface.operation.IRunnableWithProgress
+
+import java.nio.file.{Files, Path}
+import java.util.UUID
 
 final class ExportSingleTask[Options, Init](state: MainFrameState, outFile: Path,
                                             exportFormat: ExportFormat[Options, Init], exportData: Options,

@@ -22,12 +22,11 @@
 
 package moe.lymia.princess.renderer
 
-import java.io.Writer
-
 import moe.lymia.lua.LuaTable
 import moe.lymia.princess.rasterizer.SVGRasterizer
 import org.jfree.graphics2d.svg.{SVGGraphics2D, SVGHints}
 
+import java.io.Writer
 import scala.collection.mutable
 import scala.xml.dtd.{DocType, PublicID}
 import scala.xml.{XML => _, _}

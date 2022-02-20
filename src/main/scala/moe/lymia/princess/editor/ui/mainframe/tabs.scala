@@ -22,8 +22,6 @@
 
 package moe.lymia.princess.editor.ui.mainframe
 
-import java.util.UUID
-
 import moe.lymia.princess.editor.SettingsKey
 import moe.lymia.princess.editor.utils.RxWidget
 import moe.lymia.princess.util.Service
@@ -36,12 +34,13 @@ import org.eclipse.swt.widgets.{Composite, Control}
 import play.api.libs.json._
 import rx._
 
+import java.util.UUID
 import scala.collection.mutable
 
 object TabDefs {
   type TabBase = Control with PrincessEditTab
 }
-import TabDefs._
+import moe.lymia.princess.editor.ui.mainframe.TabDefs._
 
 // TODO: Should we really use an UUID here?
 abstract case class TabID[Data : Writes : Reads, TabClass <: TabBase, TabAPI](id: UUID) {

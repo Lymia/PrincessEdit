@@ -22,13 +22,13 @@
 
 package moe.lymia.princess.editor
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
-import java.util.UUID
 import moe.lymia.princess.util.{IOUtils, Platform}
 import org.apache.commons.codec.digest.DigestUtils
 import play.api.libs.json._
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
+import java.util.UUID
 import scala.collection.concurrent
 
 final case class SettingsKey[T : Reads : Writes](id: String) {

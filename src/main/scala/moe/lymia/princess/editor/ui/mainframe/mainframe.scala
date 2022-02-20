@@ -23,9 +23,8 @@
 package moe.lymia.princess.editor.ui.mainframe
 
 import moe.lymia.princess.VersionInfo
-
-import java.nio.file.{Path, Paths}
-import moe.lymia.princess.core.{GameID, I18NLoader, PackageManager}
+import moe.lymia.princess.core.packages.GameID
+import moe.lymia.princess.core.{I18NLoader, PackageManager}
 import moe.lymia.princess.editor._
 import moe.lymia.princess.editor.lua.EditorModule
 import moe.lymia.princess.editor.model.{Project, ProjectMetadata}
@@ -42,6 +41,8 @@ import org.eclipse.swt.graphics.Point
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._
 import rx._
+
+import java.nio.file.{Path, Paths}
 
 final case class UnsavedChanges(since: Long)
 final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projectSource: ProjectSource) {

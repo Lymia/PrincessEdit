@@ -23,6 +23,7 @@
 package moe.lymia.princess.core
 
 import moe.lymia.lua._
+import moe.lymia.princess.core.packages.{PackageList, StaticExportIDs}
 import moe.lymia.princess.util._
 
 import scala.collection.JavaConverters._

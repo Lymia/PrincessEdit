@@ -22,11 +22,11 @@
 
 package moe.lymia.princess.editor.model
 
-import java.nio.file.Path
-import java.util.UUID
-
 import play.api.libs.json._
 import rx._
+
+import java.nio.file.Path
+import java.util.UUID
 
 final class SlotData(protected val project: Project) extends JsonPathSerializable with HasModifyTimeDataStore {
   val cardRef = Var[Option[UUID]](None)

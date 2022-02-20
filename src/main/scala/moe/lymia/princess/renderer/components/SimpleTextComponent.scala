@@ -22,15 +22,15 @@
 
 package moe.lymia.princess.renderer.components
 
-import java.awt.font.TextLayout
-import java.awt.{Color, Font}
-import java.text.AttributedString
-
 import moe.lymia.lua._
 import moe.lymia.princess.core._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.renderer.lua._
 import org.jfree.graphics2d.svg.SVGGraphics2D
+
+import java.awt.font.TextLayout
+import java.awt.{Color, Font}
+import java.text.AttributedString
 
 
 sealed abstract class SimpleTextComponentBase(protected var fontSize: Double) extends GraphicsComponent {

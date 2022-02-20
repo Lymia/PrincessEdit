@@ -22,9 +22,6 @@
 
 package moe.lymia.princess.renderer
 
-import java.awt.image.BufferedImage
-import java.io.Writer
-
 import moe.lymia.lua._
 import moe.lymia.princess.core._
 import moe.lymia.princess.rasterizer.SVGRasterizer
@@ -33,6 +30,8 @@ import moe.lymia.princess.renderer.lua._
 import moe.lymia.princess.util.SizedCache
 import org.eclipse.swt.graphics.ImageData
 
+import java.awt.image.BufferedImage
+import java.io.Writer
 import scala.xml.Elem
 
 trait SVGRenderable {

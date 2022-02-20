@@ -23,7 +23,6 @@
 package moe.lymia.princess.util
 
 import java.util.ServiceLoader
-
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 

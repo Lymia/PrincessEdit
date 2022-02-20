@@ -22,12 +22,11 @@
 
 package moe.lymia.princess.core
 
-import java.nio.file.Path
-
 import moe.lymia.lua.LuaErrorMarker
 import moe.lymia.princess.util.IOUtils
 import org.ini4j.Ini
 
+import java.nio.file.Path
 import scala.collection.JavaConverters._
 
 final case class EditorException(message: String, ex: Throwable = null, context: Seq[String] = Seq(),

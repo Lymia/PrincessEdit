@@ -22,11 +22,10 @@
 
 package moe.lymia.princess.rasterizer
 
-import java.awt.image.BufferedImage
-import java.nio.file.Path
-
 import org.eclipse.swt.graphics.ImageData
 
+import java.awt.image.BufferedImage
+import java.nio.file.Path
 import scala.xml.Elem
 
 trait SVGRasterizerFactory {

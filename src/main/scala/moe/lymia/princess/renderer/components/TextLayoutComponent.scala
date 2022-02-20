@@ -22,15 +22,14 @@
 
 package moe.lymia.princess.renderer.components
 
-import java.awt.font.{FontRenderContext, LineBreakMeasurer, TextLayout}
-import java.awt.geom.Area
-import java.awt.{BasicStroke, Color}
-
 import moe.lymia.lua._
 import moe.lymia.princess.renderer._
 import moe.lymia.princess.renderer.lua._
 import org.jfree.graphics2d.svg.SVGGraphics2D
 
+import java.awt.font.{FontRenderContext, LineBreakMeasurer, TextLayout}
+import java.awt.geom.Area
+import java.awt.{BasicStroke, Color}
 import scala.collection.mutable
 
 private sealed trait TextLayoutResult

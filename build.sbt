@@ -96,6 +96,7 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   libraryDependencies += "com.lihaoyi" %% "scalarx" % "0.4.3",
   libraryDependencies += "com.typesafe.play" %% "play-json" % "2.10.0-RC5",
   libraryDependencies += "com.github.scopt" %% "scopt" % "4.0.1",
+  libraryDependencies += "tech.sparse" %% "toml-scala" % "0.2.2",
 
   // Apache Commons
   libraryDependencies += "commons-codec" % "commons-codec" % "1.15",

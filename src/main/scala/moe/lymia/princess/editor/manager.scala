@@ -22,8 +22,6 @@
 
 package moe.lymia.princess.editor
 
-import java.awt.image.BufferedImage
-
 import moe.lymia.princess.editor.utils.ExtendedResourceManager
 import moe.lymia.princess.rasterizer._
 import moe.lymia.princess.renderer._
@@ -36,6 +34,7 @@ import org.eclipse.swt.graphics._
 import org.eclipse.swt.widgets._
 import rx._
 
+import java.awt.image.BufferedImage
 import scala.annotation.elidable
 import scala.util.Try
 

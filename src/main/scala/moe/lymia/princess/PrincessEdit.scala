@@ -23,7 +23,6 @@
 package moe.lymia.princess
 
 import moe.lymia.princess.editor.CLI
-import moe.lymia.princess.util._
 
 object PrincessEdit {
   def main(args: Array[String]) = {

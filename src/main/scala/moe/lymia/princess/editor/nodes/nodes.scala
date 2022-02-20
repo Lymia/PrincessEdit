@@ -22,8 +22,6 @@
 
 package moe.lymia.princess.editor.nodes
 
-import java.util
-
 import moe.lymia.lua.LuaState
 import moe.lymia.princess.core.{EditorException, I18N}
 import moe.lymia.princess.editor.ControlContext
@@ -31,8 +29,9 @@ import moe.lymia.princess.editor.model.{DataField, DataFieldType, DataStore}
 import org.eclipse.swt.widgets.{Composite, Control}
 import rx.{Ctx, Obs, Rx, Var}
 
-import scala.collection.mutable
+import java.util
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 case class SetupData(obses: Seq[Obs] = Seq.empty)
 object SetupData {

@@ -22,9 +22,9 @@
 
 package moe.lymia.princess.util
 
-import java.nio.file.{Path, Paths}
-
 import com.sun.jna.platform.win32.{Shell32Util, ShlObj}
+
+import java.nio.file.{Path, Paths}
 
 sealed trait Platform {
   val configurationRoot: Path

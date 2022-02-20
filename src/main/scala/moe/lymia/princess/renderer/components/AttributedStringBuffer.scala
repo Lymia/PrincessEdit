@@ -40,7 +40,6 @@ package moe.lymia.princess.renderer.components
 
 import java.text.{AttributedCharacterIterator, AttributedString}
 import java.util
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
