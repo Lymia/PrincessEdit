@@ -28,7 +28,6 @@ import java.nio.file.Files
 import java.text.MessageFormat
 import java.util.{Locale, Properties}
 
-import com.google.i18n.pseudolocalization.PseudolocalizationPipeline
 import moe.lymia.princess.util.CountedCache
 
 import scala.collection.JavaConverters._
@@ -37,15 +36,6 @@ import scala.collection.mutable
 trait I18NSource {
   val locale: Locale
   def apply(key: String, args: Any*): String
-}
-
-final case class PseudolocalizeI18NSource(parent: I18NSource) extends I18NSource {
-  override val locale = parent.locale
-  override def apply(key: String, args: Any*): String =
-    PseudolocalizeI18NSource.pseudo.localize(parent.apply(key, args : _*))
-}
-private object PseudolocalizeI18NSource {
-  val pseudo = PseudolocalizationPipeline.buildPipeline(false, "accents", "expand", "brackets")
 }
 
 final case class MarkedI18NSource(parent: I18NSource) extends I18NSource {

@@ -26,6 +26,9 @@ Third-Party Licenses
 
 This project includes code from many third-party sources:
 
+* This project includes code from GraalVM, which is licenced under the 
+  [GNU General Public License v2](https://github.com/oracle/graal/blob/master/LICENSE)
+
 * This project includes code from scopt, which is licenced under the 
   [MIT license](https://github.com/scopt/scopt/blob/scopt3/LICENSE.md)
   
@@ -34,9 +37,6 @@ This project includes code from many third-party sources:
 
 * This project includes code from the Play Framework, which is licenced under the
   [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
-
-* This project includes code from the Java runtime library, which is licenced under the
-  [GNU General Public License v2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 
 * This project includes code from Jill, which is licenced under the MIT license
 
@@ -52,10 +52,6 @@ This project includes code from many third-party sources:
 
 * This project includes code from the Eclipse Project, which is licenced under the
   [Eclipse Public License v1.0](http://www.eclipse.org/legal/epl-v10.html)
-
-* This project includes code from htmlparser, which is dual licenced under the
-  [Common Public License v1](https://opensource.org/licenses/cpl1.0.php) and the
-  [GNU Lesser General Public License v2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html)
 
 * This project includes code from JFreeSVG, which is licenced under the
   [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.txt)

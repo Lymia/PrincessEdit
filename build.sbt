@@ -43,9 +43,6 @@ def swtDep(artifact: String) =
     exclude("package", "org.mozilla.xpcom")
     exclude("package", "org.eclipse.swt.accessibility2"))
 
-lazy val pesudoloc = project in file("modules/pseudolocalization-tool") settings (
-  exportJars := true
-  )
 lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   organization := "moe.lymia",
   name := "lua"
@@ -104,7 +101,7 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
 
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.202202012159",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.202202012159",
-)) dependsOn swt dependsOn xscalawt dependsOn lua dependsOn pesudoloc
+)) dependsOn swt dependsOn xscalawt dependsOn lua
 
 val commonSettings = versionWithGit ++ Seq(
   // Organization configuration
