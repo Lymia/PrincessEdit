@@ -24,8 +24,20 @@ import Config._
 import sbt.Keys._
 import sbt._
 
-import java.util.Properties
-
+val osName = sys.props("os.name") match {
+  case os if os.startsWith("Windows") => "windows.x86_64"
+  case "Mac OS X" => "macosx.x86_64"
+  case "Linux" => "linux.x86_64"
+}
+val swtArtifact =
+  "org.eclipse.swt." + ((sys.props("os.name"), sys.props("os.arch")) match {
+    case ("Linux", "amd64" | "x86_64") => "gtk.linux.x86_64"
+    case ("Linux", _) => "gtk.linux.x86"
+    case ("Mac OS X", "amd64" | "x86_64") => "cocoa.macosx.x86_64"
+    case (os, "amd64") if os.startsWith("Windows") => "win32.win32.x86_64"
+    case (os, _) if os.startsWith("Windows") => "win32.win32.x86"
+    case (os, arch) => sys.error("Cannot obtain lib for OS '" + os + "' and architecture '" + arch + "'")
+  })
 def swtDep(artifact: String) =
   ("bundle" % artifact % "3.118.0.v20211123-0851"
     exclude("package", "org.mozilla.xpcom")
@@ -93,12 +105,6 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.202202012159",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.202202012159",
 )) dependsOn swt dependsOn xscalawt dependsOn lua dependsOn pesudoloc
-lazy val dist = project in file("modules/dist") settings (commonSettings ++ Seq(
-  libraryDependencies += swtDep("org.eclipse.swt.gtk.linux.x86_64"),
-  libraryDependencies += swtDep("org.eclipse.swt.cocoa.macosx.x86_64"),
-  libraryDependencies += swtDep("org.eclipse.swt.win32.win32.x86_64"),
-  autoScalaLibrary := false
-))
 
 val commonSettings = versionWithGit ++ Seq(
   // Organization configuration
@@ -129,75 +135,33 @@ val commonSettings = versionWithGit ++ Seq(
   scalaVersion := config_scalaVersion,
   scalacOptions ++= "-Xlint -target:jvm-1.8 -opt:l:inline -deprecation -unchecked".split(" ").toSeq
 )
-val swtArtifact =
-  "org.eclipse.swt." + ((sys.props("os.name"), sys.props("os.arch")) match {
-    case ("Linux", "amd64" | "x86_64") => "gtk.linux.x86_64"
-    case ("Linux", _) => "gtk.linux.x86"
-    case ("Mac OS X", "amd64" | "x86_64") => "cocoa.macosx.x86_64"
-    case (os, "amd64") if os.startsWith("Windows") => "win32.win32.x86_64"
-    case (os, _) if os.startsWith("Windows") => "win32.win32.x86"
-    case (os, arch) => sys.error("Cannot obtain lib for OS '" + os + "' and architecture '" + arch + "'")
-  })
 
 externalIvySettings(baseDirectory(_ / "ivysettings.xml"))
 
 InputKey[Unit]("dist") := {
-  val distClasspath = (Compile / fullClasspath).value.filter(_.get(moduleID.key).get.name != swtArtifact)
-
-  def getSWTJar(artifact: String) =
-    (dist / Compile / fullClasspath).value.find(_.get(moduleID.key).get.name == artifact).get
-
-  val classPaths = Map(
-    "win32-x86_64" -> (distClasspath :+ getSWTJar("org.eclipse.swt.win32.win32.x86_64")),
-    "mac-x86_64" -> (distClasspath :+ getSWTJar("org.eclipse.swt.cocoa.macosx.x86_64")),
-    "linux-x86_64" -> (distClasspath :+ getSWTJar("org.eclipse.swt.gtk.linux.x86_64"))
-  )
-  val allJars: Set[Attributed[File]] = classPaths.flatMap(_._2).toSet
-
-  def jarName(jar: Attributed[File]) = {
-    val mod = jar.get(moduleID.key).get
-    val org = if (mod.organization == "bundle") "" else s"${mod.organization}."
-    s"$org${mod.name}-${mod.revision}.jar"
-  }
-
-  def classPathString(path: Seq[Attributed[File]]) = path.map(jarName).mkString(":")
-
   val path = crossTarget.value / "dist"
   IO.createDirectory(path)
 
   val zipOut = IO.withTemporaryDirectory { dir =>
-    val dirName = s"princess-edit-${(princessEdit / version).value}"
+    val dirName = s"princess-edit-${(princessEdit / version).value}-${osName}"
     val zipOut = path / s"$dirName.zip"
     val outDir = dir / dirName
 
     IO.createDirectory(outDir)
 
     def fixEndings(s: String) = s.replace("\r\n", "\n").replace("\n", "\r\n")
-
     IO.write(outDir / "README.txt", fixEndings(IO.read(file("project/dist_README.md"))))
     IO.write(outDir / "NOTICE.txt", fixEndings(IO.read(file("project/dist_NOTICE.md"))))
 
-    /*
-    IO.copyFile((loader / Compile / packageBin).value, outDir / "PrincessEdit.jar")
-    IO.write(outDir / "PrincessEdit.sh",
-      """#!/bin/sh
-        |SWT_GTK3=0 java -cp "$(dirname "$0")"/PrincessEdit.jar moe.lymia.princess.loader.Loader "$@"
-      """.stripMargin)
-    (outDir / "PrincessEdit.sh").setExecutable(true)
-     */
+    val nativeImageFile = (princessEdit / nativeImage).value
+    IO.copyFile(nativeImageFile, outDir / nativeImageFile.name)
 
     IO.createDirectory(outDir / "lib")
-    for (jar <- allJars) IO.copyFile(jar.data, outDir / "lib" / jarName(jar))
-
-    val props = new Properties()
-    for ((name, path) <- classPaths) props.put(name, classPathString(path))
-    props.put("main", (Compile / run / mainClass).value.get)
-    IO.write(props, "Classpath configuration data for PrincessEdit", outDir / "lib" / "manifest.properties")
+    Utils.runProcess(Seq("zip", "-r", outDir / "lib/core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "lib")
 
     IO.createDirectory(outDir / "packages")
-    for (file <- IO.listFiles(file("packages")) if file.getName.endsWith(".pedit-pkg"))
-      IO.copy(Path.allSubpaths(file).filter(!_._2.startsWith(".git/"))
-        .map(x => x.copy(_2 = outDir / "packages" / file.getName / x._2)))
+    for (pkg <- Seq("cards-against-humanity.pedit-pkg"))
+      IO.copyDirectory(file("packages") / pkg, outDir / "packages" / pkg)
 
     // we call out to zip to save the executable flag for *nix
     if (zipOut.exists) IO.delete(zipOut)
