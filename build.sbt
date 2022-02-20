@@ -38,10 +38,6 @@ lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   organization := "moe.lymia",
   name := "lua"
 ))
-lazy val corePkg = project in file("modules/corepkg") settings (commonSettings ++ Seq(
-  organization := "moe.lymia.princessedit",
-  name := "princess-edit-corepkg"
-))
 lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
   organization := "moe.lymia.princessedit",
   name := "princess-edit-swt",
@@ -96,17 +92,7 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
 
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.202202012159",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.202202012159",
-)) dependsOn corePkg dependsOn swt dependsOn xscalawt dependsOn lua dependsOn pesudoloc
-lazy val loader = project in file("modules/loader") settings (commonSettings ++ Seq(
-  organization := "moe.lymia.princessedit",
-  name := "princess-edit-loader",
-  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-
-  Compile / run / mainClass := Some("moe.lymia.princess.loader.Loader"),
-
-  autoScalaLibrary := false,
-  crossPaths := false
-))
+)) dependsOn swt dependsOn xscalawt dependsOn lua dependsOn pesudoloc
 lazy val dist = project in file("modules/dist") settings (commonSettings ++ Seq(
   libraryDependencies += swtDep("org.eclipse.swt.gtk.linux.x86_64"),
   libraryDependencies += swtDep("org.eclipse.swt.cocoa.macosx.x86_64"),
@@ -141,7 +127,7 @@ val commonSettings = versionWithGit ++ Seq(
 
   // Scala configuration
   scalaVersion := config_scalaVersion,
-  scalacOptions ++= "-Xlint -target:jvm-1.8 -opt:l:classpath -deprecation -unchecked".split(" ").toSeq
+  scalacOptions ++= "-Xlint -target:jvm-1.8 -opt:l:inline -deprecation -unchecked".split(" ").toSeq
 )
 val swtArtifact =
   "org.eclipse.swt." + ((sys.props("os.name"), sys.props("os.arch")) match {
@@ -191,12 +177,14 @@ InputKey[Unit]("dist") := {
     IO.write(outDir / "README.txt", fixEndings(IO.read(file("project/dist_README.md"))))
     IO.write(outDir / "NOTICE.txt", fixEndings(IO.read(file("project/dist_NOTICE.md"))))
 
+    /*
     IO.copyFile((loader / Compile / packageBin).value, outDir / "PrincessEdit.jar")
     IO.write(outDir / "PrincessEdit.sh",
       """#!/bin/sh
         |SWT_GTK3=0 java -cp "$(dirname "$0")"/PrincessEdit.jar moe.lymia.princess.loader.Loader "$@"
       """.stripMargin)
     (outDir / "PrincessEdit.sh").setExecutable(true)
+     */
 
     IO.createDirectory(outDir / "lib")
     for (jar <- allJars) IO.copyFile(jar.data, outDir / "lib" / jarName(jar))

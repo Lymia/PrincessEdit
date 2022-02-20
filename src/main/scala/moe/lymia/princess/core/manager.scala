@@ -26,7 +26,6 @@ import java.net.URI
 import java.nio.file.{Path, Paths}
 
 import moe.lymia.lua.LuaObject
-import moe.lymia.princess.core.pkg.CorePkg
 
 final class GameManager(packages: PackageList, val logger: Logger = DefaultLogger, modules: Seq[LuaModule] = Seq()) {
   val gameId = packages.gameId
@@ -69,11 +68,11 @@ final class PackageManager(packages: Path, systemPackages: Seq[Path] = Seq(), lo
     new GameManager(resolver.loadGameId(gameId), logger, modules)
 }
 object PackageManager {
-  private lazy val defaultPath = System.getProperty("moe.lymia.princess.rootDirectory") match {
-    case null => Paths.get("packages")
-    case url => Paths.get(new URI(url)).resolve("packages")
+  private lazy val rootPath = System.getProperty("moe.lymia.princess.rootDirectory") match {
+    case null => Paths.get(".")
+    case url => Paths.get(new URI(url))
   }
-  lazy val default = new PackageManager(defaultPath, Seq(CorePkg.packagePath))
+  lazy val default = new PackageManager(rootPath.resolve("packages"), Seq(rootPath.resolve("lib/core.pedit-pkg")))
 
   lazy val systemI18N = {
     val id = default.loadGameId("_princess")

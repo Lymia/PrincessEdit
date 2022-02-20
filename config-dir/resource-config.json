@@ -5,9 +5,6 @@
       "pattern":"^META-INF/.*"
     },
     {
-      "pattern":"^moe/lymia/princess/core/pkg/.*"
-    }, 
-    {
       "pattern":"^moe/lymia/princess/editor/res/.*"
     }, 
     {
