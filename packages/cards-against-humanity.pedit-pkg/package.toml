@@ -1,0 +1,27 @@
+[package]
+name = "cards-against-humanity"
+version = "1.0.0"
+gameIds = ["cards-against-humanity", "defines-gameid"]
+
+[[exports]]
+path = "cah/cah.ini"
+types = ["gameid"]
+
+[[exports]]
+path = "cah/render.lua"
+types = ["cards-against-humanity/entry-point/render"]
+
+[[exports]]
+path = "cah/ui.lua"
+types = [
+    "cards-against-humanity/entry-point/view-data",
+    "cards-against-humanity/entry-point/card-form",
+    "cards-against-humanity/entry-point/card-columns",
+]
+
+[[exports]]
+path = "cah/en_generic.properties"
+types = [
+    "cards-against-humanity/i18n/en_generic",
+    "defines-gameid/i18n/en_generic",
+]

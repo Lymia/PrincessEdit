@@ -115,7 +115,7 @@ final class LuaContext(val packages: PackageList, val logger: Logger, modules: S
     L.pcall(chunk, 0, systemTable).right.foreach(e => throw EditorException(e))
   }
   private def loadPredefs(exportType: String) =
-    for(e <- packages.getSystemExports(exportType).sortBy(_.metadata.get("priority").map(_.head.toInt).getOrElse(0)))
+    for(e <- packages.getSystemExports(exportType).sortBy(_.path))
       loadLuaPredef(e.path)
   def loadModule(mods: LuaModule*) = for(mod <- mods) {
     logger.trace(s"Loading module '${mod.moduleName}'")

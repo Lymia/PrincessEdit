@@ -1,0 +1,23 @@
+[[exports]]
+path = "_princess/fonts/FreeSans.otf"
+types = ["font", "_princess/system_font"]
+family = "FreeSans"
+
+[[exports]]
+path = "_princess/fonts/FreeSansBold.otf"
+types = ["font"]
+family = "FreeSans"
+bold = true
+
+[[exports]]
+path = "_princess/fonts/FreeSansOblique.otf"
+types = ["font"]
+family = "FreeSans"
+italic = true
+
+[[exports]]
+path = "_princess/fonts/FreeSansBoldOblique.otf"
+types = ["font"]
+family = "FreeSans"
+bold = true
+italic = true

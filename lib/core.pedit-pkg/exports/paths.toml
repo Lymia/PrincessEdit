@@ -1,0 +1,19 @@
+[[exports]]
+path = "_princess/lib"
+types = ["_princess/package-path"]
+
+[[exports]]
+path = "_princess"
+types = ["_princess/protected-path"]
+
+[[exports]]
+path = "exports/"
+types = ["_princess/ignored-path"]
+
+[[exports]]
+path = "exports.toml"
+types = ["_princess/ignored-path"]
+
+[[exports]]
+path = "package.toml"
+types = ["_princess/ignored-path"]

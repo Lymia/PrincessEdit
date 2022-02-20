@@ -1,0 +1,3 @@
+[[exports]]
+pattern = "_princess/i18n/en_generic/.*\\.properties"
+types = ["_princess/i18n/en_generic"]

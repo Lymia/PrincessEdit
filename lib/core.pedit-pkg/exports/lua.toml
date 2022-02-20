@@ -1,0 +1,19 @@
+[[exports]]
+path = "_princess/default/export.lua"
+types = ["_princess/entry-point/export-data"]
+
+[[exports]]
+path = "_princess/default/view.lua"
+types = ["_princess/entry-point/view-data"]
+
+[[exports]]
+pattern = "_princess/predef/core/.*\\.lua"
+types = ["_princess/predef/core"]
+
+[[exports]]
+pattern = "_princess/predef/editor/.*\\.lua"
+types = ["_princess/predef/editor"]
+
+[[exports]]
+pattern = "_princess/predef/render/.*\\.lua"
+types = ["_princess/predef/render"]

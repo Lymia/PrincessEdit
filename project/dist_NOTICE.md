@@ -62,6 +62,9 @@ This project includes code from many third-party sources:
 * This project includes code from Scala, which is licenced under the
   [3-Clause BSD License](https://www.scala-lang.org/license.html).
 
+* This project includes code from scalaz, which is licensed under the
+  [3-Clause BSD License](https://github.com/scalaz/scalaz/blob/master/LICENSE.txt).
+
 * This project includes code from toml-scala, which is licenced under the
   [Mozilla Public License v2.0](https://www.mozilla.org/en-US/MPL/2.0/).
 
