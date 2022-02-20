@@ -23,7 +23,7 @@
 package moe.lymia.princess.editor.ui.mainframe
 
 import moe.lymia.princess.VersionInfo
-import moe.lymia.princess.core.packages.GameID
+import moe.lymia.princess.core.packages.GameId
 import moe.lymia.princess.core.{I18NLoader, PackageManager}
 import moe.lymia.princess.editor._
 import moe.lymia.princess.editor.lua.EditorModule
@@ -154,7 +154,7 @@ object ProjectSource {
       ctx.syncLuaExec(Project.loadProject(ctx, gameID, idData, path))
     override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(Some(path), Some(lock))
   }
-  case class NewProject(id: GameID) extends ProjectSource {
+  case class NewProject(id: GameId) extends ProjectSource {
     override def getGameID: String = id.name
     override def openSettings(project: Project): SettingsStore = new UnbackedSettingsStore
     override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project = {

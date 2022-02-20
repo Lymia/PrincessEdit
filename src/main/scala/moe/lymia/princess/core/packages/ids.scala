@@ -22,25 +22,30 @@
 
 package moe.lymia.princess.core.packages
 
-import moe.lymia.princess.core.{EditorException, GameManager, INI, PackageManager}
+import moe.lymia.princess.core.{EditorException, GameManager, PackageManager}
+import moe.lymia.princess.util.IOUtils
+import toml.Toml
+import toml.Codecs._
 
 import java.nio.file.Path
 import scala.collection.mutable
 
-case class GameID(name: String, displayName: String, iconPath: Option[String])
-object GameID {
-  def loadGameID(path: Path) = EditorException.context(s"loading GameID from $path") {
-    val ini = INI.load(path)
-    val section = ini.getSection("game")
-    GameID(section.getSingle("name"), section.getSingle("display-name"), section.getSingleOption("icon"))
+case class GameId(name: String, displayName: String, iconPath: Option[String])
+object GameId {
+  def loadGameId(path: Path) = EditorException.context(s"loading GameID from $path") {
+    case class RawGameId(name: String, displayName: String, icon: Option[String])
+    case class RawGameIdContainer(game: RawGameId)
+
+    val raw = Toml.parseAs[RawGameIdContainer](IOUtils.readFileAsString(path)).checkErr
+    GameId(raw.game.name, raw.game.displayName, raw.game.icon)
   }
 
-  def loadGameIDManager(manager: PackageManager) = manager.loadGameId(StaticGameIDs.DefinesGameID)
-  def loadGameIDs(game: GameManager) = {
+  def loadGameIdManager(manager: PackageManager) = manager.loadGameId(StaticGameIDs.DefinesGameID)
+  def loadGameIds(game: GameManager) = {
     val gameIDExports = game.getExports(StaticExportIDs.GameID).map(_.path).map(game.forceResolve)
 
-    val idMap = new mutable.HashMap[String, GameID]
-    for(id <- gameIDExports.map(loadGameID)) {
+    val idMap = new mutable.HashMap[String, GameId]
+    for(id <- gameIDExports.map(loadGameId)) {
       if(idMap.contains(id.name)) throw EditorException(s"Duplicate GameID '${id.name}' found")
       idMap.put(id.name, id)
     }

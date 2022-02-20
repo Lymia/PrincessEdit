@@ -1,0 +1,4 @@
+[game]
+name = "cards-against-humanity"
+displayName = "$cah.displayName"
+icon = "cah/icon.svg"

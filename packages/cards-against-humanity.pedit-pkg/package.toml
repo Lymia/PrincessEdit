@@ -4,7 +4,7 @@ version = "1.0.0"
 gameIds = ["cards-against-humanity", "defines-gameid"]
 
 [[exports]]
-path = "cah/cah.ini"
+path = "cah/cah.toml"
 types = ["gameid"]
 
 [[exports]]

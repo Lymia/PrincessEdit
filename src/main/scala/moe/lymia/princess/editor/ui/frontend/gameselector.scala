@@ -24,7 +24,7 @@ package moe.lymia.princess.editor.ui.frontend
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.PackageManager
-import moe.lymia.princess.core.packages.GameID
+import moe.lymia.princess.core.packages.GameId
 import moe.lymia.princess.editor.ControlContext
 import moe.lymia.princess.editor.ui.mainframe.{MainFrame, ProjectSource}
 import moe.lymia.princess.editor.utils.{DialogBase, UIUtils}
@@ -71,21 +71,21 @@ private final class GameSelectorViewer(parent: Composite, dialog: GameSelectorDi
   })
   gallery.setLabelProvider(new LabelProvider {
     override def getText(element: scala.Any): String = element match {
-      case id: GameID => manager.gameIdI18N(id.displayName)
+      case id: GameId => manager.gameIdI18N(id.displayName)
       case _ => ""
     }
     override def getImage(element: scala.Any): Image = element match {
-      case id: GameID =>
+      case id: GameId =>
         id.iconPath.fold(noIconImage)(getIcon)
       case _ => null
     }
   })
   gallery.setInput(this)
 
-  def getGameID: Option[GameID] =
+  def getGameID: Option[GameId] =
     gallery.getStructuredSelection.getPaths.headOption.toSeq
       .flatMap(x => (0 until x.getSegmentCount).map(x.getSegment))
-      .find(_.isInstanceOf[GameID]).map(_.asInstanceOf[GameID])
+      .find(_.isInstanceOf[GameId]).map(_.asInstanceOf[GameId])
 
   gallery.addDoubleClickListener { event => dialog.newProject() }
 

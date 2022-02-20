@@ -60,8 +60,8 @@ final class GameManager(packages: PackageList, val logger: Logger = DefaultLogge
 final class PackageManager(packages: Path, systemPackages: Seq[Path] = Seq(), logger: Logger = DefaultLogger) {
   val resolver = PackageResolver.loadPackageDirectory(packages, systemPackages: _*)
 
-  val gameIdManager = GameID.loadGameIDManager(this)
-  val gameIds = GameID.loadGameIDs(gameIdManager)
+  val gameIdManager = GameId.loadGameIdManager(this)
+  val gameIds = GameId.loadGameIds(gameIdManager)
   val gameIdList = gameIds.values.toSeq
   val gameIdI18N = new I18NLoader(gameIdManager).i18n.user
 

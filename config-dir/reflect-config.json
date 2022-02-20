@@ -89,22 +89,6 @@
   "name":"org.eclipse.swt.widgets.Display"}
 ,
 {
-  "name":"org.ini4j.spi.BeanTool",
-  "methods":[{"name":"<init>","parameterTypes":[] }]}
-,
-{
-  "name":"org.ini4j.spi.EscapeTool",
-  "methods":[{"name":"<init>","parameterTypes":[] }]}
-,
-{
-  "name":"org.ini4j.spi.IniBuilder",
-  "methods":[{"name":"<init>","parameterTypes":[] }]}
-,
-{
-  "name":"org.ini4j.spi.IniParser",
-  "methods":[{"name":"<init>","parameterTypes":[] }]}
-,
-{
   "name":"sun.awt.X11FontManager",
   "methods":[{"name":"<init>","parameterTypes":[] }]}
 ,

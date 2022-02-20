@@ -50,7 +50,6 @@ private final case class CoreLib(context: LuaContext) extends LuaLibrary {
 
     L.register(table, "hasExport", (s: String) => context.packages.resolve(s).isDefined)
     L.register(table, "loadLuaExport", (s: String) => context.getLuaExport(s))
-    L.register(table, "loadINIExport", (s: String) => INI.loadRaw(context.packages.forceResolve(s)))
     L.register(table, "getExportList", () => context.packages.getExportKeys.toSeq)
     L.register(table, "getExports", (s: String, system: Boolean) =>
       (if(system) context.packages.getSystemExports(s) else context.packages.getExports(s)).map{ e =>
