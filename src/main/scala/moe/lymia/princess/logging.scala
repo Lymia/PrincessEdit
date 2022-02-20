@@ -20,10 +20,13 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess
 
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
+
+// TODO: Logging to file?
+// TODO: Probably just use a library for this.
 
 final case class LogLevel private (name: String, i: Int) {
   def > (o: LogLevel) = i >  o.i

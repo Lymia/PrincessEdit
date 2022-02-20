@@ -20,26 +20,30 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.util
+package moe.lymia.princess
 
 import com.sun.jna.platform.win32.{Shell32Util, ShlObj}
 
 import java.nio.file.{Path, Paths}
 
 sealed trait Platform {
+  val executableExtension: String
   val configurationRoot: Path
   def getConfigDirectory(name: String) = configurationRoot.resolve(name)
 }
 object Platform {
-  case object Windows extends Platform {
+  private case object Windows extends Platform {
+    override val executableExtension = ".exe"
     override lazy val configurationRoot: Path =
       Paths.get(Shell32Util.getFolderPath(ShlObj.CSIDL_LOCAL_APPDATA))
   }
-  case object MacOS extends Platform {
+  private case object MacOS extends Platform {
+    override val executableExtension = ""
     override lazy val configurationRoot: Path =
       Paths.get(System.getProperty("user.home")).resolve("Library/Preferences")
   }
-  case object Linux extends Platform {
+  private case object Linux extends Platform {
+    override val executableExtension = ""
     override lazy val configurationRoot: Path =
       System.getenv("XDG_CONFIG_HOME") match {
         case null => Paths.get(System.getProperty("user.home")).resolve(".config")
@@ -47,12 +51,12 @@ object Platform {
       }
   }
 
-  lazy val platformOption = sys.props("os.name") match {
+  lazy val platformOption: Option[Platform] = sys.props("os.name") match {
     case null => None
     case x if x.startsWith("Windows ") => Some(Windows)
     case x if x.startsWith("Mac ") => Some(MacOS)
     case "Linux" => Some(Linux)
     case _ => None
   }
-  def platform = platformOption.get
+  def platform: Platform = platformOption.get
 }

@@ -23,6 +23,7 @@
 package moe.lymia.princess.core
 
 import moe.lymia.lua.LuaObject
+import moe.lymia.princess.{DefaultLogger, Logger}
 import moe.lymia.princess.core.packages._
 
 import java.net.URI

@@ -22,7 +22,8 @@
 
 package moe.lymia.princess.editor
 
-import moe.lymia.princess.util.{IOUtils, Platform}
+import moe.lymia.princess.Platform
+import moe.lymia.princess.util.IOUtils
 import org.apache.commons.codec.digest.DigestUtils
 import play.api.libs.json._
 

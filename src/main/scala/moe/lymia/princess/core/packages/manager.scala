@@ -40,7 +40,7 @@ case class LoadedPackage(manifest: PackageManifest, rootPath: Path, isSystem: Bo
 }
 
 private object LoadedPackage {
-  private def loadPackageFromPath(path: Path, isSystem: Boolean) = {
+  private def loadPackageFromPath(path: Path, isSystem: Boolean): LoadedPackage = {
     val fileList = PackageManifest.buildFileList(path)
 
     val manifestPath = path.resolve("package.toml")
@@ -72,25 +72,32 @@ private object LoadedPackage {
   }
 
   // TODO: Allow loading multiple packages from one .zip file
-  private def loadPackageFromZip(path: Path, isSystem: Boolean) =
+  private def loadPackageFromZip(path: Path, isSystem: Boolean): Seq[LoadedPackage] =
     EditorException.context(s"loading package from zip $path") {
       val fs = IOUtils.openZip(path)
       val root = fs.getPath("/")
       val fileList = IOUtils.list(root)
-      loadPackageFromPath(
-        if (!Files.exists(root.resolve("package.toml")) &&
-          fileList.length == 1 && Files.isDirectory(fileList.head)) fileList.head
-        else root, isSystem)
+
+      if (Files.exists(root.resolve("package.toml")))
+        Seq(loadPackageFromPath(root, isSystem))
+      else {
+        val packages = fileList.view
+          .filter(_.getFileName.toString.endsWith(".pedit-pkg"))
+          .filter(x => Files.isRegularFile(x.resolve("package.toml")))
+        packages.map(dir => loadPackageFromPath(dir, isSystem)).toSeq
+      }
     }
 
-  private def loadPackageFromDirectory(path: Path, isSystem: Boolean) =
+  private def loadPackageFromDirectory(path: Path, isSystem: Boolean): Seq[LoadedPackage] =
     EditorException.context(s"loading package from $path") {
-      loadPackageFromPath(path, isSystem)
+      Seq(loadPackageFromPath(path, isSystem))
     }
 
-  def loadPackage(path: Path, isSystem: Boolean) =
+  def loadPackage(path: Path, isSystem: Boolean): Seq[LoadedPackage] = {
+    logger.info(s"Loading ${ if (isSystem) "system " else "" }packages from $path")
     if (Files.isDirectory(path)) loadPackageFromDirectory(path, isSystem)
     else loadPackageFromZip(path, isSystem)
+  }
 }
 
 case class PackageList(gameId: String, packages: Seq[LoadedPackage]) {
@@ -215,10 +222,10 @@ object PackageResolver {
     PackageResolver(map.toMap)
   }
 
-  def loadPackageDirectory(packages: Path, systemPackages: Path*) =
-    core.packages.PackageResolver(
-      (for (x <- IOUtils.list(packages) if x.getFileName.toString.endsWith(".pedit-pkg"))
-        yield LoadedPackage.loadPackage(x, isSystem = false)) ++
-        (for (x <- systemPackages) yield
-          LoadedPackage.loadPackage(x, isSystem = true)))
+  def loadPackageDirectory(packages: Path, systemPackages: Path*) = {
+    val loadedPackages = for (x <- IOUtils.list(packages) if x.getFileName.toString.endsWith(".pedit-pkg"))
+        yield LoadedPackage.loadPackage(x, isSystem = false)
+    val loadedSystemPackages = for (x <- systemPackages) yield LoadedPackage.loadPackage(x, isSystem = true)
+    core.packages.PackageResolver((loadedPackages ++ loadedSystemPackages).flatten)
+  }
 }

@@ -22,6 +22,7 @@
 
 package moe.lymia.princess.core
 
+import moe.lymia.princess.DefaultLogger
 import toml.{Codec, Parse, Value}
 
 package object packages {
@@ -35,4 +36,6 @@ package object packages {
       case Right(x) => x
     }
   }
+
+  private[packages] val logger = DefaultLogger.bind("core.packages")
 }
