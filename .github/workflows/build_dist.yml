@@ -14,7 +14,8 @@ jobs:
       NATIVE_IMAGE_INSTALLED: true
     steps:
       - uses: actions/checkout@v2
-      - uses: textbook/git-checkout-submodule-action@master
+        with:
+          submodules: 'recursive'
 
       # Setup environment
       - uses: actions/setup-java@v2
