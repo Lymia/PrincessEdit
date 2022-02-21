@@ -34,10 +34,10 @@ final class IconData(val svgData: Array[Byte], val imageData: Map[Int, ImageData
 object IconData {
   private def getIconData(iconName: String) = {
     val loader = new ImageLoader()
-    loader.load(IOUtils.getResource(s"gui/res/icon-$iconName.ico"))
+    loader.load(IOUtils.getResource(s"res/icon-$iconName.ico"))
     val imageDataMap = for(data <- loader.data if data.width == data.height) yield
       data.width -> data
-    new IconData(IOUtils.loadBinaryResource(s"gui/res/icon-$iconName.svg"), imageDataMap.toMap)
+    new IconData(IOUtils.loadBinaryResource(s"res/icon-$iconName.svg"), imageDataMap.toMap)
   }
 
   lazy val AppIcon      = getIconData("app")

@@ -5,10 +5,7 @@
       "pattern":"^META-INF/.*"
     },
     {
-      "pattern":"^moe/lymia/princess/editor/res/.*"
-    }, 
-    {
-      "pattern":"\\Qmoe/lymia/princess/loader/marker.txt\\E"
+      "pattern":"^moe/lymia/princess/res/.*"
     }, 
     {
       "pattern":"\\Qmoe/lymia/princess/version.properties\\E"

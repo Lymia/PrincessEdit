@@ -88,15 +88,7 @@ object ResourceGenerators {
         (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "version.properties"
       IO.copyFile(versionFile.value, versionPropertiesPath)
 
-      val icoFiles =
-        for(file <- IO.listFiles(baseDirectory.value / "project") if file.getName.startsWith("icon-")) yield {
-          val target =
-            (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "gui" / "res" / file.getName
-          IO.copyFile(file, target)
-          target
-        }
-
-      Seq(versionPropertiesPath) ++ icoFiles
+      Seq(versionPropertiesPath)
     }.taskValue
   )
 }

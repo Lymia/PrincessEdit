@@ -83,7 +83,7 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   organization := "moe.lymia.princessedit",
   name := "princess-edit",
 
-  nativeImageOptions ++= Seq("--no-fallback", "--language:js"),
+  nativeImageOptions ++= Seq("--no-fallback"),
   nativeImageOptions += s"-H:ConfigurationFileDirectories=${baseDirectory.value / "config-dir"}",
 
   run / fork := true,

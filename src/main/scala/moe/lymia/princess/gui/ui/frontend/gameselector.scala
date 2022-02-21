@@ -51,7 +51,7 @@ private final class GameSelectorViewer(parent: Composite, dialog: GameSelectorDi
   private val resources = ctx.newResourceManager()
   private val images = new mutable.HashMap[String, Image]
   private val noIconImage =
-    resources.createImageFromSVG(UIUtils.loadSVGFromResource("gui/res/no-icon.svg"), iconSize, iconSize)
+    resources.createImageFromSVG(UIUtils.loadSVGFromResource("res/no-icon.svg"), iconSize, iconSize)
   private def getIcon(path: String) =
     images.getOrElseUpdate(path, resources.createImageFromSVG(UIUtils.loadSVGFromPath(
       manager.gameIdManager.forceResolve(path)), iconSize, iconSize))
