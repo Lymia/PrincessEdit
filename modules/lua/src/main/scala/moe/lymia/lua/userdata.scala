@@ -27,7 +27,7 @@ import scala.reflect.ClassTag
 
 trait HasLuaMethods {
   def getField(L: LuaState, name: String): LuaObject
-  def setField(L: LuaState, name: String, obj: Any)
+  def setField(L: LuaState, name: String, obj: Any): Unit
 }
 
 private object LuaLookup {
@@ -53,9 +53,9 @@ trait LuaLookup extends HasLuaMethods {
   protected def property[R: FromLua](name: String, get: LuaLookup.GetPropertyFn, set: (LuaState, R) => Unit): Unit =
     properties.put(name, LuaLookup.Property(get, (L, v) => set(L, v.fromLua[R](L, Some(s"invalid property value")))))
 
-  private def luaMethod(name: String)(fn: LuaClosure) =
+  private def luaMethod(name: String)(fn: LuaClosure): Unit =
     property(name, L => fn, (L, _ : Any) => L.error(s"cannot set method '$name'"))
-  protected def method(name: String)(fn: ScalaLuaClosure) = luaMethod(name)(new LuaClosure(fn.fn))
+  protected def method(name: String)(fn: ScalaLuaClosure): Unit = luaMethod(name)(new LuaClosure(fn.fn))
 
   private def deleteProperty(L: LuaState, name: String): Unit = {
     if(!properties.contains(name)) L.error(s"property '$name' does not exist")
@@ -63,13 +63,13 @@ trait LuaLookup extends HasLuaMethods {
   }
 
   private def setLuaProperty(doOverride: Boolean)
-                            (L: LuaState, name: String, get: Option[LuaClosure], set: Option[LuaClosure]) = {
+                            (L: LuaState, name: String, get: Option[LuaClosure], set: Option[LuaClosure]): Unit = {
     if(!doOverride && properties.contains(name)) L.error(s"property '$name' already defined!")
     val getFn = get.getOrElse(LuaClosure { () => L.error(s"property '$name' is immutable") ; () })
     val setFn = set.getOrElse(LuaClosure { () => L.error(s"property '$name' is write-only"); () })
     property(name, LuaGetFn(getFn), LuaSetFn(setFn))
   }
-  private def setLuaMethod(doOverride: Boolean)(L: LuaState, name: String, m: LuaClosure) = {
+  private def setLuaMethod(doOverride: Boolean)(L: LuaState, name: String, m: LuaClosure): Unit = {
     if(!doOverride && properties.contains(name)) L.error(s"method '$name' already defined!")
     luaMethod(name)(m)
   }
@@ -110,7 +110,7 @@ trait LuaUserdataInputBase[T] extends FromLua[T] {
   protected[this] def tag: ClassTag[T]
   private final lazy val runtimeClass = tag.runtimeClass
 
-  override def fromLua(L: Lua, v: Any, source: => Option[String]) = v match {
+  override def fromLua(L: Lua, v: Any, source: => Option[String]): T = v match {
     case v: LuaUserdata =>
       val obj = v.getUserdata
       if(!runtimeClass.isInstance(obj))
@@ -120,14 +120,14 @@ trait LuaUserdataInputBase[T] extends FromLua[T] {
   }
 }
 class LuaUserdataInput[T : ClassTag] extends LuaUserdataInputBase[T] {
-  protected[this] val tag = implicitly[ClassTag[T]]
+  protected[this] val tag: ClassTag[T] = implicitly[ClassTag[T]]
 }
 class LuaUserdataOutputType[T : ClassTag] extends ToLua[T] {
-  protected[this] val tag = implicitly[ClassTag[T]]
+  protected[this] val tag: ClassTag[T] = implicitly[ClassTag[T]]
 
   private val metatableInitializers = new mutable.ArrayBuffer[(LuaState, LuaTable) => Unit]
-  protected final def metatable(fn: (LuaState, LuaTable) => Unit) = metatableInitializers.append(fn)
-  final def getMetatable(L: LuaState) = {
+  protected final def metatable(fn: (LuaState, LuaTable) => Unit): Unit = metatableInitializers.append(fn)
+  final def getMetatable(L: LuaState): LuaTable = {
     val mt = new LuaTable()
     L.register(mt, "__tostring" , (o: Any) => s"${tag.toString()}: 0x${"%08x" format System.identityHashCode(o)}")
     L.rawSet  (mt, "__metatable", s"metatable for ${tag.toString()}")
@@ -162,9 +162,9 @@ class PropertiesUserdataType[T : ClassTag] extends LuaUserdataType[T] {
   protected def property[R: FromLua](name: String, get: GetPropertyFn, set: (LuaState, T, R) => Unit): Unit =
     properties.put(name, Property((L, o, v) => set(L, o, v.fromLua[R](L, Some(s"invalid property value"))), get))
 
-  protected def method(name: String)(fn: T => ScalaLuaClosure) =
+  protected def method(name: String)(fn: T => ScalaLuaClosure): Unit =
     property(name, (L, o) => fn(o), (L, _, _ : Any) => L.error(s"cannot set method '$name'"))
-  protected def unboundMethod(name: String)(fn: => ScalaLuaClosure) = {
+  protected def unboundMethod(name: String)(fn: => ScalaLuaClosure): Unit = {
     lazy val fnWrapper = fn
     property(name, (L, _) => fnWrapper, (L, _, _ : Any) => L.error(s"cannot set method '$name'"))
   }
@@ -177,7 +177,7 @@ class PropertiesUserdataType[T : ClassTag] extends LuaUserdataType[T] {
   unboundMethod("_hasProperty")((k: String) => properties.contains(k))
 
   metatable { (L, mt) =>
-    implicit val tud = this
+    implicit val tud: PropertiesUserdataType[T] = this
     L.register(mt, "__index"   , (L: LuaState, o: T, k: String) => getField(L, o, k))
     L.register(mt, "__newindex", (L: LuaState, o: T, k: String, v: Any) => setField(L, o, k, v))
   }
@@ -185,7 +185,7 @@ class PropertiesUserdataType[T : ClassTag] extends LuaUserdataType[T] {
 
 class HasLuaMethodsUserdataType[T <: HasLuaMethods : ClassTag] extends LuaUserdataType[T] {
   metatable { (L, mt) =>
-    implicit val tud = this
+    implicit val tud: HasLuaMethodsUserdataType[T] = this
     L.register(mt, "__tostring", (o: Any) => s"${o.getClass.getName}: 0x${"%08x" format System.identityHashCode(o)}")
     L.register(mt, "__index"   , (L: LuaState, o: T, k: String) => o.getField(L, k))
     L.register(mt, "__newindex", (L: LuaState, o: T, k: String, v: Any) => o.setField(L, k, v))

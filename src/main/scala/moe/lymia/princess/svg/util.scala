@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer
+package moe.lymia.princess.svg
 
 import java.awt.Font
 import java.awt.geom.Rectangle2D
@@ -70,7 +70,7 @@ object Bounds {
                                                  rectangle.getMaxX, rectangle.getMaxY)
 }
 
-private[renderer] object GenID {
+private[svg] object GenID {
   private val globalId = new AtomicInteger(0)
   private def makeGlobalId() = globalId.incrementAndGet() & 0x7FFFFFFF
 
@@ -82,7 +82,7 @@ private[renderer] object GenID {
     s"${makeGlobalId()}_${makeRandomString()}"
 }
 
-private[renderer] object XML extends XMLLoader[Elem] {
+private[svg] object XML extends XMLLoader[Elem] {
   override def parser: SAXParser = {
     val factory = SAXParserFactory.newInstance()
     factory.setNamespaceAware(false)

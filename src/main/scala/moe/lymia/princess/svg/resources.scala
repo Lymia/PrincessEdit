@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer
+package moe.lymia.princess.svg
 
 import moe.lymia.princess.core._
 import moe.lymia.princess.util._

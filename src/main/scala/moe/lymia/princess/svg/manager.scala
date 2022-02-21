@@ -20,13 +20,13 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer
+package moe.lymia.princess.svg
 
-import moe.lymia.lua._
+import moe.lymia.lua.{LuaTable, _}
 import moe.lymia.princess.core._
-import moe.lymia.princess.rasterizer.SVGRasterizer
-import moe.lymia.princess.renderer.components._
-import moe.lymia.princess.renderer.lua._
+import moe.lymia.princess.svg.components._
+import moe.lymia.princess.svg.lua._
+import moe.lymia.princess.svg.rasterizer.SVGRasterizer
 import moe.lymia.princess.util.SizedCache
 import org.eclipse.swt.graphics.ImageData
 

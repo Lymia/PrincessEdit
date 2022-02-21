@@ -23,13 +23,11 @@
 package moe.lymia.lua
 
 import java.io.{InputStream, Reader}
-import java.nio.file.{Path, Paths}
-
 import scala.collection.JavaConverters._
 
 case class LuaRegistryEntry[T]()
 final case class LuaState(L: Lua) extends AnyVal {
-  def getRegistry[T](entry: LuaRegistryEntry[T], default: => T) = {
+  def getRegistry[T](entry: LuaRegistryEntry[T], default: => T): T = {
     val reg = L.getRegistry
     if(!reg.contains(entry)) reg.putlua(L, entry, default)
     reg.getlua(entry).asInstanceOf[T]
@@ -39,19 +37,19 @@ final case class LuaState(L: Lua) extends AnyVal {
   def status: Int = L.status()
   def newThread() = new LuaState(L.newThread())
 
-  def unwrap(o: LuaObject) = o.wrapped
+  def unwrap(o: LuaObject): Any = o.wrapped
 
   // stack manipulation functions
   def getTop: Int = L.getTop
   def setTop(n: Int): Unit = L.setTop(n)
 
   def pop(n: Int): Unit = L.pop(n)
-  def popTop() = {
+  def popTop(): LuaReturnWrapper = {
     val top = L.value(L.getTop).returnWrapper(this)
     L.pop(1)
     top
   }
-  def peekTop() = L.value(L.getTop).returnWrapper(this)
+  def peekTop(): LuaReturnWrapper = L.value(L.getTop).returnWrapper(this)
   def push(o: LuaObject): Unit = L.push(o.toLua(this))
   def pushClosure(o: ScalaLuaClosure, doCheck: Boolean = true): Unit = L.push(o.checkError(doCheck).toLua(this))
   def pushValue(idx: Int): Unit = L.pushValue(idx)
@@ -79,23 +77,23 @@ final case class LuaState(L: Lua) extends AnyVal {
   def getGlobals: LuaTable = L.getGlobals
   def getRegistry: LuaTable = L.getRegistry
 
-  def getGlobal(name: String) = L.getGlobal(name).returnWrapper(this, s"invalid global $name")
+  def getGlobal(name: String): LuaReturnWrapper = L.getGlobal(name).returnWrapper(this, s"invalid global $name")
   def setGlobal(name: String, value: LuaObject): Unit = L.setGlobal(name, value.toLua(this))
 
-  def getMetafield(o: LuaObject, event: String) =
+  def getMetafield(o: LuaObject, event: String): LuaReturnWrapper =
     L.getMetafield(o.toLua(this), event).returnWrapper(this, s"invalid metafield $event of ${toPrintString(o)}")
 
-  def getTable(t: LuaObject, k: LuaObject) =
+  def getTable(t: LuaObject, k: LuaObject): LuaReturnWrapper =
     L.getTable(t.toLua(this), k.toLua(this))
       .returnWrapper(this, s"invalid table field ${toPrintString(k)} of ${toPrintString(t)}")
-  def setTable(t: LuaObject, k: LuaObject, v: LuaObject) =
+  def setTable(t: LuaObject, k: LuaObject, v: LuaObject): Unit =
     L.setTable(t.toLua(this), k.toLua(this), v.toLua(this))
   def setField(t: LuaObject, name: String, v: LuaObject): Unit = L.setField(t.toLua(this), name, v.toLua(this))
 
-  def rawGet(t: LuaTable, k: LuaObject) =
+  def rawGet(t: LuaTable, k: LuaObject): LuaReturnWrapper =
     Lua.rawGet(t, k.toLua(this))
       .returnWrapper(this, s"invalid table field ${toPrintString(k)} of ${toPrintString(t)}")
-  def rawSet(t: LuaTable, k: LuaObject, v: LuaObject) = L.rawSet(t, k.toLua(this), v.toLua(this))
+  def rawSet(t: LuaTable, k: LuaObject, v: LuaObject): Unit = L.rawSet(t, k.toLua(this), v.toLua(this))
 
   def newLib(root: LuaTable, k: String*): LuaTable = {
     var t: LuaTable = root
@@ -106,9 +104,9 @@ final case class LuaState(L: Lua) extends AnyVal {
     t
   }
 
-  def registerGlobal(k: String, v: ScalaLuaClosure, doCheck: Boolean = true) =
+  def registerGlobal(k: String, v: ScalaLuaClosure, doCheck: Boolean = true): Unit =
     L.setGlobal(k, v.checkError(doCheck).toLua(this))
-  def register(t: LuaObject, k: LuaObject, v: ScalaLuaClosure, doCheck: Boolean = true) =
+  def register(t: LuaObject, k: LuaObject, v: ScalaLuaClosure, doCheck: Boolean = true): Unit =
     L.rawSet(t.toLua(this), k.toLua(this), v.checkError(doCheck).toLua(this))
 
   // chunk loading
@@ -118,24 +116,24 @@ final case class LuaState(L: Lua) extends AnyVal {
     L.pop(1)
     ret
   }
-  def load(in: InputStream, chunkname: String) = popLoad(L.load(in, chunkname))
-  def load(in: Reader, chunkname: String) = popLoad(L.load(in, chunkname))
-  def loadResource(filename: String) = popLoad(L.loadFile(filename))
-  def loadString(s: String, chunkname: String) = popLoad(L.loadString(s, chunkname))
-  def doString(s: String) = {
+  def load(in: InputStream, chunkname: String): Either[LuaClosure, String] = popLoad(L.load(in, chunkname))
+  def load(in: Reader, chunkname: String): Either[LuaClosure, String] = popLoad(L.load(in, chunkname))
+  def loadResource(filename: String): Either[LuaClosure, String] = popLoad(L.loadFile(filename))
+  def loadString(s: String, chunkname: String): Either[LuaClosure, String] = popLoad(L.loadString(s, chunkname))
+  def doString(s: String): Unit = {
     val status = L.doString(s)
     if(status != 0) L.error(peekTop().as[String])
     L.pop(1)
   }
 
   // call functions
-  def call(nargs: Int, nresults: Int) = L.call(nargs, nresults)
+  def call(nargs: Int, nresults: Int): Unit = L.call(nargs, nresults)
   def pcall(nargs: Int, nresults: Int, ef: LuaClosure): Int = L.pcall(nargs, nresults, ef.toLua(this))
   def pcall(nargs: Int, nresults: Int): Int =
     L.pcall(nargs, nresults, ScalaLuaClosure(L => { L.pushValue(1); 1 }).toLua(this))
   def callMeta(obj: Int, event: String): Boolean = L.callMeta(obj, event)
 
-  def callCapture(fn: LuaClosure, args: LuaObject*) = {
+  def callCapture(fn: LuaClosure, args: LuaObject*): LuaTable = {
     val capture = getRegistry(LuaState.captureFunctionReturn, {
       val chunk = loadString(
         """local function capture(fn, ...)
@@ -165,24 +163,24 @@ final case class LuaState(L: Lua) extends AnyVal {
   }
 
   // api functions
-  def error(message: String) = {
+  def error(message: String): Nothing = {
     L.error(message.toLua(this))
     sys.error("L.error returned unexpectedly!")
   }
-  def error(message: String, level: Int) = {
+  def error(message: String, level: Int): Nothing = {
     L.error(message.toLua(this), level)
     sys.error("L.error returned unexpectedly!")
   }
   def gc(what: Int, data: Int): Int = L.gc(what, data)
 
   def where(level: Int): String = L.where(level)
-  def setHook(mask: Int, count: Int)(fn: (LuaState, Debug) => Unit) =
+  def setHook(mask: Int, count: Int)(fn: (LuaState, Debug) => Unit): Unit =
     L.setHook((L: Lua, ar: Debug) => {
       fn(new LuaState(L), ar)
       0
     }, mask, count)
 
-  def newTable() = L.newTable()
+  def newTable(): LuaTable = L.newTable()
 
   def getFenv(o: LuaObject): LuaTable = L.getFenv(o.toLua(this))
   def setFenv(o: LuaObject, table: LuaTable): Boolean = L.setFenv(o.toLua(this), table)
@@ -192,18 +190,18 @@ final case class LuaState(L: Lua) extends AnyVal {
   def setMetatable(o: LuaObject, mt: Option[LuaTable]): Unit = L.setMetatable(o.toLua(this), mt.toLua(this))
 
   // operator functions
-  def objLen(o: LuaObject) = Lua.objLen(o.toLua(this))
+  def objLen(o: LuaObject): Int = Lua.objLen(o.toLua(this))
   def concat(n: Int): Unit = L.concat(n)
   def equal(o1: LuaObject, o2: LuaObject): Boolean = L.equal(o1.toLua(this), o2.toLua(this))
   def lessThan(o1: LuaObject, o2: LuaObject): Boolean = L.lessThan(o1.toLua(this), o2.toLua(this))
-  def tableKeys(t: LuaObject) = L.tableKeys(t.toLua(this)).asScala
+  def tableKeys(t: LuaObject): Iterator[Any] = L.tableKeys(t.toLua(this)).asScala
   def `type`(idx: Int): Int = L.`type`(idx)
   def typeNameOfIndex(idx: Int): String = L.typeNameOfIndex(idx)
 }
 object LuaState {
   private val captureFunctionReturn = LuaRegistryEntry[LuaClosure]()
 
-  def makeSafeContext() = {
+  def makeSafeContext(): LuaState = {
     val L = new Lua()
 
     BaseLib.open(L)

@@ -1,7 +1,8 @@
-/*  $Header: //info.ravenbrook.com/project/jili/version/1.1/code/mnj/lua/Lua.java#3 $
+/*
  * Copyright (c) 2006 Nokia Corporation and/or its subsidiary(-ies).
+ * Copyright (c) 2017-2022 Lymia Alusyia <lymia@lymiahugs.com>
  * All rights reserved.
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -9,10 +10,10 @@
  * distribute, sublicense, and/or sell copies of the Software, and to
  * permit persons to whom the Software is furnished to do so, subject
  * to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -20,6 +21,7 @@
  * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
  * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
  */
 
 package moe.lymia.lua;
@@ -1196,7 +1198,7 @@ public final class Lua {
      * Starts and resumes a Lua thread.  Threads can be created using
      * {@link #newThread}.  Once a thread has begun executing it will
      * run until it either completes (with error or normally) or has been
-     * suspended by invoking {@link #yield}.
+     * suspended by invoking {@link #lua_yield}.
      *
      * @param narg Number of values to pass to thread.
      * @return Lua.YIELD, 0, or an error code.
@@ -1613,7 +1615,7 @@ public final class Lua {
      * @param nresults Number of results to return to {@link #resume}.
      * @return a secret value.
      */
-    public int yield(int nresults) {
+    public int lua_yield(int nresults) {
         if (nCcalls > 0)
             gRunerror("attempt to yield across metamethod/Java-call boundary");
         base = stackSize - nresults;     // protect stack slots below
@@ -2466,8 +2468,6 @@ public final class Lua {
 
     /**
      * Equivalent to luaO_fb2int.
-     *
-     * @see Syntax#oInt2fb
      */
     private static int oFb2int(int x) {
         int e = (x >>> 3) & 31;
@@ -3540,7 +3540,7 @@ public final class Lua {
             } catch (LuaError e) {
                 throw e;
             } catch (RuntimeException e) {
-                yield(0);
+                lua_yield(0);
                 throw e;
             }
             if (n < 0)        // yielding?

@@ -28,7 +28,7 @@ import moe.lymia.princess.editor.lua._
 import moe.lymia.princess.editor.model.DataStore
 import moe.lymia.princess.editor.nodes._
 import moe.lymia.princess.editor.utils.RxOwner
-import moe.lymia.princess.renderer.RenderManager
+import moe.lymia.princess.svg.RenderManager
 import org.eclipse.swt.widgets._
 import rx._
 

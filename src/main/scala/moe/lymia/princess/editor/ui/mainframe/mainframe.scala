@@ -31,7 +31,7 @@ import moe.lymia.princess.editor.model.{Project, ProjectMetadata}
 import moe.lymia.princess.editor.ui.editor.{EditorTab, EditorTabData}
 import moe.lymia.princess.editor.ui.mainframe.TabDefs.TabBase
 import moe.lymia.princess.editor.utils._
-import moe.lymia.princess.renderer.lua.RenderModule
+import moe.lymia.princess.svg.lua.RenderModule
 import moe.lymia.princess.util.{FileLock, IOUtils}
 import org.eclipse.jface.action.MenuManager
 import org.eclipse.jface.dialogs.MessageDialog

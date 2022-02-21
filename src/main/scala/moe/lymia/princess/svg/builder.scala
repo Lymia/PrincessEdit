@@ -20,10 +20,10 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer
+package moe.lymia.princess.svg
 
 import moe.lymia.lua.LuaTable
-import moe.lymia.princess.rasterizer.SVGRasterizer
+import moe.lymia.princess.svg.rasterizer.SVGRasterizer
 import org.jfree.graphics2d.svg.{SVGGraphics2D, SVGHints}
 
 import java.io.Writer
@@ -71,8 +71,8 @@ final class SVGBuilder(val settings: RenderSettings) {
 
   private def attribute(key: String, value: String) = Attribute(None, key, Text(value), Null)
 
-  private[renderer] def addUsage(id: String) = useCount.put(id, useCount.getOrElse(id, 0) + 1)
-  private[renderer] def noInline(id: String) = noInlineList.add(id)
+  private[svg] def addUsage(id: String) = useCount.put(id, useCount.getOrElse(id, 0) + 1)
+  private[svg] def noInline(id: String) = noInlineList.add(id)
 
   private def getUseCount(id: String) = useCount.getOrElse(id, 0)
   private def isUsed(id: String) = getUseCount(id) > 0
@@ -166,7 +166,7 @@ final class SVGBuilder(val settings: RenderSettings) {
   def rasterizeSwt(rasterizer: SVGRasterizer, x: Int, y: Int, root: SVGDefinitionReference) =
     rasterizer.rasterizeSwt(x, y, renderSVGTag(root))
 }
-private[renderer] object SVGBuilder {
+private[svg] object SVGBuilder {
   val SVG11Doctype = DocType(
     "svg",
     PublicID("-//W3C//DTD SVG 1.1//EN",

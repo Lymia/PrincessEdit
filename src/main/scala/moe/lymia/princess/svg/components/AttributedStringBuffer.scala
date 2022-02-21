@@ -36,7 +36,7 @@
    limitations under the License.
 */
 
-package moe.lymia.princess.renderer.components
+package moe.lymia.princess.svg.components
 
 import java.text.{AttributedCharacterIterator, AttributedString}
 import java.util

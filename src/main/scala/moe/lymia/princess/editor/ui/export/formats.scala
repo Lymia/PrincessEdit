@@ -26,8 +26,8 @@ import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.VersionInfo
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
 import moe.lymia.princess.editor.utils.UIUtils
-import moe.lymia.princess.rasterizer.SVGRasterizer
-import moe.lymia.princess.renderer.SVGData
+import moe.lymia.princess.svg.SVGData
+import moe.lymia.princess.svg.rasterizer.SVGRasterizer
 import org.eclipse.jface.layout.GridDataFactory
 import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt.SWT

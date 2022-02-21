@@ -23,7 +23,7 @@
 package moe.lymia.lua
 
 object LuaConsole {
-  def startConsole() {
+  def startConsole(): Unit = {
     val L = LuaState.makeSafeContext()
 
     var continue = true
@@ -37,9 +37,8 @@ object LuaConsole {
 
     L.setGlobal("exit", exit)
 
-    val printFn = L.getGlobal("print").as[LuaClosure]
     def loadLine(s: String) =
-      L.loadString(s"return $s", "@<console>").right.flatMap(_ => L.loadString(s, "@<console>"))
+      L.loadString(s"return $s", "@<console>").flatMap(_ => L.loadString(s, "@<console>"))
     val chunk = L.loadString(
       """
         local pcall = pcall

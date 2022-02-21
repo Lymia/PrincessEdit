@@ -25,7 +25,7 @@ package moe.lymia.princess.editor.ui.editor
 import moe.lymia.lua._
 import moe.lymia.princess.editor.ui.export.ExportCardsDialog
 import moe.lymia.princess.editor.utils.{RxWidget, UIUtils}
-import moe.lymia.princess.renderer._
+import moe.lymia.princess.svg._
 import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{MouseEvent, MouseListener}

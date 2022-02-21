@@ -23,8 +23,8 @@
 package moe.lymia.princess.editor
 
 import moe.lymia.princess.editor.utils.ExtendedResourceManager
-import moe.lymia.princess.rasterizer._
-import moe.lymia.princess.renderer._
+import moe.lymia.princess.svg._
+import moe.lymia.princess.svg.rasterizer.{SVGRasterizer, SVGRasterizerFactory}
 import moe.lymia.princess.util._
 import org.eclipse.jface.resource.{JFaceResources, LocalResourceManager}
 import org.eclipse.jface.window._

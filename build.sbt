@@ -83,7 +83,7 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   organization := "moe.lymia.princessedit",
   name := "princess-edit",
 
-  nativeImageOptions += "--no-fallback",
+  nativeImageOptions ++= Seq("--no-fallback", "--language:js"),
   nativeImageOptions += s"-H:ConfigurationFileDirectories=${baseDirectory.value / "config-dir"}",
 
   run / fork := true,
@@ -137,7 +137,8 @@ val commonSettings = versionWithGit ++ Seq(
 
   // Scala configuration
   scalaVersion := config_scalaVersion,
-  scalacOptions ++= "-Xlint -target:jvm-1.8 -opt:l:inline -deprecation -unchecked".split(" ").toSeq
+  javacOptions ++= "-source 11 -target 17".split(" ").toSeq,
+  scalacOptions ++= "-Xlint -target:17 -opt:l:inline -deprecation -unchecked".split(" ").toSeq
 )
 
 externalIvySettings(baseDirectory(_ / "ivysettings.xml"))

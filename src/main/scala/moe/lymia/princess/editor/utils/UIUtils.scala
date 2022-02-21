@@ -24,7 +24,7 @@ package moe.lymia.princess.editor.utils
 
 import com.coconut_palm_software.xscalawt.XScalaWTStyles._
 import moe.lymia.princess.core.I18N
-import moe.lymia.princess.renderer.SVGFile
+import moe.lymia.princess.svg.SVGFile
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.jface.dialogs.MessageDialog
 import org.eclipse.jface.resource.FontDescriptor

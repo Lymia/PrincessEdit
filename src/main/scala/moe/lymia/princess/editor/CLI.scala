@@ -25,7 +25,7 @@ package moe.lymia.princess.editor
 import moe.lymia.princess.AppName
 import moe.lymia.princess.editor.ui.frontend.SplashScreen
 import moe.lymia.princess.editor.ui.mainframe.MainFrame
-import moe.lymia.princess.rasterizer._
+import moe.lymia.princess.svg.rasterizer.ResvgConnectionFactory
 import org.eclipse.swt.widgets.Display
 
 import java.nio.file.Paths

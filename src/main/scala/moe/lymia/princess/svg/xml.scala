@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer
+package moe.lymia.princess.svg
 
 import scala.collection.mutable
 import scala.xml._

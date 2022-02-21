@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.rasterizer
+package moe.lymia.princess.svg.rasterizer
 
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.swt.graphics.ImageData

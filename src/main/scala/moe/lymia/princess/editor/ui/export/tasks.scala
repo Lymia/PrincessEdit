@@ -25,7 +25,7 @@ package moe.lymia.princess.editor.ui.export
 import moe.lymia.lua._
 import moe.lymia.princess.editor.model.FullCardData
 import moe.lymia.princess.editor.ui.mainframe.MainFrameState
-import moe.lymia.princess.renderer.RasterizeResourceLoader
+import moe.lymia.princess.svg.RasterizeResourceLoader
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.jface.operation.IRunnableWithProgress

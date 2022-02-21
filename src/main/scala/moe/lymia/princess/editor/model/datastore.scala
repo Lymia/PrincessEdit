@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.editor.model
 
-import moe.lymia.lua._
+import moe.lymia.lua.{Lua, _}
 import play.api.libs.json._
 import rx._
 

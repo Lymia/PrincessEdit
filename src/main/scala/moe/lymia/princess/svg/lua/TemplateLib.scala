@@ -20,11 +20,11 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.renderer.lua
+package moe.lymia.princess.svg.lua
 
 import moe.lymia.lua._
 import moe.lymia.princess.core._
-import moe.lymia.princess.renderer._
+import moe.lymia.princess.svg._
 
 case class PhysicalScale(unPerViewport: Double, unit: PhysicalUnit)
 trait LuaTemplateImplicits {
