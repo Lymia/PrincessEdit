@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.mainframe
+package moe.lymia.princess.views.mainframe
 
 import moe.lymia.princess.VersionInfo
 import moe.lymia.princess.core.I18NLoader
@@ -28,11 +28,11 @@ import moe.lymia.princess.core.datamodel.{Project, ProjectMetadata}
 import moe.lymia.princess.core.packages.{GameId, PackageManager}
 import moe.lymia.princess.gui._
 import moe.lymia.princess.gui.scripting.EditorModule
-import moe.lymia.princess.gui.ui.editor.{EditorTab, EditorTabData}
-import moe.lymia.princess.gui.ui.mainframe.TabDefs.TabBase
 import moe.lymia.princess.gui.utils._
 import moe.lymia.princess.svg.scripting.RenderModule
 import moe.lymia.princess.util.{FileLock, IOUtils}
+import moe.lymia.princess.views.editor.{EditorTab, EditorTabData}
+import moe.lymia.princess.views.mainframe.TabDefs.TabBase
 import org.eclipse.jface.action.MenuManager
 import org.eclipse.jface.dialogs.MessageDialog
 import org.eclipse.jface.window.{IShellProvider, Window}

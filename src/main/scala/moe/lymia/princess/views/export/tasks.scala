@@ -20,13 +20,13 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.export
+package moe.lymia.princess.views.`export`
 
 import moe.lymia.lua._
 import moe.lymia.princess.core.datamodel.FullCardData
-import moe.lymia.princess.gui.ui.mainframe.MainFrameState
 import moe.lymia.princess.svg.RasterizeResourceLoader
 import moe.lymia.princess.util.IOUtils
+import moe.lymia.princess.views.mainframe.MainFrameState
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.jface.operation.IRunnableWithProgress
 

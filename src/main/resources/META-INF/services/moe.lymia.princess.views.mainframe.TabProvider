@@ -20,4 +20,4 @@
 # THE SOFTWARE.
 #
 
-moe.lymia.princess.gui.ui.editor.EditorTabProvider
+moe.lymia.princess.views.editor.EditorTabProvider

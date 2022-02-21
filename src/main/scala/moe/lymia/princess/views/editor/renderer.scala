@@ -20,12 +20,12 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.editor
+package moe.lymia.princess.views.editor
 
 import moe.lymia.lua._
-import moe.lymia.princess.gui.ui.export.ExportCardsDialog
 import moe.lymia.princess.gui.utils.{RxWidget, UIUtils}
 import moe.lymia.princess.svg._
+import moe.lymia.princess.views.`export`.ExportCardsDialog
 import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{MouseEvent, MouseListener}

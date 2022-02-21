@@ -20,9 +20,9 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui
+package moe.lymia.princess.views
 
-import moe.lymia.princess.gui.ui.mainframe.MainFrameState
+import moe.lymia.princess.views.mainframe.MainFrameState
 import play.api.libs.json.Json
 
 import scala.language.implicitConversions

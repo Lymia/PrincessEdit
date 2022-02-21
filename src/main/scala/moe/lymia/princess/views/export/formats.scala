@@ -20,14 +20,14 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.export
+package moe.lymia.princess.views.`export`
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.VersionInfo
-import moe.lymia.princess.gui.ui.mainframe.MainFrameState
 import moe.lymia.princess.gui.utils.UIUtils
 import moe.lymia.princess.svg.SVGData
 import moe.lymia.princess.svg.rasterizer.SVGRasterizer
+import moe.lymia.princess.views.mainframe.MainFrameState
 import org.eclipse.jface.layout.GridDataFactory
 import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt.SWT

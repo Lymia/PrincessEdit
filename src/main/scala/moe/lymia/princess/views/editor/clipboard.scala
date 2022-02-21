@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.editor
+package moe.lymia.princess.views.editor
 
 import moe.lymia.princess.MimeType
 import org.eclipse.swt.dnd.{ByteArrayTransfer, Transfer, TransferData}
@@ -43,7 +43,7 @@ object CardTransfer extends ByteArrayTransfer {
     }
   }
 
-  override def nativeToJava(transferData: TransferData) = {
+  override def nativeToJava(transferData: TransferData): AnyRef = {
     if (isSupportedType(transferData)) {
       val buffer = super.nativeToJava(transferData).asInstanceOf[Array[Byte]]
       if (buffer == null) null

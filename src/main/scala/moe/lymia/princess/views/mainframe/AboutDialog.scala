@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.mainframe
+package moe.lymia.princess.views.mainframe
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.VersionInfo

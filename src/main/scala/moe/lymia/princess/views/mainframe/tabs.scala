@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.mainframe
+package moe.lymia.princess.views.mainframe
 
 import moe.lymia.princess.gui.SettingsKey
 import moe.lymia.princess.gui.utils.RxWidget
@@ -40,7 +40,7 @@ import scala.collection.mutable
 object TabDefs {
   type TabBase = Control with PrincessEditTab
 }
-import moe.lymia.princess.gui.ui.mainframe.TabDefs._
+import moe.lymia.princess.views.mainframe.TabDefs._
 
 // TODO: Should we really use an UUID here?
 abstract case class TabID[Data : Writes : Reads, TabClass <: TabBase, TabAPI](id: UUID) {

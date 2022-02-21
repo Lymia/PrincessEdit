@@ -20,13 +20,13 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.frontend
+package moe.lymia.princess.views.frontend
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.packages.PackageManager
 import moe.lymia.princess.gui.ControlContext
-import moe.lymia.princess.gui.ui.mainframe.MainFrame
 import moe.lymia.princess.gui.utils.WindowBase
+import moe.lymia.princess.views.mainframe.MainFrame
 import org.eclipse.swt.events.SelectionEvent
 import org.eclipse.swt.widgets._
 

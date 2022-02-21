@@ -22,10 +22,10 @@
 
 package moe.lymia.princess
 
-import moe.lymia.princess.gui.ui.frontend.SplashScreen
-import moe.lymia.princess.gui.ui.mainframe.MainFrame
 import moe.lymia.princess.gui.{ControlContext, UILoop, UIManager}
 import moe.lymia.princess.svg.rasterizer.ResvgConnectionFactory
+import moe.lymia.princess.views.frontend.SplashScreen
+import moe.lymia.princess.views.mainframe.MainFrame
 import org.eclipse.swt.widgets.Display
 
 import java.nio.file.Paths

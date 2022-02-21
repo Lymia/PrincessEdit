@@ -20,13 +20,13 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.frontend
+package moe.lymia.princess.views.frontend
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.packages.{GameId, PackageManager}
 import moe.lymia.princess.gui.ControlContext
-import moe.lymia.princess.gui.ui.mainframe.{MainFrame, ProjectSource}
 import moe.lymia.princess.gui.utils.{DialogBase, UIUtils}
+import moe.lymia.princess.views.mainframe.{MainFrame, ProjectSource}
 import org.eclipse.jface.viewers.{ITreeContentProvider, LabelProvider}
 import org.eclipse.jface.window.Window
 import org.eclipse.nebula.jface.galleryviewer.GalleryTreeViewer

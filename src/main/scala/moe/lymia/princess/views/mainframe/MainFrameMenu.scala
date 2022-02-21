@@ -20,11 +20,11 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.mainframe
+package moe.lymia.princess.views.mainframe
 
 import moe.lymia.princess.core.datamodel.StaticViewID
-import moe.lymia.princess.gui.ui.editor.{EditorTab, EditorTabData}
-import moe.lymia.princess.gui.ui.frontend.GameSelectorDialog
+import moe.lymia.princess.views.editor.{EditorTab, EditorTabData}
+import moe.lymia.princess.views.frontend.GameSelectorDialog
 import org.eclipse.jface.action.{Action, MenuManager}
 import org.eclipse.swt.SWT
 import org.eclipse.swt.program.Program

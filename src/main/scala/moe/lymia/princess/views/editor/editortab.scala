@@ -20,13 +20,13 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.editor
+package moe.lymia.princess.views.editor
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.datamodel.FullCardData
-import moe.lymia.princess.gui.ui.mainframe._
 import moe.lymia.princess.gui.utils.{RxOwner, RxWidget, UIUtils}
 import moe.lymia.princess.gui.{DataRoot, UIData}
+import moe.lymia.princess.views.mainframe.{MainFrameState, PrincessEditTab, TabID, TabProvider}
 import org.eclipse.jface.action.MenuManager
 import org.eclipse.swt._
 import org.eclipse.swt.custom._

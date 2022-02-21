@@ -20,12 +20,12 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.ui.editor
+package moe.lymia.princess.views.editor
 
 import moe.lymia.princess.core.datamodel.FullCardData
 import moe.lymia.princess.gui.TableColumnData
-import moe.lymia.princess.gui.ui.export.ExportCardsDialog
 import moe.lymia.princess.gui.utils.RxWidget
+import moe.lymia.princess.views.`export`.ExportCardsDialog
 import org.eclipse.jface.action._
 import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
