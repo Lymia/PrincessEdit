@@ -38,5 +38,4 @@ jobs:
         run: sbt -v clean dist
       - uses: actions/upload-artifact@v2
         with:
-          name: package
-          path: target/scala-2.13/dist
+          path: target/scala-2.13/dist/*
