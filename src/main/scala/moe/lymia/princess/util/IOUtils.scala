@@ -30,6 +30,7 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.regex.Pattern
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.io.Codec
 
 final class FileLock(lockFile: Path) {
@@ -86,10 +87,13 @@ object IOUtils {
     }
   }
 
+  private val cachedZipFilesystems = new mutable.HashMap[Path, FileSystem]()
   def openZip(path: Path, create: Boolean = false): FileSystem = {
-    val zipFs = FileSystems.newFileSystem(URI.create(s"jar:${path.toUri}"),
-      if(create) Map("create" -> "true").asJava else Map[String, Any]().asJava)
-    zipFs
+    val canonical = path.toAbsolutePath
+    cachedZipFilesystems.getOrElseUpdate(canonical, {
+      FileSystems.newFileSystem(URI.create(s"jar:${path.toUri}"),
+        if(create) Map("create" -> "true").asJava else Map[String, Any]().asJava)
+    })
   }
 
   private val validFilenameRegex = Pattern.compile("^[- 0-9a-zA-Z_./]+$")
