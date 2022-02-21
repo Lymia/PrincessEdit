@@ -222,9 +222,14 @@ object PackageResolver {
     PackageResolver(map.toMap)
   }
 
-  def loadPackageDirectory(packages: Path, systemPackages: Path*): PackageResolver = {
-    val loadedPackages = for (x <- IOUtils.list(packages) if x.getFileName.toString.endsWith(".pedit-pkg"))
-        yield LoadedPackage.loadPackage(x, isSystem = false)
+  def loadPackageDirectory(packages: Option[Path], systemPackages: Path*): PackageResolver = {
+    val loadedPackages = packages match {
+      case Some(packages) =>
+        for (x <- IOUtils.list(packages) if x.getFileName.toString.endsWith(".pedit-pkg"))
+          yield LoadedPackage.loadPackage(x, isSystem = false)
+      case None =>
+        Seq()
+    }
     val loadedSystemPackages = for (x <- systemPackages) yield LoadedPackage.loadPackage(x, isSystem = true)
     core.packages.PackageResolver((loadedPackages ++ loadedSystemPackages).flatten)
   }

@@ -23,14 +23,14 @@
 package moe.lymia.princess.core.packages
 
 import moe.lymia.lua.LuaObject
-import moe.lymia.princess.core.{EditorException, I18NLoader, LuaContext, LuaModule}
-import moe.lymia.princess.{DefaultLogger, Logger}
+import moe.lymia.princess.core.{EditorException, I18N, I18NLoader, LuaContext, LuaModule, MarkedI18NSource}
+import moe.lymia.princess.{DefaultLogger, Environment, Logger}
 
 import java.net.URI
 import java.nio.file.{Path, Paths}
 
 final class GameManager(packages: PackageList, val logger: Logger = DefaultLogger, modules: Seq[LuaModule] = Seq()) {
-  val gameId = packages.gameId
+  val gameId: String = packages.gameId
   lazy val lua = new LuaContext(packages, logger.bind("LuaContext"), modules)
 
   def getExportKeys: Set[String] = packages.getExportKeys
@@ -54,30 +54,30 @@ final class GameManager(packages: PackageList, val logger: Logger = DefaultLogge
     } else if(ep.length > 1) throw EditorException(s"GameID '$gameId' has more than one entry point of type '$export'")
     else Some(getLuaExport(ep.head.path))
   }
-  def getRequiredEntryPoint(export: String) =
+  def getRequiredEntryPoint(export: String): LuaObject =
     getEntryPoint(export).getOrElse(throw EditorException(s"GameID '$gameId' has no entry point of type '$export'"))
 }
 
-final class PackageManager(packages: Path, systemPackages: Seq[Path] = Seq(), logger: Logger = DefaultLogger) {
-  val resolver = PackageResolver.loadPackageDirectory(packages, systemPackages: _*)
+final class PackageManager(packages: Option[Path], systemPackages: Seq[Path] = Seq(), logger: Logger = DefaultLogger) {
+  val resolver: PackageResolver = PackageResolver.loadPackageDirectory(packages, systemPackages: _*)
 
-  val gameIdManager = GameId.loadGameIdManager(this)
-  val gameIds = GameId.loadGameIds(gameIdManager)
-  val gameIdList = gameIds.values.toSeq
-  val gameIdI18N = new I18NLoader(gameIdManager).i18n.user
+  val gameIdManager: GameManager = GameId.loadGameIdManager(this)
+  val gameIds: Map[String, GameId] = GameId.loadGameIds(gameIdManager)
+  val gameIdList: Seq[GameId] = gameIds.values.toSeq
+  val gameIdI18N: MarkedI18NSource = new I18NLoader(gameIdManager).i18n.user
 
   def loadGameId(gameId: String, logger: Logger = logger, modules: Seq[LuaModule] = Seq()) =
     new GameManager(resolver.loadGameId(gameId), logger, modules)
 }
 object PackageManager {
-  private lazy val rootPath = System.getProperty("moe.lymia.princess.rootDirectory") match {
-    case null => Paths.get(".")
-    case url => Paths.get(new URI(url))
-  }
-  lazy val default = new PackageManager(rootPath.resolve("packages"), Seq(rootPath.resolve("lib/core.pedit-pkg")))
+  private def rootPath = Environment.rootDirectory
+  private def corePkgPath = rootPath.resolve("lib/core.pedit-pkg")
 
-  lazy val systemI18N = {
-    val id = default.loadGameId("_princess")
+  lazy val default = new PackageManager(Some(rootPath.resolve("packages")), Seq(corePkgPath))
+
+  private lazy val system = new PackageManager(None, Seq(corePkgPath))
+  lazy val systemI18N: I18N = {
+    val id = system.loadGameId("_princess")
     new I18NLoader(id).i18n
   }
 }

@@ -88,6 +88,7 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
 
   run / fork := true,
   run / envVars += ("SWT_GTK3", "0"),
+  run / envVars += ("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY", baseDirectory.value.toString),
 
   libraryDependencies += "org.scala-lang" % "scala-reflect" % config_scalaVersion,
   libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.0.1",

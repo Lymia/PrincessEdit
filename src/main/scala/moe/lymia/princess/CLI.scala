@@ -55,11 +55,11 @@ class CLI {
     println(s"$what in ${System.currentTimeMillis() - time}ms.")
     res
   }
-  private def setCmd(cmd: () => Unit) = {
+  private def setCmd(cmd: () => Unit): Unit = {
     if(command.isDefined) error("Command already set!")
     command = Some(cmd)
   }
-  private def mainLoop[T](f: ControlContext => Unit) = {
+  private def mainLoop[T](f: ControlContext => Unit): Unit = {
     val loop = new UILoop
     loop.mainLoop { display =>
       val manager = new UIManager(loop, ResvgConnectionFactory)
@@ -67,7 +67,7 @@ class CLI {
     }
   }
 
-  private def cmd_default() = {
+  private def cmd_default(): Unit = {
     mainLoop { ctx =>
       loadTarget match {
         case Some(x) =>
@@ -77,13 +77,13 @@ class CLI {
       }
     }
   }
-  private def cmd_load() = {
+  private def cmd_load(): Unit = {
     mainLoop { ctx =>
       MainFrame.loadProject(null, ctx, Paths.get(loadTarget.get))
     }
   }
 
-  def main(args: Seq[String]) = {
+  def main(args: Seq[String]): Unit = {
     try {
       Display.setAppName(AppName.PrincessEdit)
       if(parser.parse(args, ()).isDefined) command.getOrElse(cmd_default _)()

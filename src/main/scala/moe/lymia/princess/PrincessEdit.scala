@@ -22,6 +22,8 @@
 
 package moe.lymia.princess
 
+import scala.collection.JavaConverters._
+
 object PrincessEdit {
   def main(args: Array[String]) = {
     println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")
@@ -29,7 +31,7 @@ object PrincessEdit {
     println("")
     println(s"Commit: ${VersionInfo.commit}")
     println(s"Build ID: ${VersionInfo.buildId}")
-    println(s"Java runtime: ${System.getProperty("java.version")}")
+    println(s"Java runtime: ${System.getProperty("java.vm.version")}")
     println("")
 
     new CLI().main(args)

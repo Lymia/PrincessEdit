@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.gui
 
-import moe.lymia.princess.Platform
+import moe.lymia.princess.Environment
 import moe.lymia.princess.util.IOUtils
 import org.apache.commons.codec.digest.DigestUtils
 import play.api.libs.json._
@@ -99,7 +99,7 @@ object FilesystemSettingsStore {
 }
 
 object Settings {
-  val rootDirectory = Platform.platform.getConfigDirectory("PrincessEdit")
+  val rootDirectory = Environment.configDirectory("PrincessEdit")
   Files.createDirectories(rootDirectory)
 
   private val globalSettingsPath = rootDirectory.resolve("settings.json")

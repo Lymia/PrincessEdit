@@ -24,14 +24,14 @@ package moe.lymia.princess
 
 import com.sun.jna.platform.win32.{Shell32Util, ShlObj}
 
+import java.io.File
 import java.nio.file.{Path, Paths}
 
-sealed trait Platform {
+private sealed trait Platform {
   val executableExtension: String
   val configurationRoot: Path
-  def getConfigDirectory(name: String) = configurationRoot.resolve(name)
 }
-object Platform {
+private object Platform {
   private case object Windows extends Platform {
     override val executableExtension = ".exe"
     override lazy val configurationRoot: Path =
@@ -59,4 +59,33 @@ object Platform {
     case _ => None
   }
   def platform: Platform = platformOption.get
+}
+
+object Environment {
+  private lazy val isNativeImage: Boolean = System.getProperty("org.graalvm.nativeimage.kind") != null
+  private lazy val isSbtLaunch: Boolean = System.getenv("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY") != null
+
+  private lazy val configurationRoot = Platform.platform.configurationRoot
+  def configDirectory(name: String): Path = configurationRoot.resolve(name)
+
+  private lazy val locationFromCodeSource =
+    new File(PrincessEdit.getClass.getProtectionDomain.getCodeSource.getLocation.toURI).toPath.getParent
+  private lazy val locationFromSbtEnvironment =
+    Paths.get(System.getenv("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY"))
+
+  lazy val rootDirectory: Path =
+    if (isNativeImage) locationFromCodeSource
+    else if (isSbtLaunch) locationFromSbtEnvironment
+    else {
+      DefaultLogger.warn("Falling back to current directory when finding 'rootDirectory'.")
+      Paths.get(".")
+    }
+
+  lazy val libDirectory: Path =
+    if (isNativeImage) locationFromCodeSource.resolve("lib")
+    else if (isSbtLaunch) locationFromSbtEnvironment.resolve("lib")
+    else {
+      DefaultLogger.warn("Falling back to current directory when finding 'libDirectory'.")
+      Paths.get("lib")
+    }
 }
