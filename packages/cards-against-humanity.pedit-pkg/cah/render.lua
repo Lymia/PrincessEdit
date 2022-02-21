@@ -43,6 +43,7 @@ function render(cardData)
     local layout = component.BasicLayout(size)
     layout.addComponent(0, 0, component.Fill(size, bgColor))
     layout.addComponent(0, 0, component.Resource("cah/cah-logo.svg", size))
+    -- TODO: Expansion code in logo icon
     layout.addComponent(59, 322.5, component.SimpleText(cardData.expansion.gameName, font, 5.25, fgColor))
 
     local textLayout = component.SimpleTextLayout({25, 30, 225, 300}, text, font, 15, fgColor)
