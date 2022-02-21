@@ -27,8 +27,8 @@ jobs:
       - name: Cache Ivy packages
         uses: actions/cache@v2
         with:
-          path: |
-            ~/.ivy2
+          key: ${{ runner.os }}-dist
+          path: ~/.ivy2
 
       # Build distribution package
       - name: Run sbt dist
