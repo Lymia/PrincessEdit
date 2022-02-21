@@ -1,0 +1,38 @@
+# Based on https://gist.githubusercontent.com/linux-china/8745394fbc308168b20068386771ea1b/raw/2eacd667eb9754eed0a6d56d7cb09aaba4e55b95/graalvm.yml
+
+name: Bulid distribution package
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ '*' ]
+
+jobs:
+  buildOnLinux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      # Setup environment
+      - name: Setup JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: ayltai/setup-graalvm@v1
+        with:
+          java-version: 17
+          graalvm-version: 22.0.0.2
+          native-image: true
+      - name: Cache Ivy packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.ivy2
+
+      # Build distribution package
+      - name: Run sbt dist
+        run: sbt -v clean dist
+      - uses: actions/upload-artifact@v2
+        with:
+          name: package
+          path: target/dist
