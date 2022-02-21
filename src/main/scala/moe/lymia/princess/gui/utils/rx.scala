@@ -20,28 +20,18 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess
+package moe.lymia.princess.gui.utils
 
-object PrincessEdit {
-  def main(args: Array[String]) = {
-    println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")
-    println("Released under the MIT license")
-    println("")
-    println(s"Commit: ${VersionInfo.commit}")
-    println(s"Build ID: ${VersionInfo.buildId}")
-    println(s"Java runtime: ${System.getProperty("java.version")}")
-    println("")
+import org.eclipse.swt.widgets.Widget
+import rx._
 
-    new CLI().main(args)
-  }
+trait RxOwner {
+  protected implicit val owner = Ctx.Owner.Unsafe
+  private val dummyRx = Rx.apply { () }
+
+  def kill() = dummyRx.kill()
 }
 
-object AppName {
-  val PrincessEdit = "Lymia.PrincessEdit.PrincessEdit"
+trait RxWidget extends RxOwner { this: Widget =>
+  addDisposeListener(_ => kill())
 }
-
-object MimeType {
-  val CardData = "application/vnd.princessedit-cards+json"
-  val Project = "application/vnd.princessedit-project+zip"
-}
-

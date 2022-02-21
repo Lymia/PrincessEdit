@@ -20,28 +20,21 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess
+package moe.lymia.princess.svg
 
-object PrincessEdit {
-  def main(args: Array[String]) = {
-    println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")
-    println("Released under the MIT license")
-    println("")
-    println(s"Commit: ${VersionInfo.commit}")
-    println(s"Build ID: ${VersionInfo.buildId}")
-    println(s"Java runtime: ${System.getProperty("java.version")}")
-    println("")
+import moe.lymia.princess.core._
 
-    new CLI().main(args)
+package object scripting
+  extends LuaComponentImplicits
+  with    LuaTemplateImplicits
+  with    LuaTextImplicits {
+
+  object RenderModule extends LuaModule {
+    override val moduleName: String = "render"
+    override def getLibraries(ctx: LuaContext): Seq[LuaLibrary] = Seq(
+      ComponentLib(ctx.packages),
+      TemplateLib,
+      TextLib(ctx.packages)
+    )
   }
 }
-
-object AppName {
-  val PrincessEdit = "Lymia.PrincessEdit.PrincessEdit"
-}
-
-object MimeType {
-  val CardData = "application/vnd.princessedit-cards+json"
-  val Project = "application/vnd.princessedit-project+zip"
-}
-

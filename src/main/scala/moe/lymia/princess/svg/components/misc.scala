@@ -25,7 +25,7 @@ package moe.lymia.princess.svg.components
 import moe.lymia.lua.{LuaTable, _}
 import moe.lymia.princess.core._
 import moe.lymia.princess.svg._
-import moe.lymia.princess.svg.lua._
+import moe.lymia.princess.svg.scripting._
 
 class ComponentWrapper(underlying: ComponentReference) extends Component {
   override def getDefinitionReference(ref: ComponentReference, manager: ComponentRenderManager) =

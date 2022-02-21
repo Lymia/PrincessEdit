@@ -24,7 +24,7 @@ package moe.lymia.princess.svg.components
 
 import moe.lymia.lua.{LuaTable, _}
 import moe.lymia.princess.svg._
-import moe.lymia.princess.svg.lua._
+import moe.lymia.princess.svg.scripting._
 import org.jfree.graphics2d.svg.SVGGraphics2D
 
 import java.awt.font.{FontRenderContext, LineBreakMeasurer, TextLayout}

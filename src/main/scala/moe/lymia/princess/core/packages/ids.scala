@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.core.packages
 
-import moe.lymia.princess.core.{EditorException, GameManager, PackageManager}
+import moe.lymia.princess.core.EditorException
 import moe.lymia.princess.util.IOUtils
 import toml.Toml
 import toml.Codecs._
@@ -32,7 +32,7 @@ import scala.collection.mutable
 
 case class GameId(name: String, displayName: String, iconPath: Option[String])
 object GameId {
-  def loadGameId(path: Path) = EditorException.context(s"loading GameID from $path") {
+  def loadGameId(path: Path): GameId = EditorException.context(s"loading GameID from $path") {
     case class RawGameId(name: String, displayName: String, icon: Option[String])
     case class RawGameIdContainer(game: RawGameId)
 
@@ -40,8 +40,8 @@ object GameId {
     GameId(raw.game.name, raw.game.displayName, raw.game.icon)
   }
 
-  def loadGameIdManager(manager: PackageManager) = manager.loadGameId(StaticGameIDs.DefinesGameID)
-  def loadGameIds(game: GameManager) = {
+  def loadGameIdManager(manager: PackageManager): GameManager = manager.loadGameId(StaticGameIDs.DefinesGameID)
+  def loadGameIds(game: GameManager): Map[String, GameId] = {
     val gameIDExports = game.getExports(StaticExportIDs.GameID).map(_.path).map(game.forceResolve)
 
     val idMap = new mutable.HashMap[String, GameId]

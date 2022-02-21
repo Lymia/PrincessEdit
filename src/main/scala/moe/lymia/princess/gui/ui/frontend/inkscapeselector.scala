@@ -20,28 +20,30 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess
+package moe.lymia.princess.gui.ui.frontend
 
-object PrincessEdit {
-  def main(args: Array[String]) = {
-    println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")
-    println("Released under the MIT license")
-    println("")
-    println(s"Commit: ${VersionInfo.commit}")
-    println(s"Build ID: ${VersionInfo.buildId}")
-    println(s"Java runtime: ${System.getProperty("java.version")}")
-    println("")
+import com.coconut_palm_software.xscalawt.XScalaWT._
+import moe.lymia.princess.core.packages.PackageManager
+import moe.lymia.princess.gui.ControlContext
+import moe.lymia.princess.gui.utils.DialogBase
+import org.eclipse.jface.window.Window
+import org.eclipse.swt.SWT
+import org.eclipse.swt.graphics.Point
+import org.eclipse.swt.widgets.{Composite, Shell}
 
-    new CLI().main(args)
+final class InkscapeSelectorDialog(parent: Window, ctx: ControlContext, closeParent: Boolean = false)
+  extends DialogBase(parent, ctx) {
+
+  setShellStyle(getShellStyle | SWT.RESIZE)
+
+  override def configureShell(shell: Shell): Unit = {
+    super.configureShell(shell)
+    shell.setText(PackageManager.systemI18N.system("_princess.gameSelector.title"))
   }
-}
 
-object AppName {
-  val PrincessEdit = "Lymia.PrincessEdit.PrincessEdit"
-}
+  override def getInitialSize: Point = new Point(800, 600)
 
-object MimeType {
-  val CardData = "application/vnd.princessedit-cards+json"
-  val Project = "application/vnd.princessedit-project+zip"
-}
+  override protected def frameContents(frame: Composite): Unit = frame.contains(
 
+  )
+}

@@ -23,6 +23,7 @@
 package moe.lymia.princess.svg
 
 import moe.lymia.princess.core._
+import moe.lymia.princess.core.packages.GameManager
 import moe.lymia.princess.util._
 
 import java.awt.Font

@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.core
 
-import moe.lymia.princess.core.packages.StaticExportIDs
+import moe.lymia.princess.core.packages.{GameManager, StaticExportIDs}
 import moe.lymia.princess.util.CountedCache
 
 import java.io.InputStreamReader

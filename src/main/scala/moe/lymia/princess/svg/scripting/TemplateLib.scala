@@ -20,28 +20,26 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess
+package moe.lymia.princess.svg.scripting
 
-object PrincessEdit {
-  def main(args: Array[String]) = {
-    println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")
-    println("Released under the MIT license")
-    println("")
-    println(s"Commit: ${VersionInfo.commit}")
-    println(s"Build ID: ${VersionInfo.buildId}")
-    println(s"Java runtime: ${System.getProperty("java.version")}")
-    println("")
+import moe.lymia.lua._
+import moe.lymia.princess.core.LuaLibrary
+import moe.lymia.princess.svg._
 
-    new CLI().main(args)
+case class PhysicalScale(unPerViewport: Double, unit: PhysicalUnit)
+trait LuaTemplateImplicits {
+  implicit object LuaPhysicalScale extends LuaUserdataType[PhysicalScale] {
+    metatable { (L, mt) =>
+      L.register(mt, "__mul", (scale: Double, s: PhysicalScale) => PhysicalScale(scale * s.unPerViewport, s.unit))
+    }
   }
 }
 
-object AppName {
-  val PrincessEdit = "Lymia.PrincessEdit.PrincessEdit"
+object TemplateLib extends LuaLibrary {
+  def open(L: LuaState, table: LuaTable) = {
+    val unit = L.newTable()
+    L.rawSet(unit, "mm", PhysicalScale(1, PhysicalUnit.mm))
+    L.rawSet(unit, "in", PhysicalScale(1, PhysicalUnit.in))
+    L.rawSet(table, "PhysicalUnit", unit)
+  }
 }
-
-object MimeType {
-  val CardData = "application/vnd.princessedit-cards+json"
-  val Project = "application/vnd.princessedit-project+zip"
-}
-

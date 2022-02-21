@@ -25,13 +25,12 @@ package moe.lymia.princess.svg.components
 import moe.lymia.lua.{LuaTable, _}
 import moe.lymia.princess.core._
 import moe.lymia.princess.svg._
-import moe.lymia.princess.svg.lua._
+import moe.lymia.princess.svg.scripting._
 import org.jfree.graphics2d.svg.SVGGraphics2D
 
 import java.awt.font.TextLayout
 import java.awt.{Color, Font}
 import java.text.AttributedString
-
 
 sealed abstract class SimpleTextComponentBase(protected var fontSize: Double) extends GraphicsComponent {
   def createLayout(manager: ComponentRenderManager, graphics: SVGGraphics2D): Option[TextLayout]

@@ -91,7 +91,7 @@ object ResourceGenerators {
       val icoFiles =
         for(file <- IO.listFiles(baseDirectory.value / "project") if file.getName.startsWith("icon-")) yield {
           val target =
-            (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "editor" / "res" / file.getName
+            (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "gui" / "res" / file.getName
           IO.copyFile(file, target)
           target
         }

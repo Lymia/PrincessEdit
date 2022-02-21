@@ -20,28 +20,33 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess
+package moe.lymia.princess.gui.ui.frontend
 
-object PrincessEdit {
-  def main(args: Array[String]) = {
-    println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")
-    println("Released under the MIT license")
-    println("")
-    println(s"Commit: ${VersionInfo.commit}")
-    println(s"Build ID: ${VersionInfo.buildId}")
-    println(s"Java runtime: ${System.getProperty("java.version")}")
-    println("")
+import com.coconut_palm_software.xscalawt.XScalaWT._
+import moe.lymia.princess.core.packages.PackageManager
+import moe.lymia.princess.gui.ControlContext
+import moe.lymia.princess.gui.ui.mainframe.MainFrame
+import moe.lymia.princess.gui.utils.WindowBase
+import org.eclipse.swt.events.SelectionEvent
+import org.eclipse.swt.widgets._
 
-    new CLI().main(args)
+class SplashScreen(ctx: ControlContext) extends WindowBase(ctx) {
+  override def configureShell(shell: Shell): Unit = {
+    super.configureShell(shell)
+    shell.setText(PackageManager.systemI18N.system("_princess.frontend.title"))
+  }
+
+  override def frameContents(frame: Composite) = {
+    frame.contains(
+      gridLayout()(),
+      button(
+        "New Project", // TODO: I18N
+        (event: SelectionEvent) => new GameSelectorDialog(this, ctx, true).open()
+      ),
+      button(
+        "Load Project",
+        (event: SelectionEvent) => MainFrame.showOpenDialog(this, ctx, true)
+      )
+    )
   }
 }
-
-object AppName {
-  val PrincessEdit = "Lymia.PrincessEdit.PrincessEdit"
-}
-
-object MimeType {
-  val CardData = "application/vnd.princessedit-cards+json"
-  val Project = "application/vnd.princessedit-project+zip"
-}
-

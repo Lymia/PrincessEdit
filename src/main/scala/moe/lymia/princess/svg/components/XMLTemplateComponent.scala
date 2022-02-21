@@ -26,7 +26,7 @@ import moe.lymia.lua._
 import moe.lymia.princess.core._
 import moe.lymia.princess.core.packages.PackageList
 import moe.lymia.princess.svg._
-import moe.lymia.princess.svg.lua._
+import moe.lymia.princess.svg.scripting._
 
 import java.nio.file.Files
 import scala.collection.mutable

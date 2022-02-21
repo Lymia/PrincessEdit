@@ -20,28 +20,14 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess
+package moe.lymia.princess.gui.ui
 
-object PrincessEdit {
-  def main(args: Array[String]) = {
-    println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")
-    println("Released under the MIT license")
-    println("")
-    println(s"Commit: ${VersionInfo.commit}")
-    println(s"Build ID: ${VersionInfo.buildId}")
-    println(s"Java runtime: ${System.getProperty("java.version")}")
-    println("")
+import moe.lymia.princess.gui.ui.mainframe.MainFrameState
+import play.api.libs.json.Json
 
-    new CLI().main(args)
-  }
+import scala.language.implicitConversions
+
+package object editor {
+  implicit def editorState2mainFrameState(state: EditorState): MainFrameState = state.mainFrameState
+  private[editor] implicit val editorTabDataFormats = Json.format[EditorTabData]
 }
-
-object AppName {
-  val PrincessEdit = "Lymia.PrincessEdit.PrincessEdit"
-}
-
-object MimeType {
-  val CardData = "application/vnd.princessedit-cards+json"
-  val Project = "application/vnd.princessedit-project+zip"
-}
-

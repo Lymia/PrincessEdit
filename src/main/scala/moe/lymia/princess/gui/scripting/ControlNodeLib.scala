@@ -20,28 +20,21 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess
+package moe.lymia.princess.gui.scripting
 
-object PrincessEdit {
-  def main(args: Array[String]) = {
-    println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")
-    println("Released under the MIT license")
-    println("")
-    println(s"Commit: ${VersionInfo.commit}")
-    println(s"Build ID: ${VersionInfo.buildId}")
-    println(s"Java runtime: ${System.getProperty("java.version")}")
-    println("")
+import moe.lymia.lua._
+import moe.lymia.princess.core.LuaLibrary
+import moe.lymia.princess.gui.nodes._
 
-    new CLI().main(args)
+trait LuaControlNodeImplicits {
+  implicit object LuaControlNode extends LuaUserdataType[ControlNode]
+}
+
+object ControlNodeLib extends LuaLibrary {
+  override def open(L: LuaState, table: LuaTable): Unit = {
+    val node = L.newLib(table, "Node")
+    L.register(node, "Label", (text: String) => LabelNode(text) : ControlNode)
+    L.register(node, "Visibility",
+      (node: FieldNode, contents: ControlNode) => VisibilityNode(node, contents) : ControlNode)
   }
 }
-
-object AppName {
-  val PrincessEdit = "Lymia.PrincessEdit.PrincessEdit"
-}
-
-object MimeType {
-  val CardData = "application/vnd.princessedit-cards+json"
-  val Project = "application/vnd.princessedit-project+zip"
-}
-
