@@ -24,20 +24,13 @@ import Config._
 import sbt.Keys._
 import sbt._
 
+import java.io.FileOutputStream
+
 val osName = sys.props("os.name") match {
-  case os if os.startsWith("Windows") => "windows.x86_64"
-  case "Mac OS X" => "macosx.x86_64"
-  case "Linux" => "linux.x86_64"
+  case os if os.startsWith("Windows") => "windows"
+  case "Mac OS X" => "macosx"
+  case "Linux" => "linux"
 }
-val swtArtifact =
-  "org.eclipse.swt." + ((sys.props("os.name"), sys.props("os.arch")) match {
-    case ("Linux", "amd64" | "x86_64") => "gtk.linux.x86_64"
-    case ("Linux", _) => "gtk.linux.x86"
-    case ("Mac OS X", "amd64" | "x86_64") => "cocoa.macosx.x86_64"
-    case (os, "amd64") if os.startsWith("Windows") => "win32.win32.x86_64"
-    case (os, _) if os.startsWith("Windows") => "win32.win32.x86"
-    case (os, arch) => sys.error("Cannot obtain lib for OS '" + os + "' and architecture '" + arch + "'")
-  })
 def swtDep(artifact: String) =
   ("bundle" % artifact % "3.118.0.v20211123-0851"
     exclude("package", "org.mozilla.xpcom")
@@ -51,7 +44,10 @@ lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
   organization := "moe.lymia.princessedit",
   name := "princess-edit-swt",
 
-  libraryDependencies += swtDep(swtArtifact),
+  libraryDependencies += swtDep("org.eclipse.swt"),
+  libraryDependencies += swtDep("org.eclipse.swt.gtk.linux.x86_64"),
+  libraryDependencies += swtDep("org.eclipse.swt.win32.win32.x86_64"),
+
   libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.17.100.v20211104-1730",
   libraryDependencies += "bundle" % "org.eclipse.osgi.services" % "3.10.200.v20210723-0643"
     // provided by default in JDK 8
@@ -160,10 +156,19 @@ InputKey[Unit]("dist") := {
     IO.write(outDir / "NOTICE.txt", fixEndings(IO.read(file("project/dist_NOTICE.md"))))
 
     val nativeImageFile = (princessEdit / nativeImage).value
-    IO.copyFile(nativeImageFile, outDir / nativeImageFile.name)
+    IO.copyFile(nativeImageFile, outDir / nativeImageFile.name.replace("princess-edit", "PrincessEdit"))
 
     IO.createDirectory(outDir / "lib")
     Utils.runProcess(Seq("zip", "-r", outDir / "lib/core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "lib")
+    osName match {
+      case "linux" =>
+        val resvgTar = outDir / "lib" / "resvg.tar.gz"
+        IO.transfer(new URI(Config.url_resvg_linux).toURL.openStream(), new FileOutputStream(resvgTar))
+        Utils.runProcess(Seq("tar", "-xvf", "resvg.tar.gz"), outDir / "lib")
+        IO.delete(resvgTar)
+        IO.move(outDir / "lib" / "resvg", outDir / "lib"/ "resvg.linux")
+      case _ => sys.error("unsupported operating system for dist")
+    }
 
     IO.createDirectory(outDir / "packages")
     for (pkg <- Seq("cards-against-humanity.pedit-pkg"))

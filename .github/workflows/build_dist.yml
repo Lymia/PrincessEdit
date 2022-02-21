@@ -8,6 +8,7 @@ on:
     tags: [ '*' ]
 
 jobs:
+  # Build for Linux
   buildOnLinux:
     runs-on: ubuntu-latest
     env:
@@ -38,4 +39,5 @@ jobs:
         run: sbt -v clean dist
       - uses: actions/upload-artifact@v2
         with:
+          name: linux-artifacts
           path: target/scala-2.13/dist/*

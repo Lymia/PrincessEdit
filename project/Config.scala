@@ -26,6 +26,6 @@ object Config {
 
   val version_baseVersion = "0.1.0"
 
-  // hardcoded mirror because redirection handling is :(
-  val config_launch4j_url = "https://cfhcable.dl.sourceforge.net/project/launch4j/launch4j-3/3.14/launch4j-3.14-linux.tgz"
+  val url_resvg_windows   = "https://github.com/RazrFalcon/resvg/releases/download/v0.22.0/resvg-win64.zip"
+  val url_resvg_linux     = "https://github.com/RazrFalcon/resvg/releases/download/v0.22.0/resvg-linux-x86_64.tar.gz"
 }

@@ -68,6 +68,9 @@ This project includes code from many third-party sources:
 * This project includes code from toml-scala, which is licenced under the
   [Mozilla Public License v2.0](https://www.mozilla.org/en-US/MPL/2.0/).
 
+* This project includes code from resvg, which is licenced under the
+  [Mozilla Public License v2.0](https://www.mozilla.org/en-US/MPL/2.0/).
+
 
 In addition, this project includes several libraries as dependencies of the preceding libraries:
 
