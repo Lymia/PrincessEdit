@@ -23,11 +23,12 @@
 package moe.lymia.princess.core.packages
 
 import moe.lymia.lua.LuaObject
-import moe.lymia.princess.core.{EditorException, I18N, I18NLoader, LuaContext, LuaModule, MarkedI18NSource}
+import moe.lymia.princess.core.EditorException
+import moe.lymia.princess.core.context.{LuaContext, LuaModule}
+import moe.lymia.princess.core.i18n.{I18N, I18NLoader, MarkedI18NSource}
 import moe.lymia.princess.{DefaultLogger, Environment, Logger}
 
-import java.net.URI
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
 
 final class GameManager(packages: PackageList, val logger: Logger = DefaultLogger, modules: Seq[LuaModule] = Seq()) {
   val gameId: String = packages.gameId

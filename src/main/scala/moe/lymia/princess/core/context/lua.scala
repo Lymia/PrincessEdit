@@ -20,9 +20,10 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess.core.context
 
 import moe.lymia.lua._
+import moe.lymia.princess.core.EditorException
 import moe.lymia.princess.core.packages.{PackageList, StaticExportIDs}
 import moe.lymia.princess.util._
 import moe.lymia.princess.{LogLevel, Logger}

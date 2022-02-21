@@ -23,10 +23,10 @@
 package moe.lymia.princess.gui.nodes
 
 import moe.lymia.lua._
-import moe.lymia.princess.core._
+import moe.lymia.princess.core.context.ControlContext
 import moe.lymia.princess.core.datamodel.DataStore
+import moe.lymia.princess.core.i18n.I18N
 import moe.lymia.princess.gui.scripting._
-import moe.lymia.princess.gui.ControlContext
 import moe.lymia.princess.gui.utils.UIUtils
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout._

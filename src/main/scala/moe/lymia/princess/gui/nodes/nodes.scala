@@ -23,9 +23,10 @@
 package moe.lymia.princess.gui.nodes
 
 import moe.lymia.lua.LuaState
+import moe.lymia.princess.core.EditorException
+import moe.lymia.princess.core.context.ControlContext
 import moe.lymia.princess.core.datamodel.{DataField, DataFieldType, DataStore}
-import moe.lymia.princess.core.{EditorException, I18N}
-import moe.lymia.princess.gui.ControlContext
+import moe.lymia.princess.core.i18n.I18N
 import org.eclipse.swt.widgets.{Composite, Control}
 import rx.{Ctx, Obs, Rx, Var}
 

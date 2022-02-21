@@ -20,20 +20,12 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.scripting
+package moe.lymia.princess.core.context
 
-import moe.lymia.lua._
-import moe.lymia.princess.core.context.LuaLibrary
-import moe.lymia.princess.gui.TableColumnData
+object GlobalContext {
 
-trait LuaUIImplicits {
-  implicit object LuaTableColumnData extends LuaUserdataType[TableColumnData]
 }
 
-object UILib extends LuaLibrary {
-  override def open(L: LuaState, table: LuaTable): Unit = {
-    L.register(table, "Column", (L: LuaState, name: String, width: Int, fn: LuaClosure, sortFn: Option[LuaClosure],
-                                 isDefault: Boolean) =>
-      new TableColumnData(name, width, isDefault, L, fn, sortFn))
-  }
+class ProjectContext {
+
 }

@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess.core.i18n
 
 import moe.lymia.princess.core.packages.{GameManager, StaticExportIDs}
 import moe.lymia.princess.util.CountedCache
@@ -41,7 +41,7 @@ trait I18NSource {
 final case class MarkedI18NSource(parent: I18NSource) extends I18NSource {
   private val messageFormatCache = new CountedCache[String, MessageFormat](1024)
 
-  override val locale = parent.locale
+  override val locale: Locale = parent.locale
   private def applyLiteral(key: String, args: Seq[Any]) =
     messageFormatCache.cached(key, new MessageFormat(key, locale)).format(args.toArray)
   override def apply(key: String, args: Any*): String =
@@ -52,18 +52,18 @@ final case class MarkedI18NSource(parent: I18NSource) extends I18NSource {
 
 final case class StaticI18NSource(locale: Locale, map: Map[String, String]) extends I18NSource {
   private val messageFormatCache = new collection.mutable.HashMap[String, Option[MessageFormat]]
-  def getFormat(key: String) =
+  def getFormat(key: String): Option[MessageFormat] =
     messageFormatCache.getOrElseUpdate(key, map.get(key).map(s => new MessageFormat(s, locale)))
-  def apply(key: String, args: Any*) = getFormat(key).map(format =>
+  def apply(key: String, args: Any*): String = getFormat(key).map(format =>
     format.format(args.toArray)
   ).getOrElse("<"+key+">")
 }
 
 final case class I18N(userLua: I18NSource, system: I18NSource) {
-  val user = MarkedI18NSource(userLua)
+  val user: MarkedI18NSource = MarkedI18NSource(userLua)
 
   assert(userLua.locale == system.locale)
-  val locale = system.locale
+  val locale: Locale = system.locale
 }
 
 final class I18NLoader(game: GameManager) {
@@ -86,7 +86,7 @@ final class I18NLoader(game: GameManager) {
   }
 
   // TODO: Temporary loader
-  val i18n = {
+  val i18n: I18N = {
     val user   = loadExportData(game.gameId, "en", "generic")
     val system = loadExportData("_princess", "en", "generic", system = true)
     I18N(user, system)

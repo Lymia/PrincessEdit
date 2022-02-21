@@ -23,7 +23,8 @@
 package moe.lymia.princess.gui.scripting
 
 import moe.lymia.lua._
-import moe.lymia.princess.core._
+import moe.lymia.princess.core.context.LuaLibrary
+import moe.lymia.princess.core.i18n.I18N
 
 final case class I18NLib(i18n: I18N) extends LuaLibrary {
   override def open(L: LuaState, table: LuaTable): Unit = {

@@ -22,7 +22,8 @@
 
 package moe.lymia.princess.gui
 
-import moe.lymia.princess.core._
+import moe.lymia.princess.core.context.{LuaContext, LuaLibrary, LuaModule}
+import moe.lymia.princess.core.i18n.I18N
 
 package object scripting
   extends LuaFieldNodeImplicits

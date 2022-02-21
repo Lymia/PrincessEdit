@@ -23,8 +23,9 @@
 package moe.lymia.princess.core.datamodel
 
 import moe.lymia.princess.VersionInfo
+import moe.lymia.princess.core.context.ControlContext
 import moe.lymia.princess.core.datamodel.SerializeUtils._
-import moe.lymia.princess.gui.{ControlContext, GameIDData}
+import moe.lymia.princess.gui.GameIDData
 import moe.lymia.princess.util.IOUtils
 import play.api.libs.json._
 import rx._

@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.svg
 
-import moe.lymia.princess.core._
+import moe.lymia.princess.core.context.{LuaContext, LuaLibrary, LuaModule}
 
 package object scripting
   extends LuaComponentImplicits

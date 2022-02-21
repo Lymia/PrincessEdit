@@ -22,7 +22,7 @@
 
 package moe.lymia.princess
 
-import moe.lymia.princess.gui.{ControlContext, UILoop, UIManager}
+import moe.lymia.princess.core.context.{ControlContext, UILoop, UIManager}
 import moe.lymia.princess.svg.rasterizer.ResvgConnectionFactory
 import moe.lymia.princess.views.frontend.SplashScreen
 import moe.lymia.princess.views.mainframe.MainFrame

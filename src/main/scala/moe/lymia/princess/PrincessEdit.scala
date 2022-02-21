@@ -22,8 +22,6 @@
 
 package moe.lymia.princess
 
-import scala.collection.JavaConverters._
-
 object PrincessEdit {
   def main(args: Array[String]) = {
     println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")

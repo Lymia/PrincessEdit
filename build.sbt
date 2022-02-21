@@ -86,17 +86,23 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   run / envVars += ("SWT_GTK3", "0"),
   run / envVars += ("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY", baseDirectory.value.toString),
 
+  // Scala modules
   libraryDependencies += "org.scala-lang" % "scala-reflect" % config_scalaVersion,
   libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.0.1",
-  libraryDependencies += "org.jfree" % "jfreesvg" % "3.4.2",
-  libraryDependencies += "com.lihaoyi" %% "scalarx" % "0.4.3",
-  libraryDependencies += "com.typesafe.play" %% "play-json" % "2.10.0-RC5",
-  libraryDependencies += "com.github.scopt" %% "scopt" % "4.0.1",
-  libraryDependencies += "tech.sparse" %% "toml-scala" % "0.2.2",
-  libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.3.6",
 
-  // Apache Commons
+  // Utility libraries
   libraryDependencies += "commons-codec" % "commons-codec" % "1.15",
+  libraryDependencies += "com.google.guava" % "guava" % "31.0.1-jre",
+  libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.3.6",
+  libraryDependencies += "com.lihaoyi" %% "scalarx" % "0.4.3",
+
+  // Parsing libraries
+  libraryDependencies += "com.typesafe.play" %% "play-json" % "2.10.0-RC5",
+  libraryDependencies += "tech.sparse" %% "toml-scala" % "0.2.2",
+
+  // Misc libraries
+  libraryDependencies += "org.jfree" % "jfreesvg" % "3.4.2",
+  libraryDependencies += "com.github.scopt" %% "scopt" % "4.0.1",
 
   // JNA libraries
   libraryDependencies += "net.java.dev.jna" % "jna" % "5.10.0",

@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui
+package moe.lymia.princess.core.context
 
 import moe.lymia.princess.Environment
 import moe.lymia.princess.util.IOUtils
@@ -33,8 +33,8 @@ import java.util.UUID
 import scala.collection.concurrent
 
 final case class SettingsKey[T : Reads : Writes](id: String) {
-  def serialize(t: T) = Json.toJson(t)
-  def deserialize(t: JsValue) = t.as[T]
+  def serialize(t: T): JsValue = Json.toJson(t)
+  def deserialize(t: JsValue): T = t.as[T]
 }
 
 private sealed trait SettingsStoreEntry
@@ -44,9 +44,9 @@ private final case class SettingsStoreJsonEntry(value: JsValue) extends Settings
 abstract class SettingsStore {
   private val underlying = new concurrent.TrieMap[String, SettingsStoreEntry]
 
-  def clear() = underlying.clear()
+  def clear(): Unit = underlying.clear()
 
-  def getSetting[T](key: SettingsKey[T], default: => T) = underlying.get(key.id) match {
+  def getSetting[T](key: SettingsKey[T], default: => T): T = underlying.get(key.id) match {
     case Some(SettingsStoreObjEntry(_, obj)) =>
       obj.asInstanceOf[T]
     case Some(SettingsStoreJsonEntry(js)) =>
@@ -63,17 +63,17 @@ abstract class SettingsStore {
     save()
   }
 
-  def transferFrom(store: SettingsStore) = {
+  def transferFrom(store: SettingsStore): Unit = {
     underlying.clear()
     underlying ++= store.underlying
     save()
   }
 
-  def serialize = Json.toJson(underlying.mapValues {
+  def serialize: JsValue = Json.toJson(underlying.mapValues {
     case SettingsStoreObjEntry(key, obj) => key.serialize(obj)
     case SettingsStoreJsonEntry(js) => js
   })
-  def deserialize(js: JsValue) = {
+  def deserialize(js: JsValue): Unit = {
     underlying.clear()
     for((k, v) <- js.as[Map[String, JsValue]]) underlying.put(k, SettingsStoreJsonEntry(v))
   }
@@ -83,15 +83,15 @@ abstract class SettingsStore {
 }
 
 class UnbackedSettingsStore extends SettingsStore {
-  def load() = { }
-  def save() = { }
+  def load(): Unit = { }
+  def save(): Unit = { }
 }
 class FilesystemSettingsStore(path: Path) extends SettingsStore {
-  def load() = if(!Files.exists(path)) clear() else deserialize(Json.parse(IOUtils.readFileAsString(path)))
-  def save() = IOUtils.writeFile(path, Json.prettyPrint(serialize))
+  def load(): Unit = if(!Files.exists(path)) clear() else deserialize(Json.parse(IOUtils.readFileAsString(path)))
+  def save(): Unit = IOUtils.writeFile(path, Json.prettyPrint(serialize))
 }
 object FilesystemSettingsStore {
-  def load(path: Path) = {
+  def load(path: Path): FilesystemSettingsStore = {
     val store = new FilesystemSettingsStore(path)
     store.load()
     store
@@ -99,7 +99,7 @@ object FilesystemSettingsStore {
 }
 
 object Settings {
-  val rootDirectory = Environment.configDirectory("PrincessEdit")
+  val rootDirectory: Path = Environment.configDirectory("PrincessEdit")
   Files.createDirectories(rootDirectory)
 
   private val globalSettingsPath = rootDirectory.resolve("settings.json")
@@ -116,8 +116,8 @@ object Settings {
   private val projectLockDirectory = rootDirectory.resolve("project-locks")
   Files.createDirectories(projectLockDirectory)
 
-  lazy val global = FilesystemSettingsStore.load(globalSettingsPath)
-  def getProjectSettings(path: Path, id: UUID) =
+  lazy val global: FilesystemSettingsStore = FilesystemSettingsStore.load(globalSettingsPath)
+  def getProjectSettings(path: Path, id: UUID): FilesystemSettingsStore =
     FilesystemSettingsStore.load(projectSettingsDirectory.resolve(s"${hashPath(path, id)}.json"))
-  def getProjectLock(path: Path) = projectLockDirectory.resolve(s"${hashPath(path)}.lock")
+  def getProjectLock(path: Path): Path = projectLockDirectory.resolve(s"${hashPath(path)}.lock")
 }

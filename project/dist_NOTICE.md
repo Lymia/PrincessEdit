@@ -32,6 +32,9 @@ This project includes code from many third-party sources:
 * This project includes code from Apache Commons, which is licenced under the
   [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
+* This project includes code from Google Guava, which is licenced under the
+  [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
 * This project includes code from scopt, which is licenced under the 
   [MIT license](https://github.com/scopt/scopt/blob/scopt3/LICENSE.md).
   

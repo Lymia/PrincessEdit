@@ -23,7 +23,7 @@
 package moe.lymia.princess.gui.scripting
 
 import moe.lymia.lua._
-import moe.lymia.princess.core.LuaLibrary
+import moe.lymia.princess.core.context.LuaLibrary
 import moe.lymia.princess.core.datamodel.{DataField, DataFieldType}
 import moe.lymia.princess.gui.nodes._
 

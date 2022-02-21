@@ -23,8 +23,8 @@
 package moe.lymia.princess.views.frontend
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
+import moe.lymia.princess.core.context.ControlContext
 import moe.lymia.princess.core.packages.PackageManager
-import moe.lymia.princess.gui.ControlContext
 import moe.lymia.princess.gui.utils.WindowBase
 import moe.lymia.princess.views.mainframe.MainFrame
 import org.eclipse.swt.events.SelectionEvent

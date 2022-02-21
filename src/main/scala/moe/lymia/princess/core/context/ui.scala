@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui
+package moe.lymia.princess.core.context
 
 import moe.lymia.princess.gui.utils.ExtendedResourceManager
 import moe.lymia.princess.svg._
