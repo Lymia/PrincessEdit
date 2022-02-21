@@ -22,6 +22,7 @@
 
 package moe.lymia.princess.svg.rasterizer
 
+import moe.lymia.princess.Environment
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.swt.graphics.ImageData
 
@@ -31,7 +32,7 @@ import scala.xml.Elem
 
 object ResvgConnectionFactory extends SVGRasterizerFactory {
   private[rasterizer] def resvg(args: String*) =
-    new ProcessBuilder("resvg" +: args: _*).redirectError(ProcessBuilder.Redirect.INHERIT)
+    new ProcessBuilder(Environment.resvgCommand +: args: _*).redirectError(ProcessBuilder.Redirect.INHERIT)
 
   def createRasterizer(): SVGRasterizer = {
     ResvgConnection

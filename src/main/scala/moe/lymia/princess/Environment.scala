@@ -33,17 +33,17 @@ private sealed trait Platform {
 }
 private object Platform {
   private case object Windows extends Platform {
-    override val executableExtension = ".exe"
+    override val executableExtension = ".windows.exe"
     override lazy val configurationRoot: Path =
       Paths.get(Shell32Util.getFolderPath(ShlObj.CSIDL_LOCAL_APPDATA))
   }
   private case object MacOS extends Platform {
-    override val executableExtension = ""
+    override val executableExtension = ".macos"
     override lazy val configurationRoot: Path =
       Paths.get(System.getProperty("user.home")).resolve("Library/Preferences")
   }
   private case object Linux extends Platform {
-    override val executableExtension = ""
+    override val executableExtension = ".linux"
     override lazy val configurationRoot: Path =
       System.getenv("XDG_CONFIG_HOME") match {
         case null => Paths.get(System.getProperty("user.home")).resolve(".config")
@@ -88,4 +88,8 @@ object Environment {
       DefaultLogger.warn("Falling back to current directory when finding 'libDirectory'.")
       Paths.get("lib")
     }
+
+  lazy val resvgCommand: String =
+    if (isSbtLaunch) "resvg"
+    else libDirectory.resolve(s"resvg${Platform.platform.executableExtension}").toAbsolutePath.toString
 }
