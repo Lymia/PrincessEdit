@@ -24,9 +24,8 @@ package moe.lymia.princess.views.mainframe
 
 import moe.lymia.princess.VersionInfo
 import moe.lymia.princess.core.cardmodel.{GameIDData, Project, ProjectMetadata}
-import moe.lymia.princess.core.gamedata.{GameDataLoader, GameId, I18NLoader}
+import moe.lymia.princess.core.gamedata.{GameData, GameDataLoader, GameId, I18N, I18NLoader}
 import moe.lymia.princess.core.state.{GuiContext, Settings, SettingsStore, UnbackedSettingsStore}
-import moe.lymia.princess.editor._
 import moe.lymia.princess.editor.scripting.EditorModule
 import moe.lymia.princess.svg.scripting.RenderModule
 import moe.lymia.princess.util.swt.{RxOwner, UIUtils, WindowBase}
@@ -45,22 +44,23 @@ import rx._
 import java.nio.file.{Path, Paths}
 
 final case class UnsavedChanges(since: Long)
-final class MainFrameState(mainFrame: MainFrame, val ctx: GuiContext, projectSource: ProjectSource) {
-  val gameId = projectSource.getGameID
-  val game = GameDataLoader.default.loadGameData(gameId)
-  val i18n = new I18NLoader(game).i18n
+final class MainFrameState(private val mainFrame: MainFrame, val ctx: GuiContext,
+                           private val projectSource: ProjectSource) {
+  val gameId: String = projectSource.getGameID
+  val game: GameData = GameDataLoader.default.loadGameData(gameId)
+  val i18n: I18N = new I18NLoader(game).i18n
   game.lua.loadModule(EditorModule(i18n), RenderModule)
 
   val idData = new GameIDData(game, ctx, i18n)
-  val project = projectSource.openProject(ctx, gameId, idData)
+  val project: Project = projectSource.openProject(ctx, gameId, idData)
 
   private var settings0: SettingsStore = projectSource.openSettings(project)
-  def settings = settings0
+  def settings: SettingsStore = settings0
 
   private var currentSaveLocation: Option[Path] = None
   private var lock: Option[FileLock] = None
-  def getSaveLocation = currentSaveLocation
-  def setSaveLocation(path: Option[Path], preLock: Option[FileLock] = None) = {
+  def getSaveLocation: Option[Path] = currentSaveLocation
+  def setSaveLocation(path: Option[Path], preLock: Option[FileLock] = None): Boolean = {
     path match {
       case Some(currentPath) =>
         preLock.orElse(MainFrame.lockFile(currentPath)) match {
@@ -88,12 +88,12 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: GuiContext, projectSou
   }
   projectSource.setSaveLocation(this)
 
-  def getSaveName = currentSaveLocation.fold(i18n.system("_princess.main.untitledProject"))(_.getFileName.toString)
+  def getSaveName: String = currentSaveLocation.fold(i18n.system("_princess.main.untitledProject"))(_.getFileName.toString)
 
   @volatile private var unsavedChangesExist: Boolean = false
   @volatile private var lastUnsavedChange: Long = 0
-  def hasUnsavedChanges = if(unsavedChangesExist) Some(UnsavedChanges(lastUnsavedChange)) else None
-  def needsSaving() = {
+  def hasUnsavedChanges: Option[UnsavedChanges] = if(unsavedChangesExist) Some(UnsavedChanges(lastUnsavedChange)) else None
+  def needsSaving(): Unit = {
     if(!unsavedChangesExist) lastUnsavedChange = System.currentTimeMillis()
     unsavedChangesExist = true
     mainFrame.updateTitle()
@@ -114,17 +114,17 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: GuiContext, projectSou
         setSaveLocation(Some(Paths.get(target)))
     }
   }
-  private def doSave() = {
+  private def doSave(): Unit = {
     val fs = IOUtils.openZip(getSaveLocation.get, create = true)
     try project.writeTo(fs.getPath("/")) finally fs.close()
     unsavedChangesExist = false
     mainFrame.updateTitle()
   }
-  def save() = if(getSaveLocation.isDefined || chooseSaveLocation()) {
+  def save(): Boolean = if(getSaveLocation.isDefined || chooseSaveLocation()) {
     doSave()
     true
   } else false
-  def saveAs() = if(chooseSaveLocation()) {
+  def saveAs(): Boolean = if(chooseSaveLocation()) {
     doSave()
     true
   } else false
@@ -152,7 +152,7 @@ object ProjectSource {
     override def openSettings(project: Project): SettingsStore = Settings.getProjectSettings(path, project.uuid)
     override def openProject(ctx: GuiContext, gameID: String, idData: GameIDData): Project =
       ctx.syncLuaExec(Project.loadProject(ctx, gameID, idData, path))
-    override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(Some(path), Some(lock))
+    override def setSaveLocation(state: MainFrameState): Unit = state.setSaveLocation(Some(path), Some(lock))
   }
   case class NewProject(id: GameId) extends ProjectSource {
     override def getGameID: String = id.name
@@ -162,7 +162,7 @@ object ProjectSource {
       ctx.syncLuaExec(project.views.create())
       project
     }
-    override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(None, None)
+    override def setSaveLocation(state: MainFrameState): Unit = state.setSaveLocation(None, None)
   }
 }
 
@@ -178,7 +178,7 @@ final class MainFrame(ctx: GuiContext, projectSource: ProjectSource) extends Win
     updateTitle(shell)
   }
 
-  def updateTitle(shell: Shell = getShell) =
+  def updateTitle(shell: Shell = getShell): Unit =
     ctx.asyncUiExec {
       if(shell != null && !shell.isDisposed)
         shell.setText(s"${if(state.hasUnsavedChanges.isDefined) "*" else ""}${state.getSaveName} - PrincessEdit")
@@ -226,7 +226,7 @@ final class MainFrame(ctx: GuiContext, projectSource: ProjectSource) extends Win
 
   override def getInitialSize: Point = new Point(800, 600)
 
-  override def frameContents(frame: Composite) = {
+  override def frameContents(frame: Composite): Unit = {
     val fill = new FillLayout
     fill.marginHeight = 5
     fill.marginWidth = 5
@@ -242,7 +242,7 @@ final class MainFrame(ctx: GuiContext, projectSource: ProjectSource) extends Win
 object MainFrame {
   private[mainframe] def lockFile(path: Path) = IOUtils.lock(Settings.getProjectLock(path))
 
-  def loadProject(parent: Window, ctx: GuiContext, path: Path, closeOnAccept: Boolean = false) =
+  def loadProject(parent: Window, ctx: GuiContext, path: Path, closeOnAccept: Boolean = false): Unit =
     lockFile(path) match {
       case Some(lock) =>
         val meta = Project.getProjectMetadata(path)
@@ -266,7 +266,7 @@ object MainFrame {
         UIUtils.openMessage(parent, SWT.ICON_ERROR | SWT.OK,
                             GameDataLoader.systemI18N, "_princess.main.projectLocked")
     }
-  def showOpenDialog(parent: Window, ctx: GuiContext, closeOnAccept: Boolean = false) = {
+  def showOpenDialog(parent: Window, ctx: GuiContext, closeOnAccept: Boolean = false): Unit = {
     val selector = new FileDialog(parent.getShell, SWT.OPEN)
     selector.setFilterNames(Array(GameDataLoader.systemI18N.system("_princess.main.project")))
     selector.setFilterExtensions(Array("*.pedit-project"))
@@ -276,5 +276,10 @@ object MainFrame {
       case target =>
         loadProject(parent, ctx, Paths.get(target), closeOnAccept)
     }
+  }
+
+  def openForGenConfig(ctx: GuiContext): (MainFrame, MainFrameState) = {
+    val frame = new MainFrame(ctx, ProjectSource.NewProject(GameDataLoader.default.gameIds("cards-against-humanity")))
+    (frame, frame.state)
   }
 }

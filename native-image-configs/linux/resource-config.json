@@ -2,9 +2,6 @@
   "resources":{
   "includes":[
     {
-      "pattern":"\\QMETA-INF/services/java.nio.file.spi.FileSystemProvider\\E"
-    }, 
-    {
       "pattern":"\\QMETA-INF/services/moe.lymia.princess.views.mainframe.TabProvider\\E"
     }, 
     {
@@ -62,21 +59,15 @@
   "bundles":[
     {
       "name":"org.eclipse.jface.messages",
-      "locales":[
-        "", 
-        "und"
-      ]
+      "locales":[""]
     }, 
     {
       "name":"org.eclipse.jface.resource.jfacefonts_linux_gtk",
-      "locales":[
-        "", 
-        "und"
-      ]
+      "locales":[""]
     }, 
     {
       "name":"org.eclipse.swt.internal.SWTMessages",
-      "locales":["und"]
+      "locales":[""]
     }, 
     {
       "name":"sun.awt.resources.awt",

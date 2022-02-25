@@ -1,0 +1,479 @@
+[ {
+  "name" : "java.awt.Color",
+  "fields" : [ {
+    "name" : "value"
+  } ]
+}, {
+  "name" : "java.awt.GraphicsEnvironment",
+  "methods" : [ {
+    "name" : "isHeadless",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.awt.geom.GeneralPath",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "<init>",
+    "parameterTypes" : [ "int", "byte[]", "int", "float[]", "int" ]
+  } ]
+}, {
+  "name" : "java.awt.geom.Point2D$Float",
+  "fields" : [ {
+    "name" : "x"
+  }, {
+    "name" : "y"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "float", "float" ]
+  } ]
+}, {
+  "name" : "java.awt.geom.Rectangle2D$Float",
+  "fields" : [ {
+    "name" : "height"
+  }, {
+    "name" : "width"
+  }, {
+    "name" : "x"
+  }, {
+    "name" : "y"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "<init>",
+    "parameterTypes" : [ "float", "float", "float", "float" ]
+  } ]
+}, {
+  "name" : "java.lang.Boolean",
+  "methods" : [ {
+    "name" : "getBoolean",
+    "parameterTypes" : [ "java.lang.String" ]
+  } ]
+}, {
+  "name" : "java.lang.ClassLoader",
+  "methods" : [ {
+    "name" : "getPlatformClassLoader",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "loadClass",
+    "parameterTypes" : [ "java.lang.String" ]
+  } ]
+}, {
+  "name" : "java.lang.System",
+  "methods" : [ {
+    "name" : "load",
+    "parameterTypes" : [ "java.lang.String" ]
+  }, {
+    "name" : "setProperty",
+    "parameterTypes" : [ "java.lang.String", "java.lang.String" ]
+  } ]
+}, {
+  "name" : "java.lang.Throwable",
+  "methods" : [ {
+    "name" : "addSuppressed",
+    "parameterTypes" : [ "java.lang.Throwable" ]
+  } ]
+}, {
+  "name" : "jdk.internal.loader.ClassLoaders$PlatformClassLoader"
+}, {
+  "name" : "org.graalvm.jniutils.JNIExceptionWrapperEntryPoints",
+  "methods" : [ {
+    "name" : "getClassName",
+    "parameterTypes" : [ "java.lang.Class" ]
+  } ]
+}, {
+  "name" : "sun.font.CharToGlyphMapper",
+  "methods" : [ {
+    "name" : "charToGlyph",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "sun.font.Font2D",
+  "methods" : [ {
+    "name" : "canDisplay",
+    "parameterTypes" : [ "char" ]
+  }, {
+    "name" : "charToGlyph",
+    "parameterTypes" : [ "int" ]
+  }, {
+    "name" : "charToVariationGlyph",
+    "parameterTypes" : [ "int", "int" ]
+  }, {
+    "name" : "getMapper",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "getTableBytes",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "sun.font.FontStrike",
+  "methods" : [ {
+    "name" : "getGlyphMetrics",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "sun.font.FreetypeFontScaler",
+  "methods" : [ {
+    "name" : "invalidateScaler",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "sun.font.GlyphLayout$GVData",
+  "fields" : [ {
+    "name" : "_count"
+  }, {
+    "name" : "_flags"
+  }, {
+    "name" : "_glyphs"
+  }, {
+    "name" : "_indices"
+  }, {
+    "name" : "_positions"
+  } ],
+  "methods" : [ {
+    "name" : "grow",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "sun.font.GlyphList",
+  "fields" : [ {
+    "name" : "gposx"
+  }, {
+    "name" : "gposy"
+  }, {
+    "name" : "images"
+  }, {
+    "name" : "lcdRGBOrder"
+  }, {
+    "name" : "lcdSubPixPos"
+  }, {
+    "name" : "len"
+  }, {
+    "name" : "positions"
+  }, {
+    "name" : "usePositions"
+  } ]
+}, {
+  "name" : "sun.font.PhysicalStrike",
+  "fields" : [ {
+    "name" : "pScalerContext"
+  } ],
+  "methods" : [ {
+    "name" : "adjustPoint",
+    "parameterTypes" : [ "java.awt.geom.Point2D$Float" ]
+  }, {
+    "name" : "getGlyphPoint",
+    "parameterTypes" : [ "int", "int" ]
+  } ]
+}, {
+  "name" : "sun.font.StrikeMetrics",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "float", "float", "float", "float", "float", "float", "float", "float", "float", "float" ]
+  } ]
+}, {
+  "name" : "sun.font.TrueTypeFont",
+  "methods" : [ {
+    "name" : "readBlock",
+    "parameterTypes" : [ "java.nio.ByteBuffer", "int", "int" ]
+  }, {
+    "name" : "readBytes",
+    "parameterTypes" : [ "int", "int" ]
+  } ]
+}, {
+  "name" : "sun.font.Type1Font",
+  "methods" : [ {
+    "name" : "readFile",
+    "parameterTypes" : [ "java.nio.ByteBuffer" ]
+  } ]
+}, {
+  "name" : "sun.java2d.Disposer",
+  "methods" : [ {
+    "name" : "addRecord",
+    "parameterTypes" : [ "java.lang.Object", "long", "long" ]
+  } ]
+}, {
+  "name" : "org.eclipse.swt.accessibility.AccessibleObject",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.graphics.Device",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkActionIface",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkAttribute",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkComponentIface",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkEditableTextIface",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkHypertextIface",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkObjectClass",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkSelectionIface",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkTableIface",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkTextIface",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkTextRange",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkTextRectangle",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.accessibility.gtk.AtkValueIface",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.cairo.cairo_path_data_t",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.cairo.cairo_path_t",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.cairo.cairo_rectangle_int_t",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk3.GdkEvent",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk3.GdkEventButton",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk3.GdkEventCrossing",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk3.GdkEventFocus",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk3.GdkEventKey",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk3.GdkEventMotion",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk3.GdkEventWindowState",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk3.GdkGeometry",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.GdkKeymapKey",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.GdkRectangle",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.GdkRGBA",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk3.GdkWindowAttr",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.GObjectClass",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.GtkAdjustment",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.GtkAllocation",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.GtkBorder",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.GtkCellRendererClass",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.GtkRequisition",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk3.GtkTargetEntry",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.GtkWidgetClass",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.GTypeInfo",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.PangoAttrColor",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.PangoAttribute",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.PangoAttrInt",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.PangoItem",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.PangoLayoutLine",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.PangoLayoutRun",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.PangoLogAttr",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.PangoRectangle",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.XAnyEvent",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.XEvent",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.XExposeEvent",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.XFocusChangeEvent",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.widgets.Control",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.widgets.Display",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.widgets.Dialog",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.widgets.ToolBar",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.gtk.OS",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.SessionManagerDBus",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+} ]

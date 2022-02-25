@@ -34,8 +34,8 @@ import java.util.UUID
 
 trait SyntheticView extends CardView {
   override val isStatic: Boolean = true
-  override def addCard(uuid: UUID) = { }
-  override def removeCard(uuid: UUID) = { } // TODO: Make UI aware of views with different remove semantics
+  override def addCard(uuid: UUID): Unit = { }
+  override def removeCard(uuid: UUID): Unit = { } // TODO: Make UI aware of views with different remove semantics
 }
 
 final class AllCardsView(protected val project: Project) extends CardView with SyntheticView {
@@ -50,7 +50,7 @@ final class DeletedCardsView(protected val project: Project) extends CardView wi
 
 final class Project(val ctx: GuiContext, val gameId: String, val idData: GameIDData)
   extends JsonSerializable with DirSerializable with TrackModifyTime {
-  var uuid = UUID.randomUUID()
+  var uuid: UUID = UUID.randomUUID()
 
   val cards = new UUIDMapVar(id => {
     ctx.assertLuaThread()
@@ -74,11 +74,11 @@ final class Project(val ctx: GuiContext, val gameId: String, val idData: GameIDD
   )
   for(view <- staticViews.values) view.info.addModifyListener(this)
 
-  val allViews = Rx.unsafe { staticViews ++ views() }
-  val sources = Rx.unsafe { allCardsView +: views().values.toSeq.sortBy(_.info.createTime) }
+  val allViews: Rx[Map[UUID, CardView]] = Rx.unsafe { staticViews ++ views() }
+  val sources: Rx[Seq[CardView]] = Rx.unsafe { allCardsView +: views().values.toSeq.sortBy(_.info.createTime) }
 
   // Main serialization entry point
-  override def writeTo(path: Path) = {
+  override def writeTo(path: Path): Unit = {
     super.writeTo(path)
 
     cards.writeTo(path.resolve("cards"))
@@ -97,7 +97,7 @@ final class Project(val ctx: GuiContext, val gameId: String, val idData: GameIDD
       "uuid"      -> uuid
     ))
   }
-  override def readFrom(path: Path) = {
+  override def readFrom(path: Path): Unit = {
     ctx.assertLuaThread()
 
     super.readFrom(path)
@@ -132,7 +132,7 @@ object Project {
       finally filesystem.close()
     }
 
-  def getProjectMetadata(path: Path) =
+  def getProjectMetadata(path: Path): ProjectMetadata =
     openPath(path)(x => {
       val metadata = readJson(x.resolve("metadata.json"))
       ProjectMetadata(
@@ -142,7 +142,7 @@ object Project {
         (metadata \ "program").as[Seq[String]].mkString(" ")
       )
     })
-  def loadProject(ctx: GuiContext, gameID: String, idData: GameIDData, path: Path) =
+  def loadProject(ctx: GuiContext, gameID: String, idData: GameIDData, path: Path): Project =
     openPath(path) { x =>
       val project = new Project(ctx, gameID, idData)
       project.readFrom(x)
@@ -151,6 +151,6 @@ object Project {
 }
 
 object StaticViewID {
-  val AllCards     = UUID.fromString("2d083912-441b-11e7-8b8b-e793e0991f26")
-  val DeletedCards = UUID.fromString("7e676322-4615-11e7-b815-161899dad660")
+  val AllCards: UUID = UUID.fromString("2d083912-441b-11e7-8b8b-e793e0991f26")
+  val DeletedCards: UUID = UUID.fromString("7e676322-4615-11e7-b815-161899dad660")
 }

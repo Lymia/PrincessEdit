@@ -24,7 +24,7 @@ package moe.lymia.princess.views.editor
 
 import moe.lymia.princess.core.cardmodel.{FullCardData, TableColumnData}
 import moe.lymia.princess.util.swt.RxWidget
-import moe.lymia.princess.views.`export`.ExportCardsDialog
+import moe.lymia.princess.views.exportcards.ExportCardsDialog
 import org.eclipse.jface.action._
 import org.eclipse.jface.layout.TableColumnLayout
 import org.eclipse.jface.viewers._
@@ -45,8 +45,8 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   extends Composite(parent, SWT.NONE) with RxWidget {
 
   private val viewer = new TableViewer(this, SWT.MULTI | SWT.FULL_SELECTION | SWT.V_SCROLL | SWT.H_SCROLL)
-  def getControl = viewer.getControl
-  def getTable = viewer.getTable
+  def getControl: Control = viewer.getControl
+  def getTable: Table = viewer.getTable
 
   viewer.getTable.setHeaderVisible(true)
   viewer.getTable.setLinesVisible(true)
@@ -54,12 +54,12 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   // Setup columns
   private val activeColumns = Var(state.idData.columns.columns.filter(_.isDefault))
   private val sortOrder = Var[Option[Ordering[RowData]]](None)
-  def setColumnOrder(columns: Seq[TableColumnData]) = {
+  def setColumnOrder(columns: Seq[TableColumnData]): Unit = {
     viewer.getTable.setRedraw(false)
     activeColumns.update(columns)
     refreshColumns()
   }
-  def refreshColumns() = {
+  def refreshColumns(): Unit = {
     viewer.getTable.setRedraw(false)
 
     viewer.getTable.setSortColumn(null)
@@ -149,11 +149,11 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   // This is a hack to deal with the fact that this panel losing focus sets the current card to None
   private var savedSelection: Seq[UUID] = _
   private var lockSelection = false
-  def editorOpened() = {
+  def editorOpened(): Unit = {
     savedSelection = viewer.getStructuredSelection.iterator().asScala.toSeq.map(_.asInstanceOf[RowData].id)
     lockSelection = true
   }
-  def editorClosed() = {
+  def editorClosed(): Boolean = {
     setSelection(savedSelection : _*)
     savedSelection = null
     lockSelection = false
@@ -161,9 +161,9 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   }
 
   // Menu
-  def getSelectedCards =
+  def getSelectedCards: Array[RowData] =
     viewer.getStructuredSelection.toArray.map(_.asInstanceOf[RowData])
-  def setSelection(uuid: UUID*) = {
+  def setSelection(uuid: UUID*): Unit = {
     viewer.refresh()
     val uuidSet = uuid.toSet
     val selection = new StructuredSelection(sortedCards.now.filter(x => uuidSet.contains(x.id)).toArray[Object])
@@ -173,14 +173,14 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
 
   private val copy = new Action(state.i18n.system("_princess.editor.copyCard")) {
     setAccelerator(SWT.CTRL | 'C')
-    override def run() = {
+    override def run(): Unit = {
       val cards = getSelectedCards.map(_.data.cardData.serialize)
       state.ctx.clipboard.setContents(Array(CardTransferData(cards : _*)), Array(CardTransfer))
     }
   }
   private val paste = new Action(state.i18n.system("_princess.editor.pasteCard")) {
     setAccelerator(SWT.CTRL | 'V')
-    override def run() = state.ctx.clipboard.getContents(CardTransfer) match {
+    override def run(): Unit = state.ctx.clipboard.getContents(CardTransfer) match {
       case transfer: CardTransferData =>
         val ids = state.ctx.syncLuaExec {
           for(card <- transfer.json) yield {
@@ -194,12 +194,12 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
     }
   }
   private val export = new Action(state.i18n.system("_princess.editor.exportCard")) {
-    override def run() =
+    override def run(): Unit =
       ExportCardsDialog.open(state, getSelectedCards.map(x => x.id -> x.data) : _*)
   }
   private val addCard = new Action(state.i18n.system("_princess.editor.newCard")) {
     setAccelerator(SWT.CTRL | SWT.CR)
-    override def run() = setSelection(state.ctx.syncLuaExec {
+    override def run(): Unit = setSelection(state.ctx.syncLuaExec {
       val (id, _) = state.project.cards.create()
       state.currentView.now.addCard(id)
       id
@@ -207,13 +207,13 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   }
   private val editCard = new Action(state.i18n.system("_princess.editor.editCard")) {
     setAccelerator(SWT.CR)
-    override def run() = {
+    override def run(): Unit = {
       setSelectionFromViewer()
       state.activateEditor()
     }
   }
   private val editPoolData = new Action(state.i18n.system("_princess.editor.editCardPool")) {
-    override def run() = {
+    override def run(): Unit = {
       setSelectionFromViewer()
       state.activatePoolDataEditor()
     }
@@ -257,7 +257,7 @@ final class CardSelectorTableViewer(parent: Composite, state: EditorState)
   })
 
   // Events
-  private def setSelectionFromViewer() = {
+  private def setSelectionFromViewer(): Unit = {
     val selection = viewer.getStructuredSelection.toArray.map(_.asInstanceOf[RowData].id)
     val currentSelection = state.currentCardSelection.now
     val (alreadySelected, newSelections) = selection.partition(currentSelection.contains)

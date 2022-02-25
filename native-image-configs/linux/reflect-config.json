@@ -3,12 +3,6 @@
   "name":"[B"
 },
 {
-  "name":"[Lcom.fasterxml.jackson.databind.deser.Deserializers;"
-},
-{
-  "name":"[Lcom.fasterxml.jackson.databind.ser.Serializers;"
-},
-{
   "name":"[Ljava.lang.String;"
 },
 {
@@ -31,10 +25,6 @@
 },
 {
   "name":"[Lsun.security.pkcs.SignerInfo;"
-},
-{
-  "name":"com.fasterxml.jackson.databind.ext.Java7SupportImpl",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl",
@@ -71,10 +61,10 @@
   "methods":[{"name":"<init>","parameterTypes":["sun.security.x509.X500Name"] }]
 },
 {
-  "name":"moe.lymia.princess.views.frontend.GameSelectorViewer"
+  "name":"moe.lymia.princess.util.swt.HelpButton"
 },
 {
-  "name":"org.eclipse.swt.custom.ScrolledComposite"
+  "name":"moe.lymia.princess.views.frontend.GameSelectorViewer"
 },
 {
   "name":"org.eclipse.swt.widgets.Button",
@@ -82,6 +72,9 @@
     {"name":"addSelectionListener","parameterTypes":["org.eclipse.swt.events.SelectionListener"] }, 
     {"name":"setText","parameterTypes":["java.lang.String"] }
   ]
+},
+{
+  "name":"org.eclipse.swt.widgets.Combo"
 },
 {
   "name":"org.eclipse.swt.widgets.Composite"
@@ -94,11 +87,19 @@
   "name":"org.eclipse.swt.widgets.Display"
 },
 {
+  "name":"org.eclipse.swt.widgets.Group",
+  "methods":[{"name":"setText","parameterTypes":["java.lang.String"] }]
+},
+{
   "name":"org.eclipse.swt.widgets.Label",
   "methods":[
     {"name":"setImage","parameterTypes":["org.eclipse.swt.graphics.Image"] }, 
     {"name":"setText","parameterTypes":["java.lang.String"] }
   ]
+},
+{
+  "name":"org.eclipse.swt.widgets.Text",
+  "methods":[{"name":"setText","parameterTypes":["java.lang.String"] }]
 },
 {
   "name":"scala.Symbol",

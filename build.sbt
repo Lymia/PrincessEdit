@@ -26,7 +26,7 @@ import sbt._
 
 val osName = sys.props("os.name") match {
   case os if os.startsWith("Windows") => "windows"
-  case "Mac OS X" => "macosx"
+  case "Mac OS X" => "macos"
   case "Linux" => "linux"
 }
 def swtDep(artifact: String) =
@@ -88,7 +88,7 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
     "--no-fallback", "-H:-ParseRuntimeOptions",
 
     // configuration directory
-    s"-H:ConfigurationFileDirectories=${baseDirectory.value / "config-dir"}",
+    s"-H:ConfigurationFileDirectories=${baseDirectory.value / "native-image-configs" / osName}",
 
     // compile options
     "-H:CPUFeatures=CX8,CMOV,FXSR,MMX,SSE,SSE2,SSE3,SSE4A,SSE4_1,SSE4_2,POPCNT,TSC",

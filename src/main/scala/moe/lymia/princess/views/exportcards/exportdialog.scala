@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.views.`export`
+package moe.lymia.princess.views.exportcards
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.cardmodel.FullCardData
@@ -98,11 +98,11 @@ sealed abstract class ExportCardsDialogBase[Data](state: MainFrameState) extends
         group => dataSettings = makeDataSettings(group),
         group => {
           val mark = group.getChildren.length
-          def regenerate() = {
+          def regenerate(): Unit = {
             for(child <- group.getChildren.drop(mark)) child.dispose()
 
             format = viewer.getStructuredSelection.getFirstElement.asInstanceOf[ExportFormat[_, _]]
-            if(format != null) options = format.makeControl(this, group, SWT.NONE, state)
+            if (format != null) options = format.makeControl(this, group, SWT.NONE, state)
 
             val exclude = !hasControls && (format == null || !format.hasControls)
             group.setVisible(!exclude)
@@ -131,9 +131,15 @@ sealed abstract class ExportCardsDialogBase[Data](state: MainFrameState) extends
         _.layoutData = new GridData(SWT.END, SWT.CENTER, false, false)
       )
     )
+
+    viewer.setSelection(new StructuredSelection(ExportFormat.formats.head))
+    getShell.pack(true)
   }
 
-  override def open() = {
+  def setFormat(format: ExportFormat[_, _]): Unit =
+    viewer.setSelection(new StructuredSelection(format))
+
+  override def open(): Int = {
     state.ctx.asyncUiExec {
       viewer.setSelection(new StructuredSelection(ExportFormat.formats.head))
     }
@@ -147,7 +153,7 @@ final class ExportCardsDialogSingle(state: MainFrameState, exportTarget: (UUID, 
   override protected val cardCount: Int = 1
 
   override protected val hasControls: Boolean = false
-  override protected def makeDataSettings(parent: Composite) = () => Some(())
+  override protected def makeDataSettings(parent: Composite): () => Option[Unit] = () => Some(())
   override protected def export[T](format: ExportFormat[T, _], options: T, data: Unit): Unit = {
     val selector = new FileDialog(getShell, SWT.SAVE)
 
@@ -181,7 +187,7 @@ final class ExportCardsDialogMulti(state: MainFrameState, exportTargets: Seq[(UU
   private var nameSpec: Text = _
 
   override protected val hasControls: Boolean = true
-  override protected def makeDataSettings(parent: Composite) = {
+  override protected def makeDataSettings(parent: Composite): () => Option[LuaNameSpec] = {
     parent.contains(
       label(
         state.i18n.system("_princess.export.nameFormat"),
@@ -228,7 +234,7 @@ final class ExportCardsDialogMulti(state: MainFrameState, exportTargets: Seq[(UU
 }
 
 object ExportCardsDialog {
-  def open(state: MainFrameState, exportTargets: (UUID, FullCardData)*) =
+  def open(state: MainFrameState, exportTargets: (UUID, FullCardData)*): Int =
     if(exportTargets.isEmpty) sys.error("No export targets!")
     else if(exportTargets.length == 1) new ExportCardsDialogSingle(state, exportTargets.head).open()
     else new ExportCardsDialogMulti(state, exportTargets).open()

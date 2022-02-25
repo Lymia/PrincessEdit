@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.views.`export`
+package moe.lymia.princess.views.exportcards
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.state.GuiContext
@@ -60,7 +60,7 @@ sealed trait ExportFormat[Options, InitData] {
 
 sealed case class SimpleRasterInit(ctx: GuiContext, image: ImageLoader)
 final case class SimpleRasterOptions(dpi: Double, quality: Int)
-sealed abstract class SimpleRasterExport private[export] (val displayName: String, val extension: Seq[String])
+sealed abstract class SimpleRasterExport private[exportcards] (val displayName: String, val extension: Seq[String])
   extends ExportFormat[SimpleRasterOptions, SimpleRasterInit] {
 
   override def initRender(state: MainFrameState): SimpleRasterInit =

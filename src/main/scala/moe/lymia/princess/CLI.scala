@@ -32,6 +32,8 @@ import java.nio.file.Paths
 private case class CLIException(message: String) extends Exception
 
 class CLI {
+  private val logger = DefaultLogger.bind("CLI")
+
   private type CommandFn = () => Unit
 
   private var command: Option[CommandFn] = None
@@ -45,13 +47,19 @@ class CLI {
       setCmd(cmd_load _)
       loadTarget = Some(x)
     }
+    if (!Environment.isNativeImage) opt[Unit]("nativeImageGenConfig").foreach { x =>
+      setCmd(cmd_nativeImageGenConfig _)
+    }
+    if (!Environment.isNativeImage) opt[Unit]("nativeImageProcessConfig").foreach{ x =>
+      setCmd(cmd_nativeImageProcessConfig _)
+    }
   }
 
   private def error(s: String) = throw CLIException(s)
   private def time[T](what: String)(v: => T) = {
     val time = System.currentTimeMillis()
     val res = v
-    println(s"$what in ${System.currentTimeMillis() - time}ms.")
+    logger.info(s"$what in ${System.currentTimeMillis() - time}ms.")
     res
   }
   private def setCmd(cmd: () => Unit): Unit = {
@@ -59,6 +67,7 @@ class CLI {
     command = Some(cmd)
   }
   private def mainLoop[T](f: GuiContext => Unit): Unit = new GuiLoop().mainLoop(f)
+
   private def cmd_default(): Unit = {
     mainLoop { ctx =>
       loadTarget match {
@@ -73,6 +82,18 @@ class CLI {
     mainLoop { ctx =>
       MainFrame.loadProject(null, ctx, Paths.get(loadTarget.get))
     }
+  }
+  private def cmd_nativeImageGenConfig(): Unit = {
+    assert(!Environment.isNativeImage)
+    mainLoop { ctx =>
+      time("Generated configurations for native-image") {
+        new NativeImageGenConfig(ctx).execute()
+      }
+    }
+  }
+  private def cmd_nativeImageProcessConfig(): Unit = {
+    assert(!Environment.isNativeImage)
+    NativeImageProcessConfig.processConfigs()
   }
 
   def main(args: Seq[String]): Unit = {

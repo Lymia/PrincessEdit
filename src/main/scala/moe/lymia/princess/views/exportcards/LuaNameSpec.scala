@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.views.`export`
+package moe.lymia.princess.views.exportcards
 
 import moe.lymia.lua._
 

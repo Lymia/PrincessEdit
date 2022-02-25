@@ -44,7 +44,7 @@ import moe.lymia.princess.views.mainframe.TabDefs._
 
 // TODO: Should we really use an UUID here?
 abstract case class TabID[Data : Writes : Reads, TabClass <: TabBase, TabAPI](id: UUID) {
-  def serialize(v: Data) = Json.toJson(v)
+  def serialize(v: Data): JsValue = Json.toJson(v)
   def deserialize(js: JsValue): Data = js.as[Data]
   def extractData(tab: TabClass): TabAPI
 }
@@ -64,7 +64,7 @@ trait TabType[Data, TabClass <: TabBase, TabAPI] {
 trait TabProvider {
   private val ids = new mutable.HashMap[TabID[_, _, _], TabType[_, _, _]]
   protected def tabId[Data, TabClass <: TabBase, TabAPI](id: TabID[Data, TabClass, TabAPI])
-                                                        (fn: (Composite, Data, MainFrameState) => TabClass) = {
+                                                        (fn: (Composite, Data, MainFrameState) => TabClass): Option[TabType[_, _, _]] = {
     if(ids.contains(id)) sys.error(s"Duplicate TabID $id")
     ids.put(id, ((parent, data, state) => fn(parent, data, state)) : TabType[Data, TabClass, TabAPI])
   }
@@ -73,7 +73,7 @@ trait TabProvider {
 
 private[mainframe] case class TabData[Data, TabClass <: TabBase, TabAPI](tabID: TabID[Data, TabClass, TabAPI],
                                                                          data: Data, control: TabClass) {
-  def serialize = Json.obj(
+  def serialize: JsObject = Json.obj(
     "tabType" -> tabID.id,
     "parameters" -> tabID.serialize(data)
   )
@@ -108,8 +108,8 @@ private object MainTabFolder {
     (forUUID.toMap, forTabID.toMap)
   }
 
-  def getTabIDByUUID(id: UUID) = forUUID.get(id)
-  def getTabType[Data, TabClass <: TabBase, TabAPI](id: TabID[Data, TabClass, TabAPI]) =
+  def getTabIDByUUID(id: UUID): Option[TabID[_, _, _]] = forUUID.get(id)
+  def getTabType[Data, TabClass <: TabBase, TabAPI](id: TabID[Data, TabClass, TabAPI]): Option[TabType[Data, TabClass, TabAPI]] =
     forTabID.get(id).asInstanceOf[Option[TabType[Data, TabClass, TabAPI]]]
 }
 private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrameState)
@@ -159,13 +159,12 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
     tabFolder.setSelection(tab)
     id.extractData(tab.getControl.asInstanceOf[TabClass])
   }
-
-  private def clearTabs() = {
+  def clearTabs(): Unit = {
     for(item <- tabFolder.getItems) item.dispose()
     for(tab <- tabs) tab.control.dispose()
     tabs.clear()
   }
-  private def updateTabItems() = {
+  def updateTabItems(): Unit = {
     tabFolder.setRedraw(false)
     for(item <- tabFolder.getItems) item.dispose()
     for(tab <- tabs) {
@@ -179,13 +178,13 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
   }
 
   private def serialize = Json.toJson(tabs.map(_.serialize))
-  private def deserialize(js: JsValue) = {
+  private def deserialize(js: JsValue): Unit = {
     clearTabs()
     tabs ++= js.as[Seq[JsValue]].map(x => TabData.deserialize(tabFolder, x, state))
     updateTabItems()
   }
 
-  def loadSettings() = state.settings.getSetting(MainTabFolder.tabData, JsNull) match {
+  def loadSettings(): Boolean = state.settings.getSetting(MainTabFolder.tabData, JsNull) match {
     case JsNull => false
     case v => try {
       deserialize(v)
@@ -194,5 +193,5 @@ private[mainframe] final class MainTabFolder(parent: Composite, state: MainFrame
       case _: Throwable => false
     }
   }
-  def saveSettings() = state.settings.setSetting(MainTabFolder.tabData, serialize)
+  def saveSettings(): Unit = state.settings.setSetting(MainTabFolder.tabData, serialize)
 }

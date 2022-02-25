@@ -23,7 +23,7 @@
 package moe.lymia.princess.views.editor
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.core.cardmodel.{DataRoot, FullCardData, UIData}
+import moe.lymia.princess.core.cardmodel.{CardView, DataRoot, FullCardData, UIData}
 import moe.lymia.princess.util.swt.{RxOwner, RxWidget, UIUtils}
 import moe.lymia.princess.views.mainframe.{MainFrameState, PrincessEditTab, TabID, TabProvider}
 import org.eclipse.jface.action.MenuManager
@@ -45,7 +45,7 @@ final class DataRootEditorPane(parent: Composite, state: EditorState, root: Data
   setLayout(grid)
 
   private var deactivated = false
-  private def deactivate() = {
+  private def deactivate(): Unit = {
     if(!deactivated) state.deactivateEditor()
     deactivated = true
   }
@@ -84,7 +84,7 @@ final class DataRootEditorPane(parent: Composite, state: EditorState, root: Data
     UIUtils.listBackgroundStyle.apply
   )
 
-  private def updateScrolledComposite() = {
+  private def updateScrolledComposite(): Unit = {
     scrolled.setMinSize(uiContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT))
     scrolled.layout(true)
   }
@@ -96,24 +96,32 @@ final class DataRootEditorPane(parent: Composite, state: EditorState, root: Data
 
 sealed trait EditorAPI {
   def data: EditorTabData
-  def activateEditor()
-  def activatePoolDataEditor()
-  def deactivateEditor()
+
+  def activateEditor(): Unit
+  def activatePoolDataEditor(): Unit
+  def deactivateEditor(): Unit
+
+  def setSelectedCards(ids: UUID*): Unit
 }
 final class EditorState(parent: EditorTab, val data: EditorTabData, val mainFrameState: MainFrameState)
   extends RxOwner with EditorAPI {
 
-  val currentCardSelection = Var(Seq.empty[UUID])
+  val currentCardSelection: Var[Seq[UUID]] = Var(Seq.empty[UUID])
 
-  val currentView = Rx { mainFrameState.project.allViews().getOrElse(data.setId, sys.error("Unknown view")) }
-  val currentCard = Rx { currentCardSelection().lastOption }
-  val currentCardData = Rx { currentCard().flatMap(currentView().getFullCard) }
+  val currentView: Rx.Dynamic[CardView] = Rx {
+    mainFrameState.project.allViews().getOrElse(data.setId, sys.error("Unknown view"))
+  }
+  val currentCard: Rx.Dynamic[Option[UUID]] = Rx { currentCardSelection().lastOption }
+  val currentCardData: Rx.Dynamic[Option[FullCardData]] = Rx { currentCard().flatMap(currentView().getFullCard) }
 
-  def isEditorActive = parent.isEditorActive
+  def isEditorActive: Boolean = parent.isEditorActive
 
-  def activateEditor() = currentCardData.now.foreach(card => parent.activateEditor(card))
-  def activatePoolDataEditor() = parent.activatePoolDataEditor()
-  def deactivateEditor() = parent.deactivateEditor()
+  override def activateEditor(): Unit = currentCardData.now.foreach(card => parent.activateEditor(card))
+  override def activatePoolDataEditor(): Unit = parent.activatePoolDataEditor()
+  override def deactivateEditor(): Unit = parent.deactivateEditor()
+
+  override def setSelectedCards(ids: UUID*): Unit =
+    parent.selector.setSelection(ids : _*)
 
   override def kill(): Unit = {
     super.kill()
@@ -131,7 +139,7 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
 
   private var listContainer: Composite = _
   private var selectorContainer: Composite = _
-  private var selector: CardSelectorTableViewer = _
+  private[editor] var selector: CardSelectorTableViewer = _
 
   this.contains(
     fillLayout(),
@@ -158,7 +166,7 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
   stack.topControl = selectorContainer
 
   private var currentEditor: Option[Control] = None
-  private def clearCurrentEditor() = {
+  private def clearCurrentEditor(): Unit = {
     currentEditor match {
       case Some(x) => x.dispose()
       case None =>
@@ -168,8 +176,8 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
   }
 
   private var editorActive = false
-  def isEditorActive = editorActive
-  private def activatePane(pane: => Control) = {
+  def isEditorActive: Boolean = editorActive
+  private def activatePane(pane: => Control): Unit = {
     editorActive = true
     clearCurrentEditor()
     selector.editorOpened()
@@ -180,11 +188,11 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
     newPane.forceFocus()
     editorState.ctx.asyncUiExec { newPane.traverse(SWT.TRAVERSE_TAB_NEXT) }
   }
-  def activateEditor(cardData: FullCardData) =
+  def activateEditor(cardData: FullCardData): Unit =
     activatePane(new DataRootEditorPane(listContainer, editorState, cardData.cardData.root))
-  def activatePoolDataEditor() =
+  def activatePoolDataEditor(): Unit =
     activatePane(new DataRootEditorPane(listContainer, editorState, editorState.currentView.now.info.root))
-  def deactivateEditor() = {
+  def deactivateEditor(): Boolean = {
     editorActive = false
     clearCurrentEditor()
     selector.editorClosed()
@@ -198,7 +206,7 @@ final class EditorTab(parent: Composite, data: EditorTabData, mainState: MainFra
     // TODO
   }
 
-  override val tabName = Rx { editorState.currentView().name() }
+  override val tabName: Rx[String] = Rx { editorState.currentView().name() }
 }
 object EditorTab
   extends TabID[EditorTabData, EditorTab, EditorAPI](UUID.fromString("64a35118-343a-11e7-956d-3afa38669cf4")) {

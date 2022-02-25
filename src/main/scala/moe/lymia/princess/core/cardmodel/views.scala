@@ -29,9 +29,9 @@ import java.nio.file.Path
 import java.util.UUID
 
 final class SlotData(protected val project: Project) extends JsonPathSerializable with HasModifyTimeDataStore {
-  val cardRef = Var[Option[UUID]](None)
+  val cardRef: Var[Option[UUID]] = Var[Option[UUID]](None)
 
-  override def serialize = super.serialize ++ Json.obj("cardRef" -> cardRef.now)
+  override def serialize: JsObject = super.serialize ++ Json.obj("cardRef" -> cardRef.now)
   override def deserialize(js: JsObject): Unit = {
     super.deserialize(js)
     cardRef.update((js \ "cardRef").asOpt[UUID])
@@ -39,8 +39,8 @@ final class SlotData(protected val project: Project) extends JsonPathSerializabl
 }
 
 final class ViewInfo(protected val project: Project) extends JsonPathSerializable with HasModifyTimeDataStore {
-  val root = project.ctx.syncLuaExec { project.idData.viewRoot.createRoot(fields, Seq()) }
-  val name = Rx.unsafe { project.idData.viewData.computeName(root.luaData()) }
+  val root: DataRoot = project.ctx.syncLuaExec { project.idData.viewRoot.createRoot(fields, Seq()) }
+  val name: Rx[String] = Rx.unsafe { project.idData.viewData.computeName(root.luaData()) }
 }
 
 trait CardView extends PathSerializable {
@@ -49,15 +49,15 @@ trait CardView extends PathSerializable {
   val name: Rx[String] = info.name
 
   def cardIdList: Rx[Set[UUID]]
-  val fullCardList = Rx.unsafe { // TODO: See if I can do better than Rx.unsafe
+  val fullCardList: Rx[Seq[FullCardData]] = Rx.unsafe { // TODO: See if I can do better than Rx.unsafe
     cardIdList().toSeq.flatMap(x => getFullCard(x)).sortBy(_.cardData.createTime)
   }
 
-  val isStatic = false
-  def addCard(uuid: UUID)
-  def removeCard(uuid: UUID)
+  val isStatic: Boolean = false
+  def addCard(uuid: UUID): Unit
+  def removeCard(uuid: UUID): Unit
 
-  def getFullCard(uuid: UUID)(implicit ctx: Ctx.Data, owner: Ctx.Owner) = {
+  def getFullCard(uuid: UUID)(implicit ctx: Ctx.Data, owner: Ctx.Owner): Option[FullCardData] = {
     val card = project.cards.get(uuid)
     card.map(x => FullCardData(uuid, project, x, info, Rx { None }))
   }
@@ -74,13 +74,13 @@ trait CardView extends PathSerializable {
 
 trait CardList extends DirSerializable {
   protected val project: Project
-  lazy val idList = Var(Set.empty[UUID]) // lazy val to fix initialization order issues
+  lazy val idList: Var[Set[UUID]] = Var(Set.empty[UUID]) // lazy val to fix initialization order issues
 
-  def addCard(uuid: UUID) = if(!idList.now.contains(uuid)) {
+  def addCard(uuid: UUID): Unit = if(!idList.now.contains(uuid)) {
     project.cards.now.get(uuid).foreach(_.ref())
     idList.update(idList.now + uuid)
   }
-  def removeCard(uuid: UUID) = if(idList.now.contains(uuid)) {
+  def removeCard(uuid: UUID): Unit = if(idList.now.contains(uuid)) {
     project.cards.now.get(uuid).foreach(_.unref())
     idList.update(idList.now - uuid)
   }
@@ -98,6 +98,6 @@ trait CardList extends DirSerializable {
 }
 
 final class ListCardView(protected val project: Project) extends CardView with DirSerializable with CardList {
-  val slots = Var(Seq.empty[SlotData])
-  override def cardIdList = idList
+  val slots: Var[Seq[SlotData]] = Var(Seq.empty[SlotData])
+  override def cardIdList: Rx[Set[UUID]] = idList
 }

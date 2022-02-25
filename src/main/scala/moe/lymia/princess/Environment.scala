@@ -27,19 +27,19 @@ import com.sun.jna.platform.win32.{Shell32Util, ShlObj}
 import java.io.File
 import java.nio.file.{Path, Paths}
 
-private sealed trait Platform {
+sealed trait Platform {
   val configurationRoot: Path
 }
-private object Platform {
-  private case object Windows extends Platform {
+object Platform {
+  case object Windows extends Platform {
     override lazy val configurationRoot: Path =
       Paths.get(Shell32Util.getFolderPath(ShlObj.CSIDL_LOCAL_APPDATA))
   }
-  private case object MacOS extends Platform {
+  case object MacOS extends Platform {
     override lazy val configurationRoot: Path =
       Paths.get(System.getProperty("user.home")).resolve("Library/Preferences")
   }
-  private case object Linux extends Platform {
+  case object Linux extends Platform {
     override lazy val configurationRoot: Path =
       System.getenv("XDG_CONFIG_HOME") match {
         case null => Paths.get(System.getProperty("user.home")).resolve(".config")
@@ -58,7 +58,7 @@ private object Platform {
 }
 
 object Environment {
-  private lazy val isNativeImage: Boolean = System.getProperty("org.graalvm.nativeimage.kind") != null
+  val isNativeImage: Boolean = System.getProperty("org.graalvm.nativeimage.kind") != null
   private lazy val isSbtLaunch: Boolean = System.getenv("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY") != null
 
   private lazy val configurationRoot = Platform.platform.configurationRoot
