@@ -41,7 +41,7 @@ lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   name := "lua"
 ))
 lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
-  organization := "moe.lymia.princessedit",
+  organization := "moe.lymia.princess",
   name := "princess-edit-swt",
 
   libraryDependencies += swtDep("org.eclipse.swt"),
@@ -75,8 +75,13 @@ lazy val xscalawt = project in file("modules/xscalawt") settings (commonSettings
 
   libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 )) dependsOn swt
+lazy val native = project in file("modules/native") enablePlugins JniNative settings (commonSettings ++ Seq(
+  organization := "moe.lymia.princess",
+  name := "princess-edit-native",
+))
+
 lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin settings (commonSettings ++ ResourceGenerators.settings ++ Seq(
-  organization := "moe.lymia.princessedit",
+  organization := "moe.lymia.princess",
   name := "princess-edit",
 
   nativeImageOptions ++= Seq(
@@ -121,7 +126,7 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   // Nebula widgets
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.202202012159",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.202202012159",
-)) dependsOn swt dependsOn xscalawt dependsOn lua
+)) dependsOn swt dependsOn xscalawt dependsOn lua dependsOn native
 
 val commonSettings = versionWithGit ++ Seq(
   // Organization configuration

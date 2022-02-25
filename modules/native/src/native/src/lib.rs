@@ -20,22 +20,9 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.svg.rasterizer
+#![feature(const_fn_trait_bound)]
 
-import org.eclipse.swt.graphics.ImageData
-
-import java.awt.image.BufferedImage
-import scala.xml.Elem
-
-trait SVGRasterizerFactory {
-  def createRasterizer(): SVGRasterizer
-}
-
-trait SVGRasterizer {
-  def rasterizeSVGToPNG(x: Int, y: Int, svg: Elem): Array[Byte]
-
-  def rasterizeAwt(x: Int, y: Int, svg: Elem): BufferedImage
-  def rasterizeSwt(x: Int, y: Int, svg: Elem): ImageData
-
-  def dispose(): Unit
-}
+pub mod fonts;
+mod jni_utils;
+mod object_id;
+pub mod resvg;

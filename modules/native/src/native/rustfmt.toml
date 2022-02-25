@@ -1,0 +1,7 @@
+max_width = 100
+imports_granularity = "Crate"
+merge_derives = false
+overflow_delimited_expr = true
+struct_lit_single_line = true
+empty_item_single_line = true
+where_single_line = true

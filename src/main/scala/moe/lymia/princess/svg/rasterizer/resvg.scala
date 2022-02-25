@@ -22,18 +22,15 @@
 
 package moe.lymia.princess.svg.rasterizer
 
-import moe.lymia.princess.Environment
+import moe.lymia.princess.native.{FontDatabase, Resvg}
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.swt.graphics.ImageData
 
-import java.nio.file.Path
+import java.io.ByteArrayInputStream
 import javax.imageio.ImageIO
 import scala.xml.Elem
 
 object ResvgConnectionFactory extends SVGRasterizerFactory {
-  private[rasterizer] def resvg(args: String*) =
-    new ProcessBuilder(Environment.resvgCommand +: args: _*).redirectError(ProcessBuilder.Redirect.INHERIT)
-
   def createRasterizer(): SVGRasterizer = {
     ResvgConnection
   }
@@ -43,35 +40,31 @@ private object ResvgConnection extends SVGRasterizer {
   private val lock = new Object
   private var disposed = false
 
-  def rasterizeSVGToPNG(x: Int, y: Int, svg: Elem, out: Path): Unit = lock.synchronized {
+  private val fontDb = new FontDatabase()
+  def rasterizeSVGToPNG(x: Int, y: Int, svg: Elem): Array[Byte] = lock.synchronized {
     if (disposed) sys.error("instance already disposed")
-    IOUtils.withTemporaryFile(extension = "svg") { svgFile =>
-      IOUtils.writeFile(svgFile, svg.toString().getBytes("UTF-8"))
-      var process = ResvgConnectionFactory.resvg("-w", x.toString, "-h", y.toString,
-        svgFile.toString, out.toAbsolutePath.toString)
-      process.start().waitFor()
-    }
+    val svgFile = svg.toString()
+    Resvg.render(svgFile, None, fontDb, x, y)
   }
 
   def rasterizeAwt(x: Int, y: Int, svg: Elem) = lock.synchronized {
     if (disposed) sys.error("instance already disposed")
     IOUtils.withTemporaryFile(extension = "png") { pngFile =>
-      rasterizeSVGToPNG(x, y, svg, pngFile)
-      ImageIO.read(pngFile.toFile)
+      ImageIO.read(new ByteArrayInputStream(rasterizeSVGToPNG(x, y, svg)))
     }
   }
 
   def rasterizeSwt(x: Int, y: Int, svg: Elem) = lock.synchronized {
     if (disposed) sys.error("instance already disposed")
     IOUtils.withTemporaryFile(extension = "png") { pngFile =>
-      rasterizeSVGToPNG(x, y, svg, pngFile)
-      new ImageData(pngFile.toFile.getAbsolutePath)
+      new ImageData(new ByteArrayInputStream(rasterizeSVGToPNG(x, y, svg)))
     }
   }
 
   def dispose() = lock.synchronized {
     if (!disposed) {
       disposed = true
+      fontDb.dispose()
     }
   }
 

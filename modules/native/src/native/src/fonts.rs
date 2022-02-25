@@ -20,22 +20,35 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.svg.rasterizer
+use crate::{jni_utils::*, object_id::IdManager};
+use fontdb::Database;
+use jni::{objects::JClass, sys::jint, JNIEnv};
+use parking_lot::RwLock;
+use std::sync::Arc;
 
-import org.eclipse.swt.graphics.ImageData
+static FONT_DATABASES: IdManager<RwLock<Database>> = IdManager::new();
 
-import java.awt.image.BufferedImage
-import scala.xml.Elem
-
-trait SVGRasterizerFactory {
-  def createRasterizer(): SVGRasterizer
+pub fn get_database(i: jint) -> Arc<RwLock<Database>> {
+    FONT_DATABASES.get(i as u32)
 }
 
-trait SVGRasterizer {
-  def rasterizeSVGToPNG(x: Int, y: Int, svg: Elem): Array[Byte]
+#[no_mangle]
+pub extern "system" fn Java_moe_lymia_princess_native_Interface_fontDatabaseNew(
+    env: JNIEnv,
+    _class: JClass<'_>,
+) -> jint {
+    catch_panic_jint(&env, || {
+        FONT_DATABASES.allocate(RwLock::new(Database::new())) as i32
+    })
+}
 
-  def rasterizeAwt(x: Int, y: Int, svg: Elem): BufferedImage
-  def rasterizeSwt(x: Int, y: Int, svg: Elem): ImageData
-
-  def dispose(): Unit
+#[no_mangle]
+pub extern "system" fn Java_moe_lymia_princess_native_Interface_fontDatabaseDelete(
+    env: JNIEnv,
+    _class: JClass<'_>,
+    id: jint,
+) {
+    catch_panic_void(&env, || {
+        FONT_DATABASES.free(id as u32);
+    })
 }
