@@ -20,20 +20,19 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.scripting
+package moe.lymia.princess.editor.scripting
 
 import moe.lymia.lua._
-import moe.lymia.princess.core.state.LuaLibrary
-import moe.lymia.princess.gui.TableColumnData
+import moe.lymia.princess.core.gamedata.{I18N, LuaLibrary}
 
-trait LuaUIImplicits {
-  implicit object LuaTableColumnData extends LuaUserdataType[TableColumnData]
-}
-
-object UILib extends LuaLibrary {
+final case class I18NLib(i18n: I18N) extends LuaLibrary {
   override def open(L: LuaState, table: LuaTable): Unit = {
-    L.register(table, "Column", (L: LuaState, name: String, width: Int, fn: LuaClosure, sortFn: Option[LuaClosure],
-                                 isDefault: Boolean) =>
-      new TableColumnData(name, width, isDefault, L, fn, sortFn))
+    L.register(table, "i18n", ScalaLuaClosure { Ls =>
+      val L = new LuaState(Ls)
+      val key = L.value(1).as[String]
+      val args = L.valueRange(2).map(_.as[Any])
+      L.push(i18n.userLua(key, args : _*))
+      1
+    })
   }
 }

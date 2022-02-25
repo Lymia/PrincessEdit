@@ -20,16 +20,15 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui
+package moe.lymia.princess.core.cardmodel
 
 import moe.lymia.lua._
-import moe.lymia.princess.core.cardmodel.DataStore
 import moe.lymia.princess.core.gamedata.{GameData, I18N}
 import moe.lymia.princess.core.state.GuiContext
-import moe.lymia.princess.gui.nodes._
-import moe.lymia.princess.gui.scripting._
-import moe.lymia.princess.gui.utils.RxOwner
+import moe.lymia.princess.editor.nodes._
+import moe.lymia.princess.editor.scripting._
 import moe.lymia.princess.svg.RenderManager
+import moe.lymia.princess.util.swt.RxOwner
 import org.eclipse.swt.widgets._
 import rx._
 

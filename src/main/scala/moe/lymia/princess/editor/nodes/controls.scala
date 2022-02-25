@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.nodes
+package moe.lymia.princess.editor.nodes
 
 import moe.lymia.lua._
 import moe.lymia.princess.core.cardmodel.{DataField, DataFieldType}

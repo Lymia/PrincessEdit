@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.nodes
+package moe.lymia.princess.editor.nodes
 
 import moe.lymia.lua.Lua
 import moe.lymia.princess.core.EditorException

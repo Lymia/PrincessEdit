@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.utils
+package moe.lymia.princess.util.swt
 
 import org.eclipse.swt.SWT
 import org.eclipse.swt.events.{FocusEvent, FocusListener, SelectionEvent, SelectionListener}
@@ -48,8 +48,8 @@ final class HelpButton(parent: Composite, style: Int) extends Composite(parent, 
     override def focusLost(focusEvent: FocusEvent): Unit = balloon.setVisible(false)
   })
 
-  def setBalloonText(s: String) = balloon.setText(s)
-  def setBalloonMessage(s: String) = balloon.setMessage(s)
+  def setBalloonText(s: String): Unit = balloon.setText(s)
+  def setBalloonMessage(s: String): Unit = balloon.setMessage(s)
 
   private def makeSquare(p: Point) = new Point(p.y, p.y)
   override def computeSize(wHint: Int, hHint: Int): Point =

@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.utils
+package moe.lymia.princess.util.swt
 
 import com.coconut_palm_software.xscalawt.XScalaWTStyles._
 import moe.lymia.princess.core.gamedata.I18N
@@ -37,7 +37,7 @@ import java.nio.file.{Files, Path}
 import scala.xml.XML
 
 object UIUtils {
-  def openMessage(shell: IShellProvider, style: Int, i18n: I18N, root: String, args: Any*) = {
+  def openMessage(shell: IShellProvider, style: Int, i18n: I18N, root: String, args: Any*): Int = {
     val messageBox = new MessageBox(if(shell ne null) shell.getShell else null, style)
     messageBox.setText(i18n.system(s"$root.title", args : _*))
     messageBox.setMessage(i18n.system(s"$root.message", args : _*))
@@ -45,7 +45,7 @@ object UIUtils {
   }
 
   def openMessage(shell: IShellProvider, icon: Int, i18n: I18N, options: Seq[String], defaultOption: Int,
-                  root: String, args: Any*) = {
+                  root: String, args: Any*): Int = {
     val messageDialog =
       new MessageDialog(if(shell ne null) shell.getShell else null,
                         i18n.system(s"$root.title", args : _*), null, i18n.system(s"$root.message", args : _*),
@@ -54,20 +54,20 @@ object UIUtils {
     messageDialog.open()
   }
 
-  def computeSizeFromRatio(canvasSize: Point, width: Double, height: Double) = {
+  def computeSizeFromRatio(canvasSize: Point, width: Double, height: Double): (Int, Int) = {
     val (cx, cy) = (if(canvasSize.x == 0) 1 else canvasSize.x, if(canvasSize.y == 0) 1 else canvasSize.y)
     val size = (cx, math.round((cx.toDouble / width) * height).toInt)
     if(size._2 > cy) (math.round((cy.toDouble / height) * width).toInt, cy)
     else size
   }
 
-  def loadSVGFromResource(res: String) = SVGFile(XML.load(IOUtils.getResource(res)))
-  def loadSVGFromPath(path: Path) = SVGFile(XML.load(Files.newInputStream(path)))
+  def loadSVGFromResource(res: String): SVGFile = SVGFile(XML.load(IOUtils.getResource(res)))
+  def loadSVGFromPath(path: Path): SVGFile = SVGFile(XML.load(Files.newInputStream(path)))
 
   // XScalaWT compatible
-  def listBackground(c: Control) = c.setBackground(c.getDisplay.getSystemColor(SWT.COLOR_LIST_BACKGROUND))
+  def listBackground(c: Control): Unit = c.setBackground(c.getDisplay.getSystemColor(SWT.COLOR_LIST_BACKGROUND))
   object listBackgroundStyle extends Stylesheet ($[Control](listBackground))
 
-  def fontStyle(style: Int)(c: Control) =
+  def fontStyle(style: Int)(c: Control): Unit =
     c.setFont(FontDescriptor.createFrom(c.getFont).setStyle(style).createFont(c.getDisplay))
 }

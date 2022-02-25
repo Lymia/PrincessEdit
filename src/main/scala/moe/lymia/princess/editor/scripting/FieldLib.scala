@@ -20,12 +20,12 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.scripting
+package moe.lymia.princess.editor.scripting
 
 import moe.lymia.lua._
 import moe.lymia.princess.core.cardmodel.{DataField, DataFieldType}
-import moe.lymia.princess.core.state.LuaLibrary
-import moe.lymia.princess.gui.nodes._
+import moe.lymia.princess.core.gamedata.LuaLibrary
+import moe.lymia.princess.editor.nodes._
 
 case class DeriveList(elements: Seq[FieldNode])
 
@@ -56,7 +56,7 @@ trait LuaFieldNodeImplicits {
 }
 
 object FieldLib extends LuaLibrary {
-  private[gui] def checkName(L: LuaState, name: String) = {
+  private[editor] def checkName(L: LuaState, name: String) = {
     if(name.contains(":") || name.contains("$")) L.error("field name cannot contain ':' or '$'")
     name
   }

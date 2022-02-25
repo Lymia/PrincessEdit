@@ -20,11 +20,11 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.scripting
+package moe.lymia.princess.editor.scripting
 
 import moe.lymia.lua._
-import moe.lymia.princess.core.state.LuaLibrary
-import moe.lymia.princess.gui.nodes._
+import moe.lymia.princess.core.gamedata.LuaLibrary
+import moe.lymia.princess.editor.nodes._
 
 case class ControlTypeApWrapper(default: ControlType, call: LuaClosure)
 

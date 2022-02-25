@@ -20,12 +20,18 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.state
+package moe.lymia.princess.util.swt
 
-object GlobalContext {
+import org.eclipse.swt.widgets.Widget
+import rx._
 
+trait RxOwner {
+  protected implicit val owner: Ctx.Owner = Ctx.Owner.Unsafe
+  private val dummyRx = Rx.apply { () }
+
+  def kill(): Unit = dummyRx.kill()
 }
 
-class ProjectContext {
-
+trait RxWidget extends RxOwner { this: Widget =>
+  addDisposeListener(_ => kill())
 }

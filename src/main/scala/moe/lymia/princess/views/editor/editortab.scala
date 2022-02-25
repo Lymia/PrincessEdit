@@ -23,9 +23,8 @@
 package moe.lymia.princess.views.editor
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.core.cardmodel.FullCardData
-import moe.lymia.princess.gui.utils.{RxOwner, RxWidget, UIUtils}
-import moe.lymia.princess.gui.{DataRoot, UIData}
+import moe.lymia.princess.core.cardmodel.{DataRoot, FullCardData, UIData}
+import moe.lymia.princess.util.swt.{RxOwner, RxWidget, UIUtils}
 import moe.lymia.princess.views.mainframe.{MainFrameState, PrincessEditTab, TabID, TabProvider}
 import org.eclipse.jface.action.MenuManager
 import org.eclipse.swt._

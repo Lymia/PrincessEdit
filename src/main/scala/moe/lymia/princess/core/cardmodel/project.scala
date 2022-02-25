@@ -25,7 +25,6 @@ package moe.lymia.princess.core.cardmodel
 import moe.lymia.princess.VersionInfo
 import moe.lymia.princess.core.cardmodel.SerializeUtils._
 import moe.lymia.princess.core.state.GuiContext
-import moe.lymia.princess.gui.GameIDData
 import moe.lymia.princess.util.IOUtils
 import play.api.libs.json._
 import rx._

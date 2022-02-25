@@ -24,8 +24,8 @@ package moe.lymia.princess.views.`export`
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.state.GuiContext
-import moe.lymia.princess.gui.utils.UIUtils
 import moe.lymia.princess.svg.SVGData
+import moe.lymia.princess.util.swt.UIUtils
 import moe.lymia.princess.views.mainframe.MainFrameState
 import org.eclipse.jface.layout.GridDataFactory
 import org.eclipse.jface.window.IShellProvider

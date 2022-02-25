@@ -20,14 +20,14 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.nodes
+package moe.lymia.princess.editor.nodes
 
 import moe.lymia.lua._
 import moe.lymia.princess.core.cardmodel.DataStore
 import moe.lymia.princess.core.gamedata.I18N
 import moe.lymia.princess.core.state.GuiContext
-import moe.lymia.princess.gui.scripting._
-import moe.lymia.princess.gui.utils.UIUtils
+import moe.lymia.princess.editor.scripting._
+import moe.lymia.princess.util.swt.UIUtils
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout._
 import org.eclipse.swt.widgets._

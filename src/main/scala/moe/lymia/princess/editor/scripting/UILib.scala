@@ -20,18 +20,20 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.utils
+package moe.lymia.princess.editor.scripting
 
-import org.eclipse.swt.widgets.Widget
-import rx._
+import moe.lymia.lua._
+import moe.lymia.princess.core.cardmodel.TableColumnData
+import moe.lymia.princess.core.gamedata.LuaLibrary
 
-trait RxOwner {
-  protected implicit val owner = Ctx.Owner.Unsafe
-  private val dummyRx = Rx.apply { () }
-
-  def kill() = dummyRx.kill()
+trait LuaUIImplicits {
+  implicit object LuaTableColumnData extends LuaUserdataType[TableColumnData]
 }
 
-trait RxWidget extends RxOwner { this: Widget =>
-  addDisposeListener(_ => kill())
+object UILib extends LuaLibrary {
+  override def open(L: LuaState, table: LuaTable): Unit = {
+    L.register(table, "Column", (L: LuaState, name: String, width: Int, fn: LuaClosure, sortFn: Option[LuaClosure],
+                                 isDefault: Boolean) =>
+      new TableColumnData(name, width, isDefault, L, fn, sortFn))
+  }
 }

@@ -22,8 +22,8 @@
 
 package moe.lymia.princess.core.state
 
-import moe.lymia.princess.gui.utils.ExtendedResourceManager
 import moe.lymia.princess.util._
+import moe.lymia.princess.util.swt.ExtendedResourceManager
 import org.eclipse.jface.resource.{JFaceResources, LocalResourceManager}
 import org.eclipse.jface.window._
 import org.eclipse.swt.SWT
@@ -70,16 +70,16 @@ class GuiContext(val display: Display, loop: GuiLoop, uiThread: Thread) {
   def newShell(style: Int = SWT.SHELL_TRIM) = new Shell(display, style)
 
   private class Syncer[T] {
-    private val lock = new Condition()
+    private val lock = new Object
     @volatile private var isDone = false
     @volatile private var ret = null.asInstanceOf[Try[T]]
     def doTry(t: => T): Unit = {
       ret = Try(t)
       isDone = true
-      lock.done()
+      lock synchronized { lock.notify() }
     }
     def sync(): T = {
-      while (isRunning && !isDone) lock.waitFor(1)
+      while (isRunning && !isDone) lock synchronized { lock.wait(1000) }
       ret.get
     }
   }

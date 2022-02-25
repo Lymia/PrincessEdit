@@ -20,10 +20,9 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui
+package moe.lymia.princess.editor
 
-import moe.lymia.princess.core.gamedata.I18N
-import moe.lymia.princess.core.state.{LuaContext, LuaLibrary, LuaModule}
+import moe.lymia.princess.core.gamedata.{I18N, LuaContext, LuaLibrary, LuaModule}
 
 package object scripting
   extends LuaFieldNodeImplicits

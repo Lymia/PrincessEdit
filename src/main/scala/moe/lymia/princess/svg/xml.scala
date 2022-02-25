@@ -26,12 +26,12 @@ import scala.collection.mutable
 import scala.xml._
 
 object XMLUtils {
-  def filterAttributes(m: MetaData)(fn: MetaData => Boolean) = {
+  def filterAttributes(m: MetaData)(fn: MetaData => Boolean): MetaData = {
     var newMetadata: MetaData = Null
     for(md <- m) if(fn(md)) newMetadata = md.copy(newMetadata)
     newMetadata
   }
-  def mapAttributes(m: MetaData)(fn: MetaData => MetaData) = {
+  def mapAttributes(m: MetaData)(fn: MetaData => MetaData): MetaData = {
     var newMetadata: MetaData = Null
     for(md <- m) newMetadata = fn(md).copy(newMetadata)
     newMetadata
@@ -100,7 +100,7 @@ case class MinifyXML(dropNamespaces: Set[String], dropTags: Set[String]) {
 }
 object MinifyXML {
   import XMLNS._
-  val SVG = MinifyXML(Set(dc, cc, rdf, sodipodi, inkscape, jfreesvg, princess), Set())
+  val SVG: MinifyXML = MinifyXML(Set(dc, cc, rdf, sodipodi, inkscape, jfreesvg, princess), Set())
 }
 
 object XMLNS {

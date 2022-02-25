@@ -28,9 +28,7 @@ import moe.lymia.princess.core.gamedata.GameData
 import moe.lymia.princess.svg.components._
 import moe.lymia.princess.svg.scripting._
 import moe.lymia.princess.util.SizedCache
-import org.eclipse.swt.graphics.ImageData
 
-import java.awt.image.BufferedImage
 import java.io.Writer
 import scala.xml.Elem
 

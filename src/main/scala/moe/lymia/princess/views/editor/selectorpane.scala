@@ -22,9 +22,8 @@
 
 package moe.lymia.princess.views.editor
 
-import moe.lymia.princess.core.cardmodel.FullCardData
-import moe.lymia.princess.gui.TableColumnData
-import moe.lymia.princess.gui.utils.RxWidget
+import moe.lymia.princess.core.cardmodel.{FullCardData, TableColumnData}
+import moe.lymia.princess.util.swt.RxWidget
 import moe.lymia.princess.views.`export`.ExportCardsDialog
 import org.eclipse.jface.action._
 import org.eclipse.jface.layout.TableColumnLayout

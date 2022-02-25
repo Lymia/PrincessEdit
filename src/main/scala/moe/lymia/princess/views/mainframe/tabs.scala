@@ -23,8 +23,8 @@
 package moe.lymia.princess.views.mainframe
 
 import moe.lymia.princess.core.state.SettingsKey
-import moe.lymia.princess.gui.utils.RxWidget
 import moe.lymia.princess.util.Service
+import moe.lymia.princess.util.swt.RxWidget
 import org.eclipse.jface.action.MenuManager
 import org.eclipse.swt.SWT
 import org.eclipse.swt.custom.{CTabFolder, CTabFolder2Listener, CTabFolderEvent, CTabItem}

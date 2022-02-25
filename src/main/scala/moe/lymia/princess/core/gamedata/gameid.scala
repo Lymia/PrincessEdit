@@ -24,7 +24,6 @@ package moe.lymia.princess.core.gamedata
 
 import moe.lymia.lua.LuaObject
 import moe.lymia.princess.core.EditorException
-import moe.lymia.princess.core.state.{LuaContext, LuaModule}
 import moe.lymia.princess.util.IOUtils
 import moe.lymia.princess.{DefaultLogger, Environment, Logger}
 import toml.Toml
@@ -43,7 +42,7 @@ object GameId {
     GameId(raw.game.name, raw.game.displayName, raw.game.icon)
   }
 
-  def loadGameIdManager(manager: GameIdLoader): GameData = manager.loadGameData(StaticGameIds.DefinesGameId)
+  def loadGameIdManager(manager: GameDataLoader): GameData = manager.loadGameData(StaticGameIds.DefinesGameId)
   def loadGameIds(game: GameData): Map[String, GameId] = {
     val gameIDExports = game.getExports(StaticExportIds.GameId).map(_.path).map(game.forceResolve)
 
@@ -85,7 +84,7 @@ final class GameData(packages: PackageList, val logger: Logger = DefaultLogger, 
     getEntryPoint(export).getOrElse(throw EditorException(s"GameID '$gameId' has no entry point of type '$export'"))
 }
 
-final class GameIdLoader(packages: Option[Path], systemPackages: Seq[Path] = Seq(), logger: Logger = DefaultLogger) {
+final class GameDataLoader(packages: Option[Path], systemPackages: Seq[Path] = Seq(), logger: Logger = DefaultLogger) {
   // TODO: Encapsulate this better.
 
   val resolver: PackageResolver = PackageResolver.loadPackageDirectory(packages, systemPackages: _*)
@@ -98,11 +97,11 @@ final class GameIdLoader(packages: Option[Path], systemPackages: Seq[Path] = Seq
   def loadGameData(gameId: String, logger: Logger = logger, modules: Seq[LuaModule] = Seq()): GameData =
     new GameData(resolver.loadGameId(gameId), logger, modules)
 }
-object GameIdLoader {
+object GameDataLoader {
   private def rootPath = Environment.rootDirectory
   private def corePkgPath = rootPath.resolve("lib/core.pedit-pkg")
 
-  lazy val default = new GameIdLoader(Some(rootPath.resolve("packages")), Seq(corePkgPath))
+  lazy val default = new GameDataLoader(Some(rootPath.resolve("packages")), Seq(corePkgPath))
   lazy val systemI18N: I18N = {
     val id = default.loadGameData("_princess")
     new I18NLoader(id).i18n

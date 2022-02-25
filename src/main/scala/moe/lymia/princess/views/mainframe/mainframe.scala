@@ -23,13 +23,13 @@
 package moe.lymia.princess.views.mainframe
 
 import moe.lymia.princess.VersionInfo
-import moe.lymia.princess.core.cardmodel.{Project, ProjectMetadata}
-import moe.lymia.princess.core.gamedata.{GameId, GameIdLoader, I18NLoader}
+import moe.lymia.princess.core.cardmodel.{GameIDData, Project, ProjectMetadata}
+import moe.lymia.princess.core.gamedata.{GameDataLoader, GameId, I18NLoader}
 import moe.lymia.princess.core.state.{GuiContext, Settings, SettingsStore, UnbackedSettingsStore}
-import moe.lymia.princess.gui._
-import moe.lymia.princess.gui.scripting.EditorModule
-import moe.lymia.princess.gui.utils._
+import moe.lymia.princess.editor._
+import moe.lymia.princess.editor.scripting.EditorModule
 import moe.lymia.princess.svg.scripting.RenderModule
+import moe.lymia.princess.util.swt.{RxOwner, UIUtils, WindowBase}
 import moe.lymia.princess.util.{FileLock, IOUtils}
 import moe.lymia.princess.views.editor.{EditorTab, EditorTabData}
 import moe.lymia.princess.views.mainframe.TabDefs.TabBase
@@ -47,7 +47,7 @@ import java.nio.file.{Path, Paths}
 final case class UnsavedChanges(since: Long)
 final class MainFrameState(mainFrame: MainFrame, val ctx: GuiContext, projectSource: ProjectSource) {
   val gameId = projectSource.getGameID
-  val game = GameIdLoader.default.loadGameData(gameId)
+  val game = GameDataLoader.default.loadGameData(gameId)
   val i18n = new I18NLoader(game).i18n
   game.lua.loadModule(EditorModule(i18n), RenderModule)
 
@@ -252,23 +252,23 @@ object MainFrame {
 
         if(meta.versionMajor <= Project.VER_MAJOR) {
           if(meta.versionMinor <= Project.VER_MINOR ||
-             UIUtils.openMessage(parent, SWT.ICON_WARNING | SWT.YES | SWT.NO, GameIdLoader.systemI18N,
+             UIUtils.openMessage(parent, SWT.ICON_WARNING | SWT.YES | SWT.NO, GameDataLoader.systemI18N,
                                  "_princess.main.incompatibleMinorVersion", errorSeq : _*) == SWT.YES) {
             new MainFrame(ctx, ProjectSource.OpenProject(path, meta, lock)).open()
             if(closeOnAccept) parent.close()
           } else lock.release()
         } else {
-          UIUtils.openMessage(parent, SWT.ICON_ERROR | SWT.OK, GameIdLoader.systemI18N,
+          UIUtils.openMessage(parent, SWT.ICON_ERROR | SWT.OK, GameDataLoader.systemI18N,
                               "_princess.main.incompatibleMajorVersion", errorSeq : _*)
           lock.release()
         }
       case None =>
         UIUtils.openMessage(parent, SWT.ICON_ERROR | SWT.OK,
-                            GameIdLoader.systemI18N, "_princess.main.projectLocked")
+                            GameDataLoader.systemI18N, "_princess.main.projectLocked")
     }
   def showOpenDialog(parent: Window, ctx: GuiContext, closeOnAccept: Boolean = false) = {
     val selector = new FileDialog(parent.getShell, SWT.OPEN)
-    selector.setFilterNames(Array(GameIdLoader.systemI18N.system("_princess.main.project")))
+    selector.setFilterNames(Array(GameDataLoader.systemI18N.system("_princess.main.project")))
     selector.setFilterExtensions(Array("*.pedit-project"))
     selector.setFilterPath(Paths.get(".").toAbsolutePath.toString)
     selector.open() match {

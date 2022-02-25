@@ -23,10 +23,8 @@
 package moe.lymia.princess.svg
 
 import moe.lymia.lua.LuaTable
-import org.eclipse.swt.graphics.ImageData
 import org.jfree.graphics2d.svg.{SVGGraphics2D, SVGHints}
 
-import java.awt.image.BufferedImage
 import java.io.Writer
 import scala.collection.mutable
 import scala.xml.dtd.{DocType, PublicID}

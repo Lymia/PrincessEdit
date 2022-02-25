@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.utils
+package moe.lymia.princess.util.swt
 
 import moe.lymia.princess.core.state.GuiContext
 import org.eclipse.jface.dialogs.Dialog
@@ -34,7 +34,7 @@ trait JFaceWindowBase extends Window {
 
   ctx.wm.add(this)
 
-  protected def frameContents(frame: Composite)
+  protected def frameContents(frame: Composite): Unit
 
   override def configureShell(newShell: Shell): Unit = {
     super.configureShell(newShell)
@@ -52,7 +52,7 @@ trait JFaceWindowBase extends Window {
 }
 
 trait WithResources extends JFaceWindowBase {
-  val resourceManager = ctx.newResourceManager()
+  val resourceManager: ExtendedResourceManager = ctx.newResourceManager()
 
   override def configureShell(newShell: Shell): Unit = {
     super.configureShell(newShell)

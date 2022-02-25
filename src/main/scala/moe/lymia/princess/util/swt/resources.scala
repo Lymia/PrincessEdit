@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.utils
+package moe.lymia.princess.util.swt
 
 import moe.lymia.princess.core.state.GuiContext
 import moe.lymia.princess.svg.SVGRenderable

@@ -20,20 +20,21 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.scripting
+package moe.lymia.princess.editor.scripting
 
 import moe.lymia.lua._
-import moe.lymia.princess.core.gamedata.I18N
-import moe.lymia.princess.core.state.LuaLibrary
+import moe.lymia.princess.core.gamedata.LuaLibrary
+import moe.lymia.princess.editor.nodes._
 
-final case class I18NLib(i18n: I18N) extends LuaLibrary {
+trait LuaControlNodeImplicits {
+  implicit object LuaControlNode extends LuaUserdataType[ControlNode]
+}
+
+object ControlNodeLib extends LuaLibrary {
   override def open(L: LuaState, table: LuaTable): Unit = {
-    L.register(table, "i18n", ScalaLuaClosure { Ls =>
-      val L = new LuaState(Ls)
-      val key = L.value(1).as[String]
-      val args = L.valueRange(2).map(_.as[Any])
-      L.push(i18n.userLua(key, args : _*))
-      1
-    })
+    val node = L.newLib(table, "Node")
+    L.register(node, "Label", (text: String) => LabelNode(text) : ControlNode)
+    L.register(node, "Visibility",
+      (node: FieldNode, contents: ControlNode) => VisibilityNode(node, contents) : ControlNode)
   }
 }

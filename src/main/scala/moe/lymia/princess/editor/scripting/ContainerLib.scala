@@ -20,11 +20,11 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.gui.scripting
+package moe.lymia.princess.editor.scripting
 
 import moe.lymia.lua._
-import moe.lymia.princess.core.state.LuaLibrary
-import moe.lymia.princess.gui.nodes._
+import moe.lymia.princess.core.gamedata.LuaLibrary
+import moe.lymia.princess.editor.nodes._
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout._
 
@@ -61,7 +61,7 @@ object ContainerUtils {
     ud
   }
 }
-import moe.lymia.princess.gui.scripting.ContainerUtils._
+import moe.lymia.princess.editor.scripting.ContainerUtils._
 
 trait LuaContainerImplicits {
   implicit object LuaAlign extends LuaUserdataType[Align]

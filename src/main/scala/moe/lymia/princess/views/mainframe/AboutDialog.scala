@@ -24,7 +24,7 @@ package moe.lymia.princess.views.mainframe
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.VersionInfo
-import moe.lymia.princess.gui.utils.{DialogBase, IconData, UIUtils, WithResources}
+import moe.lymia.princess.util.swt.{DialogBase, IconData, UIUtils, WithResources}
 import org.eclipse.jface.window.IShellProvider
 import org.eclipse.swt.SWT
 import org.eclipse.swt.layout.GridData

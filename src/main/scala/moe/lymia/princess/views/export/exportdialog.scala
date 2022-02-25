@@ -24,7 +24,7 @@ package moe.lymia.princess.views.`export`
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.cardmodel.FullCardData
-import moe.lymia.princess.gui.utils.{DialogBase, HelpButton, UIUtils}
+import moe.lymia.princess.util.swt.{DialogBase, HelpButton, UIUtils}
 import moe.lymia.princess.views.mainframe.MainFrameState
 import org.eclipse.jface.dialogs.ProgressMonitorDialog
 import org.eclipse.jface.layout.GridDataFactory
