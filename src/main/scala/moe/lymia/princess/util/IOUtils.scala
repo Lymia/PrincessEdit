@@ -23,7 +23,7 @@
 package moe.lymia.princess.util
 
 import java.io.{File, IOException, InputStream, InputStreamReader}
-import java.net.URI
+import java.net.{URI, URL}
 import java.nio.channels.{FileChannel, OverlappingFileLockException}
 import java.nio.charset.StandardCharsets
 import java.nio.file._
@@ -42,8 +42,8 @@ final class FileLock(lockFile: Path) {
   }
   private var released = false
 
-  val acquired = lock.isDefined
-  def release() = if(!released) {
+  val acquired: Boolean = lock.isDefined
+  def release(): Unit = if(!released) {
     lock.foreach(_.release)
     channel.close()
     released = true
@@ -54,17 +54,18 @@ final class FileLock(lockFile: Path) {
 object IOUtils {
   private val resPath = "/moe/lymia/princess/"
 
-  def getResourceURL(s: String) = getClass.getResource(resPath + s)
-  def getResource(s: String) = getClass.getResourceAsStream(resPath + s)
-  def resourceExists(s: String) = getResource(s) != null
-  def loadFromStream(s: InputStream) = scala.io.Source.fromInputStream(s)(Codec.UTF8).mkString
-  def loadBinaryFromStream(s: InputStream) = Stream.continually(s.read).takeWhile(_ != -1).map(_.toByte).toArray
-  def loadResource(s: String) = loadFromStream(getResource(s))
-  def loadBinaryResource(s: String) = loadBinaryFromStream(getResource(s))
+  def getResourceURL(s: String): URL = getClass.getResource(resPath + s)
+  def getResource(s: String): InputStream = getClass.getResourceAsStream(resPath + s)
+  def resourceExists(s: String): Boolean = getResource(s) != null
+  def loadFromStream(s: InputStream): String = scala.io.Source.fromInputStream(s)(Codec.UTF8).mkString
+  def loadBinaryFromStream(s: InputStream): Array[Byte] =
+    Stream.continually(s.read).takeWhile(_ != -1).map(_.toByte).toArray
+  def loadResource(s: String): String = loadFromStream(getResource(s))
+  def loadBinaryResource(s: String): Array[Byte] = loadBinaryFromStream(getResource(s))
 
-  def hideFile(path: Path) =
+  def hideFile(path: Path): Path =
     Files.setAttribute(path, "dos:hidden", true)
-  def mapFileName(path: Path, mapFn: String => String) =
+  def mapFileName(path: Path, mapFn: String => String): Path =
     path.toAbsolutePath.getParent.resolve(mapFn(path.getFileName.toString))
 
   def writeFile(path: Path, data: Array[Byte]): Unit = {
@@ -74,11 +75,11 @@ object IOUtils {
   def writeFile(path: Path, data: String): Unit = writeFile(path, data.getBytes(StandardCharsets.UTF_8))
 
   def getInputStreamReader(in: InputStream) = new InputStreamReader(in, StandardCharsets.UTF_8)
-  def getFileReader(path: Path) = getInputStreamReader(Files.newInputStream(path))
-  def readFileAsBytes(path: Path) = Files.readAllBytes(path)
+  def getFileReader(path: Path): InputStreamReader = getInputStreamReader(Files.newInputStream(path))
+  def readFileAsBytes(path: Path): Array[Byte] = Files.readAllBytes(path)
   def readFileAsString(path: Path) = new String(readFileAsBytes(path), StandardCharsets.UTF_8)
 
-  def list(path: Path) = {
+  def list(path: Path): List[Path] = {
     val stream = Files.list(path)
     try {
       stream.iterator().asScala.toList
@@ -116,26 +117,26 @@ object IOUtils {
       }
     }
 
-  def deleteDirectory(path: Path) =
+  def deleteDirectory(path: Path): Any =
     if(Files.exists(path))
       Files.walkFileTree(path, new SimpleFileVisitor[Path] {
-        override def visitFile(file: Path, attrs: BasicFileAttributes) = {
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
           Files.delete(file)
           FileVisitResult.CONTINUE
         }
 
-        override def visitFileFailed(file: Path, exc: IOException) = {
+        override def visitFileFailed(file: Path, exc: IOException): FileVisitResult = {
           Files.delete(file)
           FileVisitResult.CONTINUE
         }
 
-        override def postVisitDirectory(dir: Path, exc: IOException) = if(exc == null) {
+        override def postVisitDirectory(dir: Path, exc: IOException): FileVisitResult = if(exc == null) {
           Files.delete(dir)
           FileVisitResult.CONTINUE
         } else throw exc
       })
 
-  def withTemporaryFile[T](prefix: String = "princess-edit-tmp-", extension: String = "tmp")(f: Path => T) = {
+  def withTemporaryFile[T](prefix: String = "princess-edit-tmp-", extension: String = "tmp")(f: Path => T): T = {
     val tempFile = File.createTempFile(prefix, s".$extension")
     try {
       f(tempFile.toPath)
@@ -144,7 +145,7 @@ object IOUtils {
     }
   }
 
-  def withTemporaryDirectory[T](prefix: String = "princess-edit-tmp-")(f: Path => T) = {
+  def withTemporaryDirectory[T](prefix: String = "princess-edit-tmp-")(f: Path => T): T = {
     val tempDir = Files.createTempDirectory(prefix)
     try {
       f(tempDir)
@@ -153,11 +154,11 @@ object IOUtils {
     }
   }
 
-  def lock(lockFile: Path) = {
+  def lock(lockFile: Path): Option[FileLock] = {
     val lock = new FileLock(lockFile)
     if(!lock.acquired) None else Some(lock)
   }
-  def withLock[T](lockFile: Path, error: => T = sys.error("Could not acquire lock."))(f: => T) =
+  def withLock[T](lockFile: Path, error: => T = sys.error("Could not acquire lock."))(f: => T): T =
     lock(lockFile) match {
       case None => error
       case Some(lock) => try {

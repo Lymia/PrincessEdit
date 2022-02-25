@@ -78,8 +78,8 @@ abstract class SettingsStore {
     for((k, v) <- js.as[Map[String, JsValue]]) underlying.put(k, SettingsStoreJsonEntry(v))
   }
 
-  def load()
-  def save()
+  def load(): Unit
+  def save(): Unit
 }
 
 class UnbackedSettingsStore extends SettingsStore {

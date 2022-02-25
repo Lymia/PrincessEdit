@@ -31,7 +31,7 @@ final class CountedCache[K, V](var maxSize: Int) {
     override def removeEldestEntry(eldest: Entry[K, V]): Boolean = size() > maxSize
   }.asScala
 
-  def cached(key: K, value: => V) =
+  def cached(key: K, value: => V): V =
     underlying.get(key) match {
       case Some(x) =>
         // refresh the current entry, bumping it to the top of the list
@@ -57,7 +57,7 @@ object SizedCache {
 
 object NullCache extends SizedCache {
   override def maxSize: Long = 0
-  override def maxSize_=(l: Long) { }
+  override def maxSize_=(l: Long): Unit = { }
   override def cached[K, V](section: CacheSection[K, V])(key: K, value: => (V, Long)): V = value._1
 }
 

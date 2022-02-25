@@ -2,13 +2,49 @@
   "resources":{
   "includes":[
     {
-      "pattern":"^META-INF/.*"
-    },
+      "pattern":"\\QMETA-INF/services/moe.lymia.princess.views.mainframe.TabProvider\\E"
+    }, 
     {
-      "pattern":"^moe/lymia/princess/res/.*"
+      "pattern":"\\Qmoe/lymia/princess/res/icon-app-16.png\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/res/icon-app-20.png\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/res/icon-app-22.png\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/res/icon-app-24.png\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/res/icon-app-256.png\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/res/icon-app-32.png\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/res/icon-app-40.png\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/res/icon-app-48.png\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/res/icon-app-64.png\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/res/icon-app-96.png\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/res/icon-app.svg\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/res/no-icon.svg\\E"
     }, 
     {
       "pattern":"\\Qmoe/lymia/princess/version.properties\\E"
+    }, 
+    {
+      "pattern":"\\Qnative/x86_64-linux/libprincessedit_rendering.so\\E"
     }, 
     {
       "pattern":"\\Qorg/eclipse/swt/internal/gtk/swt_functional_gtk_3_20.css\\E"
@@ -18,6 +54,12 @@
     }, 
     {
       "pattern":"\\Qorg/eclipse/swt/internal/gtk/swt_theming_fixes_gtk_3_24_5.css\\E"
+    }, 
+    {
+      "pattern":"^META-INF/.*"
+    }, 
+    {
+      "pattern":"^moe/lymia/princess/res/.*"
     }
   ]},
   "bundles":[
@@ -31,16 +73,20 @@
       "name":"com.sun.swing.internal.plaf.synth.resources.synth"
     }, 
     {
-      "name":"org.eclipse.jface.messages"
+      "name":"org.eclipse.jface.messages",
+      "locales":[""]
     }, 
     {
-      "name":"org.eclipse.jface.resource.jfacefonts_linux_gtk"
+      "name":"org.eclipse.jface.resource.jfacefonts_linux_gtk",
+      "locales":[""]
     }, 
     {
-      "name":"org.eclipse.swt.internal.SWTMessages"
+      "name":"org.eclipse.swt.internal.SWTMessages",
+      "locales":[""]
     }, 
     {
-      "name":"sun.awt.resources.awt"
+      "name":"sun.awt.resources.awt",
+      "classNames":["sun.awt.resources.awt"]
     }
   ]
 }

@@ -24,8 +24,6 @@ import Config._
 import sbt.Keys._
 import sbt._
 
-import java.io.FileOutputStream
-
 val osName = sys.props("os.name") match {
   case os if os.startsWith("Windows") => "windows"
   case "Mac OS X" => "macosx"
@@ -46,7 +44,6 @@ lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
 
   libraryDependencies += swtDep("org.eclipse.swt"),
   libraryDependencies += swtDep("org.eclipse.swt.gtk.linux.x86_64"),
-  libraryDependencies += swtDep("org.eclipse.swt.win32.win32.x86_64"),
 
   libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.17.100.v20211104-1730",
   libraryDependencies += "bundle" % "org.eclipse.osgi.services" % "3.10.200.v20210723-0643"
@@ -78,6 +75,8 @@ lazy val xscalawt = project in file("modules/xscalawt") settings (commonSettings
 lazy val native = project in file("modules/native") enablePlugins JniNative settings (commonSettings ++ Seq(
   organization := "moe.lymia.princess",
   name := "princess-edit-native",
+
+  libraryDependencies += "commons-codec" % "commons-codec" % "1.15",
 ))
 
 lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin settings (commonSettings ++ ResourceGenerators.settings ++ Seq(
@@ -95,8 +94,8 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
     "-H:CPUFeatures=CX8,CMOV,FXSR,MMX,SSE,SSE2,SSE3,SSE4A,SSE4_1,SSE4_2,POPCNT,TSC",
 
     // remove unneeded services and other code size optimizations
-    "-H:-EnableSecurityServicesFeature", "-H:-EnableSignalAPI", "-H:-EnableWildcardExpansion",
-    "-R:-EnableSignalHandling", "-H:-EnableLoggingFeature", "-H:-IncludeMethodData",
+    "-H:-EnableSignalAPI", "-H:-EnableWildcardExpansion", "-R:-EnableSignalHandling", "-H:-EnableLoggingFeature",
+    "-H:-IncludeMethodData",
   ),
   run / fork := true,
   run / envVars += ("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY", baseDirectory.value.toString),
@@ -181,15 +180,6 @@ InputKey[Unit]("dist") := {
 
     IO.createDirectory(outDir / "lib")
     Utils.runProcess(Seq("zip", "-r", outDir / "lib/core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "lib")
-    osName match {
-      case "linux" =>
-        val resvgTar = outDir / "lib" / "resvg.tar.gz"
-        IO.transfer(new URI(Config.url_resvg_linux).toURL.openStream(), new FileOutputStream(resvgTar))
-        Utils.runProcess(Seq("tar", "-xvf", "resvg.tar.gz"), outDir / "lib")
-        IO.delete(resvgTar)
-        IO.move(outDir / "lib" / "resvg", outDir / "lib"/ "resvg.linux")
-      case _ => sys.error("unsupported operating system for dist")
-    }
 
     IO.createDirectory(outDir / "packages")
     for (pkg <- Seq("cards-against-humanity.pedit-pkg"))

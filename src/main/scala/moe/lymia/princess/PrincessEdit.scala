@@ -22,6 +22,8 @@
 
 package moe.lymia.princess
 
+import java.nio.file.Files
+
 object PrincessEdit {
   def main(args: Array[String]) = {
     println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")
@@ -31,6 +33,12 @@ object PrincessEdit {
     println(s"Build ID: ${VersionInfo.buildId}")
     println(s"Java runtime: ${System.getProperty("java.vm.version")}")
     println("")
+
+    DefaultLogger.trace("Loading native library...")
+    // TODO: Cleanup procedure
+    val cacheDir = Environment.configDirectory("PrincessEdit").resolve("native_libs")
+    Files.createDirectories(cacheDir)
+    moe.lymia.princess.native.loadNatives(cacheDir)
 
     new CLI().main(args)
   }

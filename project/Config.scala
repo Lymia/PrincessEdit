@@ -25,7 +25,4 @@ object Config {
   val config_home_url     = "https://github.com/Lymia/PrincessEdit"
 
   val version_baseVersion = "0.1.0"
-
-  val url_resvg_windows   = "https://github.com/RazrFalcon/resvg/releases/download/v0.22.0/resvg-win64.zip"
-  val url_resvg_linux     = "https://github.com/RazrFalcon/resvg/releases/download/v0.22.0/resvg-linux-x86_64.tar.gz"
 }
