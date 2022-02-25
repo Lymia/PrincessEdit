@@ -23,10 +23,9 @@
 package moe.lymia.princess.views.`export`
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.VersionInfo
+import moe.lymia.princess.core.state.ControlContext
 import moe.lymia.princess.gui.utils.UIUtils
 import moe.lymia.princess.svg.SVGData
-import moe.lymia.princess.svg.rasterizer.SVGRasterizer
 import moe.lymia.princess.views.mainframe.MainFrameState
 import org.eclipse.jface.layout.GridDataFactory
 import org.eclipse.jface.window.IShellProvider
@@ -35,13 +34,7 @@ import org.eclipse.swt.graphics.ImageLoader
 import org.eclipse.swt.layout.GridData
 import org.eclipse.swt.widgets._
 
-import java.awt.Color
-import java.awt.image.BufferedImage
 import java.nio.file.{Files, Path}
-import javax.imageio._
-import javax.imageio.metadata.IIOMetadata
-import javax.imageio.plugins.jpeg.JPEGImageWriteParam
-import scala.collection.JavaConverters._
 
 sealed trait ExportControl[Options] {
   def getResult: Option[Options]
@@ -51,35 +44,33 @@ sealed trait ExportFormat[Options, InitData] {
   val extension: Seq[String]
 
   def initRender(state: MainFrameState) : InitData
-  def finalizeRender(init: InitData)
 
   val hasControls: Boolean = true
   def nullOptions: Options = sys.error("no default control")
   def makeControl(parentShell: IShellProvider, parent: Composite, style: Int,
                   main: MainFrameState): ExportControl[Options]
-  def export(svg: SVGData, options: Options, init: InitData, out: Path)
+  def export(svg: SVGData, options: Options, init: InitData, out: Path): Unit
 
-  def addExtension(str: String) = {
+  def addExtension(str: String): String = {
     val split = str.split("\\.")
     if(split.length > 1 && extension.contains(split.last)) str
     else s"$str.${extension.head}"
   }
 }
 
-sealed case class SimpleRasterInit(rasterizer: SVGRasterizer, image: ImageLoader)
+sealed case class SimpleRasterInit(ctx: ControlContext, image: ImageLoader)
 final case class SimpleRasterOptions(dpi: Double, quality: Int)
 sealed abstract class SimpleRasterExport private[export] (val displayName: String, val extension: Seq[String])
   extends ExportFormat[SimpleRasterOptions, SimpleRasterInit] {
 
   override def initRender(state: MainFrameState): SimpleRasterInit =
-    SimpleRasterInit(state.ctx.createRasterizer(), new ImageLoader)
-  override def finalizeRender(state: SimpleRasterInit): Unit =
-    state.rasterizer.dispose()
+    SimpleRasterInit(state.ctx, new ImageLoader)
 
   protected val useQualityControl = false
   protected val defaultQuality = 3
 
-  override def makeControl(parentShell: IShellProvider, parent: Composite, style: Int, state: MainFrameState) = {
+  override def makeControl(parentShell: IShellProvider, parent: Composite, style: Int,
+                           state: MainFrameState): ExportControl[SimpleRasterOptions] = {
     var dpiField: Text = null
 
     parent.contains(
@@ -116,7 +107,7 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
           if(dpi <= 0) throw new NumberFormatException
           dpi
         } catch {
-          case e: NumberFormatException =>
+          case _: NumberFormatException =>
             UIUtils.openMessage(parentShell, SWT.ICON_ERROR | SWT.OK, state.i18n, "_princess.export.dpiNotNumber")
             return None
         }
@@ -126,7 +117,7 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
           if(quality < 1 || quality > 100) throw new NumberFormatException
           quality
         } catch {
-          case e: NumberFormatException =>
+          case _: NumberFormatException =>
             UIUtils.openMessage(parentShell, SWT.ICON_ERROR | SWT.OK, state.i18n, "_princess.export.qualityNotNumber")
             return None
         }
@@ -136,62 +127,20 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
     }
   }
 
-  protected val preferredImplementation: Set[String] = Set()
-  private def newImageWriter() = {
-    val writers = ImageIO.getImageWritersBySuffix(extension.head).asScala.toSeq
-    writers.find(x => preferredImplementation.contains(x.getClass.getName)).getOrElse(writers.head)
-  }
-
-  protected def scaleDPI(i: Double, implName: String) = (1 / i) * 25.4
-  protected def newParams(writer: ImageWriter, options: SimpleRasterOptions) = writer.getDefaultWriteParam
-
-  protected def makeFormatMetadata(metadata: IIOMetadata, options: SimpleRasterOptions) = { }
-  private def makeMetadata(metadata: IIOMetadata, options: SimpleRasterOptions, implName: String) = {
-    import javax.imageio.metadata.IIOMetadataNode
-    val xDpi = new IIOMetadataNode("HorizontalPixelSize")
-    xDpi.setAttribute("value", scaleDPI(options.dpi, implName).toString)
-
-    val yDpi = new IIOMetadataNode("VerticalPixelSize")
-    yDpi.setAttribute("value", scaleDPI(options.dpi, implName).toString)
-
-    val dim = new IIOMetadataNode("Dimension")
-    dim.appendChild(xDpi)
-    dim.appendChild(yDpi)
-
-    val textEntry = new IIOMetadataNode("TextEntry")
-    textEntry.setAttribute("keyword", s"Software")
-    textEntry.setAttribute("value", s"Rendered by PrincessEdit v${VersionInfo.versionString}")
-
-    val text = new IIOMetadataNode("Text")
-    text.appendChild(textEntry)
-
-    val root = new IIOMetadataNode("javax_imageio_1.0")
-    root.appendChild(dim)
-    root.appendChild(text)
-
-    metadata.mergeTree("javax_imageio_1.0", root)
-
-    makeFormatMetadata(metadata, options)
-  }
-
-  protected def prepareImage(image: BufferedImage) = image
+  protected def compressionFromQuality(i: Int): Int = i
+  protected def format: Int
   override def export(svg: SVGData, options: SimpleRasterOptions, state: SimpleRasterInit, outPath: Path): Unit = {
     val (x, y) = svg.bestSizeForDPI(options.dpi)
-    val image = prepareImage(svg.rasterizeAwt(state.rasterizer, x, y))
+    val image = state.ctx.syncRender(svg.asSvg(), x, y)
 
-    val imageWriter = newImageWriter()
-    val param = newParams(imageWriter, options)
-    val metadata = imageWriter.getDefaultImageMetadata(ImageTypeSpecifier.createFromRenderedImage(image), param)
-    makeMetadata(metadata, options, imageWriter.getClass.getName)
+    val imageWriter = new ImageLoader()
+    imageWriter.data = Array(image)
+    imageWriter.compression = compressionFromQuality(options.quality)
 
     val out = Files.newOutputStream(outPath)
-    val imageOut = ImageIO.createImageOutputStream(out)
     try {
-      imageWriter.setOutput(imageOut)
-      imageWriter.write(metadata, new IIOImage(image, null, metadata), param)
+      imageWriter.save(out, format)
     } finally {
-      imageWriter.dispose()
-      imageOut.close()
       out.close()
     }
   }
@@ -199,52 +148,23 @@ sealed abstract class SimpleRasterExport private[export] (val displayName: Strin
 
 object ExportFormat {
   case object PNG  extends SimpleRasterExport("_princess.export.png", Seq("png")) {
-    private val oracleImpl = "com.sun.imageio.plugins.png.PNGImageWriter"
-
-    override protected val preferredImplementation: Set[String] = Set(oracleImpl)
-    override protected def scaleDPI(i: Double, implName: String): Double = {
-      val result = super.scaleDPI(i, implName)
-      if(implName == oracleImpl) 1 / result else result
-    }
+    protected override def compressionFromQuality(i: Int): Int = 2
+    protected def format: Int = SWT.IMAGE_PNG
   }
   case object JPEG extends SimpleRasterExport("_princess.export.jpeg", Seq("jpg", "jpeg", "jpe")) {
-    private val oracleImpl = "com.sun.imageio.plugins.jpeg.JPEGImageWriter"
-
-    override protected val preferredImplementation: Set[String] = Set(oracleImpl)
-    override protected def scaleDPI(i: Double, implName: String): Double = {
-      val result = super.scaleDPI(i, implName)
-      if(implName == oracleImpl) result / 100 else result
-    }
-
     override val useQualityControl = true
     override val defaultQuality = 90
-
-    override protected def prepareImage(image: BufferedImage): BufferedImage = {
-      val tx = new BufferedImage(image.getWidth, image.getHeight, BufferedImage.TYPE_3BYTE_BGR)
-      val g = tx.getGraphics
-      g.setColor(Color.WHITE)
-      g.fillRect(0, 0, image.getWidth, image.getHeight)
-      g.drawImage(image, 0, 0, null)
-      tx
-    }
-
-    override protected def newParams(writer: ImageWriter, options: SimpleRasterOptions): ImageWriteParam = {
-      val params = new JPEGImageWriteParam(null)
-      params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
-      params.setCompressionQuality(options.quality.toFloat / 100f)
-      params
-    }
+    protected def format: Int = SWT.IMAGE_JPEG
   }
   case object SVG  extends ExportFormat[Unit, Unit] {
     override val displayName: String = "_princess.export.svg"
     override val extension: Seq[String] = Seq("svg")
 
     override def initRender(state: MainFrameState): Unit = ()
-    override def finalizeRender(init: Unit): Unit = ()
 
     override val hasControls: Boolean = false
-    override def nullOptions = ()
-    override def makeControl(parentShell: IShellProvider, parent: Composite, style: Int, main: MainFrameState) =
+    override def nullOptions: Unit = ()
+    override def makeControl(parentShell: IShellProvider, parent: Composite, style: Int, main: MainFrameState): ExportControl[Unit] =
       new ExportControl[Unit] {
         override def getResult: Option[Unit] = Some(())
       }

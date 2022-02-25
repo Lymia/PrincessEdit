@@ -23,9 +23,9 @@
 package moe.lymia.princess.views.mainframe
 
 import moe.lymia.princess.VersionInfo
-import moe.lymia.princess.core.state.{ControlContext, Settings, SettingsStore, UnbackedSettingsStore}
 import moe.lymia.princess.core.cardmodel.{Project, ProjectMetadata}
 import moe.lymia.princess.core.gamedata.{GameId, GameIdLoader, I18NLoader}
+import moe.lymia.princess.core.state.{ControlContext, Settings, SettingsStore, UnbackedSettingsStore}
 import moe.lymia.princess.gui._
 import moe.lymia.princess.gui.scripting.EditorModule
 import moe.lymia.princess.gui.utils._

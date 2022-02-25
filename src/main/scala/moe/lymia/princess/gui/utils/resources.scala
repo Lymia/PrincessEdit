@@ -55,7 +55,7 @@ final class ExtendedResourceManager(underlying: ResourceManager, ctx: ControlCon
 
   def createImageFromSVG(data: SVGRenderable, bx: Int, by: Int): Image = {
     val (x, y) = UIUtils.computeSizeFromRatio(new Point(bx,  by), data.size.width, data.size.height)
-    createImage(ctx.syncRenderSwt(data, x, y))
+    createImage(ctx.syncRender(data.asSvg(), x, y))
   }
 
   // Proxy functions

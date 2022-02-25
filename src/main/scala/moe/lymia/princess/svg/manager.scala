@@ -26,7 +26,6 @@ import moe.lymia.lua.{LuaTable, _}
 import moe.lymia.princess.core._
 import moe.lymia.princess.core.gamedata.GameData
 import moe.lymia.princess.svg.components._
-import moe.lymia.princess.svg.rasterizer.SVGRasterizer
 import moe.lymia.princess.svg.scripting._
 import moe.lymia.princess.util.SizedCache
 import org.eclipse.swt.graphics.ImageData
@@ -37,8 +36,7 @@ import scala.xml.Elem
 
 trait SVGRenderable {
   val size: SizeBase
-  def rasterizeAwt(rasterize: SVGRasterizer, x: Int, y: Int): BufferedImage
-  def rasterizeSwt(rasterize: SVGRasterizer, x: Int, y: Int): ImageData
+  def asSvg(): String
 }
 
 // TODO: Error check this cleaner
@@ -48,10 +46,9 @@ final case class SVGFile(nodes: Elem) extends SVGRenderable {
 
   if(widthUnit != heightUnit) sys.error("width unit != height unit")
 
-  val size = Size(width, height)
+  val size: SizeBase = Size(width, height)
 
-  def rasterizeAwt(rasterize: SVGRasterizer, x: Int, y: Int) = rasterize.rasterizeAwt(x, y, nodes)
-  def rasterizeSwt(rasterize: SVGRasterizer, x: Int, y: Int) = rasterize.rasterizeSwt(x, y, nodes)
+  override def asSvg(): String = nodes.toString()
 }
 object SVGFile {
   private val LengthPattern = "([0-9]+(\\.[0-9])?)([a-z]*)".r
@@ -64,22 +61,20 @@ object SVGFile {
 final case class SVGData(private val builder: SVGBuilder, private val definition: SVGDefinitionReference)
   extends SVGRenderable {
 
-  val bounds = definition.bounds
-  val size = builder.settings.size
+  val bounds: Bounds = definition.bounds
+  val size: PhysicalSize = builder.settings.size
 
   private def norm(d: Double) = math.max(1, math.round(d)).toInt
-  def bestSizeForDPI(dpi: Double) =
+  def bestSizeForDPI(dpi: Double): (Int, Int) =
     (norm(size.width  / size.unit.unPerInch * dpi),
      norm(size.height / size.unit.unPerInch * dpi))
 
-  def renderSVGTag() =
+  def renderSVGTag(): Elem =
     builder.renderSVGTag(definition)
-  def write(w: Writer, encoding: String = "utf-8", pretty: Boolean = true) =
+  def write(w: Writer, encoding: String = "utf-8", pretty: Boolean = true): Unit =
     builder.write(w, definition, encoding, pretty = pretty)
-  def rasterizeAwt(rasterize: SVGRasterizer, x: Int, y: Int) =
-    builder.rasterizeAwt(rasterize, x, y, definition)
-  def rasterizeSwt(rasterize: SVGRasterizer, x: Int, y: Int) =
-    builder.rasterizeSwt(rasterize, x, y, definition)
+
+  override def asSvg(): String = builder.renderSVGTag(definition).toString
 }
 
 final class RenderManager(game: GameData, cache: SizedCache) {
@@ -87,7 +82,7 @@ final class RenderManager(game: GameData, cache: SizedCache) {
 
   private lazy val layoutFn =
     game.lua.L.newThread().getTable(game.getRequiredEntryPoint("render"), "render").as[LuaClosure]
-  def render(cardData: Seq[LuaObject], res: ResourceLoader) =
+  def render(cardData: Seq[LuaObject], res: ResourceLoader): SVGData =
     EditorException.context(s"rendering card") {
       val L = game.lua.L.newThread()
 

@@ -23,8 +23,8 @@
 package moe.lymia.princess.views.frontend
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.core.state.ControlContext
 import moe.lymia.princess.core.gamedata.{GameId, GameIdLoader}
+import moe.lymia.princess.core.state.ControlContext
 import moe.lymia.princess.gui.utils.{DialogBase, UIUtils}
 import moe.lymia.princess.views.mainframe.{MainFrame, ProjectSource}
 import org.eclipse.jface.viewers.{ITreeContentProvider, LabelProvider}

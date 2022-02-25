@@ -38,15 +38,11 @@ final class ExportSingleTask[Options, Init](state: MainFrameState, outFile: Path
                                             exportTarget: (UUID, FullCardData)) {
   def run() = {
     val init = exportFormat.initRender(state)
-    try {
-      val (id, target) = exportTarget
-      val rendered = state.ctx.syncLuaExec(state.idData.renderer.render(
-        Seq(target.luaData.now), RasterizeResourceLoader
-      ))
-      exportFormat.export(rendered, exportData, init, outFile)
-    } finally {
-      exportFormat.finalizeRender(init)
-    }
+    val (id, target) = exportTarget
+    val rendered = state.ctx.syncLuaExec(state.idData.renderer.render(
+      Seq(target.luaData.now), RasterizeResourceLoader
+    ))
+    exportFormat.export(rendered, exportData, init, outFile)
   }
 }
 final class ExportMultiTask[Options, Init](state: MainFrameState, outDir: Path, name: LuaNameSpec,
@@ -58,29 +54,26 @@ final class ExportMultiTask[Options, Init](state: MainFrameState, outDir: Path, 
   override def run(progress: IProgressMonitor): Unit = {
     progress.beginTask(state.i18n.system("_princess.export.taskName"), exportTargets.length)
     val init = exportFormat.initRender(state)
-    try {
-      IOUtils.withTemporaryDirectory("princess-edit-export-") { temp =>
-        for((id, target) <- exportTargets) {
-          val name = exportFormat.addExtension(state.ctx.syncLuaExec(
-            this.name.makeName(id.toString, target.luaData.now)
-          ).left.get)
-          progress.subTask(state.i18n.system("_princess.export.exportingTo", name))
 
-          val rendered = state.ctx.syncLuaExec(state.idData.renderer.render(
-            Seq(target.luaData.now), RasterizeResourceLoader
-          ))
+    IOUtils.withTemporaryDirectory("princess-edit-export-") { temp =>
+      for((id, target) <- exportTargets) {
+        val name = exportFormat.addExtension(state.ctx.syncLuaExec(
+          this.name.makeName(id.toString, target.luaData.now)
+        ).left.get)
+        progress.subTask(state.i18n.system("_princess.export.exportingTo", name))
 
-          exportFormat.export(rendered, exportData, init, temp.resolve(name))
+        val rendered = state.ctx.syncLuaExec(state.idData.renderer.render(
+          Seq(target.luaData.now), RasterizeResourceLoader
+        ))
 
-          progress.worked(1)
-        }
+        exportFormat.export(rendered, exportData, init, temp.resolve(name))
 
-        for(file <- IOUtils.list(temp)) Files.move(file, outDir.resolve(file.getFileName))
+        progress.worked(1)
       }
-      progress.done()
-    } finally {
-      exportFormat.finalizeRender(init)
+
+      for(file <- IOUtils.list(temp)) Files.move(file, outDir.resolve(file.getFileName))
     }
+    progress.done()
   }
 }
 object ExportMultiTask {

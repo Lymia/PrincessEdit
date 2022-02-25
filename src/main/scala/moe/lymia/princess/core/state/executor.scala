@@ -22,31 +22,35 @@
 
 package moe.lymia.princess.core.state
 
-import moe.lymia.princess.svg.rasterizer.SVGRasterizer
-import moe.lymia.princess.util.ThreadId
+import moe.lymia.princess.native.{FontDatabase, Resvg}
+import rx.Var
 
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 import java.util.concurrent.{ConcurrentHashMap, LinkedBlockingQueue}
-import java.util.concurrent.atomic.AtomicInteger
+import scala.collection.mutable
 
-object ThreadId {
+private object ThreadId {
   private val threadId = new AtomicInteger(0)
   def make(): Int = threadId.incrementAndGet()
 }
 
-trait ExecutorBase[Request, Message, Return] {
+private trait ExecutorBase[Request, Message] {
   protected def nameBase: String
-  protected def handleRequest(r: Request, m: Message, callback: Return => Unit): Unit
+  protected def handleRequest(r: Request, m: Message): Unit
+
+  private val randId = new AtomicLong(0)
+  protected def newRandId(): Long = randId.incrementAndGet()
 
   @volatile private var isRunning = true
   def shutdown(): Unit = {
     isRunning = false
   }
 
-  private val requestData = new ConcurrentHashMap[Request, (Message, Return => Unit)]
+  private val requestData = new ConcurrentHashMap[Request, Message]
   private val requestBuffer = new LinkedBlockingQueue[Request]
 
-  def pushRequest(req: Request, msg: Message, callback: Return => Unit): Unit = {
-    requestData.put(req, (msg, callback))
+  protected def pushRequest(req: Request, msg: Message): Unit = {
+    requestData.put(req, msg)
     requestBuffer.add(req)
   }
 
@@ -55,12 +59,63 @@ trait ExecutorBase[Request, Message, Return] {
     override def run(): Unit = {
       while (isRunning) {
         val req = requestBuffer.poll()
-        requestData.remove(req) match {
+        if (req != null) requestData.remove(req) match {
           case null => // no op
-          case (msg, callback) => handleRequest(req, msg, callback)
+          case msg => handleRequest(req, msg)
         }
       }
     }
   }
+
+  def isActiveThread: Boolean = Thread.currentThread() eq thread
+  def assertActiveThread(): Unit = assert(isActiveThread)
   def start(): Unit = thread.start()
+}
+
+private case class SvgRenderRequest(data: () => (String, Int, Int), callback: Array[Byte] => Unit)
+private[state] class SvgRasterizer extends ExecutorBase[Any, SvgRenderRequest] {
+  private val fontDb = new FontDatabase()
+
+  override protected def nameBase: String = "SVG rasterizer"
+  override protected def handleRequest(r: Any, m: SvgRenderRequest): Unit = {
+    val (data, w, h) = m.data()
+    m.callback(renderSync(data, w, h))
+  }
+
+  def renderSync(data: String, w: Int, h: Int): Array[Byte] =
+    Resvg.render(data, None, fontDb, w, h)
+  def render(func: () => (String, Int, Int), key: Any, callback: Array[Byte] => Unit): Unit =
+    pushRequest(key, SvgRenderRequest(func, callback))
+}
+
+private sealed trait LuaRequest
+private object LuaRequest {
+  case object UpdateVars extends LuaRequest
+  case class Execute(v: () => Unit) extends LuaRequest
+}
+private[state] class LuaExecutor extends ExecutorBase[Any, LuaRequest] {
+  private val varUpdatesMarker = new Object
+  private val varUpdatesLock = new Object
+  @volatile private var varUpdates = new mutable.HashMap[Var[_], Any]
+
+  override protected def nameBase: String = "Lua executor"
+  override protected def handleRequest(r: Any, m: LuaRequest): Unit = {
+    m match {
+      case LuaRequest.UpdateVars =>
+        val oldMap = varUpdatesLock synchronized {
+          val oldMap = varUpdates
+          varUpdates = new mutable.HashMap()
+          oldMap
+        }
+        Var.set(oldMap.map(x => Var.Assignment(x._1.asInstanceOf[Var[Any]], x._2)).toSeq : _*)
+      case LuaRequest.Execute(func) => func()
+    }
+  }
+
+  def updateVar[T](v: Var[T], value: T): Unit = {
+    varUpdatesLock synchronized { varUpdates.put(v, value) }
+    pushRequest(varUpdatesMarker, LuaRequest.UpdateVars)
+  }
+  def executeLua(func: () => Unit): Unit = pushRequest(newRandId(), LuaRequest.Execute(func))
+  def executeLua(func: () => Unit, key: Any): Unit = pushRequest(key, LuaRequest.Execute(func))
 }

@@ -46,11 +46,11 @@ private final class RendererCanvas(parent: Composite, state: EditorState)
   private val obs = currentCardData.foreach { d =>
     if(!this.isDisposed) d match {
       case Some(data) =>
-        state.ctx.asyncRenderSwt (this, {
+        state.ctx.asyncRender (this, {
           val (componentSize, rendered) =
             state.ctx.syncUiLuaExec(this.getSize, state.idData.renderer.render(data, RasterizeResourceLoader))
           val (x, y) = UIUtils.computeSizeFromRatio(componentSize, rendered.size.width, rendered.size.height)
-          (rendered, x, y)
+          (rendered.asSvg(), x, y)
         }) { imageData =>
           state.ctx.asyncUiExec {
             val image = new Image(state.ctx.display, imageData)

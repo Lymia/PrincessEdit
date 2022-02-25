@@ -23,7 +23,6 @@
 package moe.lymia.princess
 
 import moe.lymia.princess.core.state.{ControlContext, UILoop, UIManager}
-import moe.lymia.princess.svg.rasterizer.ResvgConnectionFactory
 import moe.lymia.princess.views.frontend.SplashScreen
 import moe.lymia.princess.views.mainframe.MainFrame
 import org.eclipse.swt.widgets.Display
@@ -62,7 +61,7 @@ class CLI {
   private def mainLoop[T](f: ControlContext => Unit): Unit = {
     val loop = new UILoop
     loop.mainLoop { display =>
-      val manager = new UIManager(loop, ResvgConnectionFactory)
+      val manager = new UIManager(loop)
       manager.mainLoop(display)(f)
     }
   }

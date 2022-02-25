@@ -2,6 +2,9 @@
   "resources":{
   "includes":[
     {
+      "pattern":"\\QMETA-INF/services/java.nio.file.spi.FileSystemProvider\\E"
+    }, 
+    {
       "pattern":"\\QMETA-INF/services/moe.lymia.princess.views.mainframe.TabProvider\\E"
     }, 
     {
@@ -54,35 +57,26 @@
     }, 
     {
       "pattern":"\\Qorg/eclipse/swt/internal/gtk/swt_theming_fixes_gtk_3_24_5.css\\E"
-    }, 
-    {
-      "pattern":"^META-INF/.*"
-    }, 
-    {
-      "pattern":"^moe/lymia/princess/res/.*"
     }
   ]},
   "bundles":[
     {
-      "name":"com.sun.java.swing.plaf.gtk.resources.gtk"
-    }, 
-    {
-      "name":"com.sun.swing.internal.plaf.basic.resources.basic"
-    }, 
-    {
-      "name":"com.sun.swing.internal.plaf.synth.resources.synth"
-    }, 
-    {
       "name":"org.eclipse.jface.messages",
-      "locales":[""]
+      "locales":[
+        "", 
+        "und"
+      ]
     }, 
     {
       "name":"org.eclipse.jface.resource.jfacefonts_linux_gtk",
-      "locales":[""]
+      "locales":[
+        "", 
+        "und"
+      ]
     }, 
     {
       "name":"org.eclipse.swt.internal.SWTMessages",
-      "locales":[""]
+      "locales":["und"]
     }, 
     {
       "name":"sun.awt.resources.awt",

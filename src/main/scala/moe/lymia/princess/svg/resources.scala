@@ -25,12 +25,13 @@ package moe.lymia.princess.svg
 import moe.lymia.princess.core._
 import moe.lymia.princess.core.gamedata.GameData
 import moe.lymia.princess.util._
+import org.eclipse.swt.SWT
+import org.eclipse.swt.graphics.ImageLoader
 
 import java.awt.Font
 import java.io.ByteArrayOutputStream
 import java.nio.file.{Files, Path}
 import java.util.Base64
-import javax.imageio.ImageIO
 import scala.collection.mutable
 import scala.xml.{XML => _, _}
 
@@ -42,28 +43,28 @@ trait ResourceLoader {
   def loadDefinition(cache: SizedCache, path: Path): Elem
 }
 private object ResourceLoader {
-  val dataURLLoader = new DataURLRasterLoader {}
+  val dataURLLoader: DataURLRasterLoader = new DataURLRasterLoader {}
   val normalSchemes = Set("http", "https", "ftp", "file")
 
   val loadXMLCache   = new CacheSection[Path, Elem]
   val loadImageCache = new CacheSection[Path, String]
 
-  def cachedLoadXML(cache: SizedCache, path: Path) = cache.cached(loadXMLCache)(path, {
+  def cachedLoadXML(cache: SizedCache, path: Path): Elem = cache.cached(loadXMLCache)(path, {
     val size = Files.size(path)
     (XML.load(Files.newInputStream(path)), size)
   })
 }
 
 trait IncludeDefinitionLoader {
-  def loadDefinition(cache: SizedCache, path: Path) = ResourceLoader.cachedLoadXML(cache, path)
+  def loadDefinition(cache: SizedCache, path: Path): Elem = ResourceLoader.cachedLoadXML(cache, path)
 }
 trait IncludeVectorLoader {
-  def loadVector(cache: SizedCache, path: Path) =
+  def loadVector(cache: SizedCache, path: Path): Elem =
     ResourceLoader.cachedLoadXML(cache, path) % Attribute(null, "overflow", "hidden", Null)
 }
 
 trait LinkRasterLoader {
-  def loadRaster(cache: SizedCache, reencode: Option[String], expectedMime: String, path: Path) = {
+  def loadRaster(cache: SizedCache, reencode: Option[String], expectedMime: String, path: Path): Elem = {
     val uri = path.toUri
     if(ResourceLoader.normalSchemes.contains(uri.getScheme))
       <image xlink:href={path.toUri.toASCIIString}/>
@@ -71,14 +72,18 @@ trait LinkRasterLoader {
   }
 }
 trait DataURLRasterLoader {
-  def loadRaster(cache: SizedCache, reencode: Option[String], expectedMime: String, path: Path) =
+  def loadRaster(cache: SizedCache, reencode: Option[String], expectedMime: String, path: Path): Elem =
     <image xlink:href={cache.cached(ResourceLoader.loadImageCache)(path, {
       val data = reencode match {
         case None => Files.readAllBytes(path)
         case Some(reencodeTo) =>
-          val image = ImageIO.read(Files.newInputStream(path))
+          val imageReader = new ImageLoader()
+          imageReader.load(Files.newInputStream(path))
           val byteOut = new ByteArrayOutputStream()
-          ImageIO.write(image, reencodeTo, byteOut)
+          imageReader.save(byteOut, reencodeTo.toLowerCase() match {
+            case "image/png" => SWT.IMAGE_PNG
+            case "image/jpeg" => SWT.IMAGE_JPEG
+          })
           byteOut.toByteArray
       }
       val uri = s"data:$expectedMime;base64,${Base64.getEncoder.encodeToString(data)}"
@@ -101,7 +106,7 @@ private case class ImageFormat(extensions: Seq[String], formatType: ImageFormatT
 
 final class ResourceManager(builder: SVGBuilder, settings: RenderSettings, cache: SizedCache,
                             loader: ResourceLoader, packages: GameData) {
-  lazy val systemFont = {
+  lazy val systemFont: Font = {
     val tryResolve = packages.getSystemExports("princess/system_font").headOption.flatMap(x =>
       packages.resolve(x.path).map(path => Font.createFont(Font.TRUETYPE_FONT, Files.newInputStream(path))))
     tryResolve.getOrElse(new Font(Font.SANS_SERIF, Font.PLAIN, 1))
@@ -125,7 +130,7 @@ final class ResourceManager(builder: SVGBuilder, settings: RenderSettings, cache
       )
     }.find(_.isDefined).flatten
   val imageResourceCache = new mutable.HashMap[String, Option[SVGDefinitionReference]]
-  def loadImageResource(name: String, bounds: Bounds) =
+  def loadImageResource(name: String, bounds: Bounds): SVGDefinitionReference =
     imageResourceCache.getOrElseUpdate(stripExtension(name), tryFindImageResource(stripExtension(name), bounds))
                       .getOrElse(throw EditorException(s"image '$name' not found"))
 
@@ -133,7 +138,7 @@ final class ResourceManager(builder: SVGBuilder, settings: RenderSettings, cache
     packages.resolve(name).map(path =>
       builder.createDefinition(name, loader.loadDefinition(cache, path), isDef = true))
   val definitionCache = new mutable.HashMap[String, Option[String]]
-  def loadDefinition(name: String) =
+  def loadDefinition(name: String): String =
     definitionCache.getOrElseUpdate(name, tryFindDefinition(name))
                    .getOrElse(throw EditorException(s"definition '$name' not found"))
 }
