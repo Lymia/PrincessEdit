@@ -24,13 +24,13 @@ package moe.lymia.princess.views.frontend
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.gamedata.GameIdLoader
-import moe.lymia.princess.core.state.ControlContext
+import moe.lymia.princess.core.state.GuiContext
 import moe.lymia.princess.gui.utils.WindowBase
 import moe.lymia.princess.views.mainframe.MainFrame
 import org.eclipse.swt.events.SelectionEvent
 import org.eclipse.swt.widgets._
 
-class SplashScreen(ctx: ControlContext) extends WindowBase(ctx) {
+class SplashScreen(ctx: GuiContext) extends WindowBase(ctx) {
   override def configureShell(shell: Shell): Unit = {
     super.configureShell(shell)
     shell.setText(GameIdLoader.systemI18N.system("_princess.frontend.title"))

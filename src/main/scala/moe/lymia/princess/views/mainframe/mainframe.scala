@@ -25,7 +25,7 @@ package moe.lymia.princess.views.mainframe
 import moe.lymia.princess.VersionInfo
 import moe.lymia.princess.core.cardmodel.{Project, ProjectMetadata}
 import moe.lymia.princess.core.gamedata.{GameId, GameIdLoader, I18NLoader}
-import moe.lymia.princess.core.state.{ControlContext, Settings, SettingsStore, UnbackedSettingsStore}
+import moe.lymia.princess.core.state.{GuiContext, Settings, SettingsStore, UnbackedSettingsStore}
 import moe.lymia.princess.gui._
 import moe.lymia.princess.gui.scripting.EditorModule
 import moe.lymia.princess.gui.utils._
@@ -45,7 +45,7 @@ import rx._
 import java.nio.file.{Path, Paths}
 
 final case class UnsavedChanges(since: Long)
-final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projectSource: ProjectSource) {
+final class MainFrameState(mainFrame: MainFrame, val ctx: GuiContext, projectSource: ProjectSource) {
   val gameId = projectSource.getGameID
   val game = GameIdLoader.default.loadGameData(gameId)
   val i18n = new I18NLoader(game).i18n
@@ -142,7 +142,7 @@ final class MainFrameState(mainFrame: MainFrame, val ctx: ControlContext, projec
 sealed trait ProjectSource {
   def getGameID: String
   def openSettings(project: Project): SettingsStore
-  def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project
+  def openProject(ctx: GuiContext, gameID: String, idData: GameIDData): Project
   def setSaveLocation(state: MainFrameState): Unit
 }
 object ProjectSource {
@@ -150,14 +150,14 @@ object ProjectSource {
   case class OpenProject(path: Path, meta: ProjectMetadata, lock: FileLock) extends ProjectSource {
     override def getGameID: String = meta.gameId
     override def openSettings(project: Project): SettingsStore = Settings.getProjectSettings(path, project.uuid)
-    override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project =
+    override def openProject(ctx: GuiContext, gameID: String, idData: GameIDData): Project =
       ctx.syncLuaExec(Project.loadProject(ctx, gameID, idData, path))
     override def setSaveLocation(state: MainFrameState) = state.setSaveLocation(Some(path), Some(lock))
   }
   case class NewProject(id: GameId) extends ProjectSource {
     override def getGameID: String = id.name
     override def openSettings(project: Project): SettingsStore = new UnbackedSettingsStore
-    override def openProject(ctx: ControlContext, gameID: String, idData: GameIDData): Project = {
+    override def openProject(ctx: GuiContext, gameID: String, idData: GameIDData): Project = {
       val project = new Project(ctx, gameID, idData)
       ctx.syncLuaExec(project.views.create())
       project
@@ -166,7 +166,7 @@ object ProjectSource {
   }
 }
 
-final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends WindowBase(ctx) with RxOwner {
+final class MainFrame(ctx: GuiContext, projectSource: ProjectSource) extends WindowBase(ctx) with RxOwner {
   private val state = new MainFrameState(this, ctx, projectSource)
 
   override def configureShell(shell: Shell): Unit = {
@@ -242,7 +242,7 @@ final class MainFrame(ctx: ControlContext, projectSource: ProjectSource) extends
 object MainFrame {
   private[mainframe] def lockFile(path: Path) = IOUtils.lock(Settings.getProjectLock(path))
 
-  def loadProject(parent: Window, ctx: ControlContext, path: Path, closeOnAccept: Boolean = false) =
+  def loadProject(parent: Window, ctx: GuiContext, path: Path, closeOnAccept: Boolean = false) =
     lockFile(path) match {
       case Some(lock) =>
         val meta = Project.getProjectMetadata(path)
@@ -266,7 +266,7 @@ object MainFrame {
         UIUtils.openMessage(parent, SWT.ICON_ERROR | SWT.OK,
                             GameIdLoader.systemI18N, "_princess.main.projectLocked")
     }
-  def showOpenDialog(parent: Window, ctx: ControlContext, closeOnAccept: Boolean = false) = {
+  def showOpenDialog(parent: Window, ctx: GuiContext, closeOnAccept: Boolean = false) = {
     val selector = new FileDialog(parent.getShell, SWT.OPEN)
     selector.setFilterNames(Array(GameIdLoader.systemI18N.system("_princess.main.project")))
     selector.setFilterExtensions(Array("*.pedit-project"))

@@ -25,7 +25,7 @@ package moe.lymia.princess.gui.nodes
 import moe.lymia.lua._
 import moe.lymia.princess.core.cardmodel.DataStore
 import moe.lymia.princess.core.gamedata.I18N
-import moe.lymia.princess.core.state.ControlContext
+import moe.lymia.princess.core.state.GuiContext
 import moe.lymia.princess.gui.scripting._
 import moe.lymia.princess.gui.utils.UIUtils
 import org.eclipse.swt.SWT
@@ -87,7 +87,7 @@ final class ActiveRootNode private (ctx: NodeContext, root: Option[ControlNode],
     root.map(_.createControl(uiRoot)(ctx, uiCtx.newUIContext(ctx), owner))
 }
 object ActiveRootNode {
-  def apply(L: LuaState, data: DataStore, controlCtx: ControlContext, i18n: I18N, prefix: Seq[String],
+  def apply(L: LuaState, data: DataStore, controlCtx: GuiContext, i18n: I18N, prefix: Seq[String],
             uiRoot: Option[ControlNode], fields: Map[String, ActiveSetup])(implicit owner: Ctx.Owner) = {
     val ctx = new NodeContext(L, data, controlCtx, i18n, prefix)
     uiRoot.foreach(ctx.setupNode)

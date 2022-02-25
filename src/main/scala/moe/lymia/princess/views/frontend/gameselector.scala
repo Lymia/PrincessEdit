@@ -24,7 +24,7 @@ package moe.lymia.princess.views.frontend
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
 import moe.lymia.princess.core.gamedata.{GameId, GameIdLoader}
-import moe.lymia.princess.core.state.ControlContext
+import moe.lymia.princess.core.state.GuiContext
 import moe.lymia.princess.gui.utils.{DialogBase, UIUtils}
 import moe.lymia.princess.views.mainframe.{MainFrame, ProjectSource}
 import org.eclipse.jface.viewers.{ITreeContentProvider, LabelProvider}
@@ -41,7 +41,7 @@ import scala.collection.mutable
 
 // TODO: Render icons only when needed
 private final class GameSelectorViewer(parent: Composite, dialog: GameSelectorDialog,
-                                       ctx: ControlContext) extends Composite(parent, SWT.BORDER) {
+                                       ctx: GuiContext) extends Composite(parent, SWT.BORDER) {
   private val iconSize = 175
 
   this.setLayout(new FillLayout())
@@ -91,7 +91,7 @@ private final class GameSelectorViewer(parent: Composite, dialog: GameSelectorDi
   addDisposeListener(_ => resources.dispose())
 }
 
-final class GameSelectorDialog(parent: Window, ctx: ControlContext, closeParent: Boolean = false)
+final class GameSelectorDialog(parent: Window, ctx: GuiContext, closeParent: Boolean = false)
   extends DialogBase(parent, ctx) {
 
   setShellStyle(getShellStyle | SWT.RESIZE)

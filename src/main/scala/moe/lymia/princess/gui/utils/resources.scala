@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.gui.utils
 
-import moe.lymia.princess.core.state.ControlContext
+import moe.lymia.princess.core.state.GuiContext
 import moe.lymia.princess.svg.SVGRenderable
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.jface.resource._
@@ -45,7 +45,7 @@ object IconData {
   lazy val DocumentIcon: IconData = getIconData("document")
 }
 
-final class ExtendedResourceManager(underlying: ResourceManager, ctx: ControlContext) {
+final class ExtendedResourceManager(underlying: ResourceManager, ctx: GuiContext) {
   def createImage(data: ImageData): Image =
     underlying.createImage(ImageDescriptor.createFromImageData(data))
 

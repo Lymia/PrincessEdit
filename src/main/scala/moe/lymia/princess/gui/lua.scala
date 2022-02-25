@@ -25,7 +25,7 @@ package moe.lymia.princess.gui
 import moe.lymia.lua._
 import moe.lymia.princess.core.cardmodel.DataStore
 import moe.lymia.princess.core.gamedata.{GameData, I18N}
-import moe.lymia.princess.core.state.ControlContext
+import moe.lymia.princess.core.state.GuiContext
 import moe.lymia.princess.gui.nodes._
 import moe.lymia.princess.gui.scripting._
 import moe.lymia.princess.gui.utils.RxOwner
@@ -42,7 +42,7 @@ final class UIData(parent: Composite, node: RootNode, registerControlCallbacks: 
   def kill() = rootRxValue.kill()
 }
 
-final class DataRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, i18n: I18N, node: RootNode)
+final class DataRoot(L: LuaState, data: DataStore, controlCtx: GuiContext, i18n: I18N, node: RootNode)
   extends RxOwner {
 
   private implicit val ctx = new NodeContext(L.newThread(), data, controlCtx, i18n)
@@ -52,20 +52,20 @@ final class DataRoot(L: LuaState, data: DataStore, controlCtx: ControlContext, i
     new UIData(parent, node, registerControlCallbacks)
 }
 
-sealed abstract class RootSource(L: LuaState, controlCtx: ControlContext, i18n: I18N) {
+sealed abstract class RootSource(L: LuaState, controlCtx: GuiContext, i18n: I18N) {
   val exists: Boolean = false
   def createRootNode(data: DataStore, args: Seq[Rx[LuaObject]]): RootNode
   def createRoot(data: DataStore, args: Seq[Rx[LuaObject]]) =
     new DataRoot(L.newThread(), data, controlCtx, i18n, createRootNode(data, args))
 }
 
-final class NullRootSource(L: LuaState, controlCtx: ControlContext, i18n: I18N)
+final class NullRootSource(L: LuaState, controlCtx: GuiContext, i18n: I18N)
   extends RootSource(L, controlCtx, i18n) {
 
   private val node = RootNode(None, Seq(), LuaClosure { () => })
   override def createRootNode(data: DataStore, args: Seq[Rx[LuaObject]]): RootNode = node
 }
-final class LuaRootSource(L: LuaState, controlCtx: ControlContext, i18n: I18N, fn: LuaClosure)
+final class LuaRootSource(L: LuaState, controlCtx: GuiContext, i18n: I18N, fn: LuaClosure)
   extends RootSource(L, controlCtx, i18n) {
 
   override val exists = true
@@ -75,17 +75,17 @@ final class LuaRootSource(L: LuaState, controlCtx: ControlContext, i18n: I18N, f
     if(args.isEmpty) emptyRoot else RootNode(None, args.map(RxFieldNode), fn)
 }
 object RootSource {
-  private def create(game: GameData, controlCtx: ControlContext, i18n: I18N, export: LuaObject, method: String) = {
+  private def create(game: GameData, controlCtx: GuiContext, i18n: I18N, export: LuaObject, method: String) = {
     val fn = game.lua.L.newThread().getTable(export, method).as[LuaClosure]
     new LuaRootSource(game.lua.L, controlCtx, i18n, fn)
   }
-  def optional(game: GameData, controlCtx: ControlContext, i18n: I18N, export: String, method: String) = {
+  def optional(game: GameData, controlCtx: GuiContext, i18n: I18N, export: String, method: String) = {
     game.getEntryPoint(export) match {
       case Some(exportObj) => create(game, controlCtx, i18n, exportObj, method)
       case None => new NullRootSource(game.lua.L, controlCtx, i18n)
     }
   }
-  def apply(game: GameData, controlCtx: ControlContext, i18n: I18N, export: String, method: String) =
+  def apply(game: GameData, controlCtx: GuiContext, i18n: I18N, export: String, method: String) =
     create(game, controlCtx, i18n, game.getRequiredEntryPoint(export), method)
 }
 
@@ -131,7 +131,7 @@ object LuaViewData {
   }
 }
 
-final class GameIDData(game: GameData, controlCtx: ControlContext, i18n: I18N) {
+final class GameIDData(game: GameData, controlCtx: GuiContext, i18n: I18N) {
   val internal_L = game.lua.L.newThread()
 
   val card     = RootSource(game, controlCtx, i18n, "card-form", "cardForm")

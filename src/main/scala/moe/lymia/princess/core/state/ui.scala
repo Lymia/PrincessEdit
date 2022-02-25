@@ -38,7 +38,7 @@ import scala.util.Try
 
 // TODO: Improve error handling
 
-class ControlContext(val display: Display, loop: UILoop, uiThread: Thread) {
+class GuiContext(val display: Display, loop: GuiLoop, uiThread: Thread) {
   private val svgExecutor = new SvgRasterizer
   private val luaExecutor = new LuaExecutor
 
@@ -127,13 +127,16 @@ class ControlContext(val display: Display, loop: UILoop, uiThread: Thread) {
   }
 }
 
-class UILoop {
+class GuiLoop {
   val wm = new WindowManager()
 
-  def mainLoop(init: Display => Unit): Unit = {
+  def mainLoop(init: GuiContext => Unit): Unit = {
     val display = new Display()
+    val ctx = new GuiContext(display, this, Thread.currentThread())
+
     try {
-      init(display)
+      display.addListener(SWT.Dispose, _ => ctx.shutdown())
+      init(ctx)
       while(!display.isDisposed && wm.getWindowCount > 0) if(!display.readAndDispatch()) display.sleep()
     } catch {
       case e: Exception =>
@@ -144,13 +147,5 @@ class UILoop {
     } finally {
       if(!display.isDisposed) display.dispose()
     }
-  }
-}
-
-class UIManager(loop: UILoop) {
-  def mainLoop(display: Display)(init: ControlContext => Unit): Unit = {
-    val ctx = new ControlContext(display, loop, Thread.currentThread())
-    init(ctx)
-    display.addListener(SWT.Dispose, _ => ctx.shutdown())
   }
 }

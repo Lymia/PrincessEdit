@@ -24,7 +24,7 @@ package moe.lymia.princess.core.cardmodel
 
 import moe.lymia.princess.VersionInfo
 import moe.lymia.princess.core.cardmodel.SerializeUtils._
-import moe.lymia.princess.core.state.ControlContext
+import moe.lymia.princess.core.state.GuiContext
 import moe.lymia.princess.gui.GameIDData
 import moe.lymia.princess.util.IOUtils
 import play.api.libs.json._
@@ -49,7 +49,7 @@ final class DeletedCardsView(protected val project: Project) extends CardView wi
   override val name: Rx[String] = Rx.unsafe { "Deleted Cards" } // TODO I18N
 }
 
-final class Project(val ctx: ControlContext, val gameId: String, val idData: GameIDData)
+final class Project(val ctx: GuiContext, val gameId: String, val idData: GameIDData)
   extends JsonSerializable with DirSerializable with TrackModifyTime {
   var uuid = UUID.randomUUID()
 
@@ -143,7 +143,7 @@ object Project {
         (metadata \ "program").as[Seq[String]].mkString(" ")
       )
     })
-  def loadProject(ctx: ControlContext, gameID: String, idData: GameIDData, path: Path) =
+  def loadProject(ctx: GuiContext, gameID: String, idData: GameIDData, path: Path) =
     openPath(path) { x =>
       val project = new Project(ctx, gameID, idData)
       project.readFrom(x)

@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.gui.utils
 
-import moe.lymia.princess.core.state.ControlContext
+import moe.lymia.princess.core.state.GuiContext
 import org.eclipse.jface.dialogs.Dialog
 import org.eclipse.jface.window.{ApplicationWindow, IShellProvider, Window}
 import org.eclipse.swt.SWT
@@ -30,7 +30,7 @@ import org.eclipse.swt.layout.FillLayout
 import org.eclipse.swt.widgets.{Composite, Control, Shell}
 
 trait JFaceWindowBase extends Window {
-  protected val ctx: ControlContext
+  protected val ctx: GuiContext
 
   ctx.wm.add(this)
 
@@ -60,9 +60,9 @@ trait WithResources extends JFaceWindowBase {
   }
 }
 
-abstract class WindowBase(protected val ctx: ControlContext) extends ApplicationWindow(null) with JFaceWindowBase {
+abstract class WindowBase(protected val ctx: GuiContext) extends ApplicationWindow(null) with JFaceWindowBase {
   override def showTopSeperator(): Boolean = false
 }
 
-abstract class DialogBase(parent: IShellProvider, protected val ctx: ControlContext)
+abstract class DialogBase(parent: IShellProvider, protected val ctx: GuiContext)
   extends Dialog(if(parent == null) null else parent.getShell) with JFaceWindowBase

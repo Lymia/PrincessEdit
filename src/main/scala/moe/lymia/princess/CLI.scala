@@ -22,7 +22,7 @@
 
 package moe.lymia.princess
 
-import moe.lymia.princess.core.state.{ControlContext, UILoop, UIManager}
+import moe.lymia.princess.core.state.{GuiContext, GuiLoop}
 import moe.lymia.princess.views.frontend.SplashScreen
 import moe.lymia.princess.views.mainframe.MainFrame
 import org.eclipse.swt.widgets.Display
@@ -58,14 +58,7 @@ class CLI {
     if(command.isDefined) error("Command already set!")
     command = Some(cmd)
   }
-  private def mainLoop[T](f: ControlContext => Unit): Unit = {
-    val loop = new UILoop
-    loop.mainLoop { display =>
-      val manager = new UIManager(loop)
-      manager.mainLoop(display)(f)
-    }
-  }
-
+  private def mainLoop[T](f: GuiContext => Unit): Unit = new GuiLoop().mainLoop(f)
   private def cmd_default(): Unit = {
     mainLoop { ctx =>
       loadTarget match {

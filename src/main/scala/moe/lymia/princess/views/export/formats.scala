@@ -23,7 +23,7 @@
 package moe.lymia.princess.views.`export`
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.core.state.ControlContext
+import moe.lymia.princess.core.state.GuiContext
 import moe.lymia.princess.gui.utils.UIUtils
 import moe.lymia.princess.svg.SVGData
 import moe.lymia.princess.views.mainframe.MainFrameState
@@ -58,7 +58,7 @@ sealed trait ExportFormat[Options, InitData] {
   }
 }
 
-sealed case class SimpleRasterInit(ctx: ControlContext, image: ImageLoader)
+sealed case class SimpleRasterInit(ctx: GuiContext, image: ImageLoader)
 final case class SimpleRasterOptions(dpi: Double, quality: Int)
 sealed abstract class SimpleRasterExport private[export] (val displayName: String, val extension: Seq[String])
   extends ExportFormat[SimpleRasterOptions, SimpleRasterInit] {

@@ -26,7 +26,7 @@ import moe.lymia.lua.LuaState
 import moe.lymia.princess.core.EditorException
 import moe.lymia.princess.core.cardmodel.{DataField, DataFieldType, DataStore}
 import moe.lymia.princess.core.gamedata.I18N
-import moe.lymia.princess.core.state.ControlContext
+import moe.lymia.princess.core.state.GuiContext
 import org.eclipse.swt.widgets.{Composite, Control}
 import rx.{Ctx, Obs, Rx, Var}
 
@@ -43,7 +43,7 @@ sealed trait TreeNode {
   def setupNode(implicit ctx: NodeContext, owner: Ctx.Owner): SetupData
 }
 
-final case class ControlData(L: LuaState, internal_L: LuaState, ctx: ControlContext,
+final case class ControlData(L: LuaState, internal_L: LuaState, ctx: GuiContext,
                              i18n: I18N, backing: Var[DataField], isEnabled: Rx[Boolean])
 trait ControlType {
   def expectedFieldType: DataFieldType[_]
@@ -70,7 +70,7 @@ final class UIContext(prefix: String, val registerControlCallbacks: Control => U
   def newUIContext(ctx: NodeContext) = new UIContext(ctx.prefix, registerControlCallbacks)
 }
 
-final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: ControlContext, val i18n: I18N,
+final class NodeContext(val L: LuaState, val data: DataStore, val controlCtx: GuiContext, val i18n: I18N,
                         val prefixSeq: Seq[String] = Seq()) {
   val internal_L = L.newThread()
 
