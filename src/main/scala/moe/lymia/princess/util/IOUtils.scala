@@ -88,13 +88,10 @@ object IOUtils {
     }
   }
 
-  private val cachedZipFilesystems = new mutable.HashMap[Path, FileSystem]()
   def openZip(path: Path, create: Boolean = false): FileSystem = {
     val canonical = path.toAbsolutePath
-    cachedZipFilesystems.getOrElseUpdate(canonical, {
-      FileSystems.newFileSystem(URI.create(s"jar:${path.toUri}"),
-        if(create) Map("create" -> "true").asJava else Map[String, Any]().asJava)
-    })
+    FileSystems.newFileSystem(URI.create(s"jar:${path.toUri}"),
+      if(create) Map("create" -> "true").asJava else Map[String, Any]().asJava)
   }
 
   private val validFilenameRegex = Pattern.compile("^[- 0-9a-zA-Z_./]+$")

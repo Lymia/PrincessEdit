@@ -103,10 +103,8 @@ object GameIdLoader {
   private def corePkgPath = rootPath.resolve("lib/core.pedit-pkg")
 
   lazy val default = new GameIdLoader(Some(rootPath.resolve("packages")), Seq(corePkgPath))
-
-  private lazy val system = new GameIdLoader(None, Seq(corePkgPath))
   lazy val systemI18N: I18N = {
-    val id = system.loadGameData("_princess")
+    val id = default.loadGameData("_princess")
     new I18NLoader(id).i18n
   }
 }
