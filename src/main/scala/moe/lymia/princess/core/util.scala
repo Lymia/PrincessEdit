@@ -24,6 +24,8 @@ package moe.lymia.princess.core
 
 import moe.lymia.lua.LuaErrorMarker
 
+// TODO: Rework error handling properly.
+
 final case class EditorException(message: String, ex: Throwable = null, context: Seq[String] = Seq(),
                                  suppressTrace: Boolean = false, noCause: Boolean = false)
   extends RuntimeException((context :+ message).mkString(": "), if(noCause) null else ex, suppressTrace, true)

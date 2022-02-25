@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.views.mainframe
 
-import moe.lymia.princess.core.context.SettingsKey
+import moe.lymia.princess.core.state.SettingsKey
 import moe.lymia.princess.gui.utils.RxWidget
 import moe.lymia.princess.util.Service
 import org.eclipse.jface.action.MenuManager

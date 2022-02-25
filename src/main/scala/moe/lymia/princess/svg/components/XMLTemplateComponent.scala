@@ -24,7 +24,7 @@ package moe.lymia.princess.svg.components
 
 import moe.lymia.lua._
 import moe.lymia.princess.core._
-import moe.lymia.princess.core.packages.PackageList
+import moe.lymia.princess.core.gamedata.PackageList
 import moe.lymia.princess.svg._
 import moe.lymia.princess.svg.scripting._
 

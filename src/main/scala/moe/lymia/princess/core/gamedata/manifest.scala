@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.packages
+package moe.lymia.princess.core.gamedata
 
 import moe.lymia.princess.core.EditorException
 import moe.lymia.princess.util.IOUtils
@@ -35,7 +35,7 @@ import scala.collection.mutable.ArrayBuffer
 
 case class PackageManifest(name: String, version: Version, gameIds: Set[String],
                            dependencies: Seq[Dependency], exports: Map[String, List[Export]]) {
-  private[packages] def addExports(fileList: Seq[String], path: Path) = {
+  private[gamedata] def addExports(fileList: Seq[String], path: Path) = {
     case class RawExportsContainer(exports: List[Value])
 
     val raw = Toml.parseAs[RawExportsContainer](IOUtils.readFileAsString(path)).checkErr
@@ -43,7 +43,7 @@ case class PackageManifest(name: String, version: Version, gameIds: Set[String],
     this.copy(exports = exports |+| Export.parseList(name, fileList, raw.exports))
   }
 }
-private[packages] object PackageManifest {
+private[gamedata] object PackageManifest {
   def buildFileList(path: Path): Seq[String] = {
     val buffer = new ArrayBuffer[String]()
     def pathIter(name: String, path: Path): Unit =

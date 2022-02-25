@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.datamodel
+package moe.lymia.princess.core.cardmodel
 
 import moe.lymia.lua.{Lua, _}
 import rx._

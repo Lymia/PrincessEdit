@@ -23,8 +23,8 @@
 package moe.lymia.princess.views.frontend
 
 import com.coconut_palm_software.xscalawt.XScalaWT._
-import moe.lymia.princess.core.context.ControlContext
-import moe.lymia.princess.core.packages.{GameId, PackageManager}
+import moe.lymia.princess.core.state.ControlContext
+import moe.lymia.princess.core.gamedata.{GameId, GameIdLoader}
 import moe.lymia.princess.gui.utils.{DialogBase, UIUtils}
 import moe.lymia.princess.views.mainframe.{MainFrame, ProjectSource}
 import org.eclipse.jface.viewers.{ITreeContentProvider, LabelProvider}
@@ -46,7 +46,7 @@ private final class GameSelectorViewer(parent: Composite, dialog: GameSelectorDi
 
   this.setLayout(new FillLayout())
 
-  private val manager = PackageManager.default
+  private val manager = GameIdLoader.default
 
   private val resources = ctx.newResourceManager()
   private val images = new mutable.HashMap[String, Image]
@@ -98,7 +98,7 @@ final class GameSelectorDialog(parent: Window, ctx: ControlContext, closeParent:
 
   override def configureShell(shell: Shell): Unit = {
     super.configureShell(shell)
-    shell.setText(PackageManager.systemI18N.system("_princess.gameSelector.title"))
+    shell.setText(GameIdLoader.systemI18N.system("_princess.gameSelector.title"))
   }
 
   override def getInitialSize: Point = new Point(800, 600)
@@ -111,7 +111,7 @@ final class GameSelectorDialog(parent: Window, ctx: ControlContext, closeParent:
         if(closeParent) parent.close()
       case None =>
         UIUtils.openMessage(this, SWT.ICON_ERROR | SWT.OK,
-                            PackageManager.systemI18N, "_princess.gameSelector.noGameSelected")
+                            GameIdLoader.systemI18N, "_princess.gameSelector.noGameSelected")
     }
   }
 
@@ -123,7 +123,7 @@ final class GameSelectorDialog(parent: Window, ctx: ControlContext, closeParent:
       _.layoutData = new GridData(SWT.FILL, SWT.FILL, true, true)
     ),
     button(
-      PackageManager.systemI18N.system("_princess.gameSelector.create"),
+      GameIdLoader.systemI18N.system("_princess.gameSelector.create"),
       (event: SelectionEvent) => newProject(),
       _.layoutData = new GridData(SWT.END, SWT.CENTER, false, false)
     )

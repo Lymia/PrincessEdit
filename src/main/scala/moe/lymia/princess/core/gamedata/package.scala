@@ -20,12 +20,36 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.context
+package moe.lymia.princess.core
 
-object GlobalContext {
+import moe.lymia.princess.DefaultLogger
+import toml.{Codec, Parse, Value}
 
-}
+package object gamedata {
+  private[gamedata] implicit val tomlValueCodec: Codec[Value] = Codec { (x, _, _) => Right(x) }
 
-class ProjectContext {
+  private[gamedata] implicit class TomlError[T](data: Either[Parse.Error, T]) {
+    def checkErr: T = data match {
+      case Left(error) =>
+        // TODO: Make this way prettier.
+        throw new EditorException(error.toString())
+      case Right(x) => x
+    }
+  }
 
+  private[gamedata] val logger = DefaultLogger.bind("core.packages")
+
+  object StaticGameIds {
+    val System        = "_princess/system-package"
+    val DefinesGameId = "defines-gameid"
+  }
+
+  object StaticExportIds {
+    val GameId = "gameid"
+    val ProtectedPath = "_princess/protected-path"
+    val IgnoredPath = "_princess/ignored-path"
+    def Predef(t: String) = s"_princess/predef/$t"
+    def EntryPoint(t: String, ep: String) = s"$t/entry-point/$ep"
+    def I18N(t: String, language: String, country: String) = s"$t/i18n/${language}_$country"
+  }
 }

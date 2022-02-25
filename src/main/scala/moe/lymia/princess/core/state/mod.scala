@@ -20,22 +20,12 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core
+package moe.lymia.princess.core.state
 
-import moe.lymia.princess.DefaultLogger
-import toml.{Codec, Parse, Value}
+object GlobalContext {
 
-package object packages {
-  private[packages] implicit val tomlValueCodec: Codec[Value] = Codec { (x, _, _) => Right(x) }
+}
 
-  private[packages] implicit class TomlError[T](data: Either[Parse.Error, T]) {
-    def checkErr: T = data match {
-      case Left(error) =>
-        // TODO: Make this way prettier.
-        throw new EditorException(error.toString())
-      case Right(x) => x
-    }
-  }
+class ProjectContext {
 
-  private[packages] val logger = DefaultLogger.bind("core.packages")
 }

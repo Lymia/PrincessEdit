@@ -23,7 +23,7 @@
 package moe.lymia.princess.svg.scripting
 
 import moe.lymia.lua._
-import moe.lymia.princess.core.context.LuaLibrary
+import moe.lymia.princess.core.state.LuaLibrary
 import moe.lymia.princess.svg._
 
 case class PhysicalScale(unPerViewport: Double, unit: PhysicalUnit)

@@ -20,11 +20,11 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.context
+package moe.lymia.princess.core.state
 
 import moe.lymia.lua._
 import moe.lymia.princess.core.EditorException
-import moe.lymia.princess.core.packages.{PackageList, StaticExportIDs}
+import moe.lymia.princess.core.gamedata.{PackageList, StaticExportIds}
 import moe.lymia.princess.util._
 import moe.lymia.princess.{LogLevel, Logger}
 
@@ -113,7 +113,7 @@ final class LuaContext(val packages: PackageList, val logger: Logger, modules: S
       case Left (c) => c
       case Right(e) => throw EditorException(e)
     }
-    L.pcall(chunk, 0, systemTable).right.foreach(e => throw EditorException(e))
+    L.pcall(chunk, 0, systemTable).foreach(e => throw EditorException(e))
   }
   private def loadPredefs(exportType: String) =
     for(e <- packages.getSystemExports(exportType).sortBy(_.path))
@@ -131,7 +131,7 @@ final class LuaContext(val packages: PackageList, val logger: Logger, modules: S
     for(lib <- libs) lib.open(L, table)
     L.rawSet(systemTable, mod.moduleName, table)
 
-    loadPredefs(StaticExportIDs.Predef(mod.moduleName))
+    loadPredefs(StaticExportIds.Predef(mod.moduleName))
     loadedModules.add(mod.moduleName)
   }
   def isModuleLoaded(mod: LuaModule) = loadedModules.contains(mod.moduleName)

@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.packages
+package moe.lymia.princess.core.gamedata
 
 import moe.lymia.princess.core
 import moe.lymia.princess.core.EditorException
@@ -121,8 +121,8 @@ case class PackageList(gameId: String, packages: Seq[LoadedPackage]) {
     getSystemExports(exportId).flatMap(x =>
       if (!x.path.endsWith("/")) Seq(x.path, x.path + "/") else Seq(x.path))
 
-  private val protectedPaths = getPaths(StaticExportIDs.ProtectedPath)
-  private val ignoredPaths = getPaths(StaticExportIDs.IgnoredPath)
+  private val protectedPaths = getPaths(StaticExportIds.ProtectedPath)
+  private val ignoredPaths = getPaths(StaticExportIds.IgnoredPath)
 
   private val (systemPackages, userPackages) = packages.partition(_.isSystem)
   private val resolveCache = new CountedCache[String, Option[(LoadedPackage, Path)]](4096)
@@ -206,7 +206,7 @@ case class PackageResolver(packages: Map[String, LoadedPackage]) {
 
   def loadGameId(gameId: String): PackageList =
     loadPackages(gameId, packages.values.filter(x => gameId == "*" ||
-      (x.gameIds.contains(StaticGameIDs.System) && x.isSystem) ||
+      (x.gameIds.contains(StaticGameIds.System) && x.isSystem) ||
       x.gameIds.contains(gameId)).map(_.name).toSeq)
 }
 
@@ -231,6 +231,6 @@ object PackageResolver {
         Seq()
     }
     val loadedSystemPackages = for (x <- systemPackages) yield LoadedPackage.loadPackage(x, isSystem = true)
-    core.packages.PackageResolver((loadedPackages ++ loadedSystemPackages).flatten)
+    core.gamedata.PackageResolver((loadedPackages ++ loadedSystemPackages).flatten)
   }
 }

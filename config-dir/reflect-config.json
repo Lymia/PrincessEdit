@@ -69,7 +69,7 @@
   "methods":[{"name":"main","parameterTypes":["java.lang.String[]"] }]}
 ,
 {
-  "name":"moe.lymia.princess.gui.ui.frontend.GameSelectorViewer"}
+  "name":"moe.lymia.princess.views.frontend.GameSelectorViewer"}
 ,
 {
   "name":"org.eclipse.swt.custom.ScrolledComposite"}

@@ -23,7 +23,7 @@
 package moe.lymia.princess.views.`export`
 
 import moe.lymia.lua._
-import moe.lymia.princess.core.datamodel.FullCardData
+import moe.lymia.princess.core.cardmodel.FullCardData
 import moe.lymia.princess.svg.RasterizeResourceLoader
 import moe.lymia.princess.util.IOUtils
 import moe.lymia.princess.views.mainframe.MainFrameState

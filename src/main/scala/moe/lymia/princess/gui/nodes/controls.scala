@@ -23,7 +23,7 @@
 package moe.lymia.princess.gui.nodes
 
 import moe.lymia.lua._
-import moe.lymia.princess.core.datamodel.{DataField, DataFieldType}
+import moe.lymia.princess.core.cardmodel.{DataField, DataFieldType}
 import org.eclipse.swt._
 import org.eclipse.swt.events._
 import org.eclipse.swt.widgets._

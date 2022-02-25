@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.datamodel
+package moe.lymia.princess.core.cardmodel
 
 import play.api.libs.json._
 import rx._

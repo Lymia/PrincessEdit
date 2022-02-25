@@ -20,17 +20,43 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.packages
+package moe.lymia.princess.core.gamedata
 
 import moe.lymia.lua.LuaObject
 import moe.lymia.princess.core.EditorException
-import moe.lymia.princess.core.context.{LuaContext, LuaModule}
-import moe.lymia.princess.core.i18n.{I18N, I18NLoader, MarkedI18NSource}
+import moe.lymia.princess.core.state.{LuaContext, LuaModule}
+import moe.lymia.princess.util.IOUtils
 import moe.lymia.princess.{DefaultLogger, Environment, Logger}
+import toml.Toml
+import toml.Codecs._
 
 import java.nio.file.Path
+import scala.collection.mutable
 
-final class GameManager(packages: PackageList, val logger: Logger = DefaultLogger, modules: Seq[LuaModule] = Seq()) {
+case class GameId(name: String, displayName: String, iconPath: Option[String])
+object GameId {
+  def loadGameId(path: Path): GameId = EditorException.context(s"loading GameID from $path") {
+    case class RawGameId(name: String, displayName: String, icon: Option[String])
+    case class RawGameIdContainer(game: RawGameId)
+
+    val raw = Toml.parseAs[RawGameIdContainer](IOUtils.readFileAsString(path)).checkErr
+    GameId(raw.game.name, raw.game.displayName, raw.game.icon)
+  }
+
+  def loadGameIdManager(manager: GameIdLoader): GameData = manager.loadGameData(StaticGameIds.DefinesGameId)
+  def loadGameIds(game: GameData): Map[String, GameId] = {
+    val gameIDExports = game.getExports(StaticExportIds.GameId).map(_.path).map(game.forceResolve)
+
+    val idMap = new mutable.HashMap[String, GameId]
+    for(id <- gameIDExports.map(loadGameId)) {
+      if(idMap.contains(id.name)) throw EditorException(s"Duplicate GameID '${id.name}' found")
+      idMap.put(id.name, id)
+    }
+    idMap.toMap
+  }
+}
+
+final class GameData(packages: PackageList, val logger: Logger = DefaultLogger, modules: Seq[LuaModule] = Seq()) {
   val gameId: String = packages.gameId
   lazy val lua = new LuaContext(packages, logger.bind("LuaContext"), modules)
 
@@ -46,10 +72,10 @@ final class GameManager(packages: PackageList, val logger: Logger = DefaultLogge
   def getLuaExport(path: String): LuaObject = lua.getLuaExport(path)
 
   def getEntryPoint(entryPoint: String): Option[LuaObject] = {
-    val export = StaticExportIDs.EntryPoint(gameId, entryPoint)
+    val export = StaticExportIds.EntryPoint(gameId, entryPoint)
     val ep = getExports(export)
     if(ep.isEmpty) {
-      val system = getSystemExports(StaticExportIDs.EntryPoint("_princess", entryPoint))
+      val system = getSystemExports(StaticExportIds.EntryPoint("_princess", entryPoint))
       if(system.nonEmpty) Some(getLuaExport(system.head.path))
       else None
     } else if(ep.length > 1) throw EditorException(s"GameID '$gameId' has more than one entry point of type '$export'")
@@ -59,26 +85,28 @@ final class GameManager(packages: PackageList, val logger: Logger = DefaultLogge
     getEntryPoint(export).getOrElse(throw EditorException(s"GameID '$gameId' has no entry point of type '$export'"))
 }
 
-final class PackageManager(packages: Option[Path], systemPackages: Seq[Path] = Seq(), logger: Logger = DefaultLogger) {
+final class GameIdLoader(packages: Option[Path], systemPackages: Seq[Path] = Seq(), logger: Logger = DefaultLogger) {
+  // TODO: Encapsulate this better.
+
   val resolver: PackageResolver = PackageResolver.loadPackageDirectory(packages, systemPackages: _*)
 
-  val gameIdManager: GameManager = GameId.loadGameIdManager(this)
+  val gameIdManager: GameData = GameId.loadGameIdManager(this)
   val gameIds: Map[String, GameId] = GameId.loadGameIds(gameIdManager)
   val gameIdList: Seq[GameId] = gameIds.values.toSeq
   val gameIdI18N: MarkedI18NSource = new I18NLoader(gameIdManager).i18n.user
 
-  def loadGameId(gameId: String, logger: Logger = logger, modules: Seq[LuaModule] = Seq()) =
-    new GameManager(resolver.loadGameId(gameId), logger, modules)
+  def loadGameData(gameId: String, logger: Logger = logger, modules: Seq[LuaModule] = Seq()): GameData =
+    new GameData(resolver.loadGameId(gameId), logger, modules)
 }
-object PackageManager {
+object GameIdLoader {
   private def rootPath = Environment.rootDirectory
   private def corePkgPath = rootPath.resolve("lib/core.pedit-pkg")
 
-  lazy val default = new PackageManager(Some(rootPath.resolve("packages")), Seq(corePkgPath))
+  lazy val default = new GameIdLoader(Some(rootPath.resolve("packages")), Seq(corePkgPath))
 
-  private lazy val system = new PackageManager(None, Seq(corePkgPath))
+  private lazy val system = new GameIdLoader(None, Seq(corePkgPath))
   lazy val systemI18N: I18N = {
-    val id = system.loadGameId("_princess")
+    val id = system.loadGameData("_princess")
     new I18NLoader(id).i18n
   }
 }

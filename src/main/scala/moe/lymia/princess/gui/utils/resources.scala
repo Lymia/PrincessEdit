@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.gui.utils
 
-import moe.lymia.princess.core.context.ControlContext
+import moe.lymia.princess.core.state.ControlContext
 import moe.lymia.princess.svg.SVGRenderable
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.jface.resource._
@@ -41,19 +41,19 @@ object IconData {
     new IconData(IOUtils.loadBinaryResource(s"res/icon-$iconName.svg"), imageDataMap.toMap)
   }
 
-  lazy val AppIcon      = getIconData("app")
-  lazy val DocumentIcon = getIconData("document")
+  lazy val AppIcon: IconData = getIconData("app")
+  lazy val DocumentIcon: IconData = getIconData("document")
 }
 
 final class ExtendedResourceManager(underlying: ResourceManager, ctx: ControlContext) {
-  def createImage(data: ImageData) =
+  def createImage(data: ImageData): Image =
     underlying.createImage(ImageDescriptor.createFromImageData(data))
 
   private lazy val imageCache = new mutable.HashMap[IconData, Array[Image]]
-  def loadIcon(iconData: IconData) =
+  def loadIcon(iconData: IconData): Array[Image] =
     imageCache.getOrElseUpdate(iconData, iconData.imageData.values.map(createImage).toArray)
 
-  def createImageFromSVG(data: SVGRenderable, bx: Int, by: Int) = {
+  def createImageFromSVG(data: SVGRenderable, bx: Int, by: Int): Image = {
     val (x, y) = UIUtils.computeSizeFromRatio(new Point(bx,  by), data.size.width, data.size.height)
     createImage(ctx.syncRenderSwt(data, x, y))
   }

@@ -23,7 +23,7 @@
 package moe.lymia.princess.gui.scripting
 
 import moe.lymia.lua._
-import moe.lymia.princess.core.context.LuaLibrary
+import moe.lymia.princess.core.state.LuaLibrary
 import moe.lymia.princess.gui.nodes._
 
 case class ControlTypeApWrapper(default: ControlType, call: LuaClosure)

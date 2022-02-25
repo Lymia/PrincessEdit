@@ -24,7 +24,7 @@ package moe.lymia.princess.svg
 
 import moe.lymia.lua.{LuaTable, _}
 import moe.lymia.princess.core._
-import moe.lymia.princess.core.packages.GameManager
+import moe.lymia.princess.core.gamedata.GameData
 import moe.lymia.princess.svg.components._
 import moe.lymia.princess.svg.rasterizer.SVGRasterizer
 import moe.lymia.princess.svg.scripting._
@@ -82,7 +82,7 @@ final case class SVGData(private val builder: SVGBuilder, private val definition
     builder.rasterizeSwt(rasterize, x, y, definition)
 }
 
-final class RenderManager(game: GameManager, cache: SizedCache) {
+final class RenderManager(game: GameData, cache: SizedCache) {
   if(!game.lua.isModuleLoaded(RenderModule)) game.lua.loadModule(RenderModule)
 
   private lazy val layoutFn =

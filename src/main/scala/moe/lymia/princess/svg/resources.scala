@@ -23,7 +23,7 @@
 package moe.lymia.princess.svg
 
 import moe.lymia.princess.core._
-import moe.lymia.princess.core.packages.GameManager
+import moe.lymia.princess.core.gamedata.GameData
 import moe.lymia.princess.util._
 
 import java.awt.Font
@@ -100,7 +100,7 @@ private object ResourceFormatType {
 private case class ImageFormat(extensions: Seq[String], formatType: ImageFormatType)
 
 final class ResourceManager(builder: SVGBuilder, settings: RenderSettings, cache: SizedCache,
-                            loader: ResourceLoader, packages: GameManager) {
+                            loader: ResourceLoader, packages: GameData) {
   lazy val systemFont = {
     val tryResolve = packages.getSystemExports("princess/system_font").headOption.flatMap(x =>
       packages.resolve(x.path).map(path => Font.createFont(Font.TRUETYPE_FONT, Files.newInputStream(path))))

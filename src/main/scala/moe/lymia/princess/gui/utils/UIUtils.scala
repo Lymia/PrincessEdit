@@ -23,7 +23,7 @@
 package moe.lymia.princess.gui.utils
 
 import com.coconut_palm_software.xscalawt.XScalaWTStyles._
-import moe.lymia.princess.core.i18n.I18N
+import moe.lymia.princess.core.gamedata.I18N
 import moe.lymia.princess.svg.SVGFile
 import moe.lymia.princess.util.IOUtils
 import org.eclipse.jface.dialogs.MessageDialog

@@ -20,9 +20,8 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.i18n
+package moe.lymia.princess.core.gamedata
 
-import moe.lymia.princess.core.packages.{GameManager, StaticExportIDs}
 import moe.lymia.princess.util.CountedCache
 
 import java.io.InputStreamReader
@@ -66,9 +65,9 @@ final case class I18N(userLua: I18NSource, system: I18NSource) {
   val locale: Locale = system.locale
 }
 
-final class I18NLoader(game: GameManager) {
+final class I18NLoader(game: GameData) {
   private def loadExportData(id: String, language: String, country: String, system: Boolean = false) = {
-    val exports = game.getExports(StaticExportIDs.I18N(id, language, country), system)
+    val exports = game.getExports(StaticExportIds.I18N(id, language, country), system)
     val sorted = exports.sortBy(_.metadata.get("priority").flatMap(_.headOption).map(_.toInt).getOrElse(0))
 
     val map = new mutable.HashMap[String, String]

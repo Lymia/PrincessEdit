@@ -23,10 +23,9 @@
 package moe.lymia.princess.gui
 
 import moe.lymia.lua._
-import moe.lymia.princess.core.context.ControlContext
-import moe.lymia.princess.core.datamodel.DataStore
-import moe.lymia.princess.core.i18n.I18N
-import moe.lymia.princess.core.packages.GameManager
+import moe.lymia.princess.core.state.ControlContext
+import moe.lymia.princess.core.cardmodel.DataStore
+import moe.lymia.princess.core.gamedata.{GameData, I18N}
 import moe.lymia.princess.gui.nodes._
 import moe.lymia.princess.gui.scripting._
 import moe.lymia.princess.gui.utils.RxOwner
@@ -76,17 +75,17 @@ final class LuaRootSource(L: LuaState, controlCtx: ControlContext, i18n: I18N, f
     if(args.isEmpty) emptyRoot else RootNode(None, args.map(RxFieldNode), fn)
 }
 object RootSource {
-  private def create(game: GameManager, controlCtx: ControlContext, i18n: I18N, export: LuaObject, method: String) = {
+  private def create(game: GameData, controlCtx: ControlContext, i18n: I18N, export: LuaObject, method: String) = {
     val fn = game.lua.L.newThread().getTable(export, method).as[LuaClosure]
     new LuaRootSource(game.lua.L, controlCtx, i18n, fn)
   }
-  def optional(game: GameManager, controlCtx: ControlContext, i18n: I18N, export: String, method: String) = {
+  def optional(game: GameData, controlCtx: ControlContext, i18n: I18N, export: String, method: String) = {
     game.getEntryPoint(export) match {
       case Some(exportObj) => create(game, controlCtx, i18n, exportObj, method)
       case None => new NullRootSource(game.lua.L, controlCtx, i18n)
     }
   }
-  def apply(game: GameManager, controlCtx: ControlContext, i18n: I18N, export: String, method: String) =
+  def apply(game: GameData, controlCtx: ControlContext, i18n: I18N, export: String, method: String) =
     create(game, controlCtx, i18n, game.getRequiredEntryPoint(export), method)
 }
 
@@ -101,7 +100,7 @@ final class TableColumnData(val title: String, val width: Int, val isDefault: Bo
 }
 final case class LuaColumnData(columns: Seq[TableColumnData])
 object LuaColumnData {
-  def apply(game: GameManager): LuaColumnData = {
+  def apply(game: GameData): LuaColumnData = {
     val L = game.lua.L.newThread()
     val fn = L.getTable(game.getRequiredEntryPoint("card-columns"), "cardColumns").as[LuaClosure]
     LuaColumnData(L.call(fn, 1).head.as[Seq[TableColumnData]])
@@ -110,7 +109,7 @@ object LuaColumnData {
 
 final case class LuaExportData(defaultNameFormat: String, helpText: Option[String])
 object LuaExportData {
-  def apply(game: GameManager): LuaExportData = {
+  def apply(game: GameData): LuaExportData = {
     val L = game.lua.L.newThread()
     val ep = game.getRequiredEntryPoint("export-data")
     val name = L.getTable(ep, "defaultNameFormat").as[String]
@@ -123,7 +122,7 @@ final class LuaViewData(L: LuaState, viewTypeName: String, setNameFn: LuaClosure
   def computeName(v: Any) = L.newThread().call(setNameFn, 1, v).head.as[String]
 }
 object LuaViewData {
-  def apply(game: GameManager): LuaViewData = {
+  def apply(game: GameData): LuaViewData = {
     val L = game.lua.L.newThread()
     val ep = game.getRequiredEntryPoint("view-data")
     val viewTypeName = L.getTable(ep, "viewTypeName").as[String]
@@ -132,7 +131,7 @@ object LuaViewData {
   }
 }
 
-final class GameIDData(game: GameManager, controlCtx: ControlContext, i18n: I18N) {
+final class GameIDData(game: GameData, controlCtx: ControlContext, i18n: I18N) {
   val internal_L = game.lua.L.newThread()
 
   val card     = RootSource(game, controlCtx, i18n, "card-form", "cardForm")

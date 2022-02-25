@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.views.editor
 
-import moe.lymia.princess.core.datamodel.FullCardData
+import moe.lymia.princess.core.cardmodel.FullCardData
 import moe.lymia.princess.gui.TableColumnData
 import moe.lymia.princess.gui.utils.RxWidget
 import moe.lymia.princess.views.`export`.ExportCardsDialog

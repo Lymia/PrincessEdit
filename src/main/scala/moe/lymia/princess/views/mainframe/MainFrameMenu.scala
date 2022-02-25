@@ -22,7 +22,7 @@
 
 package moe.lymia.princess.views.mainframe
 
-import moe.lymia.princess.core.datamodel.StaticViewID
+import moe.lymia.princess.core.cardmodel.StaticViewID
 import moe.lymia.princess.views.editor.{EditorTab, EditorTabData}
 import moe.lymia.princess.views.frontend.GameSelectorDialog
 import org.eclipse.jface.action.{Action, MenuManager}

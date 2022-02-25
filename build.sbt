@@ -79,11 +79,21 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   organization := "moe.lymia.princessedit",
   name := "princess-edit",
 
-  nativeImageOptions ++= Seq("--no-fallback"),
-  nativeImageOptions += s"-H:ConfigurationFileDirectories=${baseDirectory.value / "config-dir"}",
+  nativeImageOptions ++= Seq(
+    // basic image options
+    "--no-fallback", "-H:-ParseRuntimeOptions",
 
+    // configuration directory
+    s"-H:ConfigurationFileDirectories=${baseDirectory.value / "config-dir"}",
+
+    // compile options
+    "-H:CPUFeatures=CX8,CMOV,FXSR,MMX,SSE,SSE2,SSE3,SSE4A,SSE4_1,SSE4_2,POPCNT,TSC",
+
+    // remove unneeded services and other code size optimizations
+    "-H:-EnableSecurityServicesFeature", "-H:-EnableSignalAPI", "-H:-EnableWildcardExpansion",
+    "-R:-EnableSignalHandling", "-H:-EnableLoggingFeature", "-H:-IncludeMethodData",
+  ),
   run / fork := true,
-  run / envVars += ("SWT_GTK3", "0"),
   run / envVars += ("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY", baseDirectory.value.toString),
 
   // Scala modules

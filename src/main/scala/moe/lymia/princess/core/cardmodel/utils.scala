@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-package moe.lymia.princess.core.datamodel
+package moe.lymia.princess.core.cardmodel
 
 import moe.lymia.princess.util.IOUtils
 import play.api.libs.json._
@@ -119,11 +119,11 @@ final class UUIDMapVar[T <: PathSerializable](newFn: UUID => T)
   }
 }
 
-private[datamodel] trait RefCount {
+private[cardmodel] trait RefCount {
   private var refCount0 = 0
-  private[datamodel] def refCount = refCount0
-  private[datamodel] def ref()    = refCount0 = refCount + 1
-  private[datamodel] def unref()  = refCount0 = refCount - 1
+  private[cardmodel] def refCount = refCount0
+  private[cardmodel] def ref()    = refCount0 = refCount + 1
+  private[cardmodel] def unref()  = refCount0 = refCount - 1
 }
 
 trait DataStoreModifyListener { this: HasDataStore with TrackModifyTime =>

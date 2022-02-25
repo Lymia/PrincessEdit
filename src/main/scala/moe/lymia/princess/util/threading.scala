@@ -26,20 +26,20 @@ import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
 object ThreadId {
   private val threadId = new AtomicInteger(0)
-  def make() = threadId.incrementAndGet()
+  def make(): Int = threadId.incrementAndGet()
 }
 
-final class Condition(val lock: Object = new Object) extends AnyVal {
-  def done() = lock synchronized { lock.notify() }
-  def waitFor(length: Int = 10) = lock synchronized { lock.wait(length) }
+final class Condition(private val lock: Object = new Object) extends AnyVal {
+  def done(): Unit = lock synchronized { lock.notify() }
+  def waitFor(length: Int = 10): Unit = lock synchronized { lock.wait(length) }
 }
 
 final class AtomicMap[K, V](condition: Condition = new Condition()) {
   private val underlying = new AtomicReference(Map.empty[K, V])
 
-  def nonEmpty = underlying.get().nonEmpty
+  def nonEmpty: Boolean = underlying.get().nonEmpty
 
-  def put(key: K, v: V) = {
+  def put(key: K, v: V): Unit = {
     while(!{
       val current = underlying.get()
       underlying.compareAndSet(current, current + ((key, v)))
@@ -47,8 +47,8 @@ final class AtomicMap[K, V](condition: Condition = new Condition()) {
     condition.done()
   }
 
-  def pullAll() = underlying.getAndSet(Map.empty)
-  def pullOne() = {
+  def pullAll(): Map[K, V] = underlying.getAndSet(Map.empty)
+  def pullOne(): Option[(K, V)] = {
     var taken: Option[(K, V)] = null
     while(!{
       val current = underlying.get()
@@ -61,15 +61,15 @@ final class AtomicMap[K, V](condition: Condition = new Condition()) {
     taken
   }
 
-  def waitFor(length: Int = 10) = condition.waitFor(length)
+  def waitFor(length: Int = 10): Unit = condition.waitFor(length)
 }
 
 final class AtomicList[V](condition: Condition = new Condition()) {
   private val underlying = new AtomicReference(Seq.empty[V])
 
-  def nonEmpty = underlying.get().nonEmpty
+  def nonEmpty: Boolean = underlying.get().nonEmpty
 
-  def add(v: V) = {
+  def add(v: V): Unit = {
     while(!{
       val current = underlying.get()
       underlying.compareAndSet(current, current :+ v)
@@ -77,7 +77,7 @@ final class AtomicList[V](condition: Condition = new Condition()) {
     condition.done()
   }
 
-  def pullAll() = underlying.getAndSet(Seq.empty)
+  def pullAll(): Seq[V] = underlying.getAndSet(Seq.empty)
   def pullOne(): Option[V] = {
     var head: Option[V] = null
     while(!{
@@ -88,20 +88,20 @@ final class AtomicList[V](condition: Condition = new Condition()) {
     head
   }
 
-  def waitFor(length: Int = 10) = condition.waitFor(length)
+  def waitFor(length: Int = 10): Unit = condition.waitFor(length)
 }
 
 final class RequestBuffer[K, V](condition: Condition = new Condition()) {
   private val supersedableRequests = new AtomicMap[K, V]
   private val requests             = new AtomicList[V]
 
-  def nonEmpty = requests.nonEmpty || supersedableRequests.nonEmpty
+  def nonEmpty: Boolean = requests.nonEmpty || supersedableRequests.nonEmpty
 
-  def add(request: K, v: V) = supersedableRequests.put(request, v)
-  def add(v: V) = requests.add(v)
+  def add(request: K, v: V): Unit = supersedableRequests.put(request, v)
+  def add(v: V): Unit = requests.add(v)
 
-  def pullAll() = requests.pullAll() ++ supersedableRequests.pullAll().values
+  def pullAll(): Seq[V] = requests.pullAll() ++ supersedableRequests.pullAll().values
   def pullOne(): Option[V] = requests.pullOne().orElse(supersedableRequests.pullOne().map(_._2))
 
-  def waitFor(length: Int = 10) = condition.waitFor(length)
+  def waitFor(length: Int = 10): Unit = condition.waitFor(length)
 }
