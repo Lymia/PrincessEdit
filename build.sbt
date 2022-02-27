@@ -33,6 +33,11 @@ def swtDep(artifact: String) =
   ("bundle" % artifact % "3.118.0.v20211123-0851"
     exclude("package", "org.mozilla.xpcom")
     exclude("package", "org.eclipse.swt.accessibility2"))
+val swtPlaf = sys.props("os.name") match {
+  case os if os.startsWith("Windows") => "win32.win32.x86_64"
+  case "Mac OS X" => "cocoa.macosx.x86_64"
+  case "Linux" => "gtk.linux.x86_64"
+}
 
 lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   organization := "moe.lymia",
@@ -43,7 +48,7 @@ lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
   name := "princess-edit-swt",
 
   libraryDependencies += swtDep("org.eclipse.swt"),
-  libraryDependencies += swtDep("org.eclipse.swt.gtk.linux.x86_64"),
+  libraryDependencies += swtDep(s"org.eclipse.swt.$swtPlaf"),
 
   libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.17.100.v20211104-1730",
   libraryDependencies += "bundle" % "org.eclipse.osgi.services" % "3.10.200.v20210723-0643"
@@ -99,6 +104,7 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   ),
   run / fork := true,
   run / envVars += ("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY", baseDirectory.value.toString),
+  run / javaOptions ++= (if (osName == "macos") Seq("-XstartOnFirstThread") else Seq()),
 
   // Scala modules
   libraryDependencies += "org.scala-lang" % "scala-reflect" % config_scalaVersion,

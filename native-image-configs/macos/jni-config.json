@@ -1,0 +1,266 @@
+[ {
+  "name" : "java.awt.geom.GeneralPath",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "<init>",
+    "parameterTypes" : [ "int", "byte[]", "int", "float[]", "int" ]
+  } ]
+}, {
+  "name" : "java.awt.geom.Point2D$Float",
+  "fields" : [ {
+    "name" : "x"
+  }, {
+    "name" : "y"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "float", "float" ]
+  } ]
+}, {
+  "name" : "java.awt.geom.Rectangle2D$Float",
+  "fields" : [ {
+    "name" : "height"
+  }, {
+    "name" : "width"
+  }, {
+    "name" : "x"
+  }, {
+    "name" : "y"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "<init>",
+    "parameterTypes" : [ "float", "float", "float", "float" ]
+  } ]
+}, {
+  "name" : "java.lang.Boolean",
+  "methods" : [ {
+    "name" : "getBoolean",
+    "parameterTypes" : [ "java.lang.String" ]
+  } ]
+}, {
+  "name" : "java.lang.ClassLoader",
+  "methods" : [ {
+    "name" : "getPlatformClassLoader",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "loadClass",
+    "parameterTypes" : [ "java.lang.String" ]
+  } ]
+}, {
+  "name" : "java.lang.String",
+  "methods" : [ {
+    "name" : "lastIndexOf",
+    "parameterTypes" : [ "int" ]
+  }, {
+    "name" : "substring",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "java.lang.System",
+  "methods" : [ {
+    "name" : "getProperty",
+    "parameterTypes" : [ "java.lang.String" ]
+  }, {
+    "name" : "load",
+    "parameterTypes" : [ "java.lang.String" ]
+  }, {
+    "name" : "setProperty",
+    "parameterTypes" : [ "java.lang.String", "java.lang.String" ]
+  } ]
+}, {
+  "name" : "java.lang.Throwable",
+  "methods" : [ {
+    "name" : "addSuppressed",
+    "parameterTypes" : [ "java.lang.Throwable" ]
+  } ]
+}, {
+  "name" : "jdk.internal.loader.ClassLoaders$PlatformClassLoader"
+}, {
+  "name" : "moe.lymia.princess.PrincessEdit",
+  "methods" : [ {
+    "name" : "main",
+    "parameterTypes" : [ "java.lang.String[]" ]
+  } ]
+}, {
+  "name" : "org.eclipse.swt.accessibility.SWTAccessibleDelegate",
+  "methods" : [ {
+    "name" : "accessibleProc",
+    "parameterTypes" : [ "long", "long" ]
+  }, {
+    "name" : "accessibleProc",
+    "parameterTypes" : [ "long", "long", "long" ]
+  }, {
+    "name" : "accessibleProc",
+    "parameterTypes" : [ "long", "long", "long", "long" ]
+  } ]
+}, {
+  "name" : "org.eclipse.swt.graphics.Region",
+  "methods" : [ {
+    "name" : "regionToRects",
+    "parameterTypes" : [ "long", "long", "long", "long" ]
+  } ]
+}, {
+  "name" : "org.eclipse.swt.internal.cocoa.NSRange",
+  "fields" : [ {
+    "name" : "length"
+  }, {
+    "name" : "location"
+  } ]
+}, {
+  "name" : "org.graalvm.jniutils.JNIExceptionWrapperEntryPoints",
+  "methods" : [ {
+    "name" : "getClassName",
+    "parameterTypes" : [ "java.lang.Class" ]
+  } ]
+}, {
+  "name" : "sun.font.CharToGlyphMapper",
+  "methods" : [ {
+    "name" : "charToGlyph",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "sun.font.Font2D",
+  "methods" : [ {
+    "name" : "canDisplay",
+    "parameterTypes" : [ "char" ]
+  }, {
+    "name" : "charToGlyph",
+    "parameterTypes" : [ "int" ]
+  }, {
+    "name" : "charToVariationGlyph",
+    "parameterTypes" : [ "int", "int" ]
+  }, {
+    "name" : "getMapper",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "getTableBytes",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "sun.font.FontStrike",
+  "methods" : [ {
+    "name" : "getGlyphMetrics",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "sun.font.FreetypeFontScaler",
+  "methods" : [ {
+    "name" : "invalidateScaler",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "sun.font.GlyphLayout$GVData",
+  "fields" : [ {
+    "name" : "_count"
+  }, {
+    "name" : "_flags"
+  }, {
+    "name" : "_glyphs"
+  }, {
+    "name" : "_indices"
+  }, {
+    "name" : "_positions"
+  } ],
+  "methods" : [ {
+    "name" : "grow",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "sun.font.GlyphList",
+  "fields" : [ {
+    "name" : "gposx"
+  }, {
+    "name" : "gposy"
+  }, {
+    "name" : "images"
+  }, {
+    "name" : "lcdRGBOrder"
+  }, {
+    "name" : "lcdSubPixPos"
+  }, {
+    "name" : "len"
+  }, {
+    "name" : "positions"
+  }, {
+    "name" : "usePositions"
+  } ]
+}, {
+  "name" : "sun.font.PhysicalStrike",
+  "fields" : [ {
+    "name" : "pScalerContext"
+  } ],
+  "methods" : [ {
+    "name" : "adjustPoint",
+    "parameterTypes" : [ "java.awt.geom.Point2D$Float" ]
+  }, {
+    "name" : "getGlyphPoint",
+    "parameterTypes" : [ "int", "int" ]
+  } ]
+}, {
+  "name" : "sun.font.StrikeMetrics",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "float", "float", "float", "float", "float", "float", "float", "float", "float", "float" ]
+  } ]
+}, {
+  "name" : "sun.font.TrueTypeFont",
+  "methods" : [ {
+    "name" : "readBlock",
+    "parameterTypes" : [ "java.nio.ByteBuffer", "int", "int" ]
+  }, {
+    "name" : "readBytes",
+    "parameterTypes" : [ "int", "int" ]
+  } ]
+}, {
+  "name" : "sun.font.Type1Font",
+  "methods" : [ {
+    "name" : "readFile",
+    "parameterTypes" : [ "java.nio.ByteBuffer" ]
+  } ]
+}, {
+  "name" : "sun.java2d.Disposer",
+  "methods" : [ {
+    "name" : "addRecord",
+    "parameterTypes" : [ "java.lang.Object", "long", "long" ]
+  } ]
+}, {
+  "name" : "org.eclipse.swt.internal.cocoa.NSOperatingSystemVersion",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.cocoa.NSPoint",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.cocoa.NSRect",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.cocoa.NSSize",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.cocoa.objc_super",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.cocoa.OS",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.widgets.Display",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+} ]

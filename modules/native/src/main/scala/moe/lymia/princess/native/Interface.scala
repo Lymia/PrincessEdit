@@ -17,7 +17,7 @@ private[native] object Interface extends Interface {
   private val soName = sys.props("os.name") match {
     case null => None
     case x if x.startsWith("Windows ") => Some(???)
-    case x if x.startsWith("Mac ") => Some(???)
+    case x if x.startsWith("Mac ") => Some(("native/x86_64-darwin/libprincessedit_rendering.dylib", ".dylib"))
     case "Linux" => Some(("native/x86_64-linux/libprincessedit_rendering.so", ".so"))
     case _ => None
   }
