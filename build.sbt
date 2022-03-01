@@ -63,24 +63,10 @@ val buildNativeLib = TaskKey[File]("build-native-lib")
 val classPathInfo = TaskKey[(Properties, File)]("class-path-info")
 
 // Actual core definition
-lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin settings (commonSettings ++ Seq(
+lazy val princessEdit = project in file(".") settings (commonSettings ++ Seq(
   organization := "moe.lymia.princess",
   name := "princess-edit",
 
-  nativeImageOptions ++= Seq(
-    // basic image options
-    "--no-fallback", "-H:-ParseRuntimeOptions",
-
-    // configuration directory
-    s"-H:ConfigurationFileDirectories=${baseDirectory.value / "native-image-configs" / osName}",
-
-    // compile options
-    "-H:CPUFeatures=CX8,CMOV,FXSR,MMX,SSE,SSE2,SSE3,SSE4A,SSE4_1,SSE4_2,POPCNT,TSC",
-
-    // remove unneeded services and other code size optimizations
-    "-H:-EnableSignalAPI", "-H:-EnableWildcardExpansion", "-R:-EnableSignalHandling", "-H:-EnableLoggingFeature",
-    "-H:-IncludeMethodData",
-  ),
   run / fork := true,
   run / envVars += ("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY", baseDirectory.value.toString),
 
@@ -339,11 +325,34 @@ InputKey[Unit]("dist") := {
     IO.write(outDir / "README.txt", fixEndings(IO.read(file("project/dist_README.md"))))
     IO.write(outDir / "NOTICE.txt", fixEndings(IO.read(file("project/dist_NOTICE.md"))))
 
-    val nativeImageFile = (princessEdit / nativeImage).value
-    IO.copyFile(nativeImageFile, outDir / nativeImageFile.name.replace("princess-edit", "PrincessEdit"))
+    val (properties, classDir) = classPathInfo.value
+    val classPath =
+      properties.get("linux-x86_64.classpath").toString.split(":").map(x => s"$classDir/$x").mkString(";");
+    val nativeImageFlags = Seq(
+      // command
+      "native-image",
+      "--class-path", classPath,
+      properties.get("main").toString,
+      (outDir / "PrincessEdit").toString,
 
-    IO.createDirectory(outDir / "lib")
+      // basic image options
+      "--no-fallback", "-H:-ParseRuntimeOptions",
+
+      // configuration directory
+      s"-H:ConfigurationFileDirectories=${baseDirectory.value / "native-image-configs" / osName}",
+
+      // compile options
+      "-H:CPUFeatures=CX8,CMOV,FXSR,MMX,SSE,SSE2,SSE3,SSE4A,SSE4_1,SSE4_2,POPCNT,TSC",
+
+      // remove unneeded services and other code size optimizations
+      "-H:-EnableSignalAPI", "-H:-EnableWildcardExpansion", "-R:-EnableSignalHandling", "-H:-EnableLoggingFeature",
+      "-H:-IncludeMethodData",
+    )
+    runProcess(nativeImageFlags, baseDirectory.value)
+
     runProcess(Seq("zip", "-r", outDir / "core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "modules")
+    val nativeBinName = properties.get("linux-x86_64.nativeBin").toString
+    IO.copyFile(classDir / nativeBinName, outDir / nativeBinName)
 
     IO.createDirectory(outDir / "packages")
     for (pkg <- Seq("cards-against-humanity.pedit-pkg"))

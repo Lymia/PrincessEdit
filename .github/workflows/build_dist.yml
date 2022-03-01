@@ -194,10 +194,6 @@ jobs:
 
       - name: Get version as Github variable.
         run: 'echo "VERSION_STR=ci_$(git describe --dirty=-DIRTY --broken=-BROKEN --match=v* | sed "s/^v//g")" >> $GITHUB_ENV'
-      - uses: rickstaa/action-create-tag@v1
-        with:
-          tag: ${{ env.VERSION_STR }}
-          message: CI release ${{ env.VERSION_STR }}
 
       - uses: actions/download-artifact@v2
         with:
@@ -208,8 +204,14 @@ jobs:
           name: dist-universal
           path: artifacts
 
+      - uses: rickstaa/action-create-tag@v1
+        with:
+          tag: ${{ env.VERSION_STR }}
+          message: CI release ${{ env.VERSION_STR }}
       - uses: softprops/action-gh-release@v1
         with:
+          name: ${{ env.VERSION_STR }}
+          tag_name: ${{ env.VERSION_STR }}
           body: |
             CI Build ${{ env.VERSION_STR }}
             This is an unstable draft release, and you should expect it to be buggy and not working.
