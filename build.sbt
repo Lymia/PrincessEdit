@@ -58,6 +58,7 @@ val osName = sys.props("os.name") match {
 
 // Project-specific keys
 val gitDir = SettingKey[File]("git-dir")
+val buildNativeLib = TaskKey[File]("build-native-lib")
 
 // Actual core definition
 lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin settings (commonSettings ++ Seq(
@@ -80,7 +81,9 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   ),
   run / fork := true,
   run / envVars += ("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY", baseDirectory.value.toString),
+
   run / javaOptions ++= (if (osName == "macos") Seq("-XstartOnFirstThread") else Seq()),
+  run / javaOptions += s"-Dprincessedit.native.bin=${(native / buildNativeLib).value}",
 
   gitDir := baseDirectory.value,
 
@@ -218,7 +221,7 @@ lazy val native = project in file("modules/native") settings (commonSettings ++ 
 
   libraryDependencies += "commons-codec" % "commons-codec" % "1.15",
 
-  Compile / resourceGenerators += Def.task {
+  buildNativeLib := {
     val (cargoOut, fileName) = osName match {
       case "windows" => ("princessedit_native.dll", "princessedit_native.x86_64.dll")
       case "macos" => ("libprincessedit_native.dylib", "libprincessedit_native.x86_64.dylib")
@@ -226,10 +229,10 @@ lazy val native = project in file("modules/native") settings (commonSettings ++ 
     }
     runProcess(Seq("cargo", "build", "--release"), baseDirectory.value / "src" / "native")
     val sourcePath = baseDirectory.value / "src" / "native" / "target" / "release" / cargoOut
-    val targetPath = (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "native" / fileName
+    val targetPath = target.value / fileName
     if (!sourcePath.exists()) sys.error(s"rustc did not produce a binary?")
     IO.copyFile(sourcePath, targetPath)
-    Seq(targetPath)
+    targetPath
   },
   cleanFiles += baseDirectory.value / "src" / "native" / "target",
 ))

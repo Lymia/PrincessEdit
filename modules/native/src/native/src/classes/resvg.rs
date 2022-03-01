@@ -61,7 +61,7 @@ fn render_svg(
 }
 
 #[no_mangle]
-pub extern "system" fn Java_moe_lymia_princess_native_Interface_resvgRender(
+pub extern "system" fn Java_moe_lymia_princess_native_svg_Resvg_renderNative(
     env: JNIEnv,
     _class: JClass<'_>,
     input: JString<'_>,
@@ -79,7 +79,7 @@ pub extern "system" fn Java_moe_lymia_princess_native_Interface_resvgRender(
         };
 
         assert!(w > 0 && h > 0);
-        let db = crate::fonts::get_database(font_db);
+        let db = crate::classes::font_database::get_database(font_db);
         let db = db.read();
         let rendered = render_svg(
             w as u32,

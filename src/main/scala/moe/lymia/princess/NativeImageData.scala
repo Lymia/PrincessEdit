@@ -3,6 +3,9 @@ package moe.lymia.princess
 import java.nio.file.{Path, Paths}
 
 object NativeImageData {
+  private val nativeTypes = Seq(
+    "moe.lymia.princess.native.NativeException",
+  )
   private val windowsTypes = Seq(
     "org.eclipse.swt.internal.ole.win32.GUID",
     "org.eclipse.swt.internal.win32.ACCEL",
@@ -207,9 +210,9 @@ object NativeImageData {
     case Platform.Linux => "linux"
   }
   val jniTypeNames: Seq[String] = Platform.platform match {
-    case Platform.Windows => windowsTypes
-    case Platform.MacOS => macosTypes
-    case Platform.Linux => linuxTypes
+    case Platform.Windows => windowsTypes ++ nativeTypes
+    case Platform.MacOS => macosTypes ++ nativeTypes
+    case Platform.Linux => linuxTypes ++ nativeTypes
   }
   val nativeImageConfigPath: Path =
     Paths.get("native-image-configs").resolve(osName)

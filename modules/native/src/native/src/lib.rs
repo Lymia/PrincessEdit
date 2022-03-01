@@ -21,8 +21,8 @@
  */
 
 #![feature(const_fn_trait_bound)]
+#![deny(unused_must_use)]
 
-pub mod fonts;
+pub mod classes;
 mod jni_utils;
 mod object_id;
-pub mod resvg;

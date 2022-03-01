@@ -22,7 +22,8 @@
 
 package moe.lymia.princess.core.state
 
-import moe.lymia.princess.native.{FontDatabase, Resvg}
+import moe.lymia.princess.native.fonts.FontDatabase
+import moe.lymia.princess.native.svg.Resvg
 import rx.Var
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}

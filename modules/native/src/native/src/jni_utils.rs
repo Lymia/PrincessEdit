@@ -22,7 +22,7 @@
 
 use jni::{
     objects::{JObject, JString},
-    sys::{jint, jobject},
+    sys::{jbyteArray, jint, jobject},
     JNIEnv,
 };
 use std::panic::AssertUnwindSafe;
@@ -42,7 +42,7 @@ fn catch_panic_ll<T>(env: &JNIEnv, func: impl FnOnce() -> T) -> Option<T> {
                 "could not retrieve panic data".to_string()
             };
             if let Err(e) = env.throw_new("moe/lymia/princess/native/NativeException", msg_str) {
-                eprintln!("Error throwing native exception: {:?}", e);
+                eprintln!("Error throwing native exception: {e:?}");
                 eprintln!("[ aborting ]");
                 std::process::abort(); // rip
             }
@@ -68,6 +68,12 @@ pub fn catch_panic_void(env: &JNIEnv, func: impl FnOnce()) {
     catch_panic_ll(env, func);
 }
 
+pub fn jbytearray_unwrap(env: &JNIEnv, str: jbyteArray) -> Vec<u8> {
+    let mut new_vec = vec![0u8; env.get_array_length(str).unwrap() as usize];
+    env.get_byte_array_region(str, 0, bytemuck::cast_slice_mut(new_vec.as_mut_slice()))
+        .unwrap();
+    new_vec
+}
 pub fn jstring_unwrap(env: &JNIEnv, str: JString<'_>) -> String {
     env.get_string(str)
         .expect("could not convert Java string to Rust string!!")

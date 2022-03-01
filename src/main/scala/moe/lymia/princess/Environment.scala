@@ -72,16 +72,15 @@ object Environment {
   lazy val rootDirectory: Path =
     if (isNativeImage) locationFromCodeSource
     else if (isSbtLaunch) locationFromSbtEnvironment
-    else {
-      DefaultLogger.warn("Falling back to current directory when finding 'rootDirectory'.")
-      Paths.get(".")
-    }
+    else sys.error("Could not locate root directory!")
 
   lazy val libDirectory: Path =
     if (isNativeImage) locationFromCodeSource
     else if (isSbtLaunch) locationFromSbtEnvironment.resolve("modules")
-    else {
-      DefaultLogger.warn("Falling back to current directory when finding 'libDirectory'.")
-      Paths.get("module")
-    }
+    else sys.error("Could not locate library directory!")
+
+  lazy val nativeLibrary: Path =
+    if (isNativeImage) ???
+    else if (isSbtLaunch) Paths.get(System.getProperty("princessedit.native.bin"))
+    else sys.error("Could not locate native library!")
 }

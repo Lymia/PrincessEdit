@@ -310,6 +310,7 @@ dependencies = [
 name = "princessedit_native"
 version = "0.1.0"
 dependencies = [
+ "bytemuck",
  "fontdb",
  "jni",
  "parking_lot",

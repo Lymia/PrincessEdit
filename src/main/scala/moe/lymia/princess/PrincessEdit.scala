@@ -22,11 +22,8 @@
 
 package moe.lymia.princess
 
-import java.nio.file.Files
-import scala.collection.JavaConverters._
-
 object PrincessEdit {
-  def main(args: Array[String]) = {
+  def main(args: Array[String]): Unit = {
     println(s"Princess Edit v${VersionInfo.versionString} (${VersionInfo.buildDateStr}) by Lymia")
     println("Released under the MIT license")
     println("")
@@ -39,11 +36,9 @@ object PrincessEdit {
     if (Environment.isNativeImage && !System.getProperties.contains("java.home"))
       System.getProperties.setProperty("java.home", Environment.rootDirectory.toString)
 
+    // Load native library from paths
     DefaultLogger.trace("Loading native library...")
-    // TODO: Cleanup procedure
-    val cacheDir = Environment.configDirectory("PrincessEdit").resolve("native_libs")
-    Files.createDirectories(cacheDir)
-    moe.lymia.princess.native.loadNatives(cacheDir)
+    System.load(Environment.nativeLibrary.toFile.toString)
 
     new CLI().main(args)
   }

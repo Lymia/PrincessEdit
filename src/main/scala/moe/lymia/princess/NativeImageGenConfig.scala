@@ -76,9 +76,5 @@ class NativeImageGenConfig(ctx: GuiContext) {
 
     // close mainframe
     mainFrame.close()
-
-    // misc operations
-    Program.launch("https://github.com/Lymia/PrincessEdit")
-    // TODO: Cause an native error in princess-edit-native and swt (?)
   }
 }

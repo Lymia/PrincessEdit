@@ -5,6 +5,7 @@ authors = ["Lymia Aluysia <lymia@lymia.moe>"]
 edition = "2021"
 
 [dependencies]
+bytemuck = "1.7.3"
 fontdb = "0.9.1"
 jni = "0.19"
 parking_lot = { version = "0.12.0", features = ["nightly"] }
