@@ -103,8 +103,6 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.202202012159",
 )) dependsOn swt dependsOn xscalawt dependsOn lua dependsOn native
 
-val gitBaseVersion = TaskKey[String]("git-base-version")
-val gitUncommittedChanges = TaskKey[Boolean]("git-uncommitted-changes")
 val commonSettings = versionWithGit ++ Seq(
   // Organization configuration
   homepage := Some(url("https://github.com/Lymia/PrincessEdit")),
@@ -136,9 +134,9 @@ val commonSettings = versionWithGit ++ Seq(
   gitUncommittedChanges := catchOr(false) {
     runProcessResult(Seq("git", "status", "--porcelain"), baseDirectory.value).nonEmpty
   },
-  version := catchOr(s"$version_baseVersion-dev_UNKNOWN") {
+  version := catchOr(s"0.0.0-UNKNOWN") {
     val gitVersion = runProcessResult(Seq("git", "describe", "--always", "--dirty=-DIRTY"), baseDirectory.value)
-    // blah
+    // blah 2
   },
 )
 
