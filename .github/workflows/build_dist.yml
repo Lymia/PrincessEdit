@@ -6,7 +6,7 @@ on:
     tags: [ '*' ]
 
 jobs:
-  nativeBuilds:
+  buildRust:
     strategy:
       matrix:
         include:
@@ -79,16 +79,16 @@ jobs:
           name: jvm-class-data
           path: target/class-path-dump/**
 
-  # Build for Linux
   distNativeImage:
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
+            osName: linux
             nativeBin: libprincessedit_native.linux.x86_64.so
     runs-on: ${{ matrix.os }}
     needs:
-      - nativeBuilds
+      - buildRust
       - buildJvm
     env:
       NATIVE_IMAGE_INSTALLED: true
@@ -124,13 +124,13 @@ jobs:
         run: sbt -v dist
       - uses: actions/upload-artifact@v2
         with:
-          name: linux-artifacts
+          name: dist-native-image-${{ matrix.osName }}
           path: target/scala-2.13/dist/*
 
   distUniversal:
     runs-on: ubuntu-latest
     needs:
-      - nativeBuilds
+      - buildRust
       - buildJvm
     env:
       PRINCESS_EDIT_DO_NOT_BUILD_NATIVE: true
@@ -177,5 +177,43 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: universal-artifacts
+          name: dist-universal
           path: target/scala-2.13/dist/*
+
+  publishArtifacts:
+    runs-on: ubuntu-latest
+    needs:
+      - distNativeImage
+      - distUniversal
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - name: Fetch git tags.
+        run: git fetch --prune --unshallow --tags
+
+      - name: Get version as Github variable.
+        run: 'echo "VERSION_STR=ci_$(git describe --dirty=-DIRTY --broken=-BROKEN --match=v* | sed "s/^v//g")" >> $GITHUB_ENV'
+      - uses: rickstaa/action-create-tag@v1
+        with:
+          tag: ${{ env.VERSION_STR }}
+          message: CI release ${{ env.VERSION_STR }}
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist-native-image-linux
+          path: artifacts
+      - uses: actions/download-artifact@v2
+        with:
+          name: dist-universal
+          path: artifacts
+
+      - uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            CI Build ${{ env.VERSION_STR }}
+            This is an unstable draft release, and you should expect it to be buggy and not working.
+          draft: true
+          prerelease: true
+          files: artifacts/**
+          fail_on_unmatched_files: true
