@@ -138,7 +138,7 @@ val commonSettings = versionWithGit ++ Seq(
   },
   version := catchOr(s"$version_baseVersion-dev_UNKNOWN") {
     val gitVersion = runProcessResult(Seq("git", "describe", "--always", "--dirty=-DIRTY"), baseDirectory.value)
-
+    // blah
   },
 )
 
