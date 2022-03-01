@@ -158,6 +158,9 @@ jobs:
           name: libprincessedit_native.linux.aarch64.so
           path: modules/native/target
 
+      - name: Check modules/native/target contents
+        run: ls -alh
+        working-directory: modules/native/target
       - name: Run sbt dist
         run: sbt -v clean distUniversal
 

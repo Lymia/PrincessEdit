@@ -344,8 +344,8 @@ InputKey[Unit]("distUniversal") := {
     val nativeBinaries = Map(
       "windows-x86_64" -> "princessedit_native.windows.x86_64.dll",
       "macos-x86_64"   -> "libprincessedit_native.macos.x86_64.dylib",
-      "macos-aarch64"  -> "libprincessedit_native.macos.aarch64.so",
-      "linux-x86_64"   -> "libprincessedit_native.linux.x86_64.dylib",
+      "macos-aarch64"  -> "libprincessedit_native.macos.aarch64.dylib",
+      "linux-x86_64"   -> "libprincessedit_native.linux.x86_64.so",
       "linux-aarch64"  -> "libprincessedit_native.linux.aarch64.so",
     )
     for ((name, path) <- nativeBinaries) props.put(s"$name.nativeBin", path)
