@@ -1,5 +1,3 @@
-# Based on https://gist.githubusercontent.com/linux-china/8745394fbc308168b20068386771ea1b/raw/2eacd667eb9754eed0a6d56d7cb09aaba4e55b95/graalvm.yml
-
 name: Bulid distribution package
 
 on:
@@ -8,6 +6,71 @@ on:
     tags: [ '*' ]
 
 jobs:
+  nativeBuildWin32:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - uses: ATiltedTree/setup-rust@v1
+        with:
+          rust-version: nightly
+      - name: Compile for x86_64
+        run: cargo build --release
+        working-directory: modules/native/src/native
+      - uses: actions/upload-artifact@v2
+        with:
+          name: princessedit_native.windows.x86_64.dll
+          path: modules/native/src/native/target/princessedit_native.dll
+  nativeBuildMacos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - uses: ATiltedTree/setup-rust@v1
+        with:
+          rust-version: nightly
+          targets: aarch64-apple-darwin x86_64-apple-darwin
+      - name: Compile for x86_64
+        run: cargo build --release --target x86_64-apple-darwin
+        working-directory: modules/native/src/native
+      - uses: actions/upload-artifact@v2
+        with:
+          name: libprincessedit_native.macos.x86_64.dylib
+          path: modules/native/src/native/target/libprincessedit_native.dylib
+      - name: Compile for aarch64
+        run: cargo build --release --target aarch64-apple-darwin
+        working-directory: modules/native/src/native
+      - uses: actions/upload-artifact@v2
+        with:
+          name: libprincessedit_native.macos.aarch64.dylib
+          path: modules/native/src/native/target/libprincessedit_native.dylib
+  nativeBuildLinux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - uses: ATiltedTree/setup-rust@v1
+        with:
+          rust-version: nightly
+          targets: aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu
+      - name: Compile for x86_64
+        run: cargo build --release --target x86_64-unknown-linux-gnu
+        working-directory: modules/native/src/native
+      - uses: actions/upload-artifact@v2
+        with:
+          name: libprincessedit_native.linux.x86_64.so
+          path: modules/native/src/native/target/libprincessedit_native.so
+      - name: Compile for aarch64
+        run: cargo build --release --target aarch64-unknown-linux-gnu
+        working-directory: modules/native/src/native
+      - uses: actions/upload-artifact@v2
+        with:
+          name: libprincessedit_native.linux.aarch64.so
+          path: modules/native/src/native/target/libprincessedit_native.so
+
   # Build for Linux
   buildOnLinux:
     runs-on: ubuntu-latest
@@ -30,7 +93,7 @@ jobs:
           native-image: true
       - uses: ATiltedTree/setup-rust@v1
         with:
-          rust-version: nightly-2022-02-23
+          rust-version: nightly
 
       - name: Cache Ivy packages
         uses: actions/cache@v2

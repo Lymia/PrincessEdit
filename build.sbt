@@ -87,6 +87,8 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
 
   gitDir := baseDirectory.value,
 
+  exportJars := true,
+
   // Scala modules
   libraryDependencies += "org.scala-lang" % "scala-reflect" % config_scalaVersion,
   libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.0.1",
@@ -161,13 +163,19 @@ val commonSettings = Seq(
 
   // Scala configuration
   scalaVersion := config_scalaVersion,
-  javacOptions ++= "-source 11 -target 17".split(" ").toSeq,
-  scalacOptions ++= "-Xlint -target:17 -opt:l:inline -deprecation -unchecked".split(" ").toSeq,
+  javacOptions ++= "-source 11 -target 11".split(" ").toSeq,
+  scalacOptions ++= "-Xlint -target:11 -opt:l:inline -deprecation -unchecked".split(" ").toSeq,
 )
 
 lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
   organization := "moe.lymia",
   name := "lua"
+))
+
+lazy val loader = project in file("modules/loader") settings (commonSettings ++ Seq(
+  organization := "moe.lymia.princess",
+  name := "princess-edit-loader",
+  crossPaths := false,
 ))
 
 lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(

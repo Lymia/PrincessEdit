@@ -55,9 +55,7 @@ fn render_svg(
         Transform::identity(),
         pixmap.as_mut(),
     );
-    pixmap
-        .encode_png()
-        .expect("Failed to encode pixmap as BMP!")
+    pixmap.encode_png().expect("Failed to encode pixmap as BMP!")
 }
 
 #[no_mangle]
@@ -90,7 +88,6 @@ pub extern "system" fn Java_moe_lymia_princess_native_svg_Resvg_renderNative(
         );
         mem::drop(db);
 
-        env.byte_array_from_slice(&rendered)
-            .expect("Could not encode as byte array!")
+        env.byte_array_from_slice(&rendered).expect("Could not encode as byte array!")
     })
 }
