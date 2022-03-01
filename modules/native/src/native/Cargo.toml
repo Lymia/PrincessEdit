@@ -1,5 +1,5 @@
 [package]
-name = "princessedit_rendering"
+name = "princessedit_native"
 version = "0.1.0"
 authors = ["Lymia Aluysia <lymia@lymia.moe>"]
 edition = "2021"

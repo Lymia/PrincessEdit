@@ -1,0 +1,1410 @@
+[ {
+  "name" : "com.sun.jna.Callback"
+}, {
+  "name" : "com.sun.jna.CallbackReference",
+  "methods" : [ {
+    "name" : "getCallback",
+    "parameterTypes" : [ "java.lang.Class", "com.sun.jna.Pointer", "boolean" ]
+  }, {
+    "name" : "getFunctionPointer",
+    "parameterTypes" : [ "com.sun.jna.Callback", "boolean" ]
+  }, {
+    "name" : "getNativeString",
+    "parameterTypes" : [ "java.lang.Object", "boolean" ]
+  }, {
+    "name" : "initializeThread",
+    "parameterTypes" : [ "com.sun.jna.Callback", "com.sun.jna.CallbackReference$AttachOptions" ]
+  } ]
+}, {
+  "name" : "com.sun.jna.CallbackReference$AttachOptions"
+}, {
+  "name" : "com.sun.jna.FromNativeConverter",
+  "methods" : [ {
+    "name" : "nativeType",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "com.sun.jna.IntegerType",
+  "fields" : [ {
+    "name" : "value"
+  } ]
+}, {
+  "name" : "com.sun.jna.JNIEnv"
+}, {
+  "name" : "com.sun.jna.Native",
+  "methods" : [ {
+    "name" : "dispose",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "fromNative",
+    "parameterTypes" : [ "com.sun.jna.FromNativeConverter", "java.lang.Object", "java.lang.reflect.Method" ]
+  }, {
+    "name" : "fromNative",
+    "parameterTypes" : [ "java.lang.Class", "java.lang.Object" ]
+  }, {
+    "name" : "fromNative",
+    "parameterTypes" : [ "java.lang.reflect.Method", "java.lang.Object" ]
+  }, {
+    "name" : "nativeType",
+    "parameterTypes" : [ "java.lang.Class" ]
+  }, {
+    "name" : "toNative",
+    "parameterTypes" : [ "com.sun.jna.ToNativeConverter", "java.lang.Object" ]
+  } ]
+}, {
+  "name" : "com.sun.jna.Native$ffi_callback",
+  "methods" : [ {
+    "name" : "invoke",
+    "parameterTypes" : [ "long", "long", "long" ]
+  } ]
+}, {
+  "name" : "com.sun.jna.NativeMapped",
+  "methods" : [ {
+    "name" : "toNative",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "com.sun.jna.Pointer",
+  "fields" : [ {
+    "name" : "peer"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "long" ]
+  } ]
+}, {
+  "name" : "com.sun.jna.PointerType",
+  "fields" : [ {
+    "name" : "pointer"
+  } ]
+}, {
+  "name" : "com.sun.jna.Structure",
+  "fields" : [ {
+    "name" : "memory"
+  }, {
+    "name" : "typeInfo"
+  } ],
+  "methods" : [ {
+    "name" : "autoRead",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "autoWrite",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "getTypeInfo",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "newInstance",
+    "parameterTypes" : [ "java.lang.Class", "long" ]
+  } ]
+}, {
+  "name" : "com.sun.jna.Structure$ByValue"
+}, {
+  "name" : "com.sun.jna.Structure$FFIType$FFITypes",
+  "fields" : [ {
+    "name" : "ffi_type_double"
+  }, {
+    "name" : "ffi_type_float"
+  }, {
+    "name" : "ffi_type_longdouble"
+  }, {
+    "name" : "ffi_type_pointer"
+  }, {
+    "name" : "ffi_type_sint16"
+  }, {
+    "name" : "ffi_type_sint32"
+  }, {
+    "name" : "ffi_type_sint64"
+  }, {
+    "name" : "ffi_type_sint8"
+  }, {
+    "name" : "ffi_type_uint16"
+  }, {
+    "name" : "ffi_type_uint32"
+  }, {
+    "name" : "ffi_type_uint64"
+  }, {
+    "name" : "ffi_type_uint8"
+  }, {
+    "name" : "ffi_type_void"
+  } ]
+}, {
+  "name" : "com.sun.jna.WString",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "java.lang.String" ]
+  } ]
+}, {
+  "name" : "java.awt.Font",
+  "fields" : [ {
+    "name" : "name"
+  }, {
+    "name" : "pData"
+  }, {
+    "name" : "size"
+  }, {
+    "name" : "style"
+  } ],
+  "methods" : [ {
+    "name" : "getFont",
+    "parameterTypes" : [ "java.lang.String" ]
+  }, {
+    "name" : "getFontPeer",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.awt.Insets",
+  "fields" : [ {
+    "name" : "bottom"
+  }, {
+    "name" : "left"
+  }, {
+    "name" : "right"
+  }, {
+    "name" : "top"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "int", "int", "int", "int" ]
+  } ]
+}, {
+  "name" : "java.awt.Toolkit",
+  "methods" : [ {
+    "name" : "getDefaultToolkit",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "getFontMetrics",
+    "parameterTypes" : [ "java.awt.Font" ]
+  } ]
+}, {
+  "name" : "java.awt.geom.GeneralPath",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "<init>",
+    "parameterTypes" : [ "int", "byte[]", "int", "float[]", "int" ]
+  } ]
+}, {
+  "name" : "java.awt.geom.Point2D$Float",
+  "fields" : [ {
+    "name" : "x"
+  }, {
+    "name" : "y"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "float", "float" ]
+  } ]
+}, {
+  "name" : "java.awt.geom.Rectangle2D$Float",
+  "fields" : [ {
+    "name" : "height"
+  }, {
+    "name" : "width"
+  }, {
+    "name" : "x"
+  }, {
+    "name" : "y"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "<init>",
+    "parameterTypes" : [ "float", "float", "float", "float" ]
+  } ]
+}, {
+  "name" : "java.lang.Boolean",
+  "fields" : [ {
+    "name" : "TYPE"
+  }, {
+    "name" : "value"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "boolean" ]
+  }, {
+    "name" : "getBoolean",
+    "parameterTypes" : [ "java.lang.String" ]
+  } ]
+}, {
+  "name" : "java.lang.Byte",
+  "fields" : [ {
+    "name" : "TYPE"
+  }, {
+    "name" : "value"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "byte" ]
+  } ]
+}, {
+  "name" : "java.lang.Character",
+  "fields" : [ {
+    "name" : "TYPE"
+  }, {
+    "name" : "value"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "char" ]
+  } ]
+}, {
+  "name" : "java.lang.Class",
+  "methods" : [ {
+    "name" : "getComponentType",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.lang.ClassLoader",
+  "methods" : [ {
+    "name" : "getPlatformClassLoader",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "loadClass",
+    "parameterTypes" : [ "java.lang.String" ]
+  } ]
+}, {
+  "name" : "java.lang.Double",
+  "fields" : [ {
+    "name" : "TYPE"
+  }, {
+    "name" : "value"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "double" ]
+  } ]
+}, {
+  "name" : "java.lang.Float",
+  "fields" : [ {
+    "name" : "TYPE"
+  }, {
+    "name" : "value"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "float" ]
+  } ]
+}, {
+  "name" : "java.lang.Integer",
+  "fields" : [ {
+    "name" : "TYPE"
+  }, {
+    "name" : "value"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "java.lang.Long",
+  "fields" : [ {
+    "name" : "TYPE"
+  }, {
+    "name" : "value"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "long" ]
+  } ]
+}, {
+  "name" : "java.lang.Object",
+  "methods" : [ {
+    "name" : "toString",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.lang.Short",
+  "fields" : [ {
+    "name" : "TYPE"
+  }, {
+    "name" : "value"
+  } ],
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "short" ]
+  } ]
+}, {
+  "name" : "java.lang.String",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "byte[]" ]
+  }, {
+    "name" : "<init>",
+    "parameterTypes" : [ "byte[]", "java.lang.String" ]
+  }, {
+    "name" : "getBytes",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "getBytes",
+    "parameterTypes" : [ "java.lang.String" ]
+  }, {
+    "name" : "toCharArray",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.lang.System",
+  "methods" : [ {
+    "name" : "getProperty",
+    "parameterTypes" : [ "java.lang.String" ]
+  } ]
+}, {
+  "name" : "java.lang.Throwable",
+  "methods" : [ {
+    "name" : "addSuppressed",
+    "parameterTypes" : [ "java.lang.Throwable" ]
+  } ]
+}, {
+  "name" : "java.lang.Void",
+  "fields" : [ {
+    "name" : "TYPE"
+  } ]
+}, {
+  "name" : "java.lang.reflect.Method",
+  "methods" : [ {
+    "name" : "getParameterTypes",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "getReturnType",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.nio.Buffer",
+  "methods" : [ {
+    "name" : "position",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.nio.ByteBuffer",
+  "methods" : [ {
+    "name" : "array",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "arrayOffset",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.nio.CharBuffer",
+  "methods" : [ {
+    "name" : "array",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "arrayOffset",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.nio.DoubleBuffer",
+  "methods" : [ {
+    "name" : "array",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "arrayOffset",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.nio.FloatBuffer",
+  "methods" : [ {
+    "name" : "array",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "arrayOffset",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.nio.IntBuffer",
+  "methods" : [ {
+    "name" : "array",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "arrayOffset",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.nio.LongBuffer",
+  "methods" : [ {
+    "name" : "array",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "arrayOffset",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "java.nio.ShortBuffer",
+  "methods" : [ {
+    "name" : "array",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "arrayOffset",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "jdk.internal.loader.ClassLoaders$PlatformClassLoader"
+}, {
+  "name" : "org.eclipse.swt.accessibility.Accessible$1"
+}, {
+  "name" : "org.eclipse.swt.dnd.Clipboard$1"
+}, {
+  "name" : "org.eclipse.swt.graphics.Device",
+  "methods" : [ {
+    "name" : "EnumFontFamProc",
+    "parameterTypes" : [ "long", "long", "long", "long" ]
+  } ]
+}, {
+  "name" : "org.eclipse.swt.internal.gdip.GdiplusStartupInput",
+  "fields" : [ {
+    "name" : "DebugEventCallback"
+  }, {
+    "name" : "GdiplusVersion"
+  }, {
+    "name" : "SuppressBackgroundThread"
+  }, {
+    "name" : "SuppressExternalCodecs"
+  } ]
+}, {
+  "name" : "org.eclipse.swt.internal.gdip.Rect",
+  "fields" : [ {
+    "name" : "Height"
+  }, {
+    "name" : "Width"
+  }, {
+    "name" : "X"
+  }, {
+    "name" : "Y"
+  } ]
+}, {
+  "name" : "org.eclipse.swt.internal.gdip.RectF",
+  "fields" : [ {
+    "name" : "Height"
+  }, {
+    "name" : "Width"
+  }, {
+    "name" : "X"
+  }, {
+    "name" : "Y"
+  } ]
+}, {
+  "name" : "org.eclipse.swt.internal.ole.win32.COMObject",
+  "methods" : [ {
+    "name" : "callback0",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback1",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback10",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback11",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback12",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback13",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback14",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback15",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback16",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback17",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback18",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback19",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback2",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback20",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback21",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback22",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback23",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback24",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback25",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback26",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback27",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback28",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback29",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback3",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback30",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback31",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback32",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback33",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback34",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback35",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback36",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback37",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback38",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback39",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback4",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback40",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback41",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback42",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback43",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback44",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback45",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback5",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback6",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback7",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback8",
+    "parameterTypes" : [ "long[]" ]
+  }, {
+    "name" : "callback9",
+    "parameterTypes" : [ "long[]" ]
+  } ]
+}, {
+  "name" : "org.eclipse.swt.internal.win32.OSVERSIONINFOEX",
+  "fields" : [ {
+    "name" : "dwBuildNumber"
+  }, {
+    "name" : "dwMajorVersion"
+  }, {
+    "name" : "dwMinorVersion"
+  }, {
+    "name" : "dwOSVersionInfoSize"
+  }, {
+    "name" : "dwPlatformId"
+  }, {
+    "name" : "szCSDVersion"
+  }, {
+    "name" : "wProductType"
+  }, {
+    "name" : "wReserved"
+  }, {
+    "name" : "wServicePackMajor"
+  }, {
+    "name" : "wServicePackMinor"
+  }, {
+    "name" : "wSuiteMask"
+  } ]
+}, {
+  "name" : "org.graalvm.jniutils.JNIExceptionWrapperEntryPoints",
+  "methods" : [ {
+    "name" : "getClassName",
+    "parameterTypes" : [ "java.lang.Class" ]
+  } ]
+}, {
+  "name" : "sun.font.CharToGlyphMapper",
+  "methods" : [ {
+    "name" : "charToGlyph",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "sun.font.Font2D",
+  "methods" : [ {
+    "name" : "canDisplay",
+    "parameterTypes" : [ "char" ]
+  }, {
+    "name" : "charToGlyph",
+    "parameterTypes" : [ "int" ]
+  }, {
+    "name" : "charToVariationGlyph",
+    "parameterTypes" : [ "int", "int" ]
+  }, {
+    "name" : "getMapper",
+    "parameterTypes" : [ ]
+  }, {
+    "name" : "getTableBytes",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "sun.font.FontStrike",
+  "methods" : [ {
+    "name" : "getGlyphMetrics",
+    "parameterTypes" : [ "int" ]
+  } ]
+}, {
+  "name" : "sun.font.FreetypeFontScaler",
+  "methods" : [ {
+    "name" : "invalidateScaler",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "sun.font.GlyphLayout$GVData",
+  "fields" : [ {
+    "name" : "_count"
+  }, {
+    "name" : "_flags"
+  }, {
+    "name" : "_glyphs"
+  }, {
+    "name" : "_indices"
+  }, {
+    "name" : "_positions"
+  } ],
+  "methods" : [ {
+    "name" : "grow",
+    "parameterTypes" : [ ]
+  } ]
+}, {
+  "name" : "sun.font.GlyphList",
+  "fields" : [ {
+    "name" : "gposx"
+  }, {
+    "name" : "gposy"
+  }, {
+    "name" : "images"
+  }, {
+    "name" : "lcdRGBOrder"
+  }, {
+    "name" : "lcdSubPixPos"
+  }, {
+    "name" : "len"
+  }, {
+    "name" : "positions"
+  }, {
+    "name" : "usePositions"
+  } ]
+}, {
+  "name" : "sun.font.PhysicalStrike",
+  "fields" : [ {
+    "name" : "pScalerContext"
+  } ],
+  "methods" : [ {
+    "name" : "adjustPoint",
+    "parameterTypes" : [ "java.awt.geom.Point2D$Float" ]
+  }, {
+    "name" : "getGlyphPoint",
+    "parameterTypes" : [ "int", "int" ]
+  } ]
+}, {
+  "name" : "sun.font.StrikeMetrics",
+  "methods" : [ {
+    "name" : "<init>",
+    "parameterTypes" : [ "float", "float", "float", "float", "float", "float", "float", "float", "float", "float" ]
+  } ]
+}, {
+  "name" : "sun.font.TrueTypeFont",
+  "methods" : [ {
+    "name" : "readBlock",
+    "parameterTypes" : [ "java.nio.ByteBuffer", "int", "int" ]
+  }, {
+    "name" : "readBytes",
+    "parameterTypes" : [ "int", "int" ]
+  } ]
+}, {
+  "name" : "sun.font.Type1Font",
+  "methods" : [ {
+    "name" : "readFile",
+    "parameterTypes" : [ "java.nio.ByteBuffer" ]
+  } ]
+}, {
+  "name" : "sun.java2d.Disposer",
+  "methods" : [ {
+    "name" : "addRecord",
+    "parameterTypes" : [ "java.lang.Object", "long", "long" ]
+  } ]
+}, {
+  "name" : "org.eclipse.swt.internal.ole.win32.GUID",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.ACCEL",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.ACTCTX",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.BITMAP",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.BITMAPINFOHEADER",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.BLENDFUNCTION",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.BP_PAINTPARAMS",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.BUTTON_IMAGELIST",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.CANDIDATEFORM",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.CHOOSECOLOR",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.CHOOSEFONT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.CIDA",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.COMBOBOXINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.COMPOSITIONFORM",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.CREATESTRUCT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.DEVMODE",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.DIBSECTION",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.DOCHOSTUIINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.DOCINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.DRAWITEMSTRUCT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.DROPFILES",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.EMR",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.EMREXTCREATEFONTINDIRECTW",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.EXTLOGFONTW",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.FLICK_DATA",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.FLICK_POINT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.GCP_RESULTS",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.GESTURECONFIG",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.GESTUREINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.GRADIENT_RECT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.GUITHREADINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.HDHITTESTINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.HDITEM",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.HDLAYOUT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.HELPINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.HIGHCONTRAST",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.ICONINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.INITCOMMONCONTROLSEX",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.INPUT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.KEYBDINPUT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.LITEM",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.LOGBRUSH",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.LOGFONT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.LRESULT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.LVCOLUMN",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.LVHITTESTINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.LVINSERTMARK",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.LVITEM",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.MARGINS",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.MCHITTESTINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.MEASUREITEMSTRUCT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.MENUBARINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.MENUINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.MENUITEMINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.MINMAXINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.MONITORINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.MOUSEINPUT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.MSG",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMCUSTOMDRAW",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMHDR",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMHEADER",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMLINK",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMLISTVIEW",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMLVCUSTOMDRAW",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMLVDISPINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMLVFINDITEM",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMLVODSTATECHANGE",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMREBARCHEVRON",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMREBARCHILDSIZE",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMTBCUSTOMDRAW",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMTBHOTITEM",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMTOOLBAR",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMTREEVIEW",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMTTCUSTOMDRAW",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMTTDISPINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMTVCUSTOMDRAW",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMTVDISPINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMTVITEMCHANGE",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NMUPDOWN",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NONCLIENTMETRICS",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.NOTIFYICONDATA",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.OS",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.OUTLINETEXTMETRIC",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.PAINTSTRUCT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.POINT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.PRINTDLG",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.PROCESS_INFORMATION",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.PROPERTYKEY",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.REBARBANDINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.RECT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SAFEARRAY",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SAFEARRAYBOUND",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SCRIPT_ANALYSIS",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SCRIPT_CONTROL",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SCRIPT_FONTPROPERTIES",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SCRIPT_ITEM",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SCRIPT_LOGATTR",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SCRIPT_PROPERTIES",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SCRIPT_STATE",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SCROLLBARINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SCROLLINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SHDRAGIMAGE",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SHELLEXECUTEINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SHFILEINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SIZE",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.STARTUPINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.SYSTEMTIME",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TBBUTTON",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TBBUTTONINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TCHAR",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TCHITTESTINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TCITEM",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TEXTMETRIC",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TF_DA_COLOR",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TF_DISPLAYATTRIBUTE",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TOOLINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TOUCHINPUT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TRACKMOUSEEVENT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TRIVERTEX",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TVHITTESTINFO",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TVINSERTSTRUCT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TVITEM",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.TVSORTCB",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.UDACCEL",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.WINDOWPLACEMENT",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.WINDOWPOS",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.internal.win32.WNDCLASS",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+}, {
+  "name" : "org.eclipse.swt.widgets.Display",
+  "allDeclaredConstructors" : true,
+  "allDeclaredMethods" : true,
+  "allDeclaredFields" : true
+} ]

@@ -44,7 +44,7 @@
       "pattern":"\\Qmoe/lymia/princess/version.properties\\E"
     }, 
     {
-      "pattern":"\\Qnative/x86_64-darwin/libprincessedit_rendering.dylib\\E"
+      "pattern":"\\Qmoe/lymia/princess/native/libprincessedit_native.x86_64.dylib\\E"
     }
   ]},
   "bundles":[

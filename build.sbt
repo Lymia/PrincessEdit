@@ -23,6 +23,9 @@
 import sbt.Keys._
 import sbt._
 
+import java.net.InetAddress
+import java.text.DateFormat
+import java.util.{Locale, UUID}
 import scala.sys.process._
 
 val version_baseVersion = "0.1.0"
@@ -34,7 +37,7 @@ def runProcess(p: Seq[Any], cd: File): Unit = {
   val code = Process(p.map(_.toString), cd).!
   if (code != 0) sys.error(s"Process ${p.head} returned non-zero return value! (ret: $code)")
 }
-def runProcessResult(p: Seq[Any], cd: File): String = {
+def runProcessStr(p: Seq[Any], cd: File): String = {
   println(s"Running process ${p.map(_.toString).mkString(" ")} in $cd")
   Process(p.map(_.toString), cd).!!
 }
@@ -53,8 +56,11 @@ val osName = sys.props("os.name") match {
   case "Linux" => "linux"
 }
 
+// Project-specific keys
+val gitDir = SettingKey[File]("git-dir")
+
 // Actual core definition
-lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin settings (commonSettings ++ ResourceGenerators.settings ++ Seq(
+lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin settings (commonSettings ++ Seq(
   organization := "moe.lymia.princess",
   name := "princess-edit",
 
@@ -75,6 +81,8 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   run / fork := true,
   run / envVars += ("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY", baseDirectory.value.toString),
   run / javaOptions ++= (if (osName == "macos") Seq("-XstartOnFirstThread") else Seq()),
+
+  gitDir := baseDirectory.value,
 
   // Scala modules
   libraryDependencies += "org.scala-lang" % "scala-reflect" % config_scalaVersion,
@@ -101,43 +109,57 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   // Nebula widgets
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.pgroup" % "1.0.0.202202012159",
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.202202012159",
+
+  // Generate versioning information
+  Compile / resourceGenerators += Def.task {
+    val properties = new java.util.Properties
+    val dateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.US)
+    val data = Map(
+      "princessedit.version.string" -> version.value,
+      "princessedit.version.commit" -> catchOr("<unknown>") {
+        runProcessStr(Seq("git", "rev-parse", "HEAD"), gitDir.value).trim
+      },
+      "princessedit.version.clean"  -> catchOr(false) {
+        runProcessStr(Seq("git", "status", "--porcelain"), gitDir.value).nonEmpty
+      },
+
+      "build.id"                    -> UUID.randomUUID().toString,
+      "build.user"                  -> catchOr("<unknown>") {
+        System.getProperty("user.name")+"@"+ InetAddress.getLocalHost.getHostName
+      },
+      "build.time"                  -> new java.util.Date().getTime.toString,
+      "build.timestr"               -> dateFormat.format(new java.util.Date()),
+    )
+    for((k, v) <- data) properties.put(k, v.toString)
+
+    val versionPropertiesPath =
+      (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "version.properties"
+    IO.write(properties, "PrincessEdit version information", versionPropertiesPath)
+
+    Seq(versionPropertiesPath)
+  }.taskValue
 )) dependsOn swt dependsOn xscalawt dependsOn lua dependsOn native
 
-val commonSettings = versionWithGit ++ Seq(
+val commonSettings = Seq(
+  gitDir := baseDirectory.value / ".." / "..",
+
   // Organization configuration
   homepage := Some(url("https://github.com/Lymia/PrincessEdit")),
   licenses := Seq("MIT License" -> url("http://www.opensource.org/licenses/mit-license.php")),
+  version := catchOr(s"0.0.0-UNKNOWN") {
+    val raw = runProcessStr(Seq("git", "describe", "--dirty=-DIRTY", "--broken=-BROKEN", "--match=v*"), gitDir.value)
+    raw.substring(1).trim
+  },
 
   // Repositories
   ThisBuild / useCoursier := false,
   externalIvySettings(baseDirectory(_ / ".." / ".." / "ivysettings.xml")),
   resolvers += Resolver.mavenLocal,
 
-  // Git versioning
-  git.uncommittedSignifier := Some("DIRTY"),
-  git.formattedShaVersion := {
-    val base = git.baseVersion.?.value
-    val suffix = git.makeUncommittedSignifierSuffix(git.gitUncommittedChanges.value, git.uncommittedSignifier.value)
-    git.gitHeadCommit.value map { rawSha =>
-      val sha = "dev_" + rawSha.substring(0, 8)
-      git.defaultFormatShaVersion(base, sha, suffix)
-    }
-  },
-
   // Scala configuration
   scalaVersion := config_scalaVersion,
   javacOptions ++= "-source 11 -target 17".split(" ").toSeq,
   scalacOptions ++= "-Xlint -target:17 -opt:l:inline -deprecation -unchecked".split(" ").toSeq,
-
-  // JGit doesn't like some of the configurations the developer herself uses. :(
-  gitBaseVersion := version_baseVersion,
-  gitUncommittedChanges := catchOr(false) {
-    runProcessResult(Seq("git", "status", "--porcelain"), baseDirectory.value).nonEmpty
-  },
-  version := catchOr(s"0.0.0-UNKNOWN") {
-    val gitVersion = runProcessResult(Seq("git", "describe", "--always", "--dirty=-DIRTY"), baseDirectory.value)
-    // blah 2
-  },
 )
 
 lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(

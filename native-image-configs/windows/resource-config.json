@@ -5,6 +5,12 @@
       "pattern":"\\QMETA-INF/services/moe.lymia.princess.views.mainframe.TabProvider\\E"
     }, 
     {
+      "pattern":"\\Qcom/sun/jna/win32-x86-64/jnidispatch.dll\\E"
+    }, 
+    {
+      "pattern":"\\Qmoe/lymia/princess/native/princessedit_native.x86_64.dll\\E"
+    }, 
+    {
       "pattern":"\\Qmoe/lymia/princess/res/icon-app-16.png\\E"
     }, 
     {
@@ -42,18 +48,6 @@
     }, 
     {
       "pattern":"\\Qmoe/lymia/princess/version.properties\\E"
-    }, 
-    {
-      "pattern":"\\Qmoe/lymia/princess/native/libprincessedit_native.x86_64.so\\E"
-    }, 
-    {
-      "pattern":"\\Qorg/eclipse/swt/internal/gtk/swt_functional_gtk_3_20.css\\E"
-    }, 
-    {
-      "pattern":"\\Qorg/eclipse/swt/internal/gtk/swt_theming_fixes_gtk_3_20.css\\E"
-    }, 
-    {
-      "pattern":"\\Qorg/eclipse/swt/internal/gtk/swt_theming_fixes_gtk_3_24_5.css\\E"
     }
   ]},
   "bundles":[
@@ -62,7 +56,7 @@
       "locales":[""]
     }, 
     {
-      "name":"org.eclipse.jface.resource.jfacefonts_linux_gtk",
+      "name":"org.eclipse.jface.resource.jfacefonts_windows10",
       "locales":[""]
     }, 
     {

@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Configuration
+#
+# You'll probably have to edit these paths on most systems.
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/graalvm-ce-java17-22.0.0.2/Contents/Home
 export GRAAL_HOME=/Library/Java/JavaVirtualMachines/graalvm-ce-java17-22.0.0.2/Contents/Home
 export NATIVE_IMAGE_INSTALLED=true
