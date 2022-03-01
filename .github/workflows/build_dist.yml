@@ -6,8 +6,31 @@ on:
     tags: [ '*' ]
 
 jobs:
-  nativeBuildWin32:
-    runs-on: windows-latest
+  nativeBuilds:
+    strategy:
+      matrix:
+        include:
+          - platform: windows
+            target: x86_64-pc-windows-msvc
+            sourceName: princessedit_native.dll
+            targetName: princessedit_native.windows.x86_64.dll
+          - platform: macos
+            target: x86_64-apple-darwin
+            sourceName: libprincessedit_native.dylib
+            targetName: libprincessedit_native.macos.x86_64.dylib
+          - platform: macos
+            target: aarch64-apple-darwin
+            sourceName: libprincessedit_native.dylib
+            targetName: libprincessedit_native.macos.aarch64.dylib
+          - platform: linux
+            target: x86_64-unknown-linux-gnu
+            sourceName: libprincessedit_native.so
+            targetName: libprincessedit_native.linux.x86_64.so
+          - platform: linux
+            target: aarch64-unknown-linux-gnu
+            sourceName: libprincessedit_native.so
+            targetName: libprincessedit_native.linux.aarch64.so
+    runs-on: ${{ matrix.platform + "-latest" }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -15,64 +38,16 @@ jobs:
       - uses: ATiltedTree/setup-rust@v1
         with:
           rust-version: nightly
-          targets: x86_64-pc-windows-msvc
-      - name: Compile for x86_64
-        run: cargo build --release --target x86_64-pc-windows-msvc
+          targets: ${{ matrix.target }}
+      - name: Compile for ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }}
         working-directory: modules/native/src/native
+      - run: mv ${{ matrix.sourceName }} ${{ matrix.targetName }}
+        working-directory: modules/native/src/native/target/${{ matrix.target }}/release
       - uses: actions/upload-artifact@v2
         with:
-          name: princessedit_native.windows.x86_64.dll
-          path: modules/native/src/native/target/x86_64-pc-windows-msvc/release/princessedit_native.dll
-  nativeBuildMacos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
-      - uses: ATiltedTree/setup-rust@v1
-        with:
-          rust-version: nightly
-          targets: aarch64-apple-darwin x86_64-apple-darwin
-      - name: Compile for x86_64
-        run: cargo build --release --target x86_64-apple-darwin
-        working-directory: modules/native/src/native
-      - uses: actions/upload-artifact@v2
-        with:
-          name: libprincessedit_native.macos.x86_64.dylib
-          path: modules/native/src/native/target/x86_64-apple-darwin/release/libprincessedit_native.dylib
-      - name: Compile for aarch64
-        run: cargo build --release --target aarch64-apple-darwin
-        working-directory: modules/native/src/native
-      - uses: actions/upload-artifact@v2
-        with:
-          name: libprincessedit_native.macos.aarch64.dylib
-          path: modules/native/src/native/target/aarch64-apple-darwin/release/libprincessedit_native.dylib
-  nativeBuildLinux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
-      - uses: ATiltedTree/setup-rust@v1
-        with:
-          rust-version: nightly
-          targets: aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu
-      - name: Install aarch64 linker
-        run: sudo apt-get install gcc-aarch64-linux-gnu
-      - name: Compile for x86_64
-        run: cargo build --release --target x86_64-unknown-linux-gnu
-        working-directory: modules/native/src/native
-      - uses: actions/upload-artifact@v2
-        with:
-          name: libprincessedit_native.linux.x86_64.so
-          path: modules/native/src/native/target/x86_64-unknown-linux-gnu/release/libprincessedit_native.so
-      - name: Compile for aarch64
-        run: cargo build --release --target aarch64-unknown-linux-gnu
-        working-directory: modules/native/src/native
-      - uses: actions/upload-artifact@v2
-        with:
-          name: libprincessedit_native.linux.aarch64.so
-          path: modules/native/src/native/target/aarch64-unknown-linux-gnu/release/libprincessedit_native.so
+          name: ${{ matrix.targetName }}
+          path: modules/native/src/native/target/${{ matrix.target }}/release/${{ matrix.targetName }}
 
   # Build for Linux
   buildOnLinux:
@@ -114,9 +89,7 @@ jobs:
   buildUniversal:
     runs-on: ubuntu-latest
     needs:
-      - nativeBuildWin32
-      - nativeBuildMacos
-      - nativeBuildLinux
+      - nativeBuilds
     steps:
       - uses: actions/checkout@v2
         with:
