@@ -10,27 +10,27 @@ jobs:
     strategy:
       matrix:
         include:
-          - platform: windows
+          - os: windows-latest
             target: x86_64-pc-windows-msvc
             sourceName: princessedit_native.dll
             targetName: princessedit_native.windows.x86_64.dll
-          - platform: macos
+          - os: macos-latest
             target: x86_64-apple-darwin
             sourceName: libprincessedit_native.dylib
             targetName: libprincessedit_native.macos.x86_64.dylib
-          - platform: macos
+          - os: macos-latest
             target: aarch64-apple-darwin
             sourceName: libprincessedit_native.dylib
             targetName: libprincessedit_native.macos.aarch64.dylib
-          - platform: linux
+          - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             sourceName: libprincessedit_native.so
             targetName: libprincessedit_native.linux.x86_64.so
-          - platform: linux
+          - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             sourceName: libprincessedit_native.so
             targetName: libprincessedit_native.linux.aarch64.so
-    runs-on: ${{ matrix.platform }}-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
         with:
