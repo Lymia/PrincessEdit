@@ -15,13 +15,14 @@ jobs:
       - uses: ATiltedTree/setup-rust@v1
         with:
           rust-version: nightly
+          targets: x86_64-pc-windows-msvc
       - name: Compile for x86_64
-        run: cargo build --release
+        run: cargo build --release --target x86_64-pc-windows-msvc
         working-directory: modules/native/src/native
       - uses: actions/upload-artifact@v2
         with:
           name: princessedit_native.windows.x86_64.dll
-          path: modules/native/src/native/target/release/princessedit_native.dll
+          path: modules/native/src/native/target/x86_64-pc-windows-msvc/release/princessedit_native.dll
   nativeBuildMacos:
     runs-on: macos-latest
     steps:
@@ -38,14 +39,14 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: libprincessedit_native.macos.x86_64.dylib
-          path: modules/native/src/native/target/release/libprincessedit_native.dylib
+          path: modules/native/src/native/target/x86_64-apple-darwin/release/libprincessedit_native.dylib
       - name: Compile for aarch64
         run: cargo build --release --target aarch64-apple-darwin
         working-directory: modules/native/src/native
       - uses: actions/upload-artifact@v2
         with:
           name: libprincessedit_native.macos.aarch64.dylib
-          path: modules/native/src/native/target/release/libprincessedit_native.dylib
+          path: modules/native/src/native/target/aarch64-apple-darwin/release/libprincessedit_native.dylib
   nativeBuildLinux:
     runs-on: ubuntu-latest
     steps:
@@ -62,7 +63,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: libprincessedit_native.linux.x86_64.so
-          path: modules/native/src/native/target/release/libprincessedit_native.so
+          path: modules/native/src/native/target/x86_64-unknown-linux-gnu/release/libprincessedit_native.so
       - name: Compile for aarch64
         run: cargo build --release --target aarch64-unknown-linux-gnu
         working-directory: modules/native/src/native
