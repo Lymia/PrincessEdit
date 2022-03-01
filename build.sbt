@@ -25,7 +25,7 @@ import sbt._
 
 import java.net.InetAddress
 import java.text.DateFormat
-import java.util.{Locale, UUID}
+import java.util.{Locale, Properties, UUID}
 import scala.sys.process._
 
 val version_baseVersion = "0.1.0"
@@ -87,8 +87,6 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
 
   gitDir := baseDirectory.value,
 
-  exportJars := true,
-
   // Scala modules
   libraryDependencies += "org.scala-lang" % "scala-reflect" % config_scalaVersion,
   libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.0.1",
@@ -147,6 +145,7 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
 
 val commonSettings = Seq(
   gitDir := baseDirectory.value / ".." / "..",
+  exportJars := true,
 
   // Organization configuration
   homepage := Some(url("https://github.com/Lymia/PrincessEdit")),
@@ -176,6 +175,12 @@ lazy val loader = project in file("modules/loader") settings (commonSettings ++ 
   organization := "moe.lymia.princess",
   name := "princess-edit-loader",
   crossPaths := false,
+
+  libraryDependencies += swtDep("org.eclipse.swt.win32.win32.x86_64"),
+  libraryDependencies += swtDep("org.eclipse.swt.cocoa.macosx.x86_64"),
+  libraryDependencies += swtDep("org.eclipse.swt.cocoa.macosx.aarch64"),
+  libraryDependencies += swtDep("org.eclipse.swt.gtk.linux.x86_64"),
+  libraryDependencies += swtDep("org.eclipse.swt.gtk.linux.aarch64"),
 ))
 
 lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
@@ -271,6 +276,86 @@ InputKey[Unit]("dist") := {
     IO.createDirectory(outDir / "packages")
     for (pkg <- Seq("cards-against-humanity.pedit-pkg"))
       IO.copyDirectory(file("packages") / pkg, outDir / "packages" / pkg)
+
+    // we call out to zip to save the executable flag for *nix
+    if (zipOut.exists) IO.delete(zipOut)
+    runProcess(Seq("zip", "-r", zipOut, dirName), dir)
+
+    zipOut
+  }
+
+  streams.value.log.info(s"Output written to: $zipOut")
+}
+
+InputKey[Unit]("distUniversal") := {
+  val path = crossTarget.value / "dist"
+  IO.createDirectory(path)
+
+  val zipOut = IO.withTemporaryDirectory { dir =>
+    val dirName = s"princess-edit-${(princessEdit / version).value}-universal"
+    val zipOut = path / s"$dirName.zip"
+    val outDir = dir / dirName
+
+    IO.createDirectory(outDir)
+
+    def fixEndings(s: String) = s.replace("\r\n", "\n").replace("\n", "\r\n")
+    IO.write(outDir / "README.txt", fixEndings(IO.read(file("project/dist_README.md"))))
+    IO.write(outDir / "NOTICE.txt", fixEndings(IO.read(file("project/dist_NOTICE.md"))))
+
+    IO.copyFile((loader / Compile / packageBin).value, outDir / "PrincessEdit.jar")
+
+    // gather classpath information
+    val rawClasspath = (loader / Compile / fullClasspath).value ++ (princessEdit / Compile / fullClasspath).value
+    val distClasspath = rawClasspath
+      .filter(!_.get(moduleID.key).get.name.startsWith("org.eclipse.swt."))
+      .filter(!_.get(moduleID.key).get.name.contains("princess-edit-loader"))
+      .distinct
+    def getSWTJar(artifact: String) = rawClasspath.find(_.get(moduleID.key).get.name == artifact).get
+
+    val classPaths = Map(
+      "windows-x86_64" -> (distClasspath :+ getSWTJar("org.eclipse.swt.win32.win32.x86_64")),
+      "macos-x86_64"   -> (distClasspath :+ getSWTJar("org.eclipse.swt.cocoa.macosx.x86_64")),
+      "macos-aarch64"  -> (distClasspath :+ getSWTJar("org.eclipse.swt.cocoa.macosx.aarch64")),
+      "linux-x86_64"   -> (distClasspath :+ getSWTJar("org.eclipse.swt.gtk.linux.x86_64")),
+      "linux-aarch64"  -> (distClasspath :+ getSWTJar("org.eclipse.swt.gtk.linux.aarch64")),
+    )
+    val allJars: Set[Attributed[File]] = classPaths.flatMap(_._2).toSet
+
+    println(classPaths)
+
+    def jarName(jar: Attributed[File]) = {
+      val mod = jar.get(moduleID.key).get
+      val org = if(mod.organization == "bundle") "" else s"${mod.organization}."
+      s"$org${mod.name}-${mod.revision}.jar"
+    }
+    def classPathString(path: Seq[Attributed[File]]) = path.map(jarName).mkString(":")
+
+    // copy lib files
+    IO.createDirectory(outDir / "lib")
+    for(jar <- allJars) IO.copyFile(jar.data, outDir / "lib" / jarName(jar))
+
+    val props = new Properties()
+    for((name, path) <- classPaths) props.put(s"$name.classpath", classPathString(path))
+    props.put("main", (Compile / run / mainClass).value.get)
+
+    runProcess(Seq("zip", "-r", outDir / "lib" / "core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "modules")
+
+    // copy native binaries, if they exist
+    val nativeBinaries = Map(
+      "windows-x86_64" -> "princessedit_native.windows.x86_64.dll",
+      "macos-x86_64"   -> "libprincessedit_native.macos.x86_64.dylib",
+      "macos-aarch64"  -> "libprincessedit_native.macos.aarch64.so",
+      "linux-x86_64"   -> "libprincessedit_native.linux.x86_64.dylib",
+      "linux-aarch64"  -> "libprincessedit_native.linux.aarch64.so",
+    )
+    for ((name, path) <- nativeBinaries) props.put(s"$name.nativeBin", path)
+    for (path <- nativeBinaries.values) {
+      val sourcePath = baseDirectory.value / "modules" / "native" / "target" / path
+      if (sourcePath.exists()) IO.copyFile(sourcePath, outDir / "lib" / path)
+    }
+
+    // write property file
+    IO.write(props, "Classpath configuration data for PrincessEdit", outDir / "lib" / "manifest.properties")
 
     // we call out to zip to save the executable flag for *nix
     if (zipOut.exists) IO.delete(zipOut)

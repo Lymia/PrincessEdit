@@ -72,8 +72,8 @@ public final class Loader {
 
         String os;
         if (nameProp.equals("Linux")) os = "linux";
-        else if (nameProp.startsWith("Mac ")) os = "mac";
-        else if (nameProp.startsWith("Windows ")) os = "win32";
+        else if (nameProp.startsWith("Mac ")) os = "macos";
+        else if (nameProp.startsWith("Windows ")) os = "windows";
         else throw error("Your operating system (" + nameProp + ") is not supported.", null);
 
         String arch;
@@ -94,7 +94,7 @@ public final class Loader {
             prop.load(Files.newInputStream(inputPath));
 
             String mainClass = prop.getProperty("main");
-            String classPath = prop.getProperty(os);
+            String classPath = prop.getProperty(os+".classpath");
 
             if (classPath == null)
                 throw error("Your system configuration (" + os + ") is not supported in this build.", null);

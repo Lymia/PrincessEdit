@@ -72,7 +72,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: libprincessedit_native.linux.aarch64.so
-          path: modules/native/src/native/target/release/libprincessedit_native.so
+          path: modules/native/src/native/target/aarch64-unknown-linux-gnu/release/libprincessedit_native.so
 
   # Build for Linux
   buildOnLinux:
@@ -97,7 +97,6 @@ jobs:
       - uses: ATiltedTree/setup-rust@v1
         with:
           rust-version: nightly
-
       - name: Cache Ivy packages
         uses: actions/cache@v2
         with:
@@ -110,4 +109,59 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: linux-artifacts
+          path: target/scala-2.13/dist/*
+
+  buildUniversal:
+    runs-on: ubuntu-latest
+    needs:
+      - nativeBuildWin32
+      - nativeBuildMacos
+      - nativeBuildLinux
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+
+      # Setup environment
+      - uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: ATiltedTree/setup-rust@v1
+        with:
+          rust-version: nightly
+      - name: Cache Ivy packages
+        uses: actions/cache@v2
+        with:
+          key: ${{ runner.os }}-distUniversal
+          path: ~/.ivy2
+
+      # Build distribution package
+      - uses: actions/download-artifact@v2
+        with:
+          name: princessedit_native.windows.x86_64.dll
+          path: modules/native/target
+      - uses: actions/download-artifact@v2
+        with:
+          name: libprincessedit_native.macos.x86_64.dylib
+          path: modules/native/target
+      - uses: actions/download-artifact@v2
+        with:
+          name: libprincessedit_native.macos.aarch64.dylib
+          path: modules/native/target
+      - uses: actions/download-artifact@v2
+        with:
+          name: libprincessedit_native.linux.x86_64.so
+          path: modules/native/target
+      - uses: actions/download-artifact@v2
+        with:
+          name: libprincessedit_native.linux.aarch64.so
+          path: modules/native/target
+
+      - name: Run sbt dist
+        run: sbt -v clean distUniversal
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: universal-artifacts
           path: target/scala-2.13/dist/*
