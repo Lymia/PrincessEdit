@@ -162,16 +162,8 @@ jobs:
           name: jvm-class-data
           path: target/class-path-dump
 
-      - name: Check modules/native/target contents
-        run: ls -alh
-        working-directory: modules/native/target
-      - name: Check target/class-path-dump contents
-        run: ls -alh
-        working-directory: target/class-path-dump
-      - name: Check EVERYTHING contents??
-        run: find
       - name: Run sbt dist
-        run: sbt -v clean distUniversal
+        run: sbt -v distUniversal
 
       - uses: actions/upload-artifact@v2
         with:
