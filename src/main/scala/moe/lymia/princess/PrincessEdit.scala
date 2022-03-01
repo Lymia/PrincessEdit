@@ -23,6 +23,7 @@
 package moe.lymia.princess
 
 import java.nio.file.Files
+import scala.collection.JavaConverters._
 
 object PrincessEdit {
   def main(args: Array[String]) = {
@@ -33,6 +34,10 @@ object PrincessEdit {
     println(s"Build ID: ${VersionInfo.buildId}")
     println(s"Java runtime: ${System.getProperty("java.vm.version")}")
     println("")
+
+    // Set a fake java.home on native-image builds.
+    if (Environment.isNativeImage && !System.getProperties.contains("java.home"))
+      System.getProperties.setProperty("java.home", Environment.rootDirectory.toString)
 
     DefaultLogger.trace("Loading native library...")
     // TODO: Cleanup procedure

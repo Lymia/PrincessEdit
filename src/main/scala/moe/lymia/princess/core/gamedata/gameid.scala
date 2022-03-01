@@ -99,7 +99,7 @@ final class GameDataLoader(packages: Option[Path], systemPackages: Seq[Path] = S
 }
 object GameDataLoader {
   private def rootPath = Environment.rootDirectory
-  private def corePkgPath = rootPath.resolve("lib/core.pedit-pkg")
+  private def corePkgPath = Environment.libDirectory.resolve("core.pedit-pkg")
 
   lazy val default = new GameDataLoader(Some(rootPath.resolve("packages")), Seq(corePkgPath))
   lazy val systemI18N: I18N = {

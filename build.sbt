@@ -255,7 +255,7 @@ InputKey[Unit]("dist") := {
     IO.copyFile(nativeImageFile, outDir / nativeImageFile.name.replace("princess-edit", "PrincessEdit"))
 
     IO.createDirectory(outDir / "lib")
-    runProcess(Seq("zip", "-r", outDir / "lib/core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "lib")
+    runProcess(Seq("zip", "-r", outDir / "core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "modules")
 
     IO.createDirectory(outDir / "packages")
     for (pkg <- Seq("cards-against-humanity.pedit-pkg"))

@@ -64,7 +64,7 @@ object Environment {
   private lazy val configurationRoot = Platform.platform.configurationRoot
   def configDirectory(name: String): Path = configurationRoot.resolve(name)
 
-  private lazy val locationFromCodeSource =
+  private lazy val locationFromCodeSource: Path =
     new File(PrincessEdit.getClass.getProtectionDomain.getCodeSource.getLocation.toURI).toPath.getParent
   private lazy val locationFromSbtEnvironment =
     Paths.get(System.getenv("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY"))
@@ -78,10 +78,10 @@ object Environment {
     }
 
   lazy val libDirectory: Path =
-    if (isNativeImage) locationFromCodeSource.resolve("lib")
-    else if (isSbtLaunch) locationFromSbtEnvironment.resolve("lib")
+    if (isNativeImage) locationFromCodeSource
+    else if (isSbtLaunch) locationFromSbtEnvironment.resolve("modules")
     else {
       DefaultLogger.warn("Falling back to current directory when finding 'libDirectory'.")
-      Paths.get("lib")
+      Paths.get("module")
     }
 }
