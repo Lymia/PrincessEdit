@@ -30,7 +30,7 @@ jobs:
             target: aarch64-unknown-linux-gnu
             sourceName: libprincessedit_native.so
             targetName: libprincessedit_native.linux.aarch64.so
-    runs-on: ${{ matrix.platform + "-latest" }}
+    runs-on: ${{ matrix.platform }}-latest
     steps:
       - uses: actions/checkout@v2
         with:
