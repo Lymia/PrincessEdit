@@ -297,7 +297,7 @@ classPathInfo := (if (System.getenv("PRINCESS_EDIT_PREBUILT_CLASS_PATH") != null
   for ((name, path) <- classPaths) props.put(s"$name.classpath", classPathString(path))
   props.put("main", (Compile / run / mainClass).value.get)
   props.put("allJars", classPathString(allJars))
-  props.put("loaderName", getJar("princess-edit-loader"))
+  props.put("loaderName", jarName(getJar("princess-edit-loader")))
 
   runProcess(Seq("zip", "-r", outDir / "core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "modules")
   props.put("corePackage", "core.pedit-pkg")
