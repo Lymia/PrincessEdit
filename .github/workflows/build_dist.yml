@@ -52,6 +52,32 @@ jobs:
           name: ${{ matrix.targetName }}
           path: modules/native/src/native/target/${{ matrix.target }}/release/${{ matrix.targetName }}
 
+  buildJvm:
+    runs-on: ubuntu-latest
+    env:
+      PRINCESS_EDIT_DO_NOT_BUILD_NATIVE: true
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Cache Ivy packages
+        uses: actions/cache@v2
+        with:
+          key: princess-edit-build-jvm
+          path: ~/.ivy2
+      - name: Run sbt dist
+        run: sbt -v precompileClassPath
+      - uses: actions/upload-artifact@v2
+        with:
+          name: jvm-class-data
+          path: target/class-path-dump/**
+
+      precompileClassPath
+
   # Build for Linux
   buildOnLinux:
     runs-on: ubuntu-latest
@@ -93,6 +119,8 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - nativeBuilds
+    env:
+      PRINCESS_EDIT_DO_NOT_BUILD_NATIVE: true
     steps:
       - uses: actions/checkout@v2
         with:

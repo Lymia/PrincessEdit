@@ -23,6 +23,7 @@
 import sbt.Keys._
 import sbt._
 
+import java.io.FileInputStream
 import java.net.InetAddress
 import java.text.DateFormat
 import java.util.{Locale, Properties, UUID}
@@ -59,6 +60,7 @@ val osName = sys.props("os.name") match {
 // Project-specific keys
 val gitDir = SettingKey[File]("git-dir")
 val buildNativeLib = TaskKey[File]("build-native-lib")
+val classPathInfo = TaskKey[(Properties, File)]("class-path-info")
 
 // Actual core definition
 lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin settings (commonSettings ++ Seq(
@@ -236,21 +238,91 @@ lazy val native = project in file("modules/native") settings (commonSettings ++ 
 
   buildNativeLib := {
     val (cargoOut, fileName) = osName match {
-      case "windows" => ("princessedit_native.dll", "princessedit_native.x86_64.dll")
-      case "macos" => ("libprincessedit_native.dylib", "libprincessedit_native.x86_64.dylib")
-      case "linux" => ("libprincessedit_native.so", "libprincessedit_native.x86_64.so")
+      case "windows" => ("princessedit_native.dll", "princessedit_native.windows.x86_64.dll")
+      case "macos" => ("libprincessedit_native.dylib", "libprincessedit_native.macos.x86_64.dylib")
+      case "linux" => ("libprincessedit_native.so", "libprincessedit_native.linux.x86_64.so")
     }
-    runProcess(Seq("cargo", "build", "--release"), baseDirectory.value / "src" / "native")
-    val sourcePath = baseDirectory.value / "src" / "native" / "target" / "release" / cargoOut
     val targetPath = target.value / fileName
-    if (!sourcePath.exists()) sys.error(s"rustc did not produce a binary?")
-    IO.copyFile(sourcePath, targetPath)
+    if (System.getenv("PRINCESS_EDIT_DO_NOT_BUILD_NATIVE") != null) {
+      runProcess(Seq("cargo", "build", "--release"), baseDirectory.value / "src" / "native")
+      val sourcePath = baseDirectory.value / "src" / "native" / "target" / "release" / cargoOut
+      if (!sourcePath.exists()) sys.error(s"rustc did not produce a binary?")
+      IO.copyFile(sourcePath, targetPath)
+    }
     targetPath
   },
   cleanFiles += baseDirectory.value / "src" / "native" / "target",
 ))
 
 externalIvySettings(baseDirectory(_ / "ivysettings.xml"))
+
+classPathInfo := (if (System.getenv("PRINCESS_EDIT_PREBUILT_CLASS_PATH") != null) {
+  val outDir = target.value / "class-path-dump"
+  val props = new Properties()
+  props.load(new FileInputStream(outDir / "manifest.properties"))
+  (props, outDir)
+} else {
+  val outDir = target.value / "class-path-dump"
+  IO.createDirectory(outDir)
+
+  // gather classpath information
+  val rawClasspath =
+    ((loader / Compile / fullClasspath).value ++ (princessEdit / Compile / fullClasspath).value).distinct
+  val distClasspath = rawClasspath
+    .filter(!_.get(moduleID.key).get.name.startsWith("org.eclipse.swt."))
+    .filter(!_.get(moduleID.key).get.name.contains("princess-edit-loader"))
+    .distinct
+  def getJar(artifact: String) = rawClasspath.find(_.get(moduleID.key).get.name == artifact).get
+
+  val classPaths = Map(
+    "windows-x86_64" -> (distClasspath :+ getJar("org.eclipse.swt.win32.win32.x86_64")),
+    "macos-x86_64"   -> (distClasspath :+ getJar("org.eclipse.swt.cocoa.macosx.x86_64")),
+    "macos-aarch64"  -> (distClasspath :+ getJar("org.eclipse.swt.cocoa.macosx.aarch64")),
+    "linux-x86_64"   -> (distClasspath :+ getJar("org.eclipse.swt.gtk.linux.x86_64")),
+    "linux-aarch64"  -> (distClasspath :+ getJar("org.eclipse.swt.gtk.linux.aarch64")),
+  )
+  val allJars: Seq[Attributed[File]] = classPaths.flatMap(_._2).toSet.toSeq
+
+  def jarName(jar: Attributed[File]) = {
+    val mod = jar.get(moduleID.key).get
+    val org = if(mod.organization == "bundle") "" else s"${mod.organization}."
+    s"$org${mod.name}-${mod.revision}.jar"
+  }
+  def classPathString(path: Seq[Attributed[File]]) = path.map(jarName).mkString(":")
+
+  // copy lib files
+  for (jar <- rawClasspath) IO.copyFile(jar.data, outDir / jarName(jar))
+
+  val props = new Properties()
+  for ((name, path) <- classPaths) props.put(s"$name.classpath", classPathString(path))
+  props.put("main", (Compile / run / mainClass).value.get)
+  props.put("allJars", classPathString(allJars))
+  props.put("loaderName", getJar("princess-edit-loader"))
+
+  runProcess(Seq("zip", "-r", outDir / "core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "modules")
+  props.put("corePackage", "core.pedit-pkg")
+
+  // copy native binaries, if they exist
+  val nativeBinaries = Map(
+    "windows-x86_64" -> "princessedit_native.windows.x86_64.dll",
+    "macos-x86_64"   -> "libprincessedit_native.macos.x86_64.dylib",
+    "macos-aarch64"  -> "libprincessedit_native.macos.aarch64.dylib",
+    "linux-x86_64"   -> "libprincessedit_native.linux.x86_64.so",
+    "linux-aarch64"  -> "libprincessedit_native.linux.aarch64.so",
+  )
+  for ((name, path) <- nativeBinaries) props.put(s"$name.nativeBin", path)
+  props.put("allNatives", nativeBinaries.values.mkString(":"))
+
+  // write property file
+  IO.write(props, "Classpath configuration data for PrincessEdit", outDir / "manifest.properties")
+
+  (props, outDir)
+})
+
+InputKey[Unit]("precompileClassPath") := {
+  classPathInfo.value
+  ()
+}
 
 InputKey[Unit]("dist") := {
   val path = crossTarget.value / "dist"
@@ -302,60 +374,25 @@ InputKey[Unit]("distUniversal") := {
     IO.write(outDir / "README.txt", fixEndings(IO.read(file("project/dist_README.md"))))
     IO.write(outDir / "NOTICE.txt", fixEndings(IO.read(file("project/dist_NOTICE.md"))))
 
-    IO.copyFile((loader / Compile / packageBin).value, outDir / "PrincessEdit.jar")
-
-    // gather classpath information
-    val rawClasspath = (loader / Compile / fullClasspath).value ++ (princessEdit / Compile / fullClasspath).value
-    val distClasspath = rawClasspath
-      .filter(!_.get(moduleID.key).get.name.startsWith("org.eclipse.swt."))
-      .filter(!_.get(moduleID.key).get.name.contains("princess-edit-loader"))
-      .distinct
-    def getSWTJar(artifact: String) = rawClasspath.find(_.get(moduleID.key).get.name == artifact).get
-
-    val classPaths = Map(
-      "windows-x86_64" -> (distClasspath :+ getSWTJar("org.eclipse.swt.win32.win32.x86_64")),
-      "macos-x86_64"   -> (distClasspath :+ getSWTJar("org.eclipse.swt.cocoa.macosx.x86_64")),
-      "macos-aarch64"  -> (distClasspath :+ getSWTJar("org.eclipse.swt.cocoa.macosx.aarch64")),
-      "linux-x86_64"   -> (distClasspath :+ getSWTJar("org.eclipse.swt.gtk.linux.x86_64")),
-      "linux-aarch64"  -> (distClasspath :+ getSWTJar("org.eclipse.swt.gtk.linux.aarch64")),
-    )
-    val allJars: Set[Attributed[File]] = classPaths.flatMap(_._2).toSet
-
-    println(classPaths)
-
-    def jarName(jar: Attributed[File]) = {
-      val mod = jar.get(moduleID.key).get
-      val org = if(mod.organization == "bundle") "" else s"${mod.organization}."
-      s"$org${mod.name}-${mod.revision}.jar"
-    }
-    def classPathString(path: Seq[Attributed[File]]) = path.map(jarName).mkString(":")
-
-    // copy lib files
+    // copy data from classpath information
     IO.createDirectory(outDir / "lib")
-    for(jar <- allJars) IO.copyFile(jar.data, outDir / "lib" / jarName(jar))
+    val (properties, classDir) = classPathInfo.value
 
-    val props = new Properties()
-    for((name, path) <- classPaths) props.put(s"$name.classpath", classPathString(path))
-    props.put("main", (Compile / run / mainClass).value.get)
+    IO.copyFile(classDir / "manifest.properties", outDir / "lib" / "manifest.properties")
 
-    runProcess(Seq("zip", "-r", outDir / "lib" / "core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "modules")
+    val loader = properties.get("loaderName").toString
+    IO.copyFile(classDir / loader, outDir / "PrincessEdit.jar")
 
-    // copy native binaries, if they exist
-    val nativeBinaries = Map(
-      "windows-x86_64" -> "princessedit_native.windows.x86_64.dll",
-      "macos-x86_64"   -> "libprincessedit_native.macos.x86_64.dylib",
-      "macos-aarch64"  -> "libprincessedit_native.macos.aarch64.dylib",
-      "linux-x86_64"   -> "libprincessedit_native.linux.x86_64.so",
-      "linux-aarch64"  -> "libprincessedit_native.linux.aarch64.so",
-    )
-    for ((name, path) <- nativeBinaries) props.put(s"$name.nativeBin", path)
-    for (path <- nativeBinaries.values) {
-      val sourcePath = baseDirectory.value / "modules" / "native" / "target" / path
-      if (sourcePath.exists()) IO.copyFile(sourcePath, outDir / "lib" / path)
+    val corePackage = properties.get("corePackage").toString
+    IO.copyFile(classDir / corePackage, outDir / "lib" / corePackage)
+
+    for (jar <- properties.get("allJars").toString.split(":"))
+      IO.copyFile(classDir / jar, outDir / "lib" / jar)
+
+    for (native <- properties.get("allNatives").toString.split(":")) {
+      val nativePath = baseDirectory.value / "modules" / "native" / "target" / native
+      if (nativePath.exists) IO.copyFile(nativePath, outDir / "lib" / native)
     }
-
-    // write property file
-    IO.write(props, "Classpath configuration data for PrincessEdit", outDir / "lib" / "manifest.properties")
 
     // we call out to zip to save the executable flag for *nix
     if (zipOut.exists) IO.delete(zipOut)
