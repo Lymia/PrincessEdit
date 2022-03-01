@@ -122,26 +122,16 @@ jobs:
       - nativeBuilds
     env:
       PRINCESS_EDIT_DO_NOT_BUILD_NATIVE: true
+      PRINCESS_EDIT_PREBUILT_CLASS_PATH: true
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
-
-      # Setup environment
       - uses: actions/setup-java@v2
         with:
           distribution: temurin
           java-version: 17
-      - uses: ATiltedTree/setup-rust@v1
-        with:
-          rust-version: nightly
-      - name: Cache Ivy packages
-        uses: actions/cache@v2
-        with:
-          key: ${{ runner.os }}-distUniversal
-          path: ~/.ivy2
 
-      # Build distribution package
       - uses: actions/download-artifact@v2
         with:
           name: princessedit_native.windows.x86_64.dll
@@ -162,6 +152,10 @@ jobs:
         with:
           name: libprincessedit_native.linux.aarch64.so
           path: modules/native/target
+      - uses: actions/download-artifact@v2
+        with:
+          name: jvm-class-data
+          path: target
 
       - name: Check modules/native/target contents
         run: ls -alh
