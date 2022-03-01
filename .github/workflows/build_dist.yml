@@ -69,14 +69,12 @@ jobs:
         with:
           key: princess-edit-build-jvm
           path: ~/.ivy2
-      - name: Run sbt dist
+      - name: Run sbt precompileClassPath
         run: sbt -v precompileClassPath
       - uses: actions/upload-artifact@v2
         with:
           name: jvm-class-data
           path: target/class-path-dump/**
-
-      precompileClassPath
 
   # Build for Linux
   buildOnLinux:
