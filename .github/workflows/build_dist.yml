@@ -57,6 +57,8 @@ jobs:
         with:
           rust-version: nightly
           targets: aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu
+      - name: Install aarch64 linker
+        run: sudo apt-get install gcc-aarch64-linux-gnu
       - name: Compile for x86_64
         run: cargo build --release --target x86_64-unknown-linux-gnu
         working-directory: modules/native/src/native
