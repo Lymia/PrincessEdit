@@ -27,17 +27,6 @@ import scala.sys.process._
 object Utils {
   val VersionRegex = "([0-9]+)\\.([0-9]+)(\\.([0-9]+))?(-(.*))?".r // major.minor.patch-suffix
 
-  // Process helper functions
-  def assertProcess(i: Int) = if(i != 0) sys.error("Process returned non-zero return value! (ret: "+i+")")
-  def runProcess   (p: Seq[Any]) = {
-    println("Running process: "+p.map(_.toString).mkString(" "))
-    assertProcess(Process(p.map(_.toString)) !)
-  }
-  def runProcess   (p: Seq[Any], cd: File) = {
-    println("Running process in "+cd+": "+p.map(_.toString).mkString(" "))
-    assertProcess(Process(p.map(_.toString), cd) !)
-  }
-
   // Directory helpers
   def dir     (path: File) = path.toString + "/"
   def allFiles(path: File, extension: String) = path.listFiles.filter(_.getName.endsWith(extension)).toSeq

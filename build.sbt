@@ -20,70 +20,40 @@
  * THE SOFTWARE.
  */
 
-import Config._
 import sbt.Keys._
 import sbt._
+
+import scala.sys.process._
+
+val version_baseVersion = "0.1.0"
+val config_scalaVersion = "2.13.8"
+
+// Process helper functions
+def runProcess(p: Seq[Any], cd: File): Unit = {
+  println(s"Running process ${p.map(_.toString).mkString(" ")} in $cd")
+  val code = Process(p.map(_.toString), cd).!
+  if (code != 0) sys.error(s"Process ${p.head} returned non-zero return value! (ret: $code)")
+}
+def runProcessResult(p: Seq[Any], cd: File): String = {
+  println(s"Running process ${p.map(_.toString).mkString(" ")} in $cd")
+  Process(p.map(_.toString), cd).!!
+}
+
+def catchOr[T](b: => T)(v: => T): T = try {
+  v
+} catch {
+  case e: Exception =>
+    e.printStackTrace()
+    b
+}
 
 val osName = sys.props("os.name") match {
   case os if os.startsWith("Windows") => "windows"
   case "Mac OS X" => "macos"
   case "Linux" => "linux"
 }
-def swtDep(artifact: String) =
-  ("bundle" % artifact % "3.118.0.v20211123-0851"
-    exclude("package", "org.mozilla.xpcom")
-    exclude("package", "org.eclipse.swt.accessibility2"))
-val swtPlaf = sys.props("os.name") match {
-  case os if os.startsWith("Windows") => "win32.win32.x86_64"
-  case "Mac OS X" => "cocoa.macosx.x86_64"
-  case "Linux" => "gtk.linux.x86_64"
-}
 
-lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
-  organization := "moe.lymia",
-  name := "lua"
-))
-lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
-  organization := "moe.lymia.princess",
-  name := "princess-edit-swt",
-
-  libraryDependencies += swtDep("org.eclipse.swt"),
-  libraryDependencies += swtDep(s"org.eclipse.swt.$swtPlaf"),
-
-  libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.17.100.v20211104-1730",
-  libraryDependencies += "bundle" % "org.eclipse.osgi.services" % "3.10.200.v20210723-0643"
-    // provided by default in JDK 8
-    exclude("package", "javax.xml.parsers"),
-  libraryDependencies += "bundle" % "org.eclipse.equinox.common" % "3.15.100.v20211021-1418",
-  libraryDependencies += "bundle" % "org.eclipse.jface" % "3.24.0.v20211110-1517"
-    exclude("bundle", "org.eclipse.equinox.bidi")
-    // provided by default in JDK 8
-    exclude("package", "javax.xml.parsers")
-    exclude("package", "org.w3c.dom")
-    exclude("package", "org.xml.sax"),
-))
-lazy val xscalawt = project in file("modules/xscalawt") settings (commonSettings ++ Seq(
-  organization := "moe.lymia",
-  name := "xscalawt",
-
-  Compile / scalaSource := baseDirectory.value / "com.coconut_palm_software.xscalawt" / "src",
-
-  unmanagedSources / excludeFilter := HiddenFileFilter || new FileFilter() {
-    override def accept(pathname: File): Boolean = {
-      val src = pathname.toString
-      src.contains("XScalaWTBinding.scala") || src.replace('\\', '/').contains("/examples/")
-    }
-  },
-
-  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
-)) dependsOn swt
-lazy val native = project in file("modules/native") enablePlugins JniNative settings (commonSettings ++ Seq(
-  organization := "moe.lymia.princess",
-  name := "princess-edit-native",
-
-  libraryDependencies += "commons-codec" % "commons-codec" % "1.15",
-))
-
+// Actual core definition
 lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin settings (commonSettings ++ ResourceGenerators.settings ++ Seq(
   organization := "moe.lymia.princess",
   name := "princess-edit",
@@ -133,13 +103,12 @@ lazy val princessEdit = project in file(".") enablePlugins NativeImagePlugin set
   libraryDependencies += "bundle" % "org.eclipse.nebula.widgets.gallery" % "1.0.0.202202012159",
 )) dependsOn swt dependsOn xscalawt dependsOn lua dependsOn native
 
+val gitBaseVersion = TaskKey[String]("git-base-version")
+val gitUncommittedChanges = TaskKey[Boolean]("git-uncommitted-changes")
 val commonSettings = versionWithGit ++ Seq(
   // Organization configuration
   homepage := Some(url("https://github.com/Lymia/PrincessEdit")),
   licenses := Seq("MIT License" -> url("http://www.opensource.org/licenses/mit-license.php")),
-
-  // Misc configuration
-  exportJars := true,
 
   // Repositories
   ThisBuild / useCoursier := false,
@@ -147,7 +116,6 @@ val commonSettings = versionWithGit ++ Seq(
   resolvers += Resolver.mavenLocal,
 
   // Git versioning
-  git.baseVersion := version_baseVersion,
   git.uncommittedSignifier := Some("DIRTY"),
   git.formattedShaVersion := {
     val base = git.baseVersion.?.value
@@ -161,8 +129,90 @@ val commonSettings = versionWithGit ++ Seq(
   // Scala configuration
   scalaVersion := config_scalaVersion,
   javacOptions ++= "-source 11 -target 17".split(" ").toSeq,
-  scalacOptions ++= "-Xlint -target:17 -opt:l:inline -deprecation -unchecked".split(" ").toSeq
+  scalacOptions ++= "-Xlint -target:17 -opt:l:inline -deprecation -unchecked".split(" ").toSeq,
+
+  // JGit doesn't like some of the configurations the developer herself uses. :(
+  gitBaseVersion := version_baseVersion,
+  gitUncommittedChanges := catchOr(false) {
+    runProcessResult(Seq("git", "status", "--porcelain"), baseDirectory.value).nonEmpty
+  },
+  version := catchOr(s"$version_baseVersion-dev_UNKNOWN") {
+    val gitVersion = runProcessResult(Seq("git", "describe", "--always", "--dirty=-DIRTY"), baseDirectory.value)
+
+  },
 )
+
+lazy val lua = project in file("modules/lua") settings (commonSettings ++ Seq(
+  organization := "moe.lymia",
+  name := "lua"
+))
+
+lazy val swt = project in file("modules/swt") settings (commonSettings ++ Seq(
+  organization := "moe.lymia.princess",
+  name := "princess-edit-swt",
+
+  libraryDependencies += swtDep("org.eclipse.swt"),
+  libraryDependencies += swtDep(s"org.eclipse.swt.$swtPlafSuffix"),
+
+  libraryDependencies += "bundle" % "org.eclipse.osgi" % "3.17.100.v20211104-1730",
+  libraryDependencies += "bundle" % "org.eclipse.osgi.services" % "3.10.200.v20210723-0643"
+    // provided by default in JDK 8
+    exclude("package", "javax.xml.parsers"),
+  libraryDependencies += "bundle" % "org.eclipse.equinox.common" % "3.15.100.v20211021-1418",
+  libraryDependencies += "bundle" % "org.eclipse.jface" % "3.24.0.v20211110-1517"
+    exclude("bundle", "org.eclipse.equinox.bidi")
+    // provided by default in JDK 8
+    exclude("package", "javax.xml.parsers")
+    exclude("package", "org.w3c.dom")
+    exclude("package", "org.xml.sax"),
+))
+def swtDep(artifact: String) =
+  ("bundle" % artifact % "3.118.0.v20211123-0851"
+    exclude("package", "org.mozilla.xpcom")
+    exclude("package", "org.eclipse.swt.accessibility2"))
+val swtPlafSuffix = sys.props("os.name") match {
+  case os if os.startsWith("Windows") => "win32.win32.x86_64"
+  case "Mac OS X" => "cocoa.macosx.x86_64"
+  case "Linux" => "gtk.linux.x86_64"
+}
+
+lazy val xscalawt = project in file("modules/xscalawt") settings (commonSettings ++ Seq(
+  organization := "moe.lymia",
+  name := "xscalawt",
+
+  Compile / scalaSource := baseDirectory.value / "com.coconut_palm_software.xscalawt" / "src",
+
+  unmanagedSources / excludeFilter := HiddenFileFilter || new FileFilter() {
+    override def accept(pathname: File): Boolean = {
+      val src = pathname.toString
+      src.contains("XScalaWTBinding.scala") || src.replace('\\', '/').contains("/examples/")
+    }
+  },
+
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
+)) dependsOn swt
+
+lazy val native = project in file("modules/native") settings (commonSettings ++ Seq(
+  organization := "moe.lymia.princess",
+  name := "princess-edit-native",
+
+  libraryDependencies += "commons-codec" % "commons-codec" % "1.15",
+
+  Compile / resourceGenerators += Def.task {
+    val (cargoOut, fileName) = osName match {
+      case "windows" => ("princessedit_native.dll", "princessedit_native.x86_64.dll")
+      case "macos" => ("libprincessedit_native.dylib", "libprincessedit_native.x86_64.dylib")
+      case "linux" => ("libprincessedit_native.so", "libprincessedit_native.x86_64.so")
+    }
+    runProcess(Seq("cargo", "build", "--release"), baseDirectory.value / "src" / "native")
+    val sourcePath = baseDirectory.value / "src" / "native" / "target" / "release" / cargoOut
+    val targetPath = (Compile / resourceManaged).value / "moe" / "lymia" / "princess" / "native" / fileName
+    if (!sourcePath.exists()) sys.error(s"rustc did not produce a binary?")
+    IO.copyFile(sourcePath, targetPath)
+    Seq(targetPath)
+  },
+  cleanFiles += baseDirectory.value / "src" / "native" / "target",
+))
 
 externalIvySettings(baseDirectory(_ / "ivysettings.xml"))
 
@@ -185,7 +235,7 @@ InputKey[Unit]("dist") := {
     IO.copyFile(nativeImageFile, outDir / nativeImageFile.name.replace("princess-edit", "PrincessEdit"))
 
     IO.createDirectory(outDir / "lib")
-    Utils.runProcess(Seq("zip", "-r", outDir / "lib/core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "lib")
+    runProcess(Seq("zip", "-r", outDir / "lib/core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "lib")
 
     IO.createDirectory(outDir / "packages")
     for (pkg <- Seq("cards-against-humanity.pedit-pkg"))
@@ -193,7 +243,7 @@ InputKey[Unit]("dist") := {
 
     // we call out to zip to save the executable flag for *nix
     if (zipOut.exists) IO.delete(zipOut)
-    Utils.runProcess(Seq("zip", "-r", zipOut, dirName), dir)
+    runProcess(Seq("zip", "-r", zipOut, dirName), dir)
 
     zipOut
   }

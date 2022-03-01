@@ -41,16 +41,6 @@ object ResourceGenerators {
       t.printStackTrace()
       s"<unknown>"
   }
-  private def propertyFromProcess(proc: String*) = tryProperty {
-    val output = new ArrayBuffer[String]()
-    val logger = new ProcessLogger {
-      override def buffer[T](f: => T): T = f
-      override def err(s: => String): Unit = output += s
-      override def out(s: => String): Unit = output += s
-    }
-    assertProcess(proc ! logger)
-    output.mkString("\n")
-  }
 
   object Keys {
     val versionData = TaskKey[Map[String, String]]("resource-version-data")
