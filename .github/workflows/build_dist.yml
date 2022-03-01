@@ -131,7 +131,7 @@ jobs:
           submodules: 'recursive'
       - name: Fetch git tags.
         run: git fetch --prune --unshallow --tags
-        
+
       - uses: actions/setup-java@v2
         with:
           distribution: temurin
@@ -168,6 +168,8 @@ jobs:
       - name: Check target/class-path-dump contents
         run: ls -alh
         working-directory: target/class-path-dump
+      - name: Check EVERYTHING contents??
+        run: find
       - name: Run sbt dist
         run: sbt -v clean distUniversal
 
