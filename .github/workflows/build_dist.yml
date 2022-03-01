@@ -39,6 +39,9 @@ jobs:
         with:
           rust-version: nightly
           targets: ${{ matrix.target }}
+      - name: Install aarch64 linker
+        run: sudo apt-get install gcc-aarch64-linux-gnu
+        if: ${{ matrix.target == 'aarch64-unknown-linux-gnu' }}
       - name: Compile for ${{ matrix.target }}
         run: cargo build --release --target ${{ matrix.target }}
         working-directory: modules/native/src/native
