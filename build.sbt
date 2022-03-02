@@ -382,8 +382,8 @@ InputKey[Unit]("dist") := {
     IO.copyFile((princessEditClasspath / nativeImage).value, outDir / "PrincessEdit")
 
     runProcess(Seq("zip", "-r", outDir / "core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "modules")
-    val nativeBinName = properties.get("linux-x86_64.nativeBin").toString
-    IO.copyFile(classDir / nativeBinName, outDir / nativeBinName)
+    val nativeBinName = properties.get(s"$osTarget.nativeBin").toString
+    IO.copyFile(classDir / nativeBinName, baseDirectory.value / "modules" / "native" / "target" / nativeBinName)
 
     IO.createDirectory(outDir / "packages")
     for (pkg <- Seq("cards-against-humanity.pedit-pkg"))
