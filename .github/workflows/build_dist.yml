@@ -125,7 +125,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: dist-native-image-${{ matrix.osName }}
-          path: target/scala-2.13/dist/*
+          path: target/dist/*
 
   distUniversal:
     runs-on: ubuntu-latest
@@ -178,7 +178,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: dist-universal
-          path: target/scala-2.13/dist/*
+          path: target/dist/*
 
   publishArtifacts:
     runs-on: ubuntu-latest

@@ -260,9 +260,9 @@ lazy val loader = project in file("modules/loader") settings (commonSettings ++ 
   crossPaths := false,
 ))
 
-/*********************************\
-|* Distribution-related Projects *|
-\*********************************/
+/********************************\
+|* Distribution-related scripts *|
+\********************************/
 
 val classPathInfo = TaskKey[(Properties, File)]("class-path-info")
 
@@ -358,6 +358,8 @@ lazy val princessEditClasspath = project in file("target/princess-edit-classpath
     "-H:-IncludeMethodData",
   ),
 ))
+
+crossPaths := false
 
 InputKey[Unit]("precompileClassPath") := {
   (princessEditClasspath / classPathInfo).value
