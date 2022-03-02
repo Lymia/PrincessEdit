@@ -85,9 +85,7 @@ public final class Loader {
         return os + "-" + arch;
     }
 
-    private LoaderData getLoaderData(Path rootPath) {
-        String os = getOS();
-
+    private LoaderData getLoaderData(String os, Path rootPath) {
         try {
             Path inputPath = rootPath.resolve("manifest.properties");
             Properties prop = new Properties();
@@ -105,8 +103,8 @@ public final class Loader {
         }
     }
 
-    private Class<?> loadMainClass(Path rootPath) {
-        LoaderData data = getLoaderData(rootPath);
+    private Class<?> loadMainClass(String os, Path rootPath) {
+        LoaderData data = getLoaderData(os, rootPath);
 
         try {
             URL[] urls = new URL[data.classPath.length];
@@ -119,9 +117,13 @@ public final class Loader {
     }
 
     private void start(String[] args) throws InvocationTargetException {
-        if (System.getProperty("org.graalvm.nativeimage.kind") != null) {
+        if (System.getProperty("org.graalvm.nativeimage.kind") != null)
             throw error("Loader is not designed for use with GraalVM native-image.", null);
-        }
+
+        String os = getOS();
+        if (os.endsWith("-x86"))
+            throw error("PrincessEdit requires a 64-bit ARM or Intel/AMD CPU.\n" +
+                    "If you have one, please install a 64-bit version of Java.", null);
 
         Path bin = getExecutablePath();
         Path dir = bin.getParent();
@@ -129,7 +131,7 @@ public final class Loader {
         System.setProperty("moe.lymia.princess.loaderBinary", bin.toUri().toString());
         System.setProperty("moe.lymia.princess.rootDirectory", dir.toUri().toString());
         System.setProperty("moe.lymia.princess.libDirectory", dir.resolve("lib").toUri().toString());
-        Class<?> main = loadMainClass(dir.resolve("lib"));
+        Class<?> main = loadMainClass(os, dir.resolve("lib"));
 
         Method m;
 
