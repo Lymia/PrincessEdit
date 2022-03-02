@@ -126,9 +126,9 @@ lazy val princessEdit = project in file("modules/princess-edit") settings (commo
   name := "princess-edit",
 
   run / fork := true,
-  run / envVars += ("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY", baseDirectory.value.toString),
 
   run / javaOptions ++= (if (osName == "macos") Seq("-XstartOnFirstThread") else Seq()),
+  run / javaOptions += s"-Dprincessedit.baseDirectory=${(baseDirectory.value / ".." / "..").toString}",
   run / javaOptions += s"-Dprincessedit.native.bin=${(native / buildNativeLib).value}",
 
   gitDir := baseDirectory.value,
@@ -243,7 +243,7 @@ lazy val native = project in file("modules/native") settings (commonSettings ++ 
       case "linux" => ("libprincessedit_native.so", "libprincessedit_native.linux.x86_64.so")
     }
     val targetPath = target.value / fileName
-    if (System.getenv("PRINCESS_EDIT_DO_NOT_BUILD_NATIVE") != null) {
+    if (System.getenv("PRINCESS_EDIT_DO_NOT_BUILD_NATIVE") == null) {
       runProcess(Seq("cargo", "build", "--release"), baseDirectory.value / "src" / "native")
       val sourcePath = baseDirectory.value / "src" / "native" / "target" / "release" / cargoOut
       if (!sourcePath.exists()) sys.error(s"rustc did not produce a binary?")
@@ -360,6 +360,8 @@ lazy val princessEditClasspath = project in file("target/princess-edit-classpath
 ))
 
 crossPaths := false
+
+run := (princessEdit / Compile / run).evaluated
 
 InputKey[Unit]("precompileClassPath") := {
   (princessEditClasspath / classPathInfo).value

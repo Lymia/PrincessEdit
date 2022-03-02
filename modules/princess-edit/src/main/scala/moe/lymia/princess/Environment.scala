@@ -59,7 +59,9 @@ object Platform {
 
 object Environment {
   val isNativeImage: Boolean = System.getProperty("org.graalvm.nativeimage.kind") != null
-  private lazy val isSbtLaunch: Boolean = System.getenv("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY") != null
+  private lazy val isSbtLaunch: Boolean =
+    System.getProperty("princessedit.baseDirectory") != null &&
+    System.getProperty("princessedit.native.bin") != null
 
   private lazy val configurationRoot = Platform.platform.configurationRoot
   def configDirectory(name: String): Path = configurationRoot.resolve(name)
@@ -67,7 +69,7 @@ object Environment {
   private lazy val locationFromCodeSource: Path =
     new File(PrincessEdit.getClass.getProtectionDomain.getCodeSource.getLocation.toURI).toPath.getParent
   private lazy val locationFromSbtEnvironment =
-    Paths.get(System.getenv("PRINCESS_EDIT_SBT_LAUNCH_BASE_DIRECTORY"))
+    Paths.get(System.getProperty("princessedit.baseDirectory"))
 
   lazy val rootDirectory: Path =
     if (isNativeImage) locationFromCodeSource
