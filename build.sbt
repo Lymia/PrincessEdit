@@ -383,7 +383,7 @@ InputKey[Unit]("dist") := {
 
     runProcess(Seq("zip", "-r", outDir / "core.pedit-pkg", "core.pedit-pkg"), baseDirectory.value / "modules")
     val nativeBinName = properties.get(s"$osTarget.nativeBin").toString
-    IO.copyFile(classDir / nativeBinName, baseDirectory.value / "modules" / "native" / "target" / nativeBinName)
+    IO.copyFile(baseDirectory.value / "modules" / "native" / "target" / nativeBinName, outDir / nativeBinName)
 
     IO.createDirectory(outDir / "packages")
     for (pkg <- Seq("cards-against-humanity.pedit-pkg"))
