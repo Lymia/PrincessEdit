@@ -35,6 +35,7 @@ import scala.sys.process._
 
 val version_baseVersion = "0.1.0"
 val config_scalaVersion = "2.13.8"
+val config_distributePackages = Seq("cards-against-humanity.pedit-pkg")
 
 // Project-specific keys
 val gitDir = SettingKey[File]("git-dir")
@@ -389,9 +390,9 @@ InputKey[Unit]("dist") := {
     val nativeBinName = properties.get(s"$osTarget.nativeBin").toString
     IO.copyFile(baseDirectory.value / "modules" / "native" / "target" / nativeBinName, outDir / nativeBinName)
 
-    IO.createDirectory(outDir / "packages")
-    for (pkg <- Seq("cards-against-humanity.pedit-pkg"))
-      IO.copyDirectory(file("packages") / pkg, outDir / "packages" / pkg)
+    // copy default packages
+    for (pkg <- config_distributePackages)
+      IO.copyDirectory(baseDirectory.value / "packages" / pkg, outDir / "packages" / pkg)
 
     // we call out to zip to save the executable flag for *nix
     if (zipOut.exists) IO.delete(zipOut)
@@ -436,6 +437,10 @@ InputKey[Unit]("distUniversal") := {
       val nativePath = baseDirectory.value / "modules" / "native" / "target" / native
       if (nativePath.exists) IO.copyFile(nativePath, outDir / "lib" / native)
     }
+
+    // copy default packages
+    for (pkg <- config_distributePackages)
+      IO.copyDirectory(baseDirectory.value / "packages" / pkg, outDir / "packages" / pkg)
 
     // we call out to zip to save the executable flag for *nix
     if (zipOut.exists) IO.delete(zipOut)

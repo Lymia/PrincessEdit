@@ -41,10 +41,12 @@ class LoaderException extends RuntimeException {
 class LoaderData {
     final String mainClass;
     final String[] classPath;
+    final String nativeBin;
 
-    LoaderData(String mainClass, String[] classPath) {
+    LoaderData(String mainClass, String[] classPath, String nativeBin) {
         this.mainClass = mainClass;
         this.classPath = classPath;
+        this.nativeBin = nativeBin;
     }
 }
 
@@ -60,7 +62,7 @@ public final class Loader {
     private Path getExecutablePath() {
         try {
             URL sourceURL = Loader.class.getProtectionDomain().getCodeSource().getLocation();
-            return Paths.get(sourceURL.toURI());
+            return Paths.get(sourceURL.toURI()).toFile().toPath();
         } catch (Exception e) {
             throw error("Could not find executable directory.", e);
         }
@@ -93,19 +95,18 @@ public final class Loader {
 
             String mainClass = prop.getProperty("main");
             String classPath = prop.getProperty(os+".classpath");
+            String nativeBin = prop.getProperty(os+".nativeBin");
 
             if (classPath == null)
                 throw error("Your system configuration (" + os + ") is not supported in this build.", null);
 
-            return new LoaderData(mainClass, classPath.split(":"));
+            return new LoaderData(mainClass, classPath.split(":"), nativeBin);
         } catch (Exception e) {
             throw error("Could not load library manifest.", e);
         }
     }
 
-    private Class<?> loadMainClass(String os, Path rootPath) {
-        LoaderData data = getLoaderData(os, rootPath);
-
+    private Class<?> loadMainClass(LoaderData data, Path rootPath) {
         try {
             URL[] urls = new URL[data.classPath.length];
             for (int i = 0; i < data.classPath.length; i++)
@@ -125,13 +126,13 @@ public final class Loader {
             throw error("PrincessEdit requires a 64-bit ARM or Intel/AMD CPU.\n" +
                     "If you have one, please install a 64-bit version of Java.", null);
 
-        Path bin = getExecutablePath();
-        Path dir = bin.getParent();
+        Path executableDir = getExecutablePath().getParent();
+        Path libDir = executableDir.resolve("lib");
+        LoaderData data = getLoaderData(os, libDir);
         System.setProperty("moe.lymia.princess.startedFromLoader", "true");
-        System.setProperty("moe.lymia.princess.loaderBinary", bin.toUri().toString());
-        System.setProperty("moe.lymia.princess.rootDirectory", dir.toUri().toString());
-        System.setProperty("moe.lymia.princess.libDirectory", dir.resolve("lib").toUri().toString());
-        Class<?> main = loadMainClass(os, dir.resolve("lib"));
+        System.setProperty("moe.lymia.princess.rootDirectory", executableDir.toString());
+        System.setProperty("moe.lymia.princess.nativeBinary", libDir.resolve(data.nativeBin).toString());
+        Class<?> main = loadMainClass(data, libDir);
 
         Method m;
 

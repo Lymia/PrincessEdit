@@ -62,27 +62,40 @@ object Environment {
   private lazy val isSbtLaunch: Boolean =
     System.getProperty("princessedit.baseDirectory") != null &&
     System.getProperty("princessedit.native.bin") != null
+  private lazy val isUniversalLaunch: Boolean =
+    System.getProperty("moe.lymia.princess.startedFromLoader") != null &&
+    System.getProperty("moe.lymia.princess.rootDirectory") != null &&
+    System.getProperty("moe.lymia.princess.nativeBinary") != null
 
   private lazy val configurationRoot = Platform.platform.configurationRoot
   def configDirectory(name: String): Path = configurationRoot.resolve(name)
 
-  private lazy val locationFromCodeSource: Path =
+  private lazy val nativeImageExecutableDirectory: Path =
     new File(PrincessEdit.getClass.getProtectionDomain.getCodeSource.getLocation.toURI).toPath.getParent
-  private lazy val locationFromSbtEnvironment =
+  private lazy val sbtBaseDirectory =
     Paths.get(System.getProperty("princessedit.baseDirectory"))
+  private lazy val universalRootDirectory =
+    Paths.get(System.getProperty("moe.lymia.princess.rootDirectory"))
 
   lazy val rootDirectory: Path =
-    if (isNativeImage) locationFromCodeSource
-    else if (isSbtLaunch) locationFromSbtEnvironment
+    if (isNativeImage) nativeImageExecutableDirectory
+    else if (isUniversalLaunch) universalRootDirectory
+    else if (isSbtLaunch) sbtBaseDirectory
     else sys.error("Could not locate root directory!")
 
   lazy val libDirectory: Path =
-    if (isNativeImage) locationFromCodeSource
-    else if (isSbtLaunch) locationFromSbtEnvironment.resolve("modules")
+    if (isNativeImage) nativeImageExecutableDirectory
+    else if (isUniversalLaunch) universalRootDirectory.resolve("lib")
+    else if (isSbtLaunch) sbtBaseDirectory.resolve("modules")
     else sys.error("Could not locate library directory!")
 
   lazy val nativeLibrary: Path =
-    if (isNativeImage) ???
+    if (isNativeImage) nativeImageExecutableDirectory.resolve(Platform.platform match {
+      case Platform.Windows => "princessedit_native.windows.x86_64.dll"
+      case Platform.MacOS => "libprincessedit_native.macos.x86_64.dylib"
+      case Platform.Linux => "libprincessedit_native.linux.x86_64.so"
+    })
+    else if (isUniversalLaunch) Paths.get(System.getProperty("moe.lymia.princess.nativeBinary"))
     else if (isSbtLaunch) Paths.get(System.getProperty("princessedit.native.bin"))
     else sys.error("Could not locate native library!")
 }
